@@ -74,7 +74,7 @@ if (!(Test-Path $installDir)) {
 }
 
 # Download the exe file
-Write-ThemeMsg "Downloading WinTool..."
+Write-ThemeMsg "Downloading WinTool... (This Might Take Bit)"
 try {
     Invoke-WebRequest -Uri $exeUrl -OutFile $exePath -ErrorAction Stop
     Write-ThemeMsg "Download complete!"
