@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WinTool - Utility Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+
+    <style>
+        /* --- Discord-like Window Chrome --- */
+        html, body {
+            background: transparent !important;
+        }
+        body {
+            /* Discord-like frosted glass frame */
+            background: linear-gradient(135deg, #23272a 60%, #181a20 100%);
+            color: #e0e0e0;
+            border-radius: 18px;
+            border: none;
+            box-shadow: 0 8px 40px 2px rgba(0,0,0,0.55);
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        /* Subtle outer border for Discord-like frame */
+        /* Removed body::before pseudo-element */
+
+        .container, .angular-border {
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            width: 100%;
+            height: 100%;
+            margin: 0 !important;
+            max-width: none !important;
+            min-width: 0 !important;
+            padding-left: 18px !important;
+            padding-right: 18px !important;
+            border: none !important;
+        }
+        *:focus { outline: none !important; }
+
+        /* --- Global Styles & Resets --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        .font-mono { font-family: 'Roboto Mono', monospace; }
+
+        /* --- Layout Container --- */
+        .container {
+            position: relative; z-index: 1;
+        }
+
+        /* --- Angular Border Style (For main content area) --- */
+        .angular-border {
+            position: relative; 
+            padding: 1.5rem; /* Standard padding */
+            background-color: rgba(20, 20, 20, 0.75); /* Slightly less transparent */
+            backdrop-filter: blur(8px);
+            border-radius: 0 0 0.75rem 0.75rem; /* Rounded bottom corners only */
+            transition: all 0.3s ease;
+            z-index: 1;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            margin-top: -1px; /* Overlap slightly with tabs */
+            display: flex;
+            flex-direction: column;
+        }
+        .angular-border::before, .angular-border::after { /* Corner elements */
+            content: ''; position: absolute; width: 12px; height: 12px; border-color: #FF7810;
+            border-style: solid; transition: all 0.3s ease; z-index: 2;
+        }
+        .angular-border::after { /* Bottom-right corner */
+             bottom: -2px; right: -2px; border-width: 0 2px 2px 0; border-bottom-right-radius: 0.75rem;
+        }
+        .angular-border::before { /* Bottom-left corner */
+            display: block;
+            bottom: -2px; left: -2px; border-width: 0 0 2px 2px; border-bottom-left-radius: 0.75rem;
+            top: auto; right: auto;
+        }
+
+        /* --- REMOVE Angular Border Corner Decorations --- */
+        .angular-border::before, .angular-border::after {
+            display: none !important;
+        }
+
+        /* --- Tab Styling --- */
+        .tab-list {
+            display: flex;
+            flex-wrap: nowrap; /* Prevent wrapping */
+            overflow-x: auto; /* Allow horizontal scrolling */
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+            list-style: none;
+            padding: 0 0 1px 0; /* Add padding-bottom to avoid cutting off bottom border */
+            margin: 0;
+            border-bottom: 1px solid rgba(255, 120, 20, 0.2);
+            position: relative;
+            z-index: 2; /* Above angular border */
+        }
+        .tab-list::-webkit-scrollbar { /* Hide scrollbar */
+            display: none;
+        }
+
+        .tab-item {
+            padding: 12px 20px; /* Adjusted padding */
+            cursor: pointer;
+            background-color: rgba(30, 30, 30, 0.7);
+            color: #a0a0a0;
+            font-weight: 500;
+            font-size: 0.9rem; /* Slightly smaller font for more tabs */
+            border: 1px solid transparent;
+            border-bottom: none;
+            border-radius: 0.5rem 0.5rem 0 0; /* Rounded top corners */
+            margin-right: 4px; /* Slightly reduced margin */
+            margin-bottom: -1px; /* Overlap border-bottom */
+            transition: all 0.3s ease;
+            position: relative;
+            backdrop-filter: blur(5px);
+            display: flex; /* Align icon and text */
+            align-items: center;
+            white-space: nowrap; /* Prevent text wrapping */
+            flex-shrink: 0; /* Ensure tabs don't shrink */
+        }
+        .tab-item:hover {
+            background-color: rgba(45, 45, 45, 0.8);
+            color: #ccc;
+        }
+        .tab-item.active {
+            background-color: rgba(20, 20, 20, 0.75); /* Match content area background */
+            color: #FF7810; /* Active tab text color */
+            border-color: rgba(255, 120, 20, 0.2);
+            border-bottom-color: transparent; /* Hide bottom border when active */
+            font-weight: 600;
+        }
+        .tab-item i {
+            margin-right: 6px; /* Space between icon and text */
+            width: 1.1em; /* Ensure icons align roughly */
+            text-align: center;
+        }
+
+        /* --- Tab Content Styling --- */
+        .tab-content {
+            display: none; /* Hidden by default */
+            flex-grow: 1; /* Allow content to fill space */
+            overflow: hidden; /* Prevent content overflow issues */
+            flex-direction: column;
+        }
+        .tab-content.active {
+            display: flex; /* Show active content. Use flex because Package Manager needs it */
+            animation: fadeIn 0.5s ease; /* Simple fade-in */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Button Styling --- */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 10px 24px; border-radius: 25px; text-decoration: none; font-weight: 600;
+            transition: all 0.3s ease; border: none; cursor: pointer; font-size: 0.9rem; text-align: center; white-space: nowrap;
+        }
+        .btn i { margin-right: 6px; }
+        .btn-primary { background: linear-gradient(45deg, #ff9800, #ff5722); color: #151515; border: none; }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(255, 152, 0, 0.3); }
+        .btn-secondary { background: rgba(255, 120, 20, 0.1); color: #FF7810; border: 1px solid rgba(255, 120, 20, 0.3); }
+        .btn-secondary:hover:not(:disabled) { background: rgba(255, 120, 20, 0.2); transform: translateY(-2px); box-shadow: 0 5px 10px rgba(255, 120, 20, 0.15); }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; border-radius: 20px; }
+        .btn:disabled {
+            background: #404040; color: #737373; border-color: #525252;
+            cursor: not-allowed; transform: none; box-shadow: none;
+        }
+        .action-btn {
+            padding: 8px 20px; font-size: 0.85rem; border-radius: 6px;
+            background: #3f3f46; color: #e0e0e0; border: 1px solid #52525b;
+        }
+        .action-btn:hover:not(:disabled) { background: #52525b; color: #fff; transform: none; box-shadow: none; }
+        .action-btn i { margin-right: 5px; }
+
+
+        /* --- Placeholder Content Styling --- */
+        .feature-section { margin-bottom: 2rem; }
+        .feature-section:last-child { margin-bottom: 0; }
+        .feature-section h3 {
+            color: #ffb74d; font-size: 1.4rem; font-weight: 600;
+            margin-bottom: 0.75rem; padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255, 120, 20, 0.15);
+            display: flex; align-items: center;
+        }
+         .feature-section h3 i { margin-right: 10px; color: #FF7810; font-size: 1.2rem; }
+        .feature-section p { margin-bottom: 1rem; color: #b0b0b0; font-size: 0.95rem; }
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+        .info-card {
+            background-color: rgba(40, 40, 40, 0.5); padding: 1rem;
+            border-radius: 0.375rem; border: 1px solid rgba(255, 120, 20, 0.1);
+            cursor: default;
+        }
+        .info-card.clickable { cursor: pointer; transition: background-color 0.2s ease; }
+        .info-card.clickable:hover { background-color: rgba(55, 55, 55, 0.6); }
+        .info-card .label { font-size: 0.85rem; color: #a0a0a0; margin-bottom: 0.25rem; }
+        .info-card .value { font-size: 1.1rem; font-weight: 500; color: #e0e0e0; }
+        .info-card .value.highlight { color: #FF7810; font-weight: 600; }
+        .tool-card .value { font-size: 1.1rem; margin-bottom: 0.25rem; }
+        .tool-card .label { font-size: 0.9rem; }
+
+
+        /* --- Specific Component Styles --- */
+        /* Switch/Toggle */
+        .switch { position: relative; display: inline-block; width: 36px; height: 18px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: .4s; border-radius: 18px; }
+        .slider:before { position: absolute; content: ""; height: 13px; width: 13px; left: 2.5px; bottom: 2.5px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #ff9800; }
+        input:checked + .slider:before { transform: translateX(18px); }
+
+        /* Input field styling */
+        .input-field {
+            background-color: #27272a; border: 1px solid #52525b; color: #e0e0e0;
+            font-size: 0.875rem; border-radius: 0.375rem; padding: 0.5rem 0.75rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .input-field:focus { outline: none; border-color: #ff9800; box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.3); }
+        .input-field::placeholder { color: #a1a1aa; }
+
+        /* Select field styling */
+        .select-field {
+            background-color: #3f3f46; border: 1px solid #52525b; color: white;
+            font-size: 0.875rem; border-radius: 0.375rem; padding: 0.375rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23a0a0a0' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1.25em 1.25em;
+            padding-right: 2.5rem;
+        }
+        .select-field:focus { outline: none; border-color: #ff9800; box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.3); }
+
+        /* --- Package Manager Specific Styles --- */
+        .package-manager-container {
+            display: flex; flex-direction: column; height: 100%; overflow: hidden;
+        }
+        .pm-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 0.75rem; padding: 0.5rem 0.25rem;
+            border-bottom: 1px solid rgba(255, 120, 20, 0.15);
+        }
+        .pm-title { font-size: 1.1rem; font-weight: 600; color: #ffb74d; }
+        .pm-subtitle { font-size: 0.8rem; color: #a0a0a0; }
+        .pm-status { font-size: 0.9rem; color: #a0a0a0; }
+        .pm-status.ready { color: #4ade80; }
+
+        .pm-filter-bar {
+            display: flex; gap: 0.75rem; margin-bottom: 0.75rem;
+            align-items: center; padding: 0 0.25rem;
+        }
+        .pm-filter-bar .input-field { flex-grow: 1; }
+        .pm-filter-bar .select-field { flex-shrink: 0; min-width: 150px; }
+
+        .pm-summary {
+            font-size: 0.85rem; color: #a0a0a0; margin-bottom: 0.75rem; padding: 0.25rem;
+        }
+        .pm-summary i { margin-right: 5px; color: #FF7810; }
+
+        .pm-table-wrapper {
+            max-height: 420px;
+            min-height: 100px;
+            overflow-y: auto;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            background: rgba(20,20,20,0.85);
+        }
+        .pm-table-wrapper::-webkit-scrollbar { width: 8px; }
+        .pm-table-wrapper::-webkit-scrollbar-track { background: #27272a; border-radius: 4px; }
+        .pm-table-wrapper::-webkit-scrollbar-thumb { background-color: #52525b; border-radius: 4px; }
+        .pm-table-wrapper::-webkit-scrollbar-thumb:hover { background-color: #71717a; }
+
+        .pm-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+        .pm-table thead { position: sticky; top: 0; z-index: 10; background-color: #27272a; }
+        .pm-table th {
+            padding: 0.75rem 1rem; text-align: left; font-weight: 600;
+            color: #a1a1aa; border-bottom: 1px solid #3f3f46;
+        }
+        .pm-table th.col-name { width: 20%; }
+        .pm-table th.col-desc { width: 80%; }
+
+        .pm-table tbody tr { border-bottom: 1px solid #3f3f46; transition: background-color 0.15s ease; cursor: pointer; }
+        .pm-table tbody tr:last-child { border-bottom: none; }
+        .pm-table tbody tr:hover { background-color: rgba(70, 70, 70, 0.3); }
+        .pm-table tbody tr.selected { background-color: rgba(255, 120, 20, 0.15); border-left: 3px solid #FF7810; }
+        .pm-table tbody tr.selected td:first-child { padding-left: calc(1rem - 3px); }
+
+        .pm-table td { padding: 0.75rem 1rem; vertical-align: top; color: #d4d4d8; }
+
+        .pm-table tr.category-row { background-color: #3f3f46; font-weight: 600; color: #e0e0e0; cursor: default; }
+        .pm-table tr.category-row:hover { background-color: #3f3f46; }
+        .pm-table tr.category-row td { padding: 0.5rem 1rem; }
+        .pm-table tr.category-row i { margin-right: 8px; transition: transform 0.2s ease; }
+        .pm-table tr.category-row.collapsed i { transform: rotate(-90deg); }
+
+        .pm-actions-bar {
+            padding-top: 1rem; display: flex; gap: 0.75rem; justify-content: flex-start;
+            border-top: 1px solid rgba(255, 120, 20, 0.15); margin-top: 1rem;
+        }
+        .pm-actions-bar .refresh-btn { margin-left: auto; }
+
+        /* --- Tweak Item Styling --- */
+        .tweak-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem; /* Reduced padding */
+            background-color: #27272a; /* neutral-800 */
+            border: 1px solid #3f3f46; /* neutral-700 */
+            border-radius: 0.375rem; /* rounded-md */
+        }
+        .tweak-item label:first-child { /* Target the text label */
+             color: #d4d4d8; /* neutral-300 */
+             font-size: 0.9rem;
+             margin-right: 1rem; /* Space between label and switch */
+        }
+
+        .tweak-row { margin-bottom: 0.5rem !important; min-height: 36px; }
+        .tweak-row label[for^="tweak-"] span { font-size: 0.94em; }
+
+        /* --- Responsive Adjustments --- */
+        @media (max-width: 900px) {
+             .tab-item { padding: 10px 15px; font-size: 0.85rem; margin-right: 3px; }
+             .pm-table th.col-name, .pm-table th.col-desc { width: auto; }
+             .pm-table th.col-desc, .pm-table td.col-desc { display: none; }
+        }
+        @media (max-width: 768px) {
+            .tab-item i { margin-right: 4px; }
+            .angular-border { padding: 1rem; }
+            .feature-section h3 { font-size: 1.3rem; }
+             .feature-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+             .pm-filter-bar { flex-direction: column; align-items: stretch; }
+             /* Tweak grid becomes 1 column on smaller screens */
+             #tweaks-grid { grid-template-columns: 1fr; }
+        }
+         @media (max-width: 640px) {
+             .tab-item span { display: none; }
+             .tab-item i { margin-right: 0; }
+             .tab-item { padding: 10px; }
+             body { padding: 1rem 0.5rem; }
+             .container { width: 100%; }
+             .btn { padding: 8px 16px; font-size: 0.85rem; }
+             .feature-section h3 { font-size: 1.2rem; }
+             .flex.items-center.justify-between { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+             .flex.items-center.justify-between label.switch { margin-left: auto; }
+             .pm-actions-bar { flex-wrap: wrap; }
+             .pm-actions-bar .refresh-btn { margin-left: 0; margin-top: 0.5rem; width: 100%; }
+         }
+
+        /* --- System Health Section Styles --- */
+        .health-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.2rem;
+            margin-top: 1.5rem;
+        }
+        .health-card {
+            background: rgba(30,30,30,0.85);
+            border: 1px solid rgba(255,120,20,0.12);
+            border-radius: 0.75rem;
+            padding: 1.2rem 1rem 0.8rem 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.13);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            min-height: 85px;
+        }
+        .health-title {
+            font-size: 1.05rem;
+            color: #ffb74d;
+            margin-bottom: 0.6rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5em;
+        }
+        .health-title i { color: #FF7810; }
+        .health-value {
+            font-size: 1.6rem;
+            color: #fff;
+            font-weight: 700;
+            margin-bottom: 0.2em;
+        }
+
+        /* Make a draggable area for the Electron window */
+        .titlebar {
+            -webkit-app-region: drag;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #181b20; /* EXACTLY match app background */
+            color: #fff;      /* White text for contrast */
+            height: 32px;
+            padding: 0 12px;
+            font-size: 16px;
+            font-weight: bold;
+            position: relative;
+            z-index: 20;
+            user-select: none;
+            border-bottom: none;
+            box-shadow: none;
+        }
+        .titlebar .window-title {
+            flex: 1;
+            text-align: left;
+            font-size: 16px;
+            padding-left: 4px;
+            color: #fff; /* White for visibility */
+        }
+        .titlebar .window-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .titlebar .window-btn {
+            -webkit-app-region: no-drag;
+            background: transparent;
+            border: none;
+            color: #ff9800;   /* Orange X for visibility */
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 8px;
+            height: 32px;
+            transition: background 0.2s;
+        }
+        .titlebar .window-btn:hover {
+            background: #c0392b;
+            color: #fff;
+        }
+        .drag-region { display: none; } /* Hide old drag region */
+
+        /* --- Tweak Category Styling --- */
+        .tweaks-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 2.5rem 2.5rem;
+            align-items: stretch;
+            justify-items: stretch;
+            width: 100%;
+            margin-bottom: 2rem;
+            max-height: 70vh;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+        .tweaks-category {
+            background: rgba(30,34,40,0.96);
+            border: 1.5px solid #31343a;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px 0 rgba(0,0,0,0.08);
+            padding: 1.2rem 1.4rem 1.1rem 1.4rem;
+            min-width: 0;
+            max-width: 100%;
+            transition: box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+        .tweaks-category:hover {
+            box-shadow: 0 4px 24px 0 rgba(255,152,0,0.10);
+            border-color: #ff9800;
+        }
+        .tweaks-category h3 {
+            color: #ff9800;
+            margin-top: 0;
+            margin-bottom: 1rem;
+            font-size: 1.13rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+
+        #tweaks-footer {
+            background: #23262b !important;
+            box-shadow: 0 -2px 8px #0001;
+            padding: 1.5rem 0 1rem 0;
+            text-align: left;
+            margin-top: 0;
+            border-radius: 12px;
+            border: 1.5px solid #31343a;
+            width: 96%;
+            margin-left: 2%;
+            margin-bottom: 2.5rem;
+        }
+
+        #apply-tweaks-btn {
+            background: #ff9800 !important;
+            color: #23262b !important;
+            border: none;
+            border-radius: 24px;
+            font-weight: 600;
+            font-size: 1.05rem;
+            padding: 0.7rem 2.2rem;
+            box-shadow: 0 2px 8px 0 rgba(0,0,0,0.08);
+            transition: background 0.2s, color 0.2s;
+        }
+        #apply-tweaks-btn:hover {
+            background: #ffa733 !important;
+            color: #181b20 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="titlebar">
+        <span class="window-title">WinTool - Windows Utility</span>
+        <div class="window-controls">
+            <button class="window-btn" id="closeBtn" title="Close">&#10005;</button>
+        </div>
+    </div>
+    <div class="container">
+
+        <ul class="tab-list" id="winToolTabs">
+            <li class="tab-item active" data-tab="dashboard"> <i class="fas fa-tachometer-alt"></i><span>Dashboard</span></li>
+            <li class="tab-item" data-tab="tweaks"><i class="fas fa-bolt"></i><span>Tweaks</span></li>
+            <li class="tab-item" data-tab="packages"><i class="fas fa-box-open"></i><span>Packages</span></li>
+            <li class="tab-item" data-tab="tools"><i class="fas fa-toolbox"></i><span>System Tools</span></li>
+            <li class="tab-item" data-tab="setup"><i class="fas fa-cog"></i><span>Unattended Setup</span></li>
+            <li class="tab-item" data-tab="settings"><i class="fas fa-sliders-h"></i><span>Settings</span></li>
+        </ul>
+
+        <div class="angular-border">
+
+            <div id="tab-dashboard" class="tab-content active" data-aos="fade-in">
+                <script>
+                    async function updateSystemInfo() {
+                        const data = await window.electronAPI.getSystemInfo();
+                        document.getElementById('cpu-usage').innerText = data.cpu !== undefined ? `${data.cpu}%` : '--';
+                        document.getElementById('ram-usage').innerText = (data.ram && data.ram.used !== undefined && data.ram.total !== undefined) ? `${(data.ram.used/1073741824).toFixed(1)} GB / ${(data.ram.total/1073741824).toFixed(1)} GB` : '--';
+                        document.getElementById('disk-usage').innerText = (data.disk && data.disk.percent !== undefined) ? `${data.disk.percent}%` : '--';
+                        const netMbps = (data.net && data.net.bytes_recv !== undefined && data.net.bytes_sent !== undefined) ? (((data.net.bytes_recv + data.net.bytes_sent) / 1024 / 1024).toFixed(2)) : '--';
+                        document.getElementById('net-usage').innerText = `${netMbps !== '--' ? netMbps + ' MB' : '--'}`;
+                    }
+                    setInterval(updateSystemInfo, 2000);
+                    document.addEventListener('DOMContentLoaded', updateSystemInfo);
+
+                    async function quickAction(action) {
+                        await window.electronAPI.quickAction(action);
+                    }
+                </script>
+
+                <div class="feature-section">
+                    <h3><i class="fas fa-chart-line"></i>System Overview</h3>
+                    <p>Real-time system monitoring (CPU, RAM, Disk) and quick actions hub.</p>
+                    <div class="feature-grid">
+                        <div class="info-card"><div class="label">CPU Usage</div><div class="value" id="cpu-usage">...</div></div>
+                        <div class="info-card"><div class="label">RAM Usage</div><div class="value" id="ram-usage">...</div></div>
+                        <div class="info-card"><div class="label">Disk C: Activity</div><div class="value" id="disk-usage">...</div></div>
+                        <div class="info-card"><div class="label">Network Usage</div><div class="value" id="net-usage">...</div></div>
+                        <div class="info-card" id="uptime-dashboard-card">
+                            <div class="label">Uptime</div>
+                            <div class="value" id="dashboard-uptime">--</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="feature-section">
+                    <h3><i class="fas fa-bolt"></i>Quick Actions</h3>
+                    <div class="flex flex-wrap gap-3 justify-center">
+                        <button class="btn btn-secondary" onclick="quickAction('disk_cleanup')"><i class="fas fa-broom"></i>Run Disk Cleanup</button>
+                        <button class="btn btn-secondary" onclick="quickAction('task_manager')"><i class="fas fa-tasks"></i>Open Task Manager</button>
+                        <button class="btn btn-secondary" onclick="quickAction('security_center')"><i class="fas fa-shield-alt"></i>Security Center</button>
+                        <button class="btn btn-secondary" onclick="quickAction('power_options')"><i class="fas fa-power-off"></i>Power Options</button>
+                    </div>
+                </div>
+                <script>
+                    async function fetchDashboardUptime() {
+                        try {
+                            const data = await window.electronAPI.getSystemInfo();
+                            document.getElementById('dashboard-uptime').textContent = formatUptime(data.uptime_seconds);
+                        } catch (e) {
+                            document.getElementById('dashboard-uptime').textContent = '--';
+                        }
+                    }
+                    function formatUptime(seconds) {
+                        const d = Math.floor(seconds / 86400);
+                        const h = Math.floor((seconds % 86400) / 3600);
+                        const m = Math.floor((seconds % 3600) / 60);
+                        const s = Math.floor(seconds % 60);
+                        let str = '';
+                        if (d) str += `${d}d `;
+                        if (h) str += `${h}h `;
+                        if (m) str += `${m}m `;
+                        str += `${s}s`;
+                        return str;
+                    }
+                    fetchDashboardUptime();
+                    setInterval(fetchDashboardUptime, 3000);
+                </script>
+            </div>
+
+            <div id="tab-tweaks" class="tab-content" data-aos="fade-in" style="min-height:100vh;">
+                <div id="tweaks-loading" style="margin:2rem;text-align:center;">Loading tweaks...</div>
+                <div id="tweaks-list" class="tweaks-grid" style="display:none;"></div>
+                <div id="tweaks-footer" style="background:#23262b !important;box-shadow: 0 -2px 8px #0001;padding: 1.5rem 0 1rem 0;text-align: left;margin-top: 0;border-radius: 12px;border: 1.5px solid #31343a;width: 96%;margin-left: 2%;margin-bottom: 2.5rem;">
+                    <button id="apply-tweaks-btn" class="btn btn-primary" style="background: #ff9800 !important;color: #23262b !important;border: none;border-radius: 24px;font-weight: 600;font-size: 1.05rem;padding: 0.7rem 2.2rem;box-shadow: 0 2px 8px 0 rgba(0,0,0,0.08);transition: background 0.2s, color 0.2s;">Apply Selected Tweaks</button>
+                    <span id="tweaks-feedback" style="margin-left:1rem;"></span>
+                </div>
+                <script>
+                    async function fetchTweaks() {
+                        document.getElementById('tweaks-loading').style.display = '';
+                        document.getElementById('tweaks-list').style.display = 'none';
+                        document.getElementById('tweaks-loading').innerText = 'Loading tweaks...';
+                        try {
+                            const data = await window.electronAPI.getCurrentTweaks();
+                            // Transform tweaks object into an array for renderTweaksList
+                            const tweaksArr = [
+                                {
+                                    key: 'visualfx',
+                                    label: 'Visual Effects',
+                                    description: 'Adjusts Windows visual effects for performance or appearance.',
+                                    enabled: data.visualfx === 2
+                                },
+                                {
+                                    key: 'show_hidden_files',
+                                    label: 'Show Hidden Files',
+                                    description: 'Show or hide hidden files and folders in File Explorer.',
+                                    enabled: data.show_hidden_files == 1
+                                },
+                                {
+                                    key: 'file_extensions',
+                                    label: 'Show File Extensions',
+                                    description: 'Show or hide file extensions for known file types.',
+                                    enabled: data.file_extensions == 0
+                                },
+                                {
+                                    key: 'disable_telemetry',
+                                    label: 'Disable Telemetry',
+                                    description: 'Disables Windows telemetry (diagnostic data collection).',
+                                    enabled: data.disable_telemetry == 0
+                                },
+                                {
+                                    key: 'disable_advertising_id',
+                                    label: 'Disable Advertising ID',
+                                    description: 'Prevents apps from using your advertising ID for experiences across apps.',
+                                    enabled: data.disable_advertising_id == 0
+                                },
+                                {
+                                    key: 'show_this_pc_on_desktop',
+                                    label: 'Show This PC on Desktop',
+                                    description: 'Displays the This PC icon on the desktop.',
+                                    enabled: data.show_this_pc_on_desktop == 0
+                                },
+                                {
+                                    key: 'show_recycle_bin_on_desktop',
+                                    label: 'Show Recycle Bin on Desktop',
+                                    description: 'Displays the Recycle Bin icon on the desktop.',
+                                    enabled: data.show_recycle_bin_on_desktop == 0
+                                },
+                                {
+                                    key: 'disable_lock_screen',
+                                    label: 'Disable Lock Screen',
+                                    description: 'Removes the lock screen for faster access to your desktop.',
+                                    enabled: data.disable_lock_screen == 1
+                                },
+                                {
+                                    key: 'disable_cortana',
+                                    label: 'Disable Cortana',
+                                    description: 'Disables Cortana, the personal assistant.',
+                                    enabled: data.disable_cortana == 0
+                                },
+                                {
+                                    key: 'small_taskbar_buttons',
+                                    label: 'Use Small Taskbar Buttons',
+                                    description: 'Use smaller icons on the taskbar.',
+                                    enabled: data.small_taskbar_buttons == 1
+                                },
+                                {
+                                    key: 'show_seconds_on_taskbar_clock',
+                                    label: 'Show Seconds on Taskbar Clock',
+                                    description: 'Show seconds in the Windows taskbar clock.',
+                                    enabled: data.show_seconds_on_taskbar_clock == 1
+                                },
+                                {
+                                    key: 'disable_startup_sound',
+                                    label: 'Disable Startup Sound',
+                                    description: 'Disables the Windows startup sound.',
+                                    enabled: data.disable_startup_sound == 1
+                                },
+                                {
+                                    key: 'disable_animations',
+                                    label: 'Disable Animations',
+                                    description: 'Disables UI animations for improved performance.',
+                                    enabled: data.disable_animations == 2
+                                }
+                            ];
+                            renderTweaksList(tweaksArr);
+                            document.getElementById('tweaks-loading').style.display = 'none';
+                            document.getElementById('tweaks-list').style.display = '';
+                        } catch (e) {
+                            document.getElementById('tweaks-loading').innerText = 'Failed to load tweaks.';
+                        }
+                    }
+                    function renderTweaksList(tweaks) {
+                        const list = document.getElementById('tweaks-list');
+                        list.innerHTML = '';
+                        // Group tweaks by category
+                        const categories = [
+                            { name: 'Privacy', keys: ['disable_telemetry','disable_advertising_id','disable_cortana'] },
+                            { name: 'Desktop & Explorer', keys: ['show_this_pc_on_desktop','show_recycle_bin_on_desktop','show_hidden_files','file_extensions'] },
+                            { name: 'Taskbar & Start', keys: ['small_taskbar_buttons','show_seconds_on_taskbar_clock'] },
+                            { name: 'Performance & UI', keys: ['visualfx','disable_animations','disable_startup_sound','disable_lock_screen'] }
+                        ];
+                        categories.forEach(cat => {
+                            const catTweaks = tweaks.filter(tw => cat.keys.includes(tw.key));
+                            if (catTweaks.length) {
+                                const catDiv = document.createElement('div');
+                                catDiv.className = 'tweaks-category';
+                                catDiv.innerHTML = `<h3>${cat.name}</h3>`;
+                                catTweaks.forEach(tweak => {
+                                    const row = document.createElement('div');
+                                    row.className = 'tweak-row';
+                                    row.style.display = 'flex';
+                                    row.style.alignItems = 'center';
+                                    row.style.marginBottom = '0.5rem';
+                                    row.innerHTML = `
+                                        <label style=\"flex:1;cursor:pointer;\" for=\"tweak-${tweak.key}\">
+                                            <span style=\"font-weight:600;\">${tweak.label}</span><br>
+                                            <span style=\"font-size:0.94em;color:#b0b0b0;\">${tweak.description}</span>
+                                        </label>
+                                        <label class=\"switch\">
+                                            <input type=\"checkbox\" id=\"tweak-${tweak.key}\" ${tweak.enabled ? 'checked' : ''} tabindex=\"0\">
+                                            <span class=\"slider\"></span>
+                                        </label>
+                                    `;
+                                    catDiv.appendChild(row);
+                                });
+                                list.appendChild(catDiv);
+                            }
+                        });
+                    }
+                    document.addEventListener('DOMContentLoaded', () => {
+                        if (document.getElementById('tab-tweaks')) fetchTweaks();
+                        document.getElementById('apply-tweaks-btn').onclick = async () => {
+                            const feedback = document.getElementById('tweaks-feedback');
+                            feedback.innerText = 'Applying...';
+                            const tweaks = {};
+                            document.querySelectorAll('#tweaks-list input[type=checkbox]').forEach(cb => {
+                                tweaks[cb.id.replace('tweak-','')] = cb.checked;
+                            });
+                            try {
+                                const data = await window.electronAPI.applyTweaks(tweaks);
+                                if (data && data.error) {
+                                    feedback.innerText = 'Error: ' + data.error;
+                                } else {
+                                    feedback.innerText = 'Tweaks applied! Some changes may require restarting your computer to take effect.';
+                                    fetchTweaks();
+                                }
+                            } catch (e) {
+                                feedback.innerText = 'Failed to apply tweaks.';
+                            }
+                        };
+                    });
+                </script>
+            </div>
+
+            <div id="tab-packages" class="tab-content" data-aos="fade-in"> 
+                <script>
+                    // --- Modern, robust Packages Tab logic ---
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const installBtn = document.getElementById('pm-install-btn');
+                        const uninstallBtn = document.getElementById('pm-uninstall-btn');
+                        const updateBtn = document.getElementById('pm-update-btn');
+                        const refreshBtn = document.getElementById('pm-refresh-btn');
+                        const descBox = document.getElementById('package-desc-box');
+                        const filterSelect = document.querySelector('.pm-filter-bar .select-field');
+                        const searchInput = document.querySelector('.pm-filter-bar .input-field');
+                        const summary = document.querySelector('.pm-summary span');
+                        const packageListBody = document.getElementById('package-list-body');
+
+                        let packages = [];
+                        let grouped = {};
+
+                        // --- Fetch packages from backend (Electron IPC) ---
+                        async function fetchPackages() {
+                            console.log('Packages tab script loaded');
+                            packageListBody.innerHTML = '<tr><td colspan="2">Loading packages...</td></tr>';
+                            try {
+                                // Use the Electron preload bridge instead of fetch()
+                                const data = await window.electronAPI.getPackages();
+                                console.log('Fetched packages:', data);
+                                if (!data || data.error) {
+                                    packageListBody.innerHTML = `<tr><td colspan="2">${data && data.error ? data.error : 'Error loading packages.'}</td></tr>`;
+                                    packages = [];
+                                    return;
+                                }
+                                if (!Array.isArray(data)) {
+                                    packageListBody.innerHTML = '<tr><td colspan="2">Error loading packages.</td></tr>';
+                                    packages = [];
+                                    return;
+                                }
+                                packages = data;
+                                renderTable();
+                            } catch (e) {
+                                packageListBody.innerHTML = '<tr><td colspan="2">Error loading packages.</td></tr>';
+                                packages = [];
+                                console.log('Error in fetchPackages:', e);
+                            }
+                        }
+
+                        // --- Render the packages table ---
+                        function renderTable() {
+                            grouped = {};
+                            const selectedCat = filterSelect.value;
+                            const search = searchInput.value.toLowerCase();
+                            packages.forEach(pkg => {
+                                const cat = (pkg.category||'Other').toLowerCase();
+                                if ((selectedCat === 'all' || cat === selectedCat) && (pkg.content||pkg.id).toLowerCase().includes(search)) {
+                                    if (!grouped[cat]) grouped[cat] = [];
+                                    grouped[cat].push(pkg);
+                                }
+                            });
+                            let html = '';
+                            Object.keys(grouped).sort().forEach(cat => {
+                                html += `<tr class="category-row" data-category="${cat}"><td colspan="2"><i class="fas fa-folder fa-chevron-down"></i> ${cat.charAt(0).toUpperCase() + cat.slice(1)}</td></tr>`;
+                                grouped[cat].forEach(pkg => {
+                                    html += `<tr data-package-id="${pkg.id}" data-category="${cat}">
+                                        <td>${pkg.content||pkg.id}</td>
+                                        <td class="col-desc">${pkg.description||''}</td>
+                                    </tr>`;
+                                });
+                            });
+                            packageListBody.innerHTML = html || '<tr><td colspan="2">No packages found.</td></tr>';
+                            let pkgCount = 0; Object.values(grouped).forEach(arr => pkgCount += arr.length);
+                            summary.innerHTML = `${pkgCount} WinGet Packages in ${Object.keys(grouped).length} Categories`;
+                            updateActionButtons();
+                        }
+
+                        // --- Combined click handler for selection and category collapse ---
+                        packageListBody.addEventListener('click', (event) => {
+                            const categoryRow = event.target.closest('tr.category-row');
+                            if (categoryRow) {
+                                const cat = categoryRow.dataset.category;
+                                const icon = categoryRow.querySelector('i');
+                                if (icon) {
+                                    categoryRow.classList.toggle('collapsed');
+                                    icon.classList.toggle('fa-chevron-down');
+                                    icon.classList.toggle('fa-chevron-right');
+                                }
+                                let currentRow = categoryRow.nextElementSibling;
+                                while (currentRow && !currentRow.classList.contains('category-row')) {
+                                    if (currentRow.dataset.category === cat) {
+                                        currentRow.style.display = categoryRow.classList.contains('collapsed') ? 'none' : 'table-row';
+                                    }
+                                    currentRow = currentRow.nextElementSibling;
+                                }
+                                event.stopImmediatePropagation();
+                                return;
+                            }
+                            const clickedRow = event.target.closest('tr[data-package-id]');
+                            if (!clickedRow) return;
+                            if (event.ctrlKey || event.metaKey) {
+                                clickedRow.classList.toggle('selected');
+                            } else {
+                                packageListBody.querySelectorAll('tr.selected').forEach(row => row.classList.remove('selected'));
+                                clickedRow.classList.add('selected');
+                            }
+                            updateActionButtons();
+                        });
+
+                        // --- Selection, keyboard, and description logic ---
+                        packageListBody.addEventListener('keydown', (event) => {
+                            if (event.target.tagName !== 'TR') return;
+                            if (event.key === ' ' || event.key === 'Enter') {
+                                event.preventDefault();
+                                event.target.click();
+                            }
+                        });
+
+                        // --- Action buttons logic ---
+                        function updateActionButtons() {
+                            const selectedRows = packageListBody.querySelectorAll('tr.selected');
+                            installBtn.disabled = selectedRows.length === 0;
+                            uninstallBtn.disabled = selectedRows.length === 0;
+                            updateBtn.disabled = selectedRows.length === 0;
+                            // Description box
+                            if (selectedRows.length === 1) {
+                                const pkgId = selectedRows[0].dataset.packageId;
+                                const pkg = packages.find(p => p.id === pkgId);
+                                descBox.innerHTML = pkg ? `<b>${pkg.content||pkg.id}</b><br>${pkg.description||''}` : '';
+                            } else if (selectedRows.length > 1) {
+                                descBox.innerHTML = `${selectedRows.length} packages selected.`;
+                            } else {
+                                descBox.innerHTML = 'Select a package to see details.';
+                            }
+                        }
+
+                        // --- Action handlers ---
+                        installBtn.onclick = () => doPackageAction('install');
+                        uninstallBtn.onclick = () => doPackageAction('uninstall');
+                        updateBtn.onclick = () => doPackageAction('update');
+                        refreshBtn.onclick = fetchPackages;
+                        filterSelect.onchange = renderTable;
+                        searchInput.oninput = renderTable;
+
+                        // --- Package actions ---
+                        async function doPackageAction(action) {
+                            const selected = Array.from(packageListBody.querySelectorAll('tr.selected'));
+                            if (!selected.length) return;
+                            setPackageProgress(0, selected.length);
+                            let done = 0;
+                            for (const row of selected) {
+                                const id = row.getAttribute('data-package-id');
+                                try {
+                                    await window.electronAPI.packageAction(action, id);
+                                } catch (e) {}
+                                done++;
+                                setPackageProgress(done, selected.length);
+                            }
+                            setTimeout(() => setPackageProgress(0, 0), 800);
+                            fetchPackages();
+                        }
+                        function setPackageProgress(current, total) {
+                            const bar = document.getElementById('package-progress-bar');
+                            const inner = document.getElementById('package-progress-inner');
+                            if (total > 0) {
+                                bar.style.display = '';
+                                inner.style.width = Math.round((current/total)*100) + '%';
+                            } else {
+                                bar.style.display = 'none';
+                                inner.style.width = '0%';
+                            }
+                        }
+
+                        // --- Initial load ---
+                        fetchPackages();
+                    });
+                </script>
+
+                <div class="package-manager-container">
+                    <div class="pm-header">
+                        <div>
+                            <div class="pm-title">WinGet Package Manager</div>
+                            <div class="pm-subtitle">(Hold Ctrl + Left Click to select multiple)</div>
+                        </div>
+                        <div class="pm-status ready">Ready</div>
+                    </div>
+
+                    <div class="pm-filter-bar">
+                        <input type="text" placeholder="Search packages..." class="input-field">
+                        <select class="select-field">
+                            <option value="all">Category: All</option>
+                            <option value="utilities">Category: Utilities</option>
+                            <option value="dev">Category: Development</option>
+                            <option value="media">Category: Media</option>
+                        </select>
+                    </div>
+
+                    <div class="pm-summary">
+                        <i class="fas fa-info-circle"></i><span>0 WinGet Packages in 0 Categories</span>
+                    </div>
+
+                    <div id="package-progress-bar" style="height: 8px; background: #333; border-radius: 4px; overflow: hidden; margin-bottom: 0.5rem; display: none;">
+                        <div id="package-progress-inner" style="height:100%;width:0%;background:linear-gradient(90deg,#ff9800,#ff5722);transition:width 0.3s;"></div>
+                    </div>
+
+                    <div class="pm-table-wrapper">
+                        <table class="pm-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-name">Name</th>
+                                    <th class="col-desc">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody id="package-list-body">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="pm-actions-bar">
+                        <button class="action-btn" id="pm-install-btn" disabled><i class="fas fa-download"></i>Install</button>
+                        <button class="action-btn" id="pm-uninstall-btn" disabled><i class="fas fa-times"></i>Uninstall</button>
+                        <button class="action-btn" id="pm-update-btn" disabled><i class="fas fa-sync-alt"></i>Update</button>
+                        <button class="action-btn refresh-btn" id="pm-refresh-btn"><i class="fas fa-redo"></i>Refresh</button>
+                    </div>
+                    <div id="package-desc-box" class="mt-4 p-4 bg-neutral-800 rounded border border-neutral-700"></div>
+                </div>
+            </div>
+
+            <div id="tab-tools" class="tab-content" data-aos="fade-in"> 
+                <div class="feature-section">
+                    <h3><i class="fas fa-toolbox"></i>System Tools</h3>
+                    <p>Access essential built-in Windows tools quickly.</p>
+                    <div class="feature-grid" id="system-tools-grid"></div>
+                </div>
+                <script>
+                    const SYSTEM_TOOLS = [
+                        { id: 'disk_cleanup', label: 'Disk Cleanup', icon: 'fas fa-hdd', desc: 'Free up disk space' },
+                        { id: 'task_manager', label: 'Task Manager', icon: 'fas fa-tasks', desc: 'Manage running processes' },
+                        { id: 'services', label: 'Services', icon: 'fas fa-cogs', desc: 'Manage system services' },
+                        { id: 'msconfig', label: 'System Configuration', icon: 'fas fa-cog', desc: 'msconfig utility' },
+                        { id: 'system_info', label: 'System Information', icon: 'fas fa-info-circle', desc: 'View hardware/software details' },
+                        { id: 'cmd', label: 'Command Prompt', icon: 'fas fa-terminal', desc: 'Open CMD (Admin)' }
+                    ];
+                    function renderSystemTools() {
+                        const grid = document.getElementById('system-tools-grid');
+                        grid.innerHTML = '';
+                        SYSTEM_TOOLS.forEach(tool => {
+                            const btn = document.createElement('button');
+                            btn.className = 'info-card clickable tool-card text-left';
+                            btn.innerHTML = `<div class="value text-lg"><i class="${tool.icon} mr-2 text-orange-400"></i>${tool.label}</div><div class="label">${tool.desc}</div>`;
+                            btn.onclick = () => launchSystemTool(tool.id);
+                            grid.appendChild(btn);
+                        });
+                    }
+                    async function launchSystemTool(id) {
+                        let endpoint = 'http://127.0.0.1:5000/api/quick_action';
+                        let body = { action: id };
+                        console.log('Launching system tool:', id);
+                        try {
+                            let resp;
+                            if (id === 'services') {
+                                resp = await fetch(endpoint, {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({ action: 'services' })
+                                });
+                            } else if (id === 'msconfig') {
+                                resp = await fetch(endpoint, {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({ action: 'msconfig' })
+                                });
+                            } else if (id === 'system_info') {
+                                resp = await fetch(endpoint, {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({ action: 'system_info' })
+                                });
+                            } else if (id === 'cmd') {
+                                resp = await fetch(endpoint, {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({ action: 'cmd' })
+                                });
+                            } else {
+                                resp = await fetch(endpoint, {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify(body)
+                                });
+                            }
+                            const data = await resp.json();
+                            console.log('System tool response:', data);
+                            if (!resp.ok) {
+                                console.error('Failed to launch tool:', data.error || resp.statusText);
+                            }
+                        } catch (err) {
+                            console.error('Error launching system tool:', err);
+                        }
+                    }
+                    document.addEventListener('DOMContentLoaded', renderSystemTools);
+                </script>
+            </div>
+
+            <div id="tab-setup" class="tab-content" data-aos="fade-in">
+                <div class="feature-section">
+                    <h3><i class="fas fa-cog"></i>Unattended Setup</h3>
+                    <div class="unattend-wizard bg-neutral-900 rounded-md border border-neutral-700 p-4">
+                        <div class="wizard-tabs flex mb-4">
+                            <button class="wizard-tab active" data-tab="system">System</button>
+                            <button class="wizard-tab" data-tab="regional">Regional</button>
+                            <button class="wizard-tab" data-tab="user">User Account</button>
+                            <button class="wizard-tab" data-tab="privacy">Privacy</button>
+                            <button class="wizard-tab" data-tab="apps">Apps</button>
+                        </div>
+                        <form id="unattend-form">
+                            <div class="wizard-panel" data-panel="system" style="display:block;">
+                                <div class="form-group">
+                                    <label for="computerName">Computer Name:</label>
+                                    <input type="text" id="computerName" name="computerName" class="input-field" value="PC-NAME">
+                                </div>
+                                <div class="form-group">
+                                    <label for="organization">Organization:</label>
+                                    <input type="text" id="organization" name="organization" class="input-field" value="Organization">
+                                </div>
+                                <div class="form-group">
+                                    <label for="owner">Owner:</label>
+                                    <input type="text" id="owner" name="owner" class="input-field" value="Owner">
+                                </div>
+                                <div class="form-group">
+                                    <label for="productKey">Product Key:</label>
+                                    <input type="text" id="productKey" name="productKey" class="input-field">
+                                </div>
+                                <div class="form-group">
+                                    <label for="windowsEdition">Windows Edition:</label>
+                                    <select id="windowsEdition" name="windowsEdition" class="input-field">
+                                        <option>Windows 10 Pro</option>
+                                        <option>Windows 10 Home</option>
+                                        <option>Windows 11 Pro</option>
+                                        <option>Windows 11 Home</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="wizard-panel" data-panel="regional" style="display:none;">
+                                <div class="form-group">
+                                    <label for="language">Language:</label>
+                                    <select id="language" name="language" class="input-field">
+                                        <option>English (United States)</option>
+                                        <option>Spanish (Spain)</option>
+                                        <option>French (France)</option>
+                                        <option>German (Germany)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="timezone">Time Zone:</label>
+                                    <select id="timezone" name="timezone" class="input-field">
+                                        <option>UTC-06:00 Central Time (US & Canada)</option>
+                                        <option>UTC-05:00 Eastern Time (US & Canada)</option>
+                                        <option>UTC+00:00 London</option>
+                                        <option>UTC+01:00 Berlin</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="keyboard">Keyboard Layout:</label>
+                                    <select id="keyboard" name="keyboard" class="input-field">
+                                        <option>US</option>
+                                        <option>UK</option>
+                                        <option>German</option>
+                                        <option>French</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="wizard-panel" data-panel="user" style="display:none;">
+                                <div class="form-group">
+                                    <label for="username">Username:</label>
+                                    <input type="text" id="username" name="username" class="input-field" value="User">
+                                </div>
+                                <div class="form-group">
+                                    <label for="password">Password:</label>
+                                    <input type="password" id="password" name="password" class="input-field">
+                                </div>
+                                <div class="form-group">
+                                    <label for="autoLogin">Enable Auto-Login:</label>
+                                    <select id="autoLogin" name="autoLogin" class="input-field">
+                                        <option value="yes">Yes</option>
+                                        <option value="no">No</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="wizard-panel" data-panel="privacy" style="display:none;">
+                                <div class="form-group">
+                                    <label><input type="checkbox" id="disableTelemetry" name="disableTelemetry" title="Prevents Windows from sending usage data to Microsoft."> Disable Telemetry</label>
+                                </div>
+                                <div class="form-group">
+                                    <label><input type="checkbox" id="disableCortana" name="disableCortana" title="Removes or disables the Cortana assistant."> Disable Cortana</label>
+                                </div>
+                                <div class="form-group">
+                                    <label><input type="checkbox" id="disableLocation" name="disableLocation" title="Blocks apps and services from accessing your location."> Disable Location Services</label>
+                                </div>
+                            </div>
+                            <div class="wizard-panel" data-panel="apps" style="display:none;">
+                                <div class="form-group">
+                                    <label for="appsList">Preinstall Apps (comma separated):</label>
+                                    <input type="text" id="appsList" name="appsList" class="input-field" placeholder="e.g. Chrome,7zip,VSCode">
+                                </div>
+                            </div>
+                            <div class="text-right mt-4">
+                                <button type="button" class="btn btn-primary" id="unattend-next">Next &rarr;</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <style>
+                    .unattend-wizard { max-width: 700px; margin: 0 auto; }
+                    .wizard-tabs { gap: 0.5rem; }
+                    .wizard-tab { background: #222; color: #fff; border: none; padding: 0.5rem 1.2rem; border-radius: 0.5rem 0.5rem 0 0; margin-right: 0.25rem; cursor: pointer; font-weight: 500; }
+                    .wizard-tab.active { background: #333; color: #FF7810; }
+                    .wizard-panel { margin-top: 1.5rem; }
+                    .form-group { margin-bottom: 1.2rem; }
+                    .form-group label { display: block; font-size: 1rem; margin-bottom: 0.4rem; color: #bbb; }
+                    .input-field { width: 100%; padding: 0.5rem; border-radius: 0.3rem; border: 1px solid #444; background: #191919; color: #fff; }
+                    .input-field:focus { border-color: #FF7810; outline: none; }
+                </style>
+                <script>
+                    // Wizard tab switching
+                    const wizardTabs = Array.from(document.querySelectorAll('.wizard-tab'));
+                    const wizardPanels = Array.from(document.querySelectorAll('.wizard-panel'));
+                    let currentTabIdx = 0;
+
+                    function showTab(idx) {
+                        wizardTabs.forEach((tab, i) => tab.classList.toggle('active', i === idx));
+                        wizardPanels.forEach((panel, i) => panel.style.display = i === idx ? 'block' : 'none');
+                        currentTabIdx = idx;
+                        // Disable Next on last tab
+                        document.getElementById('unattend-next').disabled = (idx === wizardTabs.length - 1);
+                    }
+
+                    wizardTabs.forEach((tab, idx) => {
+                        tab.addEventListener('click', () => showTab(idx));
+                    });
+
+                    document.getElementById('unattend-next').addEventListener('click', () => {
+                        if (currentTabIdx < wizardTabs.length - 1) {
+                            showTab(currentTabIdx + 1);
+                        }
+                    });
+
+                    // Export as JSON or XML
+                    function collectFormData() {
+                        const data = {};
+                        const form = document.getElementById('unattend-form');
+                        new FormData(form).forEach((value, key) => {
+                            if (data[key]) {
+                                if (!Array.isArray(data[key])) data[key] = [data[key]];
+                                data[key].push(value);
+                            } else {
+                                data[key] = value;
+                            }
+                        });
+                        // Handle checkboxes
+                        ['disableTelemetry','disableCortana','disableLocation'].forEach(id => {
+                            data[id] = document.getElementById(id).checked;
+                        });
+                        return data;
+                    }
+
+                    function exportAsJSON() {
+                        const data = collectFormData();
+                        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = 'unattended_setup.json';
+                        a.click();
+                    }
+
+                    function exportAsXML() {
+                        const data = collectFormData();
+                        let xml = '<UnattendedSetup>\n';
+                        for (const [key, value] of Object.entries(data)) {
+                            xml += `  <${key}>${String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</${key}>\n`;
+                        }
+                        xml += '</UnattendedSetup>';
+                        const blob = new Blob([xml], {type: 'application/xml'});
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = 'unattended_setup.xml';
+                        a.click();
+                    }
+
+                    document.addEventListener('DOMContentLoaded', () => {
+                        // Add export buttons
+                        const btns = document.createElement('div');
+                        btns.className = 'text-right mt-2';
+                        btns.innerHTML = `<button type="button" class="btn btn-secondary mr-2" id="export-json"><i class="fas fa-file-code"></i> Export JSON</button><button type="button" class="btn btn-secondary" id="export-xml"><i class="fas fa-file-alt"></i> Export XML</button>`;
+                        document.getElementById('unattend-form').appendChild(btns);
+                        document.getElementById('export-json').onclick = exportAsJSON;
+                        document.getElementById('export-xml').onclick = exportAsXML;
+                    });
+                </script>
+            </div>
+
+            <div id="tab-settings" class="tab-content" data-aos="fade-in">
+                <div class="feature-section">
+                    <h3><i class="fas fa-sliders-h"></i>Settings</h3>
+                    <p>Configure WinTool options, manage updates, and customize behavior.</p>
+                </div>
+                <!-- Window Size Display -->
+                <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700 mt-2">
+                    <label class="text-gray-300">Current Window Size</label>
+                    <span id="window-size-label" class="font-mono text-orange-400">Loading...</span>
+                </div>
+                <script>
+                    // Settings persistence (localStorage)
+                    document.addEventListener('DOMContentLoaded', () => {
+                        // Theme
+                        const themeSelect = document.getElementById('theme-select');
+                        themeSelect.value = localStorage.getItem('theme') || 'dark';
+                        themeSelect.addEventListener('change', () => {
+                            localStorage.setItem('theme', themeSelect.value);
+                            // Optionally trigger theme switch here
+                        });
+
+                        // Reset Settings
+                        document.getElementById('reset-settings').addEventListener('click', () => {
+                            if (confirm('Are you sure you want to reset all settings?')) {
+                                localStorage.removeItem('theme');
+                                // Optionally reset more settings
+                                location.reload();
+                            }
+                        });
+
+                        // Check for Updates (placeholder)
+                        document.getElementById('check-updates').addEventListener('click', () => {
+                            alert('Checking for updates... (This is a placeholder)');
+                        });
+
+                        // Window Size Display Logic
+                        function updateWindowSizeLabel() {
+                            if (window && window.innerWidth && window.innerHeight) {
+                                const label = document.getElementById('window-size-label');
+                                if (label) {
+                                    label.textContent = `${window.innerWidth} x ${window.innerHeight}`;
+                                }
+                            }
+                        }
+                        updateWindowSizeLabel();
+                        window.addEventListener('resize', updateWindowSizeLabel);
+                        // If settings tab is clicked, update label (in case it was hidden during resize)
+                        const tabsContainer = document.getElementById('winToolTabs');
+                        if (tabsContainer) {
+                            tabsContainer.addEventListener('click', (event) => {
+                                const clickedTab = event.target.closest('.tab-item');
+                                if (clickedTab && clickedTab.dataset.tab === 'settings') {
+                                    setTimeout(updateWindowSizeLabel, 100); // Delay to ensure tab is visible
+                                }
+                            });
+                        }
+                    });
+                </script>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
+                        <label for="theme-select" class="text-gray-300">Theme</label>
+                        <select id="theme-select" class="select-field">
+                            <option value="dark">Dark (Default)</option>
+                            <option value="light" disabled>Light (Coming Soon)</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
+                        <label class="text-gray-300">Update Channel</label>
+                        <span class="text-green-400 font-semibold">Stable</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
+                        <label for="reset-settings" class="text-gray-300">Reset All Settings</label>
+                        <button id="reset-settings" class="btn btn-secondary">Reset</button>
+                    </div>
+                    <div class="text-center mt-6">
+                        <button class="btn btn-secondary" id="check-updates"><i class="fas fa-sync-alt"></i>Check for Updates</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REMOVE Backend Tab Content -->
+            <!-- <div id="tab-backend" class="tab-content" data-aos="fade-in"> ... </div> -->
+
+        </div> 
+    </div> 
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        // Initialize AOS animations
+        AOS.init({
+            duration: 600, // Animation duration
+            once: true,    // Animate only once
+            offset: 20,    // Offset (in px) from the original trigger point
+        });
+
+        // Make the X (close) button work in Electron
+        document.addEventListener('DOMContentLoaded', () => {
+            const closeBtn = document.getElementById('closeBtn');
+            if (closeBtn && window.require) {
+                const { ipcRenderer } = window.require('electron');
+                closeBtn.addEventListener('click', () => {
+                    ipcRenderer.send('close-window');
+                });
+            }
+        });
+    </script>
+
+    <script>
+        document.getElementById('closeBtn').addEventListener('click', () => {
+            window.electronAPI.closeWindow && window.electronAPI.closeWindow();
+        });
+    </script>
+
+    <script>
+        // Tab switching logic
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabItems = document.querySelectorAll('.tab-item');
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabItems.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    tabItems.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    const target = tab.getAttribute('data-tab');
+                    tabContents.forEach(c => {
+                        // Remove 'active' from all
+                        c.classList.remove('active');
+                    });
+                    // Only add 'active' to the selected tab
+                    const showTab = document.getElementById('tab-' + target);
+                    if (showTab) showTab.classList.add('active');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
