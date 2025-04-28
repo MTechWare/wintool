@@ -21,7 +21,7 @@
 ### System Requirements
 - Windows 10/11
 - 4GB RAM (minimum)
-- 15MB free disk space
+- 70MB free disk space
 - Node.js 18+ (add to PATH)
 
 ### Build from Source (Recommended for Developers)
