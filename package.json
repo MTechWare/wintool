@@ -1,6 +1,6 @@
 {
   "name": "wintool",
-  "version": "0.0.1a",
+  "version": "0.0.2a",
   "main": "main.js",
   "description": "WinTool - Windows Management and Tweaks",
   "author": "MTech",
@@ -21,7 +21,7 @@
     },
     "publish": "never",
     "directories": {
-      "output": "dist"
+      "output": "wintool"
     },
     "files": [
       "main.js",

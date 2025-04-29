@@ -19,6 +19,7 @@ function createWindow() {
     autoHideMenuBar: true,
     show: false, // Don't show until ready-to-show event
     alwaysOnTop: true,
+    icon: path.join(__dirname, 'icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

@@ -10,19 +10,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+    <link rel="icon" type="image/x-icon" href="icon.ico">
 
     <style>
         /* --- Discord-like Window Chrome --- */
         html, body {
-            background: transparent !important;
+            background: #0a0a0c !important;
         }
         body {
-            /* Discord-like frosted glass frame */
-            background: linear-gradient(135deg, #23272a 60%, #181a20 100%);
-            color: #e0e0e0;
+            background: linear-gradient(135deg, #111113 70%, #0a0a0c 100%);
+            color: #f1f1f1;
             border-radius: 18px;
             border: none;
-            box-shadow: 0 8px 40px 2px rgba(0,0,0,0.55);
+            box-shadow: 0 8px 40px 2px rgba(0,0,0,0.75);
             overflow: hidden;
             margin: 0;
             padding: 0;
@@ -61,31 +61,17 @@
         .angular-border {
             position: relative; 
             padding: 1.5rem; /* Standard padding */
-            background-color: rgba(20, 20, 20, 0.75); /* Slightly less transparent */
+            background-color: rgba(10, 10, 12, 0.98); /* Slightly less transparent */
             backdrop-filter: blur(8px);
             border-radius: 0 0 0.75rem 0.75rem; /* Rounded bottom corners only */
             transition: all 0.3s ease;
             z-index: 1;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
             margin-top: -1px; /* Overlap slightly with tabs */
             display: flex;
             flex-direction: column;
         }
         .angular-border::before, .angular-border::after { /* Corner elements */
-            content: ''; position: absolute; width: 12px; height: 12px; border-color: #FF7810;
-            border-style: solid; transition: all 0.3s ease; z-index: 2;
-        }
-        .angular-border::after { /* Bottom-right corner */
-             bottom: -2px; right: -2px; border-width: 0 2px 2px 0; border-bottom-right-radius: 0.75rem;
-        }
-        .angular-border::before { /* Bottom-left corner */
-            display: block;
-            bottom: -2px; left: -2px; border-width: 0 0 2px 2px; border-bottom-left-radius: 0.75rem;
-            top: auto; right: auto;
-        }
-
-        /* --- REMOVE Angular Border Corner Decorations --- */
-        .angular-border::before, .angular-border::after {
             display: none !important;
         }
 
@@ -97,9 +83,8 @@
             -ms-overflow-style: none;  /* IE and Edge */
             scrollbar-width: none;  /* Firefox */
             list-style: none;
-            padding: 0 0 1px 0; /* Add padding-bottom to avoid cutting off bottom border */
-            margin: 0;
-            border-bottom: 1px solid rgba(255, 120, 20, 0.2);
+            background: #111113;
+            border-bottom: 1px solid #23232a;
             position: relative;
             z-index: 2; /* Above angular border */
         }
@@ -110,39 +95,26 @@
         .tab-item {
             padding: 12px 20px; /* Adjusted padding */
             cursor: pointer;
-            background-color: rgba(30, 30, 30, 0.7);
-            color: #a0a0a0;
+            background-color: #181a20;
+            color: #b0b0b0;
             font-weight: 500;
-            font-size: 0.9rem; /* Slightly smaller font for more tabs */
-            border: 1px solid transparent;
-            border-bottom: none;
-            border-radius: 0.5rem 0.5rem 0 0; /* Rounded top corners */
-            margin-right: 4px; /* Slightly reduced margin */
-            margin-bottom: -1px; /* Overlap border-bottom */
-            transition: all 0.3s ease;
-            position: relative;
-            backdrop-filter: blur(5px);
-            display: flex; /* Align icon and text */
-            align-items: center;
-            white-space: nowrap; /* Prevent text wrapping */
-            flex-shrink: 0; /* Ensure tabs don't shrink */
+            border: none;
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+            transition: background 0.2s, color 0.2s;
+            margin-right: 2px;
         }
         .tab-item:hover {
-            background-color: rgba(45, 45, 45, 0.8);
-            color: #ccc;
+            background: #23232a;
+            color: #f1f1f1;
         }
         .tab-item.active {
-            background-color: rgba(20, 20, 20, 0.75); /* Match content area background */
-            color: #FF7810; /* Active tab text color */
-            border-color: rgba(255, 120, 20, 0.2);
-            border-bottom-color: transparent; /* Hide bottom border when active */
+            background: #23232a;
+            color: #ff9800;
+            border-bottom: 2px solid #23232a;
             font-weight: 600;
         }
-        .tab-item i {
-            margin-right: 6px; /* Space between icon and text */
-            width: 1.1em; /* Ensure icons align roughly */
-            text-align: center;
-        }
+        .tab-item i { margin-right: 6px; width: 1.1em; text-align: center; }
 
         /* --- Tab Content Styling --- */
         .tab-content {
@@ -164,14 +136,29 @@
         /* --- Button Styling --- */
         .btn {
             display: inline-flex; align-items: center; justify-content: center;
-            padding: 10px 24px; border-radius: 25px; text-decoration: none; font-weight: 600;
-            transition: all 0.3s ease; border: none; cursor: pointer; font-size: 0.9rem; text-align: center; white-space: nowrap;
+            padding: 0.5rem 1.5rem; border-radius: 0.375rem; text-decoration: none; font-weight: 600;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+            font-size: 1rem;
         }
         .btn i { margin-right: 6px; }
-        .btn-primary { background: linear-gradient(45deg, #ff9800, #ff5722); color: #151515; border: none; }
-        .btn-primary:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(255, 152, 0, 0.3); }
-        .btn-secondary { background: rgba(255, 120, 20, 0.1); color: #FF7810; border: 1px solid rgba(255, 120, 20, 0.3); }
-        .btn-secondary:hover:not(:disabled) { background: rgba(255, 120, 20, 0.2); transform: translateY(-2px); box-shadow: 0 5px 10px rgba(255, 120, 20, 0.15); }
+        .btn-primary {
+            background: linear-gradient(45deg, #ff9800, #ff5722);
+            color: #101014;
+            border: none;
+        }
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(255, 152, 0, 0.25);
+        }
+        .btn-secondary {
+            background: #23232a;
+            color: #fff !important;
+            border: 1px solid #3f3f46;
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background: #181a20;
+            color: #fff !important;
+        }
         .btn-sm { padding: 6px 12px; font-size: 0.8rem; border-radius: 20px; }
         .btn:disabled {
             background: #404040; color: #737373; border-color: #525252;
@@ -184,17 +171,16 @@
         .action-btn:hover:not(:disabled) { background: #52525b; color: #fff; transform: none; box-shadow: none; }
         .action-btn i { margin-right: 5px; }
 
-
         /* --- Placeholder Content Styling --- */
         .feature-section { margin-bottom: 2rem; }
         .feature-section:last-child { margin-bottom: 0; }
         .feature-section h3 {
-            color: #ffb74d; font-size: 1.4rem; font-weight: 600;
+            color: #ff9800; font-size: 1.4rem; font-weight: 600;
             margin-bottom: 0.75rem; padding-bottom: 0.5rem;
-            border-bottom: 1px solid rgba(255, 120, 20, 0.15);
+            border-bottom: 1px solid #23232a;
             display: flex; align-items: center;
         }
-         .feature-section h3 i { margin-right: 10px; color: #FF7810; font-size: 1.2rem; }
+         .feature-section h3 i { margin-right: 10px; color: #ff9800; font-size: 1.2rem; }
         .feature-section p { margin-bottom: 1rem; color: #b0b0b0; font-size: 0.95rem; }
         .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
         .info-card {
@@ -210,36 +196,35 @@
         .tool-card .value { font-size: 1.1rem; margin-bottom: 0.25rem; }
         .tool-card .label { font-size: 0.9rem; }
 
-
         /* --- Specific Component Styles --- */
         /* Switch/Toggle */
         .switch { position: relative; display: inline-block; width: 36px; height: 18px; flex-shrink: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: .4s; border-radius: 18px; }
-        .slider:before { position: absolute; content: ""; height: 13px; width: 13px; left: 2.5px; bottom: 2.5px; background-color: white; transition: .4s; border-radius: 50%; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #23232a; transition: .4s; border-radius: 18px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: #ffb74d; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: #ff9800; }
-        input:checked + .slider:before { transform: translateX(18px); }
+        input:checked + .slider:before { background-color: #23232a; }
 
         /* Input field styling */
         .input-field {
-            background-color: #27272a; border: 1px solid #52525b; color: #e0e0e0;
-            font-size: 0.875rem; border-radius: 0.375rem; padding: 0.5rem 0.75rem;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            background: #181a20; border: 1px solid #3f3f46; color: #f1f1f1;
+            font-size: 1rem; border-radius: 0.375rem; padding: 0.5rem 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .input-field:focus { outline: none; border-color: #ff9800; box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.3); }
+        .input-field:focus { outline: none; border-color: #ff9800; box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2); }
         .input-field::placeholder { color: #a1a1aa; }
 
         /* Select field styling */
         .select-field {
-            background-color: #3f3f46; border: 1px solid #52525b; color: white;
+            background-color: #181a20; border: 1px solid #3f3f46; color: #f1f1f1;
             font-size: 0.875rem; border-radius: 0.375rem; padding: 0.375rem;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            transition: border-color 0.2s, box-shadow 0.2s;
             -webkit-appearance: none; -moz-appearance: none; appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23a0a0a0' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
             background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1.25em 1.25em;
             padding-right: 2.5rem;
         }
-        .select-field:focus { outline: none; border-color: #ff9800; box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.3); }
+        .select-field:focus { outline: none; border-color: #ff9800; box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2); }
 
         /* --- Package Manager Specific Styles --- */
         .package-manager-container {
@@ -248,11 +233,11 @@
         .pm-header {
             display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 0.75rem; padding: 0.5rem 0.25rem;
-            border-bottom: 1px solid rgba(255, 120, 20, 0.15);
+            border-bottom: 1px solid #23232a;
         }
-        .pm-title { font-size: 1.1rem; font-weight: 600; color: #ffb74d; }
-        .pm-subtitle { font-size: 0.8rem; color: #a0a0a0; }
-        .pm-status { font-size: 0.9rem; color: #a0a0a0; }
+        .pm-title { font-size: 1.1rem; font-weight: 600; color: #ff9800; }
+        .pm-subtitle { font-size: 0.8rem; color: #b0b0b0; }
+        .pm-status { font-size: 0.9rem; color: #b0b0b0; }
         .pm-status.ready { color: #4ade80; }
 
         .pm-filter-bar {
@@ -263,7 +248,7 @@
         .pm-filter-bar .select-field { flex-shrink: 0; min-width: 150px; }
 
         .pm-summary {
-            font-size: 0.85rem; color: #a0a0a0; margin-bottom: 0.75rem; padding: 0.25rem;
+            font-size: 0.85rem; color: #b0b0b0; margin-bottom: 0.75rem; padding: 0.25rem;
         }
         .pm-summary i { margin-right: 5px; color: #FF7810; }
 
@@ -285,21 +270,21 @@
             border-collapse: collapse;
             font-size: 0.875rem;
         }
-        .pm-table thead { position: sticky; top: 0; z-index: 10; background-color: #27272a; }
+        .pm-table thead { position: sticky; top: 0; z-index: 10; background-color: #181a20; }
         .pm-table th {
             padding: 0.75rem 1rem; text-align: left; font-weight: 600;
-            color: #a1a1aa; border-bottom: 1px solid #3f3f46;
+            color: #b0b0b0; border-bottom: 1px solid #23232a;
         }
         .pm-table th.col-name { width: 20%; }
         .pm-table th.col-desc { width: 80%; }
 
-        .pm-table tbody tr { border-bottom: 1px solid #3f3f46; transition: background-color 0.15s ease; cursor: pointer; }
+        .pm-table tbody tr { border-bottom: 1px solid #23232a; transition: background-color 0.15s ease; cursor: pointer; }
         .pm-table tbody tr:last-child { border-bottom: none; }
         .pm-table tbody tr:hover { background-color: rgba(70, 70, 70, 0.3); }
         .pm-table tbody tr.selected { background-color: rgba(255, 120, 20, 0.15); border-left: 3px solid #FF7810; }
         .pm-table tbody tr.selected td:first-child { padding-left: calc(1rem - 3px); }
 
-        .pm-table td { padding: 0.75rem 1rem; vertical-align: top; color: #d4d4d8; }
+        .pm-table td { padding: 0.75rem 1rem; vertical-align: top; color: #e0e0e0; }
 
         .pm-table tr.category-row { background-color: #3f3f46; font-weight: 600; color: #e0e0e0; cursor: default; }
         .pm-table tr.category-row:hover { background-color: #3f3f46; }
@@ -309,7 +294,7 @@
 
         .pm-actions-bar {
             padding-top: 1rem; display: flex; gap: 0.75rem; justify-content: flex-start;
-            border-top: 1px solid rgba(255, 120, 20, 0.15); margin-top: 1rem;
+            border-top: 1px solid #23232a; margin-top: 1rem;
         }
         .pm-actions-bar .refresh-btn { margin-left: auto; }
 
@@ -381,7 +366,7 @@
         }
         .health-title {
             font-size: 1.05rem;
-            color: #ffb74d;
+            color: #ff9800;
             margin-bottom: 0.6rem;
             font-weight: 600;
             display: flex;
@@ -446,15 +431,12 @@
         /* --- Tweak Category Styling --- */
         .tweaks-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 2.5rem 2.5rem;
             align-items: stretch;
             justify-items: stretch;
             width: 100%;
             margin-bottom: 2rem;
-            max-height: 70vh;
-            overflow-y: auto;
             padding-right: 8px;
         }
         .tweaks-category {
@@ -485,31 +467,140 @@
 
         #tweaks-footer {
             background: #23262b !important;
-            box-shadow: 0 -2px 8px #0001;
-            padding: 1.5rem 0 1rem 0;
-            text-align: left;
-            margin-top: 0;
-            border-radius: 12px;
+            box-shadow: 0 2px 18px 0 rgba(0,0,0,0.16);
+            padding: 2rem 0 2rem 0;
+            border-radius: 18px;
             border: 1.5px solid #31343a;
-            width: 96%;
-            margin-left: 2%;
-            margin-bottom: 2.5rem;
+            width: 420px;
+            margin: 3rem auto 2.5rem auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.1rem;
         }
-
         #apply-tweaks-btn {
-            background: #ff9800 !important;
+            background: linear-gradient(90deg,#ff9800 60%,#ffa733 100%) !important;
             color: #23262b !important;
             border: none;
-            border-radius: 24px;
-            font-weight: 600;
-            font-size: 1.05rem;
-            padding: 0.7rem 2.2rem;
-            box-shadow: 0 2px 8px 0 rgba(0,0,0,0.08);
-            transition: background 0.2s, color 0.2s;
+            border-radius: 28px;
+            font-weight: 700;
+            font-size: 1.15rem;
+            padding: 1rem 2.8rem;
+            box-shadow: 0 4px 16px 0 rgba(255,152,0,0.09);
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+            margin-bottom: 0.2rem;
         }
         #apply-tweaks-btn:hover {
-            background: #ffa733 !important;
+            background: linear-gradient(90deg,#ffa733 60%,#ff9800 100%) !important;
             color: #181b20 !important;
+            box-shadow: 0 6px 18px 0 rgba(255,152,0,0.13);
+        }
+        #tweaks-feedback {
+            color: #ff9800;
+            font-size: 0.97rem;
+            font-weight: 500;
+            min-height: 1.2em;
+        }
+        @media (max-width: 600px) {
+            #tweaks-footer {
+                width: 98%;
+                padding: 1.2rem 0.3rem 1.2rem 0.3rem;
+            }
+            #apply-tweaks-btn {
+                font-size: 1rem;
+                padding: 0.7rem 1.2rem;
+            }
+        }
+
+        /* --- Vertical Tab Layout --- */
+        .main-flex {
+            display: flex;
+            flex-direction: row;
+            height: 100vh;
+        }
+        .tab-list {
+            display: flex;
+            flex-direction: column;
+            width: 200px;
+            min-width: 160px;
+            max-width: 220px;
+            height: 100vh;
+            background: #111113;
+            border-right: 1.5px solid #19191c;
+            border-bottom: none;
+            position: relative;
+            z-index: 2;
+            padding-top: 18px;
+            padding-bottom: 18px;
+            padding-left: 0;
+            padding-right: 0;
+            flex-wrap: unset;
+            overflow-x: unset;
+        }
+        .tab-item {
+            width: 100%;
+            padding: 16px 18px;
+            cursor: pointer;
+            background-color: #181a20;
+            color: #b0b0b0;
+            font-weight: 500;
+            border: none;
+            border-radius: 0 1.5rem 1.5rem 0;
+            border-left: 4px solid transparent;
+            margin: 2px 0;
+            text-align: left;
+            transition: background 0.2s, color 0.2s, border-left 0.2s;
+            display: flex;
+            align-items: center;
+        }
+        .tab-item.active {
+            background: #23232a;
+            color: #ff9800;
+            border-left: 4px solid #ff9800;
+            font-weight: 600;
+        }
+        .tab-item:hover {
+            background: #23232a;
+            color: #f1f1f1;
+        }
+        .tab-item i {
+            margin-right: 10px;
+            min-width: 22px;
+            text-align: center;
+        }
+        .angular-border {
+            flex: 1 1 0%;
+            min-width: 0;
+            height: 100vh;
+            overflow-y: auto;
+            border-radius: 0 0.75rem 0.75rem 0;
+            margin-top: 0;
+        }
+
+        /* Hide default scrollbars and style them for a modern look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #23232a;
+            border-radius: 6px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #33333a;
+        }
+        /* For Firefox */
+        html {
+            scrollbar-width: thin;
+            scrollbar-color: #23232a #181a20;
+        }
+
+        /* Add space at the bottom of the tweaks tab for scrolling comfort */
+        #tab-tweaks {
+            padding-bottom: 48px;
+            min-height: 100vh;
+            overflow-y: auto;
         }
     </style>
 </head>
@@ -520,8 +611,7 @@
             <button class="window-btn" id="closeBtn" title="Close">&#10005;</button>
         </div>
     </div>
-    <div class="container">
-
+    <div class="main-flex">
         <ul class="tab-list" id="winToolTabs">
             <li class="tab-item active" data-tab="dashboard"> <i class="fas fa-tachometer-alt"></i><span>Dashboard</span></li>
             <li class="tab-item" data-tab="tweaks"><i class="fas fa-bolt"></i><span>Tweaks</span></li>
@@ -530,14 +620,12 @@
             <li class="tab-item" data-tab="setup"><i class="fas fa-cog"></i><span>Unattended Setup</span></li>
             <li class="tab-item" data-tab="settings"><i class="fas fa-sliders-h"></i><span>Settings</span></li>
         </ul>
-
         <div class="angular-border">
-
             <div id="tab-dashboard" class="tab-content active" data-aos="fade-in">
                 <script>
                     async function updateSystemInfo() {
                         const data = await window.electronAPI.getSystemInfo();
-                        document.getElementById('cpu-usage').innerText = data.cpu !== undefined ? `${data.cpu}%` : '--';
+                        document.getElementById('cpu-usage').innerText = data.cpu !== undefined ? `${data.cpu.toFixed(1)}%` : '--';
                         document.getElementById('ram-usage').innerText = (data.ram && data.ram.used !== undefined && data.ram.total !== undefined) ? `${(data.ram.used/1073741824).toFixed(1)} GB / ${(data.ram.total/1073741824).toFixed(1)} GB` : '--';
                         document.getElementById('disk-usage').innerText = (data.disk && data.disk.percent !== undefined) ? `${data.disk.percent}%` : '--';
                         const netMbps = (data.net && data.net.bytes_recv !== undefined && data.net.bytes_sent !== undefined) ? (((data.net.bytes_recv + data.net.bytes_sent) / 1024 / 1024).toFixed(2)) : '--';
@@ -603,17 +691,26 @@
             <div id="tab-tweaks" class="tab-content" data-aos="fade-in" style="min-height:100vh;">
                 <div id="tweaks-loading" style="margin:2rem;text-align:center;">Loading tweaks...</div>
                 <div id="tweaks-list" class="tweaks-grid" style="display:none;"></div>
-                <div id="tweaks-footer" style="background:#23262b !important;box-shadow: 0 -2px 8px #0001;padding: 1.5rem 0 1rem 0;text-align: left;margin-top: 0;border-radius: 12px;border: 1.5px solid #31343a;width: 96%;margin-left: 2%;margin-bottom: 2.5rem;">
-                    <button id="apply-tweaks-btn" class="btn btn-primary" style="background: #ff9800 !important;color: #23262b !important;border: none;border-radius: 24px;font-weight: 600;font-size: 1.05rem;padding: 0.7rem 2.2rem;box-shadow: 0 2px 8px 0 rgba(0,0,0,0.08);transition: background 0.2s, color 0.2s;">Apply Selected Tweaks</button>
-                    <span id="tweaks-feedback" style="margin-left:1rem;"></span>
-                </div>
                 <script>
                     async function fetchTweaks() {
                         document.getElementById('tweaks-loading').style.display = '';
                         document.getElementById('tweaks-list').style.display = 'none';
                         document.getElementById('tweaks-loading').innerText = 'Loading tweaks...';
                         try {
-                            const data = await window.electronAPI.getCurrentTweaks();
+                            const raw = await window.electronAPI.getCurrentTweaks();
+                            console.log('getCurrentTweaks returned:', raw);
+                            // Normalize registry values
+                            const norm = {};
+                            Object.entries(raw).forEach(([k, v]) => {
+                                let nv = v;
+                                if (typeof v === 'string') {
+                                    if (v.startsWith('0x')) nv = parseInt(v, 16);
+                                    else if (v === 'true' || v === 'false') nv = (v === 'true');
+                                    else if (!isNaN(Number(v))) nv = Number(v);
+                                }
+                                norm[k] = nv;
+                            });
+                            let data = norm;
                             // Transform tweaks object into an array for renderTweaksList
                             const tweaksArr = [
                                 {
@@ -695,6 +792,7 @@
                                     enabled: data.disable_animations == 2
                                 }
                             ];
+                            console.log('renderTweaksList tweaksArr:', tweaksArr);
                             renderTweaksList(tweaksArr);
                             document.getElementById('tweaks-loading').style.display = 'none';
                             document.getElementById('tweaks-list').style.display = '';
@@ -734,6 +832,43 @@
                                             <span class=\"slider\"></span>
                                         </label>
                                     `;
+                                    // Add change event for instant apply
+                                    setTimeout(() => {
+                                        row.querySelector('input[type=checkbox]').addEventListener('change', async function() {
+                                            const key = this.id.replace('tweak-','');
+                                            const checked = this.checked;
+                                            let value;
+                                            switch (key) {
+                                                case 'visualfx': value = checked ? 2 : 3; break;
+                                                case 'disable_animations': value = checked ? 2 : 1; break;
+                                                case 'show_hidden_files': value = checked ? 1 : 2; break;
+                                                case 'file_extensions': value = checked ? 0 : 1; break;
+                                                case 'disable_telemetry': value = checked ? 0 : 1; break;
+                                                case 'disable_advertising_id': value = checked ? 0 : 1; break;
+                                                case 'show_this_pc_on_desktop': value = checked ? 0 : 1; break;
+                                                case 'show_recycle_bin_on_desktop': value = checked ? 0 : 1; break;
+                                                case 'disable_lock_screen': value = checked ? 1 : 0; break;
+                                                case 'disable_cortana': value = checked ? 0 : 1; break;
+                                                case 'small_taskbar_buttons': value = checked ? 1 : 0; break;
+                                                case 'show_seconds_on_taskbar_clock': value = checked ? 1 : 0; break;
+                                                case 'disable_startup_sound': value = checked ? 1 : 0; break;
+                                                default: value = checked ? 1 : 0;
+                                            }
+                                            const tweaks = {};
+                                            tweaks[key] = value;
+                                            console.log('Applying tweak', key, '=>', value);
+                                            try {
+                                                const result = await window.electronAPI.applyTweaks(tweaks);
+                                                if (result && result.errors && result.errors.length > 0) {
+                                                    alert('Failed to apply tweak: ' + result.errors.join('\n'));
+                                                    console.error('applyTweaks errors:', result.errors);
+                                                }
+                                                fetchTweaks();
+                                            } catch (e) {
+                                                console.error('applyTweaks failed for ' + key, e);
+                                            }
+                                        });
+                                    }, 0);
                                     catDiv.appendChild(row);
                                 });
                                 list.appendChild(catDiv);
@@ -742,25 +877,6 @@
                     }
                     document.addEventListener('DOMContentLoaded', () => {
                         if (document.getElementById('tab-tweaks')) fetchTweaks();
-                        document.getElementById('apply-tweaks-btn').onclick = async () => {
-                            const feedback = document.getElementById('tweaks-feedback');
-                            feedback.innerText = 'Applying...';
-                            const tweaks = {};
-                            document.querySelectorAll('#tweaks-list input[type=checkbox]').forEach(cb => {
-                                tweaks[cb.id.replace('tweak-','')] = cb.checked;
-                            });
-                            try {
-                                const data = await window.electronAPI.applyTweaks(tweaks);
-                                if (data && data.error) {
-                                    feedback.innerText = 'Error: ' + data.error;
-                                } else {
-                                    feedback.innerText = 'Tweaks applied! Some changes may require restarting your computer to take effect.';
-                                    fetchTweaks();
-                                }
-                            } catch (e) {
-                                feedback.innerText = 'Failed to apply tweaks.';
-                            }
-                        };
                     });
                 </script>
             </div>
@@ -1067,8 +1183,8 @@
             <div id="tab-setup" class="tab-content" data-aos="fade-in">
                 <div class="feature-section">
                     <h3><i class="fas fa-cog"></i>Unattended Setup</h3>
-                    <div class="unattend-wizard bg-neutral-900 rounded-md border border-neutral-700 p-4">
-                        <div class="wizard-tabs flex mb-4">
+                    <div class="unattend-wizard bg-neutral-900 rounded-lg border border-neutral-700 shadow-lg p-6 max-w-2xl mx-auto">
+                        <div class="wizard-tabs flex mb-4 gap-2">
                             <button class="wizard-tab active" data-tab="system">System</button>
                             <button class="wizard-tab" data-tab="regional">Regional</button>
                             <button class="wizard-tab" data-tab="user">User Account</button>
@@ -1083,7 +1199,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="organization">Organization:</label>
-                                    <input type="text" id="organization" name="organization" class="input-field" value="Organization">
+                                    <input type="text" id="organization" name="organization" class="input-field" value="MyOrg">
                                 </div>
                                 <div class="form-group">
                                     <label for="owner">Owner:</label>
@@ -1091,7 +1207,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="productKey">Product Key:</label>
-                                    <input type="text" id="productKey" name="productKey" class="input-field">
+                                    <input type="text" id="productKey" name="productKey" class="input-field" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX">
                                 </div>
                                 <div class="form-group">
                                     <label for="windowsEdition">Windows Edition:</label>
@@ -1107,19 +1223,19 @@
                                 <div class="form-group">
                                     <label for="language">Language:</label>
                                     <select id="language" name="language" class="input-field">
-                                        <option>English (United States)</option>
-                                        <option>Spanish (Spain)</option>
-                                        <option>French (France)</option>
-                                        <option>German (Germany)</option>
+                                        <option>English (US)</option>
+                                        <option>English (UK)</option>
+                                        <option>German</option>
+                                        <option>French</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
                                     <label for="timezone">Time Zone:</label>
                                     <select id="timezone" name="timezone" class="input-field">
-                                        <option>UTC-06:00 Central Time (US & Canada)</option>
-                                        <option>UTC-05:00 Eastern Time (US & Canada)</option>
-                                        <option>UTC+00:00 London</option>
-                                        <option>UTC+01:00 Berlin</option>
+                                        <option>UTC-6 Central</option>
+                                        <option>UTC-5 Eastern</option>
+                                        <option>UTC-8 Pacific</option>
+                                        <option>UTC+1 Berlin</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
@@ -1139,25 +1255,23 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="password">Password:</label>
-                                    <input type="password" id="password" name="password" class="input-field">
+                                    <input type="password" id="password" name="password" class="input-field" autocomplete="new-password">
                                 </div>
                                 <div class="form-group">
-                                    <label for="autoLogin">Enable Auto-Login:</label>
-                                    <select id="autoLogin" name="autoLogin" class="input-field">
-                                        <option value="yes">Yes</option>
-                                        <option value="no">No</option>
-                                    </select>
+                                    <label for="autoLogin">
+                                        <input type="checkbox" id="autoLogin" name="autoLogin"> Enable Auto-Login
+                                    </label>
                                 </div>
                             </div>
                             <div class="wizard-panel" data-panel="privacy" style="display:none;">
                                 <div class="form-group">
-                                    <label><input type="checkbox" id="disableTelemetry" name="disableTelemetry" title="Prevents Windows from sending usage data to Microsoft."> Disable Telemetry</label>
+                                    <label><input type="checkbox" id="disableTelemetry" name="disableTelemetry"> Disable Telemetry</label>
                                 </div>
                                 <div class="form-group">
-                                    <label><input type="checkbox" id="disableCortana" name="disableCortana" title="Removes or disables the Cortana assistant."> Disable Cortana</label>
+                                    <label><input type="checkbox" id="disableCortana" name="disableCortana"> Disable Cortana</label>
                                 </div>
                                 <div class="form-group">
-                                    <label><input type="checkbox" id="disableLocation" name="disableLocation" title="Blocks apps and services from accessing your location."> Disable Location Services</label>
+                                    <label><input type="checkbox" id="disableLocation" name="disableLocation"> Disable Location Services</label>
                                 </div>
                             </div>
                             <div class="wizard-panel" data-panel="apps" style="display:none;">
@@ -1166,183 +1280,185 @@
                                     <input type="text" id="appsList" name="appsList" class="input-field" placeholder="e.g. Chrome,7zip,VSCode">
                                 </div>
                             </div>
-                            <div class="text-right mt-4">
+                            <div class="flex justify-between mt-6">
+                                <button type="button" class="btn btn-secondary" id="unattend-prev">&larr; Previous</button>
                                 <button type="button" class="btn btn-primary" id="unattend-next">Next &rarr;</button>
+                            </div>
+                            <div class="text-right mt-6">
+                                <button type="button" class="btn btn-secondary mr-2" id="export-json"><i class="fas fa-file-code"></i> Export JSON</button>
+                                <button type="button" class="btn btn-secondary" id="export-xml"><i class="fas fa-file-alt"></i> Export XML</button>
                             </div>
                         </form>
                     </div>
-                </div>
-                <style>
-                    .unattend-wizard { max-width: 700px; margin: 0 auto; }
-                    .wizard-tabs { gap: 0.5rem; }
-                    .wizard-tab { background: #222; color: #fff; border: none; padding: 0.5rem 1.2rem; border-radius: 0.5rem 0.5rem 0 0; margin-right: 0.25rem; cursor: pointer; font-weight: 500; }
-                    .wizard-tab.active { background: #333; color: #FF7810; }
-                    .wizard-panel { margin-top: 1.5rem; }
-                    .form-group { margin-bottom: 1.2rem; }
-                    .form-group label { display: block; font-size: 1rem; margin-bottom: 0.4rem; color: #bbb; }
-                    .input-field { width: 100%; padding: 0.5rem; border-radius: 0.3rem; border: 1px solid #444; background: #191919; color: #fff; }
-                    .input-field:focus { border-color: #FF7810; outline: none; }
-                </style>
-                <script>
-                    // Wizard tab switching
-                    const wizardTabs = Array.from(document.querySelectorAll('.wizard-tab'));
-                    const wizardPanels = Array.from(document.querySelectorAll('.wizard-panel'));
-                    let currentTabIdx = 0;
-
-                    function showTab(idx) {
-                        wizardTabs.forEach((tab, i) => tab.classList.toggle('active', i === idx));
-                        wizardPanels.forEach((panel, i) => panel.style.display = i === idx ? 'block' : 'none');
-                        currentTabIdx = idx;
-                        // Disable Next on last tab
-                        document.getElementById('unattend-next').disabled = (idx === wizardTabs.length - 1);
-                    }
-
-                    wizardTabs.forEach((tab, idx) => {
-                        tab.addEventListener('click', () => showTab(idx));
-                    });
-
-                    document.getElementById('unattend-next').addEventListener('click', () => {
-                        if (currentTabIdx < wizardTabs.length - 1) {
-                            showTab(currentTabIdx + 1);
+                    <style>
+                        .unattend-wizard { max-width: 700px; margin: 0 auto; background: #191919; }
+                        .wizard-tabs { gap: 0.5rem; }
+                        .wizard-tab { background: #23232a; color: #fff; border: none; padding: 0.5rem 1.2rem; border-radius: 0.5rem 0.5rem 0 0; margin-right: 0.25rem; cursor: pointer; font-weight: 500; transition: background 0.2s, color 0.2s; }
+                        .wizard-tab.active { background: #333; color: #FF7810; }
+                        .wizard-panel { margin-top: 1.5rem; }
+                        .form-group { margin-bottom: 1.2rem; }
+                        .form-group label { display: block; font-size: 1rem; margin-bottom: 0.4rem; color: #bbb; }
+                        .input-field { width: 100%; padding: 0.5rem; border-radius: 0.3rem; border: 1px solid #444; background: #191919; color: #fff; }
+                        .input-field:focus { border-color: #FF7810; outline: none; }
+                        .btn { padding: 0.5rem 1.25rem; border-radius: 0.375rem; border: none; font-weight: 600; cursor: pointer; transition: background 0.2s, color 0.2s; }
+                        .btn-primary { background: #FF7810; color: #fff; }
+                        .btn-primary:hover { background: #e56700; }
+                        .btn-secondary { background: #23232a; color: #FF7810; border: 1px solid #FF7810; }
+                        .btn-secondary:hover { background: #333; color: #fff; }
+                    </style>
+                    <script>
+                        // Wizard tab switching
+                        const wizardTabs = Array.from(document.querySelectorAll('.wizard-tab'));
+                        const wizardPanels = Array.from(document.querySelectorAll('.wizard-panel'));
+                        let currentTabIdx = 0;
+                        function showTab(idx) {
+                            wizardTabs.forEach((tab, i) => tab.classList.toggle('active', i === idx));
+                            wizardPanels.forEach((panel, i) => panel.style.display = i === idx ? 'block' : 'none');
+                            currentTabIdx = idx;
+                            document.getElementById('unattend-prev').disabled = (idx === 0);
+                            document.getElementById('unattend-next').disabled = (idx === wizardTabs.length - 1);
                         }
-                    });
-
-                    // Export as JSON or XML
-                    function collectFormData() {
-                        const data = {};
-                        const form = document.getElementById('unattend-form');
-                        new FormData(form).forEach((value, key) => {
-                            if (data[key]) {
-                                if (!Array.isArray(data[key])) data[key] = [data[key]];
-                                data[key].push(value);
-                            } else {
-                                data[key] = value;
+                        wizardTabs.forEach((tab, idx) => {
+                            tab.addEventListener('click', () => showTab(idx));
+                        });
+                        document.getElementById('unattend-next').addEventListener('click', () => {
+                            if (currentTabIdx < wizardTabs.length - 1) {
+                                showTab(currentTabIdx + 1);
                             }
                         });
-                        // Handle checkboxes
-                        ['disableTelemetry','disableCortana','disableLocation'].forEach(id => {
-                            data[id] = document.getElementById(id).checked;
-                        });
-                        return data;
-                    }
-
-                    function exportAsJSON() {
-                        const data = collectFormData();
-                        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-                        const a = document.createElement('a');
-                        a.href = URL.createObjectURL(blob);
-                        a.download = 'unattended_setup.json';
-                        a.click();
-                    }
-
-                    function exportAsXML() {
-                        const data = collectFormData();
-                        let xml = '<UnattendedSetup>\n';
-                        for (const [key, value] of Object.entries(data)) {
-                            xml += `  <${key}>${String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</${key}>\n`;
-                        }
-                        xml += '</UnattendedSetup>';
-                        const blob = new Blob([xml], {type: 'application/xml'});
-                        const a = document.createElement('a');
-                        a.href = URL.createObjectURL(blob);
-                        a.download = 'unattended_setup.xml';
-                        a.click();
-                    }
-
-                    document.addEventListener('DOMContentLoaded', () => {
-                        // Add export buttons
-                        const btns = document.createElement('div');
-                        btns.className = 'text-right mt-2';
-                        btns.innerHTML = `<button type="button" class="btn btn-secondary mr-2" id="export-json"><i class="fas fa-file-code"></i> Export JSON</button><button type="button" class="btn btn-secondary" id="export-xml"><i class="fas fa-file-alt"></i> Export XML</button>`;
-                        document.getElementById('unattend-form').appendChild(btns);
-                        document.getElementById('export-json').onclick = exportAsJSON;
-                        document.getElementById('export-xml').onclick = exportAsXML;
-                    });
-                </script>
-            </div>
-
-            <div id="tab-settings" class="tab-content" data-aos="fade-in">
-                <div class="feature-section">
-                    <h3><i class="fas fa-sliders-h"></i>Settings</h3>
-                    <p>Configure WinTool options, manage updates, and customize behavior.</p>
-                </div>
-                <!-- Window Size Display -->
-                <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700 mt-2">
-                    <label class="text-gray-300">Current Window Size</label>
-                    <span id="window-size-label" class="font-mono text-orange-400">Loading...</span>
-                </div>
-                <script>
-                    // Settings persistence (localStorage)
-                    document.addEventListener('DOMContentLoaded', () => {
-                        // Theme
-                        const themeSelect = document.getElementById('theme-select');
-                        themeSelect.value = localStorage.getItem('theme') || 'dark';
-                        themeSelect.addEventListener('change', () => {
-                            localStorage.setItem('theme', themeSelect.value);
-                            // Optionally trigger theme switch here
-                        });
-
-                        // Reset Settings
-                        document.getElementById('reset-settings').addEventListener('click', () => {
-                            if (confirm('Are you sure you want to reset all settings?')) {
-                                localStorage.removeItem('theme');
-                                // Optionally reset more settings
-                                location.reload();
+                        document.getElementById('unattend-prev').addEventListener('click', () => {
+                            if (currentTabIdx > 0) {
+                                showTab(currentTabIdx - 1);
                             }
                         });
-
-                        // Check for Updates (placeholder)
-                        document.getElementById('check-updates').addEventListener('click', () => {
-                            alert('Checking for updates... (This is a placeholder)');
-                        });
-
-                        // Window Size Display Logic
-                        function updateWindowSizeLabel() {
-                            if (window && window.innerWidth && window.innerHeight) {
-                                const label = document.getElementById('window-size-label');
-                                if (label) {
-                                    label.textContent = `${window.innerWidth} x ${window.innerHeight}`;
-                                }
-                            }
-                        }
-                        updateWindowSizeLabel();
-                        window.addEventListener('resize', updateWindowSizeLabel);
-                        // If settings tab is clicked, update label (in case it was hidden during resize)
-                        const tabsContainer = document.getElementById('winToolTabs');
-                        if (tabsContainer) {
-                            tabsContainer.addEventListener('click', (event) => {
-                                const clickedTab = event.target.closest('.tab-item');
-                                if (clickedTab && clickedTab.dataset.tab === 'settings') {
-                                    setTimeout(updateWindowSizeLabel, 100); // Delay to ensure tab is visible
+                    </script>
+                    <script>
+                        // Export as JSON or XML
+                        function collectFormData() {
+                            const data = {};
+                            const form = document.getElementById('unattend-form');
+                            new FormData(form).forEach((value, key) => {
+                                if (data[key]) {
+                                    if (!Array.isArray(data[key])) data[key] = [data[key]];
+                                    data[key].push(value);
+                                } else {
+                                    data[key] = value;
                                 }
                             });
+                            // Handle checkboxes
+                            ['disableTelemetry','disableCortana','disableLocation','autoLogin'].forEach(id => {
+                                const el = document.getElementById(id);
+                                if (el && el.type === 'checkbox') data[id] = el.checked;
+                            });
+                            return data;
                         }
-                    });
-                </script>
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
-                        <label for="theme-select" class="text-gray-300">Theme</label>
-                        <select id="theme-select" class="select-field">
-                            <option value="dark">Dark (Default)</option>
-                            <option value="light" disabled>Light (Coming Soon)</option>
-                        </select>
+                        function exportAsJSON() {
+                            const data = collectFormData();
+                            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            a.download = 'unattended_setup.json';
+                            a.click();
+                        }
+                        function exportAsXML() {
+                            const data = collectFormData();
+                            let xml = '<UnattendedSetup>\n';
+                            for (const [key, value] of Object.entries(data)) {
+                                xml += `  <${key}>${String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</${key}>\n`;
+                            }
+                            xml += '</UnattendedSetup>';
+                            const blob = new Blob([xml], {type: 'application/xml'});
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            a.download = 'unattended_setup.xml';
+                            a.click();
+                        }
+                        document.addEventListener('DOMContentLoaded', () => {
+                            document.getElementById('export-json').onclick = exportAsJSON;
+                            document.getElementById('export-xml').onclick = exportAsXML;
+                        });
+                    </script>
+                </div>
+
+                <div id="tab-settings" class="tab-content" data-aos="fade-in">
+                    <div class="feature-section">
+                        <h3><i class="fas fa-sliders-h"></i>Settings</h3>
+                        <p>Configure WinTool options, manage updates, and customize behavior.</p>
                     </div>
-                    <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
-                        <label class="text-gray-300">Update Channel</label>
-                        <span class="text-green-400 font-semibold">Stable</span>
+                    <!-- Window Size Display -->
+                    <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700 mt-2">
+                        <label class="text-gray-300">Current Window Size</label>
+                        <span id="window-size-label" class="font-mono text-orange-400">Loading...</span>
                     </div>
-                    <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
-                        <label for="reset-settings" class="text-gray-300">Reset All Settings</label>
-                        <button id="reset-settings" class="btn btn-secondary">Reset</button>
-                    </div>
-                    <div class="text-center mt-6">
-                        <button class="btn btn-secondary" id="check-updates"><i class="fas fa-sync-alt"></i>Check for Updates</button>
+                    <script>
+                        // Settings persistence (localStorage)
+                        document.addEventListener('DOMContentLoaded', () => {
+                            // Theme
+                            const themeSelect = document.getElementById('theme-select');
+                            themeSelect.value = localStorage.getItem('theme') || 'dark';
+                            themeSelect.addEventListener('change', () => {
+                                localStorage.setItem('theme', themeSelect.value);
+                                // Optionally trigger theme switch here
+                            });
+
+                            // Reset Settings
+                            document.getElementById('reset-settings').addEventListener('click', () => {
+                                if (confirm('Are you sure you want to reset all settings?')) {
+                                    localStorage.removeItem('theme');
+                                    // Optionally reset more settings
+                                    location.reload();
+                                }
+                            });
+
+                            // Check for Updates (placeholder)
+                            document.getElementById('check-updates').addEventListener('click', () => {
+                                alert('Checking for updates... (This is a placeholder)');
+                            });
+
+                            // Window Size Display Logic
+                            function updateWindowSizeLabel() {
+                                if (window && window.innerWidth && window.innerHeight) {
+                                    const label = document.getElementById('window-size-label');
+                                    if (label) {
+                                        label.textContent = `${window.innerWidth} x ${window.innerHeight}`;
+                                    }
+                                }
+                            }
+                            updateWindowSizeLabel();
+                            window.addEventListener('resize', updateWindowSizeLabel);
+                            // If settings tab is clicked, update label (in case it was hidden during resize)
+                            const tabsContainer = document.getElementById('winToolTabs');
+                            if (tabsContainer) {
+                                tabsContainer.addEventListener('click', (event) => {
+                                    const clickedTab = event.target.closest('.tab-item');
+                                    if (clickedTab && clickedTab.dataset.tab === 'settings') {
+                                        setTimeout(updateWindowSizeLabel, 100); // Delay to ensure tab is visible
+                                    }
+                                });
+                            }
+                        });
+                    </script>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
+                            <label for="theme-select" class="text-gray-300">Theme</label>
+                            <select id="theme-select" class="select-field">
+                                <option value="dark">Dark (Default)</option>
+                                <option value="light" disabled>Light (Coming Soon)</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
+                            <label class="text-gray-300">Update Channel</label>
+                            <span class="text-green-400 font-semibold">Stable</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
+                            <label for="reset-settings" class="text-gray-300">Reset All Settings</label>
+                            <button id="reset-settings" class="btn btn-secondary">Reset</button>
+                        </div>
+                        <div class="text-center mt-6">
+                            <button class="btn btn-secondary" id="check-updates"><i class="fas fa-sync-alt"></i>Check for Updates</button>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- REMOVE Backend Tab Content -->
-            <!-- <div id="tab-backend" class="tab-content" data-aos="fade-in"> ... </div> -->
 
         </div> 
     </div> 
