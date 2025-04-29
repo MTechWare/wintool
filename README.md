@@ -39,7 +39,7 @@ npx electron-builder
 - If you see `'electron-builder' is not recognized`, make sure you ran `npm install` and use `npx electron-builder` instead of `npm run dist`.
 
 ### Option 2: Download Release (if available)
-1. Visit the [Releases Page](https://github.com/MTechWare/wintools)
+1. Visit the [(Releases Page](https://github.com/MTechWare/wintool/releases))
 2. Download the latest version
 3. Run the installer or executable to start the application
 
