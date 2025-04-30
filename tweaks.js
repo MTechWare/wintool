@@ -245,4 +245,38 @@ async function applyTweaks(tweaks) {
   return { results, errors };
 }
 
-module.exports = { getCurrentTweaks, applyTweaks, TWEAKS };
+// Restore all tweaks to Windows defaults
+async function restoreDefaultTweaks() {
+  // Define the default values for each tweak key
+  const defaults = {
+    visualfx: 1, // Let Windows choose (1)
+    show_hidden_files: 2, // Don't show hidden files (2)
+    file_extensions: 1, // Hide file extensions (1)
+    disable_telemetry: 1, // Allow telemetry (1)
+    disable_advertising_id: 1, // Advertising ID enabled (1)
+    disable_cortana: 1, // Allow Cortana (1)
+    disable_lock_screen: 0, // Lock screen enabled (0)
+    show_this_pc_on_desktop: 0, // Hide 'This PC' (0 = hide)
+    show_recycle_bin_on_desktop: 0, // Hide Recycle Bin (0 = hide)
+    small_taskbar_buttons: 0, // Use large taskbar buttons (0)
+    show_seconds_on_taskbar_clock: 0, // Don't show seconds (0)
+    disable_startup_sound: '', // No override (empty string)
+    disable_animations: 1, // Animations enabled (1)
+  };
+  const results = {};
+  const errors = [];
+  for (const tweak of TWEAKS) {
+    const key = tweak.key;
+    if (defaults.hasOwnProperty(key)) {
+      try {
+        await tweak.set(defaults[key]);
+        results[key] = defaults[key];
+      } catch (e) {
+        errors.push(`${key}: ${e.message}`);
+      }
+    }
+  }
+  return { results, errors };
+}
+
+module.exports = { getCurrentTweaks, applyTweaks, restoreDefaultTweaks, TWEAKS };

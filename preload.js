@@ -9,5 +9,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getCurrentTweaks: () => ipcRenderer.invoke('get-current-tweaks'),
   applyTweaks: (tweaks) => ipcRenderer.invoke('apply-tweaks', tweaks),
   closeWindow: () => ipcRenderer.invoke('close-window'),
-  // Add more as needed (e.g., tweaks)
+  optimizeRam: () => ipcRenderer.invoke('optimizeRam'),
+  setGameMode: (enabled) => ipcRenderer.invoke('setGameMode', enabled),
+  setPowerPlan: (plan) => ipcRenderer.invoke('setPowerPlan', plan),
+  setFpsCounter: (enabled) => ipcRenderer.invoke('setFpsCounter', enabled),
+});
+
+contextBridge.exposeInMainWorld('wintoolAPI', {
+  launchSystemTool: (toolId) => ipcRenderer.invoke('launch-system-tool', toolId)
+});
+
+contextBridge.exposeInMainWorld('networkingAPI', {
+  getNetworkStatus: () => ipcRenderer.invoke('get-network-status'),
 });

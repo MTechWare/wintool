@@ -11,642 +11,249 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
     <link rel="icon" type="image/x-icon" href="icon.ico">
-
+    <link rel="stylesheet" href="styles.css">
     <style>
-        /* --- Discord-like Window Chrome --- */
-        html, body {
-            background: #0a0a0c !important;
-        }
-        body {
-            background: linear-gradient(135deg, #111113 70%, #0a0a0c 100%);
-            color: #f1f1f1;
-            border-radius: 18px;
-            border: none;
-            box-shadow: 0 8px 40px 2px rgba(0,0,0,0.75);
-            overflow: hidden;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            font-family: 'Inter', sans-serif;
-        }
-        /* Subtle outer border for Discord-like frame */
-        /* Removed body::before pseudo-element */
-
-        .container, .angular-border {
-            border-radius: 0 !important;
-            box-shadow: none !important;
-            background: transparent !important;
-            width: 100%;
-            height: 100%;
-            margin: 0 !important;
-            max-width: none !important;
-            min-width: 0 !important;
-            padding-left: 18px !important;
-            padding-right: 18px !important;
-            border: none !important;
-        }
-        *:focus { outline: none !important; }
-
-        /* --- Global Styles & Resets --- */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
-        .font-mono { font-family: 'Roboto Mono', monospace; }
-
-        /* --- Layout Container --- */
-        .container {
-            position: relative; z-index: 1;
-        }
-
-        /* --- Angular Border Style (For main content area) --- */
-        .angular-border {
-            position: relative; 
-            padding: 1.5rem; /* Standard padding */
-            background-color: rgba(10, 10, 12, 0.98); /* Slightly less transparent */
-            backdrop-filter: blur(8px);
-            border-radius: 0 0 0.75rem 0.75rem; /* Rounded bottom corners only */
-            transition: all 0.3s ease;
-            z-index: 1;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
-            margin-top: -1px; /* Overlap slightly with tabs */
-            display: flex;
-            flex-direction: column;
-        }
-        .angular-border::before, .angular-border::after { /* Corner elements */
-            display: none !important;
-        }
-
-        /* --- Tab Styling --- */
-        .tab-list {
-            display: flex;
-            flex-wrap: nowrap; /* Prevent wrapping */
-            overflow-x: auto; /* Allow horizontal scrolling */
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
-            list-style: none;
-            background: #111113;
-            border-bottom: 1px solid #23232a;
-            position: relative;
-            z-index: 2; /* Above angular border */
-        }
-        .tab-list::-webkit-scrollbar { /* Hide scrollbar */
-            display: none;
-        }
-
-        .tab-item {
-            padding: 12px 20px; /* Adjusted padding */
-            cursor: pointer;
-            background-color: #181a20;
-            color: #b0b0b0;
-            font-weight: 500;
-            border: none;
-            border-top-left-radius: 0.5rem;
-            border-top-right-radius: 0.5rem;
-            transition: background 0.2s, color 0.2s;
-            margin-right: 2px;
-        }
-        .tab-item:hover {
-            background: #23232a;
-            color: #f1f1f1;
-        }
-        .tab-item.active {
-            background: #23232a;
-            color: #ff9800;
-            border-bottom: 2px solid #23232a;
-            font-weight: 600;
-        }
-        .tab-item i { margin-right: 6px; width: 1.1em; text-align: center; }
-
-        /* --- Tab Content Styling --- */
-        .tab-content {
-            display: none; /* Hidden by default */
-            flex-grow: 1; /* Allow content to fill space */
-            overflow: hidden; /* Prevent content overflow issues */
-            flex-direction: column;
-        }
-        .tab-content.active {
-            display: flex; /* Show active content. Use flex because Package Manager needs it */
-            animation: fadeIn 0.5s ease; /* Simple fade-in */
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* --- Button Styling --- */
-        .btn {
-            display: inline-flex; align-items: center; justify-content: center;
-            padding: 0.5rem 1.5rem; border-radius: 0.375rem; text-decoration: none; font-weight: 600;
-            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-            font-size: 1rem;
-        }
-        .btn i { margin-right: 6px; }
-        .btn-primary {
-            background: linear-gradient(45deg, #ff9800, #ff5722);
-            color: #101014;
-            border: none;
-        }
-        .btn-primary:hover:not(:disabled) {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 15px rgba(255, 152, 0, 0.25);
-        }
-        .btn-secondary {
-            background: #23232a;
-            color: #fff !important;
-            border: 1px solid #3f3f46;
-        }
-        .btn-secondary:hover:not(:disabled) {
-            background: #181a20;
-            color: #fff !important;
-        }
-        .btn-sm { padding: 6px 12px; font-size: 0.8rem; border-radius: 20px; }
-        .btn:disabled {
-            background: #404040; color: #737373; border-color: #525252;
-            cursor: not-allowed; transform: none; box-shadow: none;
-        }
-        .action-btn {
-            padding: 8px 20px; font-size: 0.85rem; border-radius: 6px;
-            background: #3f3f46; color: #e0e0e0; border: 1px solid #52525b;
-        }
-        .action-btn:hover:not(:disabled) { background: #52525b; color: #fff; transform: none; box-shadow: none; }
-        .action-btn i { margin-right: 5px; }
-
-        /* --- Placeholder Content Styling --- */
-        .feature-section { margin-bottom: 2rem; }
-        .feature-section:last-child { margin-bottom: 0; }
-        .feature-section h3 {
-            color: #ff9800; font-size: 1.4rem; font-weight: 600;
-            margin-bottom: 0.75rem; padding-bottom: 0.5rem;
-            border-bottom: 1px solid #23232a;
-            display: flex; align-items: center;
-        }
-         .feature-section h3 i { margin-right: 10px; color: #ff9800; font-size: 1.2rem; }
-        .feature-section p { margin-bottom: 1rem; color: #b0b0b0; font-size: 0.95rem; }
-        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
-        .info-card {
-            background-color: rgba(40, 40, 40, 0.5); padding: 1rem;
-            border-radius: 0.375rem; border: 1px solid rgba(255, 120, 20, 0.1);
-            cursor: default;
-        }
-        .info-card.clickable { cursor: pointer; transition: background-color 0.2s ease; }
-        .info-card.clickable:hover { background-color: rgba(55, 55, 55, 0.6); }
-        .info-card .label { font-size: 0.85rem; color: #a0a0a0; margin-bottom: 0.25rem; }
-        .info-card .value { font-size: 1.1rem; font-weight: 500; color: #e0e0e0; }
-        .info-card .value.highlight { color: #FF7810; font-weight: 600; }
-        .tool-card .value { font-size: 1.1rem; margin-bottom: 0.25rem; }
-        .tool-card .label { font-size: 0.9rem; }
-
-        /* --- Specific Component Styles --- */
-        /* Switch/Toggle */
-        .switch { position: relative; display: inline-block; width: 36px; height: 18px; flex-shrink: 0; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #23232a; transition: .4s; border-radius: 18px; }
-        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: #ffb74d; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #ff9800; }
-        input:checked + .slider:before { background-color: #23232a; }
-
-        /* Input field styling */
-        .input-field {
-            background: #181a20; border: 1px solid #3f3f46; color: #f1f1f1;
-            font-size: 1rem; border-radius: 0.375rem; padding: 0.5rem 1rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .input-field:focus { outline: none; border-color: #ff9800; box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2); }
-        .input-field::placeholder { color: #a1a1aa; }
-
-        /* Select field styling */
-        .select-field {
-            background-color: #181a20; border: 1px solid #3f3f46; color: #f1f1f1;
-            font-size: 0.875rem; border-radius: 0.375rem; padding: 0.375rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            -webkit-appearance: none; -moz-appearance: none; appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23a0a0a0' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
-            background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1.25em 1.25em;
-            padding-right: 2.5rem;
-        }
-        .select-field:focus { outline: none; border-color: #ff9800; box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2); }
-
-        /* --- Package Manager Specific Styles --- */
-        .package-manager-container {
-            display: flex; flex-direction: column; height: 100%; overflow: hidden;
-        }
-        .pm-header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 0.75rem; padding: 0.5rem 0.25rem;
-            border-bottom: 1px solid #23232a;
-        }
-        .pm-title { font-size: 1.1rem; font-weight: 600; color: #ff9800; }
-        .pm-subtitle { font-size: 0.8rem; color: #b0b0b0; }
-        .pm-status { font-size: 0.9rem; color: #b0b0b0; }
-        .pm-status.ready { color: #4ade80; }
-
-        .pm-filter-bar {
-            display: flex; gap: 0.75rem; margin-bottom: 0.75rem;
-            align-items: center; padding: 0 0.25rem;
-        }
-        .pm-filter-bar .input-field { flex-grow: 1; }
-        .pm-filter-bar .select-field { flex-shrink: 0; min-width: 150px; }
-
-        .pm-summary {
-            font-size: 0.85rem; color: #b0b0b0; margin-bottom: 0.75rem; padding: 0.25rem;
-        }
-        .pm-summary i { margin-right: 5px; color: #FF7810; }
-
-        .pm-table-wrapper {
-            max-height: 420px;
-            min-height: 100px;
-            overflow-y: auto;
-            border-radius: 0.5rem;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-            background: rgba(20,20,20,0.85);
-        }
-        .pm-table-wrapper::-webkit-scrollbar { width: 8px; }
-        .pm-table-wrapper::-webkit-scrollbar-track { background: #27272a; border-radius: 4px; }
-        .pm-table-wrapper::-webkit-scrollbar-thumb { background-color: #52525b; border-radius: 4px; }
-        .pm-table-wrapper::-webkit-scrollbar-thumb:hover { background-color: #71717a; }
-
-        .pm-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.875rem;
-        }
-        .pm-table thead { position: sticky; top: 0; z-index: 10; background-color: #181a20; }
-        .pm-table th {
-            padding: 0.75rem 1rem; text-align: left; font-weight: 600;
-            color: #b0b0b0; border-bottom: 1px solid #23232a;
-        }
-        .pm-table th.col-name { width: 20%; }
-        .pm-table th.col-desc { width: 80%; }
-
-        .pm-table tbody tr { border-bottom: 1px solid #23232a; transition: background-color 0.15s ease; cursor: pointer; }
-        .pm-table tbody tr:last-child { border-bottom: none; }
-        .pm-table tbody tr:hover { background-color: rgba(70, 70, 70, 0.3); }
-        .pm-table tbody tr.selected { background-color: rgba(255, 120, 20, 0.15); border-left: 3px solid #FF7810; }
-        .pm-table tbody tr.selected td:first-child { padding-left: calc(1rem - 3px); }
-
-        .pm-table td { padding: 0.75rem 1rem; vertical-align: top; color: #e0e0e0; }
-
-        .pm-table tr.category-row { background-color: #3f3f46; font-weight: 600; color: #e0e0e0; cursor: default; }
-        .pm-table tr.category-row:hover { background-color: #3f3f46; }
-        .pm-table tr.category-row td { padding: 0.5rem 1rem; }
-        .pm-table tr.category-row i { margin-right: 8px; transition: transform 0.2s ease; }
-        .pm-table tr.category-row.collapsed i { transform: rotate(-90deg); }
-
-        .pm-actions-bar {
-            padding-top: 1rem; display: flex; gap: 0.75rem; justify-content: flex-start;
-            border-top: 1px solid #23232a; margin-top: 1rem;
-        }
-        .pm-actions-bar .refresh-btn { margin-left: auto; }
-
-        /* --- Tweak Item Styling --- */
-        .tweak-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.75rem; /* Reduced padding */
-            background-color: #27272a; /* neutral-800 */
-            border: 1px solid #3f3f46; /* neutral-700 */
-            border-radius: 0.375rem; /* rounded-md */
-        }
-        .tweak-item label:first-child { /* Target the text label */
-             color: #d4d4d8; /* neutral-300 */
-             font-size: 0.9rem;
-             margin-right: 1rem; /* Space between label and switch */
-        }
-
-        .tweak-row { margin-bottom: 0.5rem !important; min-height: 36px; }
-        .tweak-row label[for^="tweak-"] span { font-size: 0.94em; }
-
-        /* --- Responsive Adjustments --- */
-        @media (max-width: 900px) {
-             .tab-item { padding: 10px 15px; font-size: 0.85rem; margin-right: 3px; }
-             .pm-table th.col-name, .pm-table th.col-desc { width: auto; }
-             .pm-table th.col-desc, .pm-table td.col-desc { display: none; }
-        }
-        @media (max-width: 768px) {
-            .tab-item i { margin-right: 4px; }
-            .angular-border { padding: 1rem; }
-            .feature-section h3 { font-size: 1.3rem; }
-             .feature-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
-             .pm-filter-bar { flex-direction: column; align-items: stretch; }
-             /* Tweak grid becomes 1 column on smaller screens */
-             #tweaks-grid { grid-template-columns: 1fr; }
-        }
-         @media (max-width: 640px) {
-             .tab-item span { display: none; }
-             .tab-item i { margin-right: 0; }
-             .tab-item { padding: 10px; }
-             body { padding: 1rem 0.5rem; }
-             .container { width: 100%; }
-             .btn { padding: 8px 16px; font-size: 0.85rem; }
-             .feature-section h3 { font-size: 1.2rem; }
-             .flex.items-center.justify-between { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-             .flex.items-center.justify-between label.switch { margin-left: auto; }
-             .pm-actions-bar { flex-wrap: wrap; }
-             .pm-actions-bar .refresh-btn { margin-left: 0; margin-top: 0.5rem; width: 100%; }
-         }
-
-        /* --- System Health Section Styles --- */
-        .health-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 1.2rem;
-            margin-top: 1.5rem;
-        }
-        .health-card {
-            background: rgba(30,30,30,0.85);
-            border: 1px solid rgba(255,120,20,0.12);
-            border-radius: 0.75rem;
-            padding: 1.2rem 1rem 0.8rem 1rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.13);
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            min-height: 85px;
-        }
-        .health-title {
-            font-size: 1.05rem;
-            color: #ff9800;
-            margin-bottom: 0.6rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5em;
-        }
-        .health-title i { color: #FF7810; }
-        .health-value {
-            font-size: 1.6rem;
-            color: #fff;
-            font-weight: 700;
-            margin-bottom: 0.2em;
-        }
-
-        /* Make a draggable area for the Electron window */
         .titlebar {
             -webkit-app-region: drag;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #181b20; /* EXACTLY match app background */
-            color: #fff;      /* White text for contrast */
-            height: 32px;
-            padding: 0 12px;
-            font-size: 16px;
-            font-weight: bold;
-            position: relative;
-            z-index: 20;
+            cursor: move;
             user-select: none;
-            border-bottom: none;
-            box-shadow: none;
-        }
-        .titlebar .window-title {
-            flex: 1;
-            text-align: left;
-            font-size: 16px;
-            padding-left: 4px;
-            color: #fff; /* White for visibility */
-        }
-        .titlebar .window-controls {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .titlebar .window-btn {
-            -webkit-app-region: no-drag;
-            background: transparent;
-            border: none;
-            color: #ff9800;   /* Orange X for visibility */
-            font-size: 18px;
-            cursor: pointer;
-            padding: 0 8px;
-            height: 32px;
-            transition: background 0.2s;
-        }
-        .titlebar .window-btn:hover {
-            background: #c0392b;
-            color: #fff;
-        }
-        .drag-region { display: none; } /* Hide old drag region */
-
-        /* --- Tweak Category Styling --- */
-        .tweaks-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 2.5rem 2.5rem;
-            align-items: stretch;
-            justify-items: stretch;
-            width: 100%;
-            margin-bottom: 2rem;
-            padding-right: 8px;
-        }
-        .tweaks-category {
-            background: rgba(30,34,40,0.96);
-            border: 1.5px solid #31343a;
-            border-radius: 12px;
-            box-shadow: 0 2px 16px 0 rgba(0,0,0,0.08);
-            padding: 1.2rem 1.4rem 1.1rem 1.4rem;
-            min-width: 0;
-            max-width: 100%;
-            transition: box-shadow 0.2s;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-        }
-        .tweaks-category:hover {
-            box-shadow: 0 4px 24px 0 rgba(255,152,0,0.10);
-            border-color: #ff9800;
-        }
-        .tweaks-category h3 {
-            color: #ff9800;
-            margin-top: 0;
-            margin-bottom: 1rem;
-            font-size: 1.13rem;
-            font-weight: 600;
-            letter-spacing: 0.01em;
-        }
-
-        #tweaks-footer {
-            background: #23262b !important;
-            box-shadow: 0 2px 18px 0 rgba(0,0,0,0.16);
-            padding: 2rem 0 2rem 0;
-            border-radius: 18px;
-            border: 1.5px solid #31343a;
-            width: 420px;
-            margin: 3rem auto 2.5rem auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1.1rem;
-        }
-        #apply-tweaks-btn {
-            background: linear-gradient(90deg,#ff9800 60%,#ffa733 100%) !important;
-            color: #23262b !important;
-            border: none;
-            border-radius: 28px;
-            font-weight: 700;
-            font-size: 1.15rem;
-            padding: 1rem 2.8rem;
-            box-shadow: 0 4px 16px 0 rgba(255,152,0,0.09);
-            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-            margin-bottom: 0.2rem;
-        }
-        #apply-tweaks-btn:hover {
-            background: linear-gradient(90deg,#ffa733 60%,#ff9800 100%) !important;
-            color: #181b20 !important;
-            box-shadow: 0 6px 18px 0 rgba(255,152,0,0.13);
-        }
-        #tweaks-feedback {
-            color: #ff9800;
-            font-size: 0.97rem;
-            font-weight: 500;
-            min-height: 1.2em;
-        }
-        @media (max-width: 600px) {
-            #tweaks-footer {
-                width: 98%;
-                padding: 1.2rem 0.3rem 1.2rem 0.3rem;
-            }
-            #apply-tweaks-btn {
-                font-size: 1rem;
-                padding: 0.7rem 1.2rem;
-            }
-        }
-
-        /* --- Vertical Tab Layout --- */
-        .main-flex {
-            display: flex;
-            flex-direction: row;
-            height: 100vh;
-        }
-        .tab-list {
-            display: flex;
-            flex-direction: column;
-            width: 200px;
-            min-width: 160px;
-            max-width: 220px;
-            height: 100vh;
-            background: #111113;
-            border-right: 1.5px solid #19191c;
-            border-bottom: none;
-            position: relative;
-            z-index: 2;
-            padding-top: 18px;
-            padding-bottom: 18px;
-            padding-left: 0;
-            padding-right: 0;
-            flex-wrap: unset;
-            overflow-x: unset;
-        }
-        .tab-item {
-            width: 100%;
-            padding: 16px 18px;
-            cursor: pointer;
-            background-color: #181a20;
-            color: #b0b0b0;
-            font-weight: 500;
-            border: none;
-            border-radius: 0 1.5rem 1.5rem 0;
-            border-left: 4px solid transparent;
-            margin: 2px 0;
-            text-align: left;
-            transition: background 0.2s, color 0.2s, border-left 0.2s;
-            display: flex;
-            align-items: center;
-        }
-        .tab-item.active {
-            background: #23232a;
-            color: #ff9800;
-            border-left: 4px solid #ff9800;
-            font-weight: 600;
-        }
-        .tab-item:hover {
-            background: #23232a;
-            color: #f1f1f1;
-        }
-        .tab-item i {
-            margin-right: 10px;
-            min-width: 22px;
-            text-align: center;
-        }
-        .angular-border {
-            flex: 1 1 0%;
-            min-width: 0;
-            height: 100vh;
-            overflow-y: auto;
-            border-radius: 0 0.75rem 0.75rem 0;
-            margin-top: 0;
-        }
-
-        /* Hide default scrollbars and style them for a modern look */
-        ::-webkit-scrollbar {
-            width: 8px;
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #23232a;
-            border-radius: 6px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #33333a;
-        }
-        /* For Firefox */
-        html {
-            scrollbar-width: thin;
-            scrollbar-color: #23232a #181a20;
-        }
-
-        /* Add space at the bottom of the tweaks tab for scrolling comfort */
-        #tab-tweaks {
-            padding-bottom: 48px;
-            min-height: 100vh;
-            overflow-y: auto;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
     </style>
 </head>
 <body>
-    <div class="titlebar">
-        <span class="window-title">WinTool - Windows Utility</span>
-        <div class="window-controls">
-            <button class="window-btn" id="closeBtn" title="Close">&#10005;</button>
+    <!-- Splash Screen (animated loader only) -->
+    <div id="splash-screen" class="splash-overlay">
+        <div class="loader">
+            <div class="inner one"></div>
+            <div class="inner two"></div>
+            <div class="inner three"></div>
         </div>
     </div>
+    <script>
+        // Loader splash: animated 3D spinner
+        function hideSplash() {
+            const splash = document.getElementById('splash-screen');
+            splash.style.opacity = 0;
+            setTimeout(() => splash.style.display = 'none', 400);
+        }
+        // Ensure splash loader uses accent color on load
+        function applySplashAccent() {
+            let color = localStorage.getItem('accentColor') || '#ff9800';
+            document.documentElement.style.setProperty('--primary', color);
+            // Derive --primary-dark and --primary-faded for splash if needed
+            try {
+                // Simple shade: darken by 15%
+                function darken(hex, amt) {
+                    let n = parseInt(hex.replace('#', ''), 16);
+                    let r = Math.max(((n >> 16) & 0xff) - amt, 0);
+                    let g = Math.max(((n >> 8) & 0xff) - amt, 0);
+                    let b = Math.max((n & 0xff) - amt, 0);
+                    return `#${(1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1)}`;
+                }
+                let dark = darken(color, 30);
+                let faded = color.replace('#', '');
+                let rf = parseInt(faded.substring(0,2),16), gf = parseInt(faded.substring(2,4),16), bf = parseInt(faded.substring(4,6),16);
+                document.documentElement.style.setProperty('--primary-dark', dark);
+                document.documentElement.style.setProperty('--primary-faded', `rgba(${rf},${gf},${bf},0.22)`);
+            } catch(e) {}
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            applySplashAccent();
+            setTimeout(hideSplash, 1200);
+
+            // Tab sidebar collapse/expand logic
+            const sidebarFoldToggle = document.getElementById('sidebar-fold-toggle');
+            const tabList = document.getElementById('winToolTabs');
+            let collapsed = false;
+
+            function setSidebarCollapsed(state, updateCheckbox = true) {
+                collapsed = state;
+                tabList.classList.toggle('collapsed', collapsed);
+                if (updateCheckbox && sidebarFoldToggle) sidebarFoldToggle.checked = collapsed;
+                // Persist state
+                localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0');
+            }
+
+            // Settings tab checkbox logic
+            if (sidebarFoldToggle) {
+                sidebarFoldToggle.addEventListener('change', function(e) {
+                    setSidebarCollapsed(e.target.checked, false);
+                });
+            }
+
+            // Restore sidebar state from localStorage
+            const savedCollapsed = localStorage.getItem('sidebarCollapsed');
+            setSidebarCollapsed(savedCollapsed === '1', true);
+        });
+    </script>
+    <div class="titlebar">
+        <div class="window-title"></div>
+        <div class="window-controls">
+            <button type="button" class="window-btn" id="closeBtn" title="Close">&#10005;</button>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const closeBtn = document.getElementById('closeBtn');
+            if (closeBtn && window.electronAPI) {
+                closeBtn.addEventListener('click', function() {
+                    window.electronAPI.closeWindow && window.electronAPI.closeWindow();
+                });
+            }
+        });
+    </script>
     <div class="main-flex">
-        <ul class="tab-list" id="winToolTabs">
-            <li class="tab-item active" data-tab="dashboard"> <i class="fas fa-tachometer-alt"></i><span>Dashboard</span></li>
-            <li class="tab-item" data-tab="tweaks"><i class="fas fa-bolt"></i><span>Tweaks</span></li>
-            <li class="tab-item" data-tab="packages"><i class="fas fa-box-open"></i><span>Packages</span></li>
-            <li class="tab-item" data-tab="tools"><i class="fas fa-toolbox"></i><span>System Tools</span></li>
-            <li class="tab-item" data-tab="setup"><i class="fas fa-cog"></i><span>Unattended Setup</span></li>
-            <li class="tab-item" data-tab="settings"><i class="fas fa-sliders-h"></i><span>Settings</span></li>
-        </ul>
+        <div class="sidebar" style="display:flex;flex-direction:column;align-items:stretch;height:100vh;background:#111113;border-right:1.5px solid #19191c;min-width:160px;max-width:220px;width:200px;">
+            <div class="sidebar-logo" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.2em 0 0.3em 0;">
+                <img src="WT.png" alt="WinTool Logo" style="width:108px;height:108px;border-radius:24px;box-shadow:0 2px 18px #23232a80;" />
+                <div class="sidebar-brand-label" style="margin-top:0.1em;font-size:1.1rem;font-weight:700;color:var(--primary);letter-spacing:0.03em;text-shadow:0 1px 4px #23232a60;">WinTool</div>
+            </div>
+            <ul class="tab-list" id="winToolTabs">
+                <li class="tab-item active" data-tab="welcome"><i class="fas fa-home"></i><span>Welcome</span></li>
+                <li class="tab-item" data-tab="dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></li>
+                <li class="tab-item" data-tab="tweaks"><i class="fas fa-bolt"></i><span>Tweaks</span></li>
+                <li class="tab-item" data-tab="packages"><i class="fas fa-box-open"></i><span>Packages</span></li>
+                <li class="tab-item" data-tab="tools"><i class="fas fa-toolbox"></i><span>System Tools</span></li>
+                <li class="tab-item" data-tab="gaming"><i class="fas fa-gamepad"></i><span>Gaming & Performance</span></li>
+                <li class="tab-item" data-tab="setup"><i class="fas fa-cog"></i><span>Unattended Setup</span></li>
+                <li class="tab-item" data-tab="settings"><i class="fas fa-sliders-h"></i><span>Settings</span></li>
+                <li class="tab-item" data-tab="about"><i class="fas fa-info-circle"></i><span>About</span></li>
+            </ul>
+        </div>
         <div class="angular-border">
-            <div id="tab-dashboard" class="tab-content active" data-aos="fade-in">
+            <div id="tab-welcome" class="tab-content active" data-aos="fade-in">
+                <div class="welcome-card bg-neutral-900 rounded-lg border border-neutral-700 shadow-lg p-8 max-w-xl mx-auto mt-10 text-center">
+                    <h1 class="text-3xl font-bold mb-2 text-orange-400">Welcome to WinTool!</h1>
+                    <p class="mb-4 text-lg text-gray-300">Your all-in-one Windows management and tweaks dashboard.</p>
+                    <div class="announcements bg-neutral-800 border border-orange-400 rounded-md p-4 mb-4">
+                        <div class="font-semibold text-orange-300 mb-2" style="font-size:1.1rem;">Latest Announcements</div>
+                        <ul class="list-disc list-inside text-gray-200 text-left" style="margin-left:1.2em;">
+                            <li>Welcome to WinTool v0.0.3a!</li>
+                            <li><b>NEW:</b>Added support for custom accent colors.</li>
+                            <li><b>NEW:</b> FPS Counter toggle in Settings tab.</li>
+                            <li><b>NEW:</b>Gaming & Performance tab.</li>
+                            <li><b>NEW:</b>You can move tabs and it will save the order.</li>
+                            <li><b>NEW:</b>Always on Top toggle in Settings tab.</li>
+                            <li><b>NEW:</b>Fold Sidebar Tabs toggle in Settings tab.</li>
+                            <li>Reset tab order to default is in Settings tab.</li>
+                            <li>Improved error handling throughout the app.</li>
+                            <li>Splash screen can be a custom color.</li>
+                        </ul>
+                    </div>
+                    <p class="text-gray-400">Select a tab on the right to get started.</p>
+                    <div class="mt-6 flex justify-center">
+                        <a href="https://discord.gg/nCmEQ8zaa7" target="_blank" rel="noopener" class="btn btn-secondary flex items-center gap-2 px-5 py-2 text-lg" style="background:#ff9800;color:#fff;border:none;border-radius:0.5rem;box-shadow:0 2px 8px #23232a80;transition:background 0.2s;">
+                            <i class="fab fa-discord" style="font-size:1.4em;"></i> Join our Discord
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div id="tab-dashboard" class="tab-content" data-aos="fade-in">
                 <script>
-                    async function updateSystemInfo() {
-                        const data = await window.electronAPI.getSystemInfo();
-                        document.getElementById('cpu-usage').innerText = data.cpu !== undefined ? `${data.cpu.toFixed(1)}%` : '--';
-                        document.getElementById('ram-usage').innerText = (data.ram && data.ram.used !== undefined && data.ram.total !== undefined) ? `${(data.ram.used/1073741824).toFixed(1)} GB / ${(data.ram.total/1073741824).toFixed(1)} GB` : '--';
-                        document.getElementById('disk-usage').innerText = (data.disk && data.disk.percent !== undefined) ? `${data.disk.percent}%` : '--';
-                        const netMbps = (data.net && data.net.bytes_recv !== undefined && data.net.bytes_sent !== undefined) ? (((data.net.bytes_recv + data.net.bytes_sent) / 1024 / 1024).toFixed(2)) : '--';
-                        document.getElementById('net-usage').innerText = `${netMbps !== '--' ? netMbps + ' MB' : '--'}`;
+                    // Initialize elements
+                    let sysOsEl = null;
+                    let sysHostEl = null;
+                    let sysUserEl = null;
+                    let cpuUsageEl = null;
+                    let ramUsageEl = null;
+                    let diskUsageEl = null;
+                    let netUsageEl = null;
+
+                    // Format uptime in days, hours, minutes, seconds
+                    function formatUptime(seconds) {
+                        const d = Math.floor(seconds / 86400);
+                        const h = Math.floor((seconds % 86400) / 3600);
+                        const m = Math.floor((seconds % 3600) / 60);
+                        const s = Math.floor(seconds % 60);
+                        let str = '';
+                        if (d) str += `${d}d `;
+                        if (h) str += `${h}h `;
+                        if (m) str += `${m}m `;
+                        str += `${s}s`;
+                        return str;
                     }
-                    setInterval(updateSystemInfo, 2000);
-                    document.addEventListener('DOMContentLoaded', updateSystemInfo);
+
+                    async function updateSystemInfo() {
+                        try {
+                            // Only update if dashboard tab is visible
+                            const dashboardTab = document.getElementById('tab-dashboard');
+                            if (!dashboardTab || !dashboardTab.classList.contains('active')) {
+                                return;
+                            }
+
+                            const data = await window.electronAPI.getSystemInfo();
+                            if (!data) return;
+
+                            // Initialize elements if they haven't been cached yet
+                            if (!sysOsEl) sysOsEl = document.getElementById('sys-os');
+                            if (!sysHostEl) sysHostEl = document.getElementById('sys-host');
+                            if (!sysUserEl) sysUserEl = document.getElementById('sys-user');
+                            if (!cpuUsageEl) cpuUsageEl = document.getElementById('cpu-usage');
+                            if (!ramUsageEl) ramUsageEl = document.getElementById('ram-usage');
+                            if (!diskUsageEl) diskUsageEl = document.getElementById('disk-usage');
+                            if (!netUsageEl) netUsageEl = document.getElementById('net-usage');
+
+                            if (sysOsEl) sysOsEl.innerText = data.os || '--';
+                            if (sysHostEl) sysHostEl.innerText = data.hostname || '--';
+                            if (sysUserEl) sysUserEl.innerText = data.user || '--';
+                            if (cpuUsageEl) cpuUsageEl.innerText = data.cpu !== undefined ? `${data.cpu.toFixed(1)}%` : '--';
+                            if (ramUsageEl) ramUsageEl.innerText = (data.ram && data.ram.used !== undefined && data.ram.total !== undefined) ? `${(data.ram.used/1073741824).toFixed(1)} GB / ${(data.ram.total/1073741824).toFixed(1)} GB` : '--';
+                            if (diskUsageEl) diskUsageEl.innerText = (data.disk && data.disk.percent !== undefined) ? `${data.disk.percent}%` : '--';
+                            if (netUsageEl) {
+                                const netMbps = (data.net && data.net.bytes_recv !== undefined && data.net.bytes_sent !== undefined) ? (((data.net.bytes_recv + data.net.bytes_sent) / 1024 / 1024).toFixed(2)) : '--';
+                                netUsageEl.innerText = `${netMbps !== '--' ? netMbps + ' MB' : '--'}`;
+                            }
+                            const dashboardUptimeEl = document.getElementById('dashboard-uptime');
+                            if (dashboardUptimeEl && data.uptime_seconds !== undefined) {
+                                dashboardUptimeEl.textContent = formatUptime(data.uptime_seconds);
+                            }
+                        } catch (error) {
+                            console.error("Error updating system info:", error);
+                        }
+                    }
+
+                    // Start updates only after DOM is loaded and elements are found
+                    document.addEventListener('DOMContentLoaded', () => {
+                        updateSystemInfo();
+                        setInterval(updateSystemInfo, 2000);
+                    });
 
                     async function quickAction(action) {
-                        await window.electronAPI.quickAction(action);
+                        switch (action) {
+                            case 'disk_cleanup':
+                                await window.electronAPI.launchDiskCleanup();
+                                break;
+                            case 'task_manager':
+                                await window.electronAPI.launchTaskManager();
+                                break;
+                            case 'security_center':
+                                await window.electronAPI.launchSystemTool('security_center');
+                                break;
+                            case 'power_options':
+                                await window.electronAPI.launchSystemTool('power_options');
+                                break;
+                            default:
+                                showErrorNotification('Unknown quick action: ' + action);
+                        }
                     }
                 </script>
 
                 <div class="feature-section">
                     <h3><i class="fas fa-chart-line"></i>System Overview</h3>
+                    <p>System Information for your Windows system.</p>
+                    <div class="feature-grid mb-4">
+                        <div class="info-card"><div class="label">OS</div><div class="value" id="sys-os">...</div></div>
+                        <div class="info-card"><div class="label">Hostname</div><div class="value" id="sys-host">...</div></div>
+                        <div class="info-card"><div class="label">User</div><div class="value" id="sys-user">...</div></div>
+                    </div>
                     <p>Real-time system monitoring (CPU, RAM, Disk) and quick actions hub.</p>
                     <div class="feature-grid">
                         <div class="info-card"><div class="label">CPU Usage</div><div class="value" id="cpu-usage">...</div></div>
                         <div class="info-card"><div class="label">RAM Usage</div><div class="value" id="ram-usage">...</div></div>
                         <div class="info-card"><div class="label">Disk C: Activity</div><div class="value" id="disk-usage">...</div></div>
-                        <div class="info-card"><div class="label">Network Usage</div><div class="value" id="net-usage">...</div></div>
                         <div class="info-card" id="uptime-dashboard-card">
                             <div class="label">Uptime</div>
                             <div class="value" id="dashboard-uptime">--</div>
@@ -656,19 +263,21 @@
                 <div class="feature-section">
                     <h3><i class="fas fa-bolt"></i>Quick Actions</h3>
                     <div class="flex flex-wrap gap-3 justify-center">
-                        <button class="btn btn-secondary" onclick="quickAction('disk_cleanup')"><i class="fas fa-broom"></i>Run Disk Cleanup</button>
-                        <button class="btn btn-secondary" onclick="quickAction('task_manager')"><i class="fas fa-tasks"></i>Open Task Manager</button>
-                        <button class="btn btn-secondary" onclick="quickAction('security_center')"><i class="fas fa-shield-alt"></i>Security Center</button>
-                        <button class="btn btn-secondary" onclick="quickAction('power_options')"><i class="fas fa-power-off"></i>Power Options</button>
+                        <button type="button" class="btn btn-secondary" onclick="quickAction('disk_cleanup')"><i class="fas fa-broom"></i>Run Disk Cleanup</button>
+                        <button type="button" class="btn btn-secondary" onclick="quickAction('task_manager')"><i class="fas fa-tasks"></i>Open Task Manager</button>
+                        <button type="button" class="btn btn-secondary" onclick="quickAction('security_center')"><i class="fas fa-shield-alt"></i>Security Center</button>
+                        <button type="button" class="btn btn-secondary" onclick="quickAction('power_options')"><i class="fas fa-power-off"></i>Power Options</button>
                     </div>
                 </div>
                 <script>
                     async function fetchDashboardUptime() {
                         try {
                             const data = await window.electronAPI.getSystemInfo();
-                            document.getElementById('dashboard-uptime').textContent = formatUptime(data.uptime_seconds);
-                        } catch (e) {
-                            document.getElementById('dashboard-uptime').textContent = '--';
+                            const dashboardUptimeEl = document.getElementById('dashboard-uptime');
+                            if (dashboardUptimeEl && data && data.uptime_seconds !== undefined) dashboardUptimeEl.textContent = formatUptime(data.uptime_seconds);
+                        } catch (error) {
+                            const dashboardUptimeEl = document.getElementById('dashboard-uptime');
+                            if (dashboardUptimeEl) dashboardUptimeEl.textContent = '--';
                         }
                     }
                     function formatUptime(seconds) {
@@ -688,7 +297,7 @@
                 </script>
             </div>
 
-            <div id="tab-tweaks" class="tab-content" data-aos="fade-in" style="min-height:100vh;">
+            <div id="tab-tweaks" class="tab-content" data-aos="fade-in"> 
                 <div id="tweaks-loading" style="margin:2rem;text-align:center;">Loading tweaks...</div>
                 <div id="tweaks-list" class="tweaks-grid" style="display:none;"></div>
                 <script>
@@ -798,6 +407,7 @@
                             document.getElementById('tweaks-list').style.display = '';
                         } catch (e) {
                             document.getElementById('tweaks-loading').innerText = 'Failed to load tweaks.';
+                            showErrorNotification('Failed to load tweaks.');
                         }
                     }
                     function renderTweaksList(tweaks) {
@@ -810,26 +420,30 @@
                             { name: 'Taskbar & Start', keys: ['small_taskbar_buttons','show_seconds_on_taskbar_clock'] },
                             { name: 'Performance & UI', keys: ['visualfx','disable_animations','disable_startup_sound','disable_lock_screen'] }
                         ];
+                        tweaks.forEach(tweak => {
+                            let cat = categories.find(c => c.keys.includes(tweak.key)) || categories[categories.length-1];
+                            if (!cat.tweaks) cat.tweaks = [];
+                            cat.tweaks.push(tweak);
+                        });
                         categories.forEach(cat => {
-                            const catTweaks = tweaks.filter(tw => cat.keys.includes(tw.key));
-                            if (catTweaks.length) {
+                            if (cat.tweaks && cat.tweaks.length) {
                                 const catDiv = document.createElement('div');
                                 catDiv.className = 'tweaks-category';
                                 catDiv.innerHTML = `<h3>${cat.name}</h3>`;
-                                catTweaks.forEach(tweak => {
+                                cat.tweaks.forEach(tweak => {
                                     const row = document.createElement('div');
                                     row.className = 'tweak-row';
                                     row.style.display = 'flex';
                                     row.style.alignItems = 'center';
                                     row.style.marginBottom = '0.5rem';
                                     row.innerHTML = `
-                                        <label style=\"flex:1;cursor:pointer;\" for=\"tweak-${tweak.key}\">
-                                            <span style=\"font-weight:600;\">${tweak.label}</span><br>
-                                            <span style=\"font-size:0.94em;color:#b0b0b0;\">${tweak.description}</span>
+                                        <label style="flex:1;cursor:pointer;" for="tweak-${tweak.key}">
+                                            <span style="font-weight:600;">${tweak.label}</span><br>
+                                            <span style="font-size:0.94em;color:#b0b0b0;">${tweak.description}</span>
                                         </label>
-                                        <label class=\"switch\">
-                                            <input type=\"checkbox\" id=\"tweak-${tweak.key}\" ${tweak.enabled ? 'checked' : ''} tabindex=\"0\">
-                                            <span class=\"slider\"></span>
+                                        <label class="switch">
+                                            <input type="checkbox" id="tweak-${tweak.key}" ${tweak.enabled ? 'checked' : ''} tabindex="0">
+                                            <span class="slider"></span>
                                         </label>
                                     `;
                                     // Add change event for instant apply
@@ -856,16 +470,20 @@
                                             }
                                             const tweaks = {};
                                             tweaks[key] = value;
-                                            console.log('Applying tweak', key, '=>', value);
+                                            console.log('Attempting to apply tweak:', tweaks); // Log the object being sent
                                             try {
                                                 const result = await window.electronAPI.applyTweaks(tweaks);
+                                                console.log('applyTweaks result:', result); // Log the result from backend
                                                 if (result && result.errors && result.errors.length > 0) {
-                                                    alert('Failed to apply tweak: ' + result.errors.join('\n'));
-                                                    console.error('applyTweaks errors:', result.errors);
+                                                    console.error('Backend reported errors applying tweak:', result.errors);
+                                                    showErrorNotification('Failed to apply tweak: ' + result.errors.join('\n'));
+                                                } else {
+                                                    showNotification(`${tweak.label} has been turned ${checked ? 'on' : 'off'}.`, { type: 'success' });
                                                 }
-                                                fetchTweaks();
+                                                // Add a small delay before refetching to allow registry changes to potentially settle
+                                                setTimeout(fetchTweaks, 250); // Increased delay slightly
                                             } catch (e) {
-                                                console.error('applyTweaks failed for ' + key, e);
+                                                showErrorNotification('Failed to apply tweak: ' + e.message);
                                             }
                                         });
                                     }, 0);
@@ -877,6 +495,60 @@
                     }
                     document.addEventListener('DOMContentLoaded', () => {
                         if (document.getElementById('tab-tweaks')) fetchTweaks();
+                    });
+                </script>
+            </div>
+
+            <div id="tab-gaming" class="tab-content" data-aos="fade-in" style="display:none; max-height: 80vh; overflow-y: auto; padding-bottom: 2rem;">
+                <div class="feature-section">
+                    <h3><i class="fas fa-gamepad"></i> Gaming & Performance</h3>
+                    <p>Boost your system for gaming and demanding workloads. Apply tweaks, monitor performance, and access tools designed for gamers and power users.</p>
+                    <div class="feature-grid mb-4">
+                        <!-- Game Mode Tweaks -->
+                        <div class="info-card flex flex-col items-center justify-between" style="border: 1.5px solid var(--primary);">
+                            <div class="label flex items-center gap-2 text-lg"><i class="fas fa-rocket text-primary"></i>Game Mode</div>
+                            <div class="text-gray-300 text-sm my-2 text-center">Enable or disable Windows Game Mode for optimized gaming performance.</div>
+                            <label class="inline-flex items-center cursor-pointer mt-2">
+                                <input type="checkbox" id="toggle-game-mode" class="form-checkbox h-5 w-5 text-primary">
+                                <span class="ml-2 text-gray-200">Enable Game Mode</span>
+                            </label>
+                        </div>
+                        <!-- Performance Profiles -->
+                        <div class="info-card flex flex-col items-center justify-between" style="border: 1.5px solid var(--primary);">
+                            <div class="label flex items-center gap-2 text-lg"><i class="fas fa-tachometer-alt text-primary"></i>Performance Profile</div>
+                            <div class="text-gray-300 text-sm my-2 text-center">Switch between Windows power plans for different performance needs.</div>
+                            <div class="flex flex-col gap-2 mt-2 w-full">
+                                <button class="btn btn-secondary btn-sm w-full" id="btn-power-balanced" style="border:none;">Balanced</button>
+                                <button class="btn btn-secondary btn-sm w-full" id="btn-power-high" style="border:none;">High Performance</button>
+                            </div>
+                        </div>
+                        <!-- Memory & Latency Tweaks -->
+                        <div class="info-card flex flex-col items-center justify-between" style="border: 1.5px solid var(--primary);">
+                            <div class="label flex items-center gap-2 text-lg"><i class="fas fa-memory text-primary"></i>Memory & Latency</div>
+                            <div class="text-gray-300 text-sm my-2 text-center">Free up RAM and reduce system latency for smoother gaming.</div>
+                            <button class="btn btn-secondary mt-2 w-full" id="btn-optimize-ram">Optimize RAM</button>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    // Make the border color of the Performance Profile and Memory & Latency cards changeable
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const profileColorInput = document.getElementById('profile-border-color');
+                        if (profileColorInput) {
+                            profileColorInput.addEventListener('input', (e) => {
+                                document.documentElement.style.setProperty('--profile-border-color', e.target.value);
+                            });
+                            // Set initial value
+                            document.documentElement.style.setProperty('--profile-border-color', profileColorInput.value);
+                        }
+                        const memoryColorInput = document.getElementById('memory-border-color');
+                        if (memoryColorInput) {
+                            memoryColorInput.addEventListener('input', (e) => {
+                                document.documentElement.style.setProperty('--memory-border-color', e.target.value);
+                            });
+                            // Set initial value
+                            document.documentElement.style.setProperty('--memory-border-color', memoryColorInput.value);
+                        }
                     });
                 </script>
             </div>
@@ -909,11 +581,13 @@
                                 if (!data || data.error) {
                                     packageListBody.innerHTML = `<tr><td colspan="2">${data && data.error ? data.error : 'Error loading packages.'}</td></tr>`;
                                     packages = [];
+                                    if (data && data.error) showErrorNotification(data.error);
                                     return;
                                 }
                                 if (!Array.isArray(data)) {
                                     packageListBody.innerHTML = '<tr><td colspan="2">Error loading packages.</td></tr>';
                                     packages = [];
+                                    showErrorNotification('Error loading packages.');
                                     return;
                                 }
                                 packages = data;
@@ -921,7 +595,7 @@
                             } catch (e) {
                                 packageListBody.innerHTML = '<tr><td colspan="2">Error loading packages.</td></tr>';
                                 packages = [];
-                                console.log('Error in fetchPackages:', e);
+                                showErrorNotification('Error loading packages.');
                             }
                         }
 
@@ -1028,9 +702,23 @@
                             let done = 0;
                             for (const row of selected) {
                                 const id = row.getAttribute('data-package-id');
+                                let pkgName = row.querySelector('td') ? row.querySelector('td').textContent : id;
+                                // Show notification before starting the action
+                                if (action === 'install') {
+                                    showNotification(`Installing: ${pkgName}...`, { type: 'info' });
+                                } else if (action === 'uninstall') {
+                                    showNotification(`Uninstalling: ${pkgName}...`, { type: 'info' });
+                                }
                                 try {
                                     await window.electronAPI.packageAction(action, id);
-                                } catch (e) {}
+                                    if (action === 'install') {
+                                        showNotification(`Installed: ${pkgName}`, { type: 'success' });
+                                    } else if (action === 'uninstall') {
+                                        showNotification(`Uninstalled: ${pkgName}`, { type: 'info' });
+                                    }
+                                } catch (e) {
+                                    showErrorNotification('Failed to ' + action + ' package: ' + e.message);
+                                }
                                 done++;
                                 setPackageProgress(done, selected.length);
                             }
@@ -1114,7 +802,6 @@
                     const SYSTEM_TOOLS = [
                         { id: 'disk_cleanup', label: 'Disk Cleanup', icon: 'fas fa-hdd', desc: 'Free up disk space' },
                         { id: 'task_manager', label: 'Task Manager', icon: 'fas fa-tasks', desc: 'Manage running processes' },
-                        { id: 'services', label: 'Services', icon: 'fas fa-cogs', desc: 'Manage system services' },
                         { id: 'msconfig', label: 'System Configuration', icon: 'fas fa-cog', desc: 'msconfig utility' },
                         { id: 'system_info', label: 'System Information', icon: 'fas fa-info-circle', desc: 'View hardware/software details' },
                         { id: 'cmd', label: 'Command Prompt', icon: 'fas fa-terminal', desc: 'Open CMD (Admin)' }
@@ -1125,55 +812,17 @@
                         SYSTEM_TOOLS.forEach(tool => {
                             const btn = document.createElement('button');
                             btn.className = 'info-card clickable tool-card text-left';
-                            btn.innerHTML = `<div class="value text-lg"><i class="${tool.icon} mr-2 text-orange-400"></i>${tool.label}</div><div class="label">${tool.desc}</div>`;
+                            btn.innerHTML = `<div class="value text-lg"><i class="${tool.icon} mr-2 system-tool-icon"></i>${tool.label}</div><div class="label">${tool.desc}</div>`;
                             btn.onclick = () => launchSystemTool(tool.id);
                             grid.appendChild(btn);
                         });
                     }
                     async function launchSystemTool(id) {
-                        let endpoint = 'http://127.0.0.1:5000/api/quick_action';
-                        let body = { action: id };
-                        console.log('Launching system tool:', id);
                         try {
-                            let resp;
-                            if (id === 'services') {
-                                resp = await fetch(endpoint, {
-                                    method: 'POST',
-                                    headers: {'Content-Type': 'application/json'},
-                                    body: JSON.stringify({ action: 'services' })
-                                });
-                            } else if (id === 'msconfig') {
-                                resp = await fetch(endpoint, {
-                                    method: 'POST',
-                                    headers: {'Content-Type': 'application/json'},
-                                    body: JSON.stringify({ action: 'msconfig' })
-                                });
-                            } else if (id === 'system_info') {
-                                resp = await fetch(endpoint, {
-                                    method: 'POST',
-                                    headers: {'Content-Type': 'application/json'},
-                                    body: JSON.stringify({ action: 'system_info' })
-                                });
-                            } else if (id === 'cmd') {
-                                resp = await fetch(endpoint, {
-                                    method: 'POST',
-                                    headers: {'Content-Type': 'application/json'},
-                                    body: JSON.stringify({ action: 'cmd' })
-                                });
-                            } else {
-                                resp = await fetch(endpoint, {
-                                    method: 'POST',
-                                    headers: {'Content-Type': 'application/json'},
-                                    body: JSON.stringify(body)
-                                });
-                            }
-                            const data = await resp.json();
-                            console.log('System tool response:', data);
-                            if (!resp.ok) {
-                                console.error('Failed to launch tool:', data.error || resp.statusText);
-                            }
+                            const result = await window.electronAPI.launchSystemTool(id);
+                            // Optionally, show a success message
                         } catch (err) {
-                            console.error('Error launching system tool:', err);
+                            showErrorNotification('Error launching system tool: ' + err);
                         }
                     }
                     document.addEventListener('DOMContentLoaded', renderSystemTools);
@@ -1379,89 +1028,245 @@
                         });
                     </script>
                 </div>
+            </div>
 
-                <div id="tab-settings" class="tab-content" data-aos="fade-in">
-                    <div class="feature-section">
-                        <h3><i class="fas fa-sliders-h"></i>Settings</h3>
-                        <p>Configure WinTool options, manage updates, and customize behavior.</p>
+            <div id="tab-settings" class="tab-content" data-aos="fade-in">
+                <div class="feature-section">
+                    <h3><i class="fas fa-sliders-h"></i>Settings</h3>
+                    <p>Configure WinTool options, manage updates, and customize behavior.</p>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
+                        <label for="theme-select" class="text-gray-300">Theme</label>
+                        <select id="theme-select" class="select-field">
+                            <option value="dark">Dark (Default)</option>
+                            <option value="light" disabled>Light (Coming Soon)</option>
+                        </select>
                     </div>
-                    <!-- Window Size Display -->
-                    <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700 mt-2">
-                        <label class="text-gray-300">Current Window Size</label>
-                        <span id="window-size-label" class="font-mono text-orange-400">Loading...</span>
+                    <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
+                        <label class="text-gray-300">Update Channel</label>
+                        <span class="text-green-400 font-semibold">Stable</span>
                     </div>
-                    <script>
-                        // Settings persistence (localStorage)
-                        document.addEventListener('DOMContentLoaded', () => {
-                            // Theme
-                            const themeSelect = document.getElementById('theme-select');
-                            themeSelect.value = localStorage.getItem('theme') || 'dark';
-                            themeSelect.addEventListener('change', () => {
-                                localStorage.setItem('theme', themeSelect.value);
-                                // Optionally trigger theme switch here
-                            });
-
-                            // Reset Settings
-                            document.getElementById('reset-settings').addEventListener('click', () => {
-                                if (confirm('Are you sure you want to reset all settings?')) {
-                                    localStorage.removeItem('theme');
-                                    // Optionally reset more settings
-                                    location.reload();
-                                }
-                            });
-
-                            // Check for Updates (placeholder)
-                            document.getElementById('check-updates').addEventListener('click', () => {
-                                alert('Checking for updates... (This is a placeholder)');
-                            });
-
-                            // Window Size Display Logic
-                            function updateWindowSizeLabel() {
-                                if (window && window.innerWidth && window.innerHeight) {
-                                    const label = document.getElementById('window-size-label');
-                                    if (label) {
-                                        label.textContent = `${window.innerWidth} x ${window.innerHeight}`;
-                                    }
-                                }
-                            }
-                            updateWindowSizeLabel();
-                            window.addEventListener('resize', updateWindowSizeLabel);
-                            // If settings tab is clicked, update label (in case it was hidden during resize)
-                            const tabsContainer = document.getElementById('winToolTabs');
-                            if (tabsContainer) {
-                                tabsContainer.addEventListener('click', (event) => {
-                                    const clickedTab = event.target.closest('.tab-item');
-                                    if (clickedTab && clickedTab.dataset.tab === 'settings') {
-                                        setTimeout(updateWindowSizeLabel, 100); // Delay to ensure tab is visible
-                                    }
-                                });
-                            }
-                        });
-                    </script>
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
-                            <label for="theme-select" class="text-gray-300">Theme</label>
-                            <select id="theme-select" class="select-field">
-                                <option value="dark">Dark (Default)</option>
-                                <option value="light" disabled>Light (Coming Soon)</option>
-                            </select>
-                        </div>
-                        <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
-                            <label class="text-gray-300">Update Channel</label>
-                            <span class="text-green-400 font-semibold">Stable</span>
-                        </div>
-                        <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
-                            <label for="reset-settings" class="text-gray-300">Reset All Settings</label>
-                            <button id="reset-settings" class="btn btn-secondary">Reset</button>
-                        </div>
-                        <div class="text-center mt-6">
-                            <button class="btn btn-secondary" id="check-updates"><i class="fas fa-sync-alt"></i>Check for Updates</button>
-                        </div>
+                    <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
+                        <label class="text-gray-300">Current Version</label>
+                        <span class="text-green-400 font-semibold">v0.0.3a</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
+                        <label class="text-gray-300" for="sidebar-fold-toggle">Fold Sidebar Tabs</label>
+                        <input type="checkbox" id="sidebar-fold-toggle" class="form-checkbox h-5 w-5 text-primary">
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
+                        <label class="text-gray-300" for="fps-counter-toggle">FPS Counter</label>
+                        <input type="checkbox" id="fps-counter-toggle" class="form-checkbox h-5 w-5 text-primary">
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
+                        <label class="text-gray-300" for="alwaysOnTopToggle">Always on Top</label>
+                        <input type="checkbox" id="alwaysOnTopToggle" class="form-checkbox h-5 w-5 text-primary">
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
+                        <label for="accent-color-picker" class="text-gray-300">Accent Color</label>
+                        <input type="color" id="accent-color-picker" value="#ff9800" style="width: 2.5rem; height: 2.5rem; border: none; background: none; cursor: pointer;">
+                        <button class="btn btn-secondary ml-3" id="reset-accent-color-btn" type="button"><i class="fas fa-undo"></i>Reset to Default</button>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-neutral-800 rounded border border-neutral-700">
+                        <label class="text-gray-300">Tab Order</label>
+                        <button class="action-btn accent-btn" id="reset-tab-order-btn" style="margin-top:0.5rem;">
+                            <i class="fas fa-sync-alt"></i> Reset Tab Order to Default
+                        </button>
+                    </div>
+                    <div class="text-center mt-6">
+                        <button class="btn btn-secondary" id="check-updates"><i class="fas fa-sync-alt" ></i>Check for Updates</button>
+                        <button class="action-btn ml-3" id="test-notification"><i class="fas fa-bell"></i>Test Notification</button>
                     </div>
                 </div>
+                <script>
+                    // Always on Top toggle logic
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const alwaysOnTopToggle = document.getElementById('alwaysOnTopToggle');
+                        if(alwaysOnTopToggle && window.electronAPI) {
+                            // Restore state
+                            const saved = localStorage.getItem('alwaysOnTop');
+                            if (saved !== null) {
+                                alwaysOnTopToggle.checked = saved === '1';
+                                window.electronAPI.setAlwaysOnTop && window.electronAPI.setAlwaysOnTop(alwaysOnTopToggle.checked);
+                            } else {
+                                window.electronAPI.getAlwaysOnTop && window.electronAPI.getAlwaysOnTop().then((isOnTop) => {
+                                    alwaysOnTopToggle.checked = !!isOnTop;
+                                    localStorage.setItem('alwaysOnTop', isOnTop ? '1' : '0');
+                                });
+                            }
+                            alwaysOnTopToggle.addEventListener('change', function() {
+                                window.electronAPI.setAlwaysOnTop && window.electronAPI.setAlwaysOnTop(alwaysOnTopToggle.checked);
+                                localStorage.setItem('alwaysOnTop', alwaysOnTopToggle.checked ? '1' : '0');
+                            });
+                        }
+                    });
+                </script>
+                <script>
+                    // FPS Counter Toggle Handler
+                    const fpsToggle = document.getElementById('fps-counter-toggle');
+                    if (fpsToggle) {
+                        fpsToggle.addEventListener('change', async (e) => {
+                            try {
+                                await window.electronAPI.setFpsCounter(e.target.checked);
+                                showNotification('FPS Counter ' + (e.target.checked ? 'enabled' : 'disabled'), { type: 'success' });
+                                showFpsOverlay(e.target.checked);
+                            } catch (err) {
+                                showErrorNotification('Failed to toggle FPS Counter: ' + err.message);
+                            }
+                        });
+                    }
 
+                    // Improved Accent Color Picker Logic
+                    (function() {
+                        const accentPicker = document.getElementById('accent-color-picker');
+                        const defaultAccent = '#ff9800';
+                        const accentTargets = [
+                            '--primary', '--primary-dark',
+                        ];
+                        // All selectors that use the accent color
+                        const styleSelectors = [
+                            '[style*="#ff9800"]', '[style*="#FF9800"]', '[style*="#ff7810"]', '[style*="#FF7810"]',
+                            '[style*="accent-color: #ff9800"]', '[style*="accent-color: #FF9800"]',
+                            '[style*="#ffa733"]', '[style*="#FF5722"]', '[style*="#ff5722"]', '[style*="#ffa733"]',
+                            '[style*="rgba(255, 152, 0"]', '[style*="rgba(255,120,20"]', '[style*="rgba(255, 120, 20"]',
+                            '[style*="#ff9800a0"]', '[style*="#FF9800A0"]', '[style*="#ff9800a0"]', '[style*="#FF9800a0"]'
+                        ];
+                        // Utility classes for Tailwind
+                        const tailwindClasses = [
+                            'text-orange-400', 'text-orange-300', 'border-orange-400', 'bg-orange-400', 'bg-orange-300'
+                        ];
+                        // CSS rules to patch (for <style> blocks in the document)
+                        const cssAccentRegex = /#ff9800|#FF9800|#ff7810|#FF7810|#ffa733|#FF5722|#ff5722|rgba\(255, 152, 0[^)]*\)|rgba\(255, ?120, ?20[^)]*\)|#ff9800a0/gi;
+                        function setAccentColor(color) {
+                            // Update CSS variables
+                            accentTargets.forEach(v => document.documentElement.style.setProperty(v, color));
+                            // Update inline styles
+                            styleSelectors.forEach(sel => {
+                                document.querySelectorAll(sel).forEach(el => {
+                                    el.style.cssText = el.style.cssText.replace(cssAccentRegex, color);
+                                    if ('accentColor' in el.style) el.style.accentColor = color;
+                                });
+                            });
+                            // Update Tailwind utility classes
+                            tailwindClasses.forEach(cls => {
+                                document.querySelectorAll('.' + cls).forEach(el => {
+                                    if (cls.startsWith('text-')) el.style.color = color;
+                                    if (cls.startsWith('border-')) el.style.borderColor = color;
+                                    if (cls.startsWith('bg-')) el.style.backgroundColor = color;
+                                });
+                            });
+                            // Update gradients and backgrounds
+                            document.querySelectorAll('[style*="linear-gradient"], [style*="background"]').forEach(el => {
+                                el.style.cssText = el.style.cssText.replace(cssAccentRegex, color);
+                            });
+                            // Patch <style> blocks in the document (for static CSS)
+                            document.querySelectorAll('style').forEach(styleTag => {
+                                if (cssAccentRegex.test(styleTag.innerHTML)) {
+                                    styleTag.innerHTML = styleTag.innerHTML.replace(cssAccentRegex, color);
+                                }
+                            });
+                            // Patch inline <style> attribute in <body> and <html>
+                            ['body','html'].forEach(tag => {
+                                const el = document.querySelector(tag);
+                                if (el && el.hasAttribute('style')) {
+                                    el.setAttribute('style', el.getAttribute('style').replace(cssAccentRegex, color));
+                                }
+                            });
+                            // Patch system tools icons (force accent color on icons in tools tab)
+                            function patchSystemToolIcons(color) {
+                                // Icons in system tools are rendered with .text-orange-400 or inline style
+                                document.querySelectorAll('.tab-content[data-tab="tools"] .fa, .tab-content[data-tab="tools"] i').forEach(icon => {
+                                    icon.style.color = color;
+                                });
+                                // Also patch any .text-orange-400 etc. in tools tab
+                                document.querySelectorAll('.tab-content[data-tab="tools"] .text-orange-400, .tab-content[data-tab="tools"] .text-orange-300').forEach(el => {
+                                    el.style.color = color;
+                                });
+                            }
+                            patchSystemToolIcons(color);
+                            // Patch Discord join button color
+                            function patchDiscordButton(color) {
+                                document.querySelectorAll('a[href*="discord.gg"]').forEach(btn => {
+                                    btn.style.background = color;
+                                    btn.style.border = 'none';
+                                    btn.style.color = '#fff';
+                                });
+                            }
+                            patchDiscordButton(color);
+                            // Save to localStorage
+                            localStorage.setItem('accentColor', color);
+                        }
+                        if (accentPicker) {
+                            // Load saved color
+                            const savedAccent = localStorage.getItem('accentColor') || defaultAccent;
+                            accentPicker.value = savedAccent;
+                            setAccentColor(savedAccent);
+                            let pendingAccent = null;
+                            accentPicker.addEventListener('input', (e) => {
+                                setAccentColor(e.target.value);
+                                pendingAccent = e.target.value;
+                            });
+                            accentPicker.addEventListener('change', (e) => {
+                                if (pendingAccent) {
+                                    setTimeout(() => {
+                                        location.reload();
+                                    }, 100);
+                                }
+                            });
+                            const resetBtn = document.getElementById('reset-accent-color-btn');
+                            if (resetBtn) {
+                                resetBtn.addEventListener('click', function() {
+                                    accentPicker.value = defaultAccent;
+                                    if (typeof setAccentColor === 'function') setAccentColor(defaultAccent);
+                                    setTimeout(() => {
+                                        location.reload();
+                                    }, 100);
+                                });
+                            }
+                        }
+                    })();
+                </script>
+                <script>
+                    document.getElementById('reset-tab-order-btn').onclick = function() {
+                        localStorage.removeItem('tabOrder');
+                        const tabList = document.getElementById('winToolTabs');
+                        const defaultOrder = [
+                            'welcome','dashboard','tweaks','packages','tools','gaming','setup','settings', 'about'
+                        ];
+                        const tabs = Array.from(tabList.children);
+                        defaultOrder.forEach(tabData => {
+                            const tab = tabs.find(t => t.dataset.tab === tabData);
+                            if (tab) tabList.appendChild(tab);
+                        });
+                        showNotification('Tab order reset to default!', { type: 'success' });
+                    };
+                </script>
+            </div>
+
+            <div id="tab-about" class="tab-content" data-aos="fade-in" style="display:none; max-width: 700px; margin: 0 auto;">
+                <div class="feature-section">
+                    <h3><i class="fas fa-info-circle"></i> About WinTool</h3>
+                    <p><b>WinTool</b> is a utility application for Windows designed to help you manage your system and improve your experience.</p>
+                    <div class="about-details" style="margin-top:1.2rem;">
+                        <div><b>Author:</b> MTechWare</div>
+                        <div><b>GitHub:</b> <a href="https://github.com/MTechWare/wintool" target="_blank">https://github.com/MTechWare/wintool</a></div>
+                    </div>
+                    <hr style="margin:1.5rem 0;">
+                    <div style="font-size:0.98rem;color:#888;">
+                        &copy; 2025 WinTool. All rights reserved.<br>
+                        This project is open source and provided as-is with no warranty.
+                    </div>
+                </div>
+            </div>
         </div> 
     </div> 
+    <!-- Notification Toast -->
+    <div id="notification-toast" class="notification-toast" style="display:none;">
+        <span class="toast-icon"><i class="fas fa-bell"></i></span>
+        <span class="toast-message">Test notification!</span>
+        <button class="toast-close" aria-label="Close notification">&times;</button>
+    </div>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
         // Initialize AOS animations
@@ -1474,23 +1279,27 @@
         // Make the X (close) button work in Electron
         document.addEventListener('DOMContentLoaded', () => {
             const closeBtn = document.getElementById('closeBtn');
-            if (closeBtn && window.require) {
-                const { ipcRenderer } = window.require('electron');
+            if (closeBtn && window.electronAPI) {
                 closeBtn.addEventListener('click', () => {
-                    ipcRenderer.send('close-window');
+                    window.electronAPI.closeWindow && window.electronAPI.closeWindow();
                 });
             }
         });
     </script>
 
     <script>
-        document.getElementById('closeBtn').addEventListener('click', () => {
-            window.electronAPI.closeWindow && window.electronAPI.closeWindow();
+        document.addEventListener('DOMContentLoaded', function() {
+            const closeBtn = document.getElementById('closeBtn');
+            if(closeBtn && window.electronAPI) {
+                closeBtn.addEventListener('click', function() {
+                    window.electronAPI.closeWindow && window.electronAPI.closeWindow();
+                });
+            }
         });
     </script>
 
     <script>
-        // Tab switching logic
+        // Tab switching logic (simple and consistent for all tabs)
         document.addEventListener('DOMContentLoaded', function() {
             const tabItems = document.querySelectorAll('.tab-item');
             const tabContents = document.querySelectorAll('.tab-content');
@@ -1500,12 +1309,172 @@
                     tab.classList.add('active');
                     const target = tab.getAttribute('data-tab');
                     tabContents.forEach(c => {
-                        // Remove 'active' from all
                         c.classList.remove('active');
+                        c.style.display = 'none';
+                        if (c.id === 'tab-' + target) {
+                            c.classList.add('active');
+                            c.style.display = 'block';
+                        }
                     });
-                    // Only add 'active' to the selected tab
-                    const showTab = document.getElementById('tab-' + target);
-                    if (showTab) showTab.classList.add('active');
+                });
+            });
+            // Gaming Tweaks Button
+            const gamingBtn = document.getElementById('apply-gaming-tweaks');
+            if (gamingBtn) {
+                gamingBtn.addEventListener('click', function() {
+                    showNotification('Gaming and performance tweaks will be available in a future update!', { type: 'info' });
+                });
+            }
+        });
+    </script>
+
+    <script>
+        // Settings tab logic
+        document.addEventListener('DOMContentLoaded', () => {
+            // Theme
+            const themeSelect = document.getElementById('theme-select');
+            if (themeSelect) {
+                themeSelect.value = localStorage.getItem('theme') || 'dark';
+                themeSelect.addEventListener('change', () => {
+                    localStorage.setItem('theme', themeSelect.value);
+                });
+            }
+            // Reset Settings
+            const resetBtn = document.getElementById('reset-settings');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => {
+                    if (confirm('Are you sure you want to reset all settings?')) {
+                        localStorage.removeItem('theme');
+                        location.reload();
+                    }
+                });
+            }
+            // Check for Updates (placeholder)
+            const checkUpdatesBtn = document.getElementById('check-updates');
+            if (checkUpdatesBtn) {
+                checkUpdatesBtn.addEventListener('click', () => {
+                    showNotification('Checking for updates... (This does not work yet)');
+                });
+            }
+        });
+    </script>
+
+    <script>
+        // Notification logic
+        function showNotification(message) {
+            const toast = document.getElementById('notification-toast');
+            const msgSpan = toast.querySelector('.toast-message');
+            msgSpan.textContent = message;
+            toast.style.display = 'flex';
+            setTimeout(() => toast.classList.add('show'), 10);
+            // Auto-hide after 3.5s
+            if (toast._hideTimeout) clearTimeout(toast._hideTimeout);
+            toast._hideTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => { toast.style.display = 'none'; }, 350);
+            }, 3500);
+        }
+        function showErrorNotification(message) {
+            showNotification('Error: ' + message);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            // Test Notification button
+            const testBtn = document.getElementById('test-notification');
+            if (testBtn) {
+                testBtn.addEventListener('click', () => showNotification('This is a test notification!'));
+            }
+            // Close button for toast
+            const toast = document.getElementById('notification-toast');
+            const closeBtn = toast.querySelector('.toast-close');
+            closeBtn.addEventListener('click', () => {
+                toast.classList.remove('show');
+                setTimeout(() => { toast.style.display = 'none'; }, 350);
+            });
+        });
+    </script>
+    <div id="fps-overlay" style="display:none;position:fixed;bottom:16px;left:32px;z-index:99999;background:rgba(20,20,25,0.86);color:var(--primary);font-size:1.15rem;font-family:'Roboto Mono',monospace;padding:6px 18px;border-radius:0.6rem;box-shadow:0 2px 12px #000a;pointer-events:none;user-select:none;">
+        FPS: <span id="fps-value">0</span>
+    </div>
+    <script>
+        let fpsIntervalId = null;
+        function showFpsOverlay(show) {
+            const overlay = document.getElementById('fps-overlay');
+            if (!overlay) return;
+            if (show) {
+                overlay.style.display = '';
+                let lastFrame = performance.now();
+                let frames = 0;
+                let lastFps = 0;
+                function updateFps() {
+                    frames++;
+                    const now = performance.now();
+                    if (now - lastFrame >= 1000) {
+                        lastFps = frames;
+                        document.getElementById('fps-value').textContent = lastFps;
+                        frames = 0;
+                        lastFrame = now;
+                    }
+                    if (overlay.style.display !== 'none') {
+                        requestAnimationFrame(updateFps);
+                    }
+                }
+                requestAnimationFrame(updateFps);
+            } else {
+                overlay.style.display = 'none';
+                document.getElementById('fps-value').textContent = '0';
+            }
+        }
+    </script>
+    <script>
+        // Make tabs draggable/reorderable and persist order
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabList = document.getElementById('winToolTabs');
+            let draggedTab = null;
+            let dragOverTab = null;
+
+            // Restore saved tab order
+            const savedOrder = JSON.parse(localStorage.getItem('tabOrder') || 'null');
+            if (savedOrder && Array.isArray(savedOrder)) {
+                const tabs = Array.from(tabList.children);
+                savedOrder.forEach(tabData => {
+                    const tab = tabs.find(t => t.dataset.tab === tabData);
+                    if (tab) tabList.appendChild(tab);
+                });
+            }
+
+            function saveTabOrder() {
+                const order = Array.from(tabList.children).map(tab => tab.dataset.tab);
+                localStorage.setItem('tabOrder', JSON.stringify(order));
+            }
+
+            tabList.querySelectorAll('.tab-item').forEach(tab => {
+                tab.draggable = true;
+                tab.addEventListener('dragstart', (e) => {
+                    draggedTab = tab;
+                    e.dataTransfer.effectAllowed = 'move';
+                    setTimeout(() => tab.classList.add('dragging'), 0);
+                });
+                tab.addEventListener('dragend', () => {
+                    draggedTab = null;
+                    tab.classList.remove('dragging');
+                });
+                tab.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dragOverTab = tab;
+                });
+                tab.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (draggedTab && draggedTab !== tab) {
+                        tabList.insertBefore(draggedTab, tab.nextSibling);
+                        saveTabOrder();
+                    }
+                    tab.classList.remove('drag-over');
+                });
+                tab.addEventListener('dragenter', () => {
+                    tab.classList.add('drag-over');
+                });
+                tab.addEventListener('dragleave', () => {
+                    tab.classList.remove('drag-over');
                 });
             });
         });

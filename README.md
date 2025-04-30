@@ -1,4 +1,4 @@
-# 🛠️ WinTool - Windows Utility
+<h1 align="center">🛠️ WinTool - Windows Utility</h1>
 
 <div align="center">
 
@@ -12,9 +12,18 @@
 
 [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Requirements](#-requirements)
 
----
+## 🆕 Latest Features
 
-</div>
+- **Added support for custom accent colors:** Personalize the app’s accent color from Settings.
+- **FPS Counter toggle in Settings tab:** Easily turn the FPS overlay on/off.
+- **Gaming & Performance tab:** Access new gaming tweaks and performance tools.
+- **Move tabs and save the order:** Drag and drop tabs to reorder them; your layout is remembered.
+- **Fold Sidebar Tabs toggle in Settings tab:** Collapse the sidebar to show only icons, or expand to show labels.
+- **Reset tab order to default in Settings:** Quickly restore the original tab layout.
+- **Improved error handling throughout the app:** More robust and informative error messages.
+- **Splash screen can be a custom color:** The splash screen now uses your selected accent color.
+
+---
 
 ## 📋 Requirements
 
@@ -39,7 +48,7 @@ npx electron-builder
 - If you see `'electron-builder' is not recognized`, make sure you ran `npm install` and use `npx electron-builder` instead of `npm run dist`.
 
 ### Option 2: Download Release (if available)
-1. Visit the [(Releases Page](https://github.com/MTechWare/wintool/releases))
+1. Visit the [Releases Page](https://github.com/MTechWare/wintools)
 2. Download the latest version
 3. Run the installer or executable to start the application
 
@@ -59,6 +68,22 @@ npx electron-builder
 - **Quick Actions Hub**
   - Common system tasks
   - Frequently used tools
+</details>
+
+<details>
+<summary><b>🆕 New Features (v0.0.3a+)</b></summary>
+
+- **Custom Accent Colors**
+  - Choose your own accent color for the entire app
+- **FPS Counter Toggle**
+  - Enable/disable FPS overlay from Settings
+- **Gaming & Performance Tab**
+  - Access performance tweaks and gaming utilities
+- **Draggable & Reorderable Tabs**
+  - Move tabs and save your preferred order
+- **Fold Sidebar Tabs**
+  - Fold/unfold sidebar tabs to show only icons (toggle in Settings)
+  - Sidebar state is remembered between sessions
 </details>
 
 <details>
@@ -149,6 +174,11 @@ npx electron-builder
 - **System Monitoring**: Node.js only (no Python required)
 
 ---
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 or later (GPLv3).
+See the [LICENSE](./LICENSE) file for details.
 
 <div align="center">
 

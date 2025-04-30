@@ -1,9 +1,10 @@
 {
   "name": "wintool",
-  "version": "0.0.2a",
+  "version": "0.0.3a",
   "main": "main.js",
   "description": "WinTool - Windows Management and Tweaks",
   "author": "MTech",
+  "license": "GPL-3.0-or-later",
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder",
@@ -19,20 +20,24 @@
       ],
       "signAndEditExecutable": false
     },
-    "publish": "never",
     "directories": {
       "output": "wintool"
     },
     "files": [
+      "icon.ico",
       "main.js",
       "index.html",
+      "styles.css",
       "applications.json",
       "packages.js",
       "package-actions.js",
       "system-info.js",
       "system-commands.js",
       "tweaks.js",
-      "preload.js"
+      "preload.js",
+      "WT.png",
+      "WinTool.png",
+      "registry-utils.js"
     ],
     "asarUnpack": []
   },
@@ -44,7 +49,12 @@
     "tailwindcss": "^4.1.4"
   },
   "dependencies": {
+    "default-gateway": "^6.0.3",
     "electron-is-dev": "^3.0.1",
+    "is-elevated": "^2.0.1",
+    "node-fetch": "^2.7.0",
+    "portscanner": "^2.2.0",
+    "sudo-prompt": "^9.2.1",
     "systeminformation": "^5.25.11",
     "winreg": "^1.2.5"
   }
