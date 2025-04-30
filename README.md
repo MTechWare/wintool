@@ -1,3 +1,5 @@
+<div align="center">
+
 # 🛠️ WinTool - Windows Utility
 
 [![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D6?style=for-the-badge&logo=windows&logoColor=white)](https://www.microsoft.com/windows)
@@ -10,7 +12,9 @@
 
 **[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Requirements](#-requirements)**
 
-## 🆕 Latest Features
+</div>
+
+## 🆕 Latest Features (v0.0.3a+)
 
 - **Added support for custom accent colors:** Personalize the app’s accent color from Settings.
 - **FPS Counter toggle in Settings tab:** Easily turn the FPS overlay on/off.
@@ -29,7 +33,6 @@
 - Windows 10/11
 - 4GB RAM (minimum)
 - 70MB free disk space
-- Node.js 18+ (add to PATH)
 
 ### Build from Source (Recommended for Developers)
 ```bash
