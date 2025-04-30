@@ -1,16 +1,14 @@
-<h1 align="center">🛠️ WinTool - Windows Utility</h1>
-
-<div align="center">
+# 🛠️ WinTool - Windows Utility
 
 [![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D6?style=for-the-badge&logo=windows&logoColor=white)](https://www.microsoft.com/windows)
-[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=for-the-badge)](LICENSE)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg?style=for-the-badge)](https://github.com/MTechWare/wintool)
 
 ### 🎯 A Modern Windows System Management Suite
 
 *Streamline your Windows experience with an elegant, all-in-one system management tool.*
 
-[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Requirements](#-requirements)
+**[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Requirements](#-requirements)**
 
 ## 🆕 Latest Features
 
@@ -59,8 +57,7 @@ npx electron-builder
 
 ## ✨ Features
 
-<details open>
-<summary><b>🏠 Dashboard</b></summary>
+### 🏠 Dashboard
 
 - **Real-time System Monitoring**
   - CPU, Memory, and Disk usage tracking
@@ -68,10 +65,8 @@ npx electron-builder
 - **Quick Actions Hub**
   - Common system tasks
   - Frequently used tools
-</details>
 
-<details>
-<summary><b>🆕 New Features (v0.0.3a+)</b></summary>
+### 🆕 New Features (v0.0.3a+)
 
 - **Custom Accent Colors**
   - Choose your own accent color for the entire app
@@ -84,10 +79,8 @@ npx electron-builder
 - **Fold Sidebar Tabs**
   - Fold/unfold sidebar tabs to show only icons (toggle in Settings)
   - Sidebar state is remembered between sessions
-</details>
 
-<details>
-<summary><b>⚡ Tweaks</b></summary>
+### ⚡ Tweaks
 
 - **Performance Optimization**
   - System tweaks for better performance
@@ -95,10 +88,8 @@ npx electron-builder
 - **Privacy Settings**
   - Windows telemetry controls
   - Privacy-focused configurations
-</details>
 
-<details>
-<summary><b>📦 Package Management</b></summary>
+### 📦 Package Management
 
 - **WinGet Integration**
   - Smart package search
@@ -108,10 +99,8 @@ npx electron-builder
   - One-click installation
   - Clean uninstallation
   - Automatic updates
-</details>
 
-<details>
-<summary><b>💻 System Tools</b></summary>
+### 💻 System Tools
 
 - **System Maintenance**
   - Disk cleanup utility
@@ -119,10 +108,8 @@ npx electron-builder
 - **System Configuration**
   - Device manager
   - Control panel
-</details>
 
-<details>
-<summary><b>🔧 System Health</b></summary>
+### 🔧 System Health
 
 - **Performance Monitoring**
   - Resource usage tracking
@@ -130,10 +117,8 @@ npx electron-builder
 - **System Information**
   - Hardware details
   - Software inventory
-</details>
 
-<details>
-<summary><b>⚙️ Unattended Setup</b></summary>
+### ⚙️ Unattended Setup
 
 - **Windows Configuration**
   - Custom installation settings
@@ -141,7 +126,6 @@ npx electron-builder
 - **Automation**
   - Scripted setup
   - Configuration profiles
-</details>
 
 ## 🎨 Themes & Design
 
@@ -180,8 +164,4 @@ npx electron-builder
 This project is licensed under the GNU General Public License v3.0 or later (GPLv3).
 See the [LICENSE](./LICENSE) file for details.
 
-<div align="center">
-
 Made with ❤️ by MTech
-
-</div>
