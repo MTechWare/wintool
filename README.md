@@ -14,7 +14,20 @@
 
 </div>
 
-## 🆕 Latest Features (v0.0.3a+)
+## 🆕 Latest Features (v0.0.4a+)
+
+- **First-Time User Tutorial:** A modal tutorial now guides new users through the main features and tabs, accessible anytime via the Welcome page.
+- **Show Tutorial Button:** Added a prominent button on the Welcome page to launch the tutorial overlay at any time.
+- **Scrollable Tabs:** All main tabs (System Tools, Unattended Setup, Settings, etc.) are now fully scrollable for improved usability.
+- **Table-Based Package Management:** Packages tab now uses a table layout with checkboxes for multi-select installation.
+- **Package Installation Progress:** Added progress bar and status display during package installation.
+- **Package Uninstallation:** Implemented uninstall feature for individual or multiple packages.
+- **Draggable Window:** Custom title bar for window dragging, minimize, maximize, and close.
+- **Consistent Accent Colors:** Accent color is now applied consistently across all tabs.
+- **Custom Font Support:** Application-wide support for custom fonts.
+- **Direct Download Links:** Improved handling of direct download links by opening them in the default browser.
+
+## 🆕 Previous Features (v0.0.3a+)
 
 - **Added support for custom accent colors:** Personalize the app’s accent color from Settings.
 - **FPS Counter toggle in Settings tab:** Easily turn the FPS overlay on/off.
@@ -68,6 +81,8 @@ npx electron-builder
 - **Quick Actions Hub**
   - Common system tasks
   - Frequently used tools
+- **First-Time Tutorial**
+  - Access the onboarding tutorial from the Welcome page at any time
 
 ### 🆕 New Features (v0.0.3a+)
 
@@ -94,14 +109,23 @@ npx electron-builder
 
 ### 📦 Package Management
 
-- **WinGet Integration**
+- **Table-Based Interface**
+  - Multi-select package installation
+  - Checkbox selection for bulk operations
+  - Scrollable package list
+- **Installation Progress**
+  - Real-time progress tracking
+  - Current package status display
+- **Uninstall Support**
+  - Individual package removal
+  - Bulk uninstallation
+- **WinGet & Chocolatey Integration**
   - Smart package search
   - Category-based filtering
-  - Bulk operations support
-- **Package Operations**
-  - One-click installation
-  - Clean uninstallation
-  - Automatic updates
+  - Automatic package manager detection
+- **Direct Download Support**
+  - Browser integration for direct links
+  - Seamless handling of non-package manager apps
 
 ### 💻 System Tools
 
@@ -134,10 +158,15 @@ npx electron-builder
 
 - **Modern Interface**
   - Sun Valley dark theme
-  - Orange accent colors
+  - Custom accent color system
+  - Draggable window with custom title bar
 - **Responsive Design**
   - Adaptive layout
+  - Scrollable tabs for better content viewing
   - Smooth animations
+- **Custom Typography**
+  - Custom font support
+  - Consistent styling across all tabs
 
 ## 🎯 Usage
 

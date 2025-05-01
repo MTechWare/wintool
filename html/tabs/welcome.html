@@ -1,0 +1,510 @@
+<div id="tab-welcome" class="tab-content welcome-container custom-scrollbar">
+    <!-- Hero Section -->
+    <div class="welcome-hero">
+        <div class="hero-content">
+            <div class="logo-container">
+                <i class="fas fa-tools logo-icon"></i>
+            </div>
+            <h1>Welcome to <span class="highlight">WinTool</span></h1>
+            <p class="hero-subtitle">Your all-in-one Windows management and optimization suite</p>
+            <div class="hero-buttons">
+                <a href="https://discord.gg/nCmEQ8za7" target="_blank" class="btn btn-secondary btn-lg">
+                    <i class="fab fa-discord"></i> Join Discord
+                </a>
+                <button id="start-tutorial-btn" class="btn btn-primary btn-lg">
+                    <i class="fas fa-graduation-cap"></i> Show Tutorial
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Grid -->
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-bolt"></i>
+            </div>
+            <h3>System Optimization</h3>
+            <p>Boost performance with one-click optimizations and tweaks</p>
+            <a href="#" class="feature-link" data-tab="tweaks">
+                <i class="fas fa-arrow-right"></i> Explore Tweaks
+            </a>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-gamepad"></i>
+            </div>
+            <h3>Gaming Performance</h3>
+            <p>Optimize your PC for the best gaming experience</p>
+            <a href="#" class="feature-link" data-tab="gaming">
+                <i class="fas fa-arrow-right"></i> Gaming Tools
+            </a>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-box-open"></i>
+            </div>
+            <h3>Software Manager</h3>
+            <p>Install and manage software with ease</p>
+            <a href="#" class="feature-link" data-tab="packages">
+                <i class="fas fa-arrow-right"></i> Manage Packages
+            </a>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-cog"></i>
+            </div>
+            <h3>Unattended Setup</h3>
+            <p>Create custom Windows installation configurations</p>
+            <a href="#" class="feature-link" data-tab="setup">
+                <i class="fas fa-arrow-right"></i> Setup Tools
+            </a>
+        </div>
+    </div>
+
+    <!-- Tutorial Section for First-Time Users -->
+    <div id="first-time-tutorial" class="tutorial-section" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; width: 80%; max-width: 1000px; max-height: 80vh; overflow-y: auto; display: none; box-shadow: 0 10px 50px rgba(0,0,0,0.5);">
+        <h2><i class="fas fa-graduation-cap"></i> Getting Started with WinTool</h2>
+        <p>Welcome! Here’s a quick tour of what each tab offers. Click each tab on the sidebar to explore these features.</p>
+        <div class="tutorial-grid">
+            <div class="tutorial-card">
+                <i class="fas fa-tachometer-alt tutorial-icon"></i>
+                <h3>Dashboard</h3>
+                <p>Monitor system performance, view system info, and access quick tools.</p>
+            </div>
+            <div class="tutorial-card">
+                <i class="fas fa-sliders-h tutorial-icon"></i>
+                <h3>Tweaks</h3>
+                <p>Apply one-click optimizations and performance tweaks to your Windows system.</p>
+            </div>
+            <div class="tutorial-card">
+                <i class="fas fa-gamepad tutorial-icon"></i>
+                <h3>Gaming</h3>
+                <p>Boost gaming performance with Game Booster, RAM optimizer, and more.</p>
+            </div>
+            <div class="tutorial-card">
+                <i class="fas fa-wrench tutorial-icon"></i>
+                <h3>System Tools</h3>
+                <p>Access Windows utilities like Disk Cleanup, Task Manager, and system info tools.</p>
+            </div>
+            <div class="tutorial-card">
+                <i class="fas fa-box-open tutorial-icon"></i>
+                <h3>Packages</h3>
+                <p>Install, update, or remove software packages easily from a central location.</p>
+            </div>
+            <div class="tutorial-card">
+                <i class="fas fa-magic tutorial-icon"></i>
+                <h3>Setup</h3>
+                <p>Create custom Windows installation configurations for automated deployments.</p>
+            </div>
+            <div class="tutorial-card">
+                <i class="fas fa-cog tutorial-icon"></i>
+                <h3>Settings</h3>
+                <p>Customize WinTool’s appearance, behavior, and preferences.</p>
+            </div>
+            <div class="tutorial-card">
+                <i class="fas fa-info-circle tutorial-icon"></i>
+                <h3>About</h3>
+                <p>Learn about WinTool, its features, and the development team.</p>
+            </div>
+        </div>
+        <div class="tutorial-footer">
+            <button id="close-tutorial" class="btn btn-primary"><i class="fas fa-check"></i> Got it!</button>
+        </div>
+    </div>
+    <div class="tutorial-overlay"></div>
+
+    <!-- Latest Updates Section -->
+    <div class="updates-section">
+        <div class="section-header">
+            <i class="fas fa-bullhorn"></i>
+            <h2>Latest Updates</h2>
+        </div>
+        <div class="update-card">
+            <div class="update-version">v0.0.4a</div>
+            <div class="update-content">
+                <h3>April 2025 Update</h3>
+                <ul class="update-list">
+                    <li><span class="tag new">New</span> New design through out the app.</li>
+                    <li><span class="tag new">New</span> Tutorial for first time users.</li>
+                    <li><span class="tag new">New</span> Enhanced Gaming & Performance dashboard with quick actions</li>
+                    <li><span class="tag new">New</span> Advanced Unattended Setup options with templates</li>
+                    <li><span class="tag new">New</span> WinTool auto-installer in Unattended Setup</li>
+                    <li><span class="tag improved">Improved</span> Scrollable tabs with proper padding</li>
+                    <li><span class="tag improved">Improved</span> Lots of bug fixes.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.welcome-container {
+    padding: 0;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.welcome-container::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+.welcome-hero {
+    background: linear-gradient(135deg, rgba(25, 25, 30, 0.7) 0%, rgba(15, 15, 20, 0.8) 100%);
+    padding: 50px 30px;
+    text-align: center;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.welcome-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('../../WT.png') no-repeat center center;
+    background-size: 180px;
+    opacity: 0.15;
+    z-index: 0;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+}
+
+.logo-container {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    background: rgba(var(--primary-rgb), 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite;
+}
+
+.logo-icon {
+    font-size: 2.5rem;
+    color: var(--primary);
+}
+
+.welcome-hero h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #fff;
+}
+
+.hero-subtitle {
+    font-size: 1.2rem;
+    color: #b0b0b0;
+    margin-bottom: 2rem;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.btn-lg {
+    padding: 0.8rem 1.8rem;
+    font-size: 1.1rem;
+}
+
+/* Features Grid */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.feature-card {
+    background: rgba(25, 25, 30, 0.5);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    border-color: rgba(var(--primary-rgb), 0.3);
+    background: rgba(30, 30, 35, 0.6);
+}
+
+.feature-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(var(--primary-rgb), 0.15);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.feature-icon i {
+    font-size: 1.5rem;
+    color: var(--primary);
+}
+
+.feature-card h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #fff;
+}
+
+.feature-card p {
+    color: #b0b0b0;
+    margin-bottom: 1rem;
+}
+
+.feature-link {
+    display: inline-flex;
+    align-items: center;
+    color: var(--primary);
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.feature-link:hover {
+    color: #fff;
+}
+
+.feature-link i {
+    margin-right: 5px;
+    font-size: 0.9rem;
+}
+
+/* Updates Section */
+.updates-section {
+    background: rgba(25, 25, 30, 0.5);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-header i {
+    font-size: 1.5rem;
+    color: var(--primary);
+    margin-right: 0.8rem;
+}
+
+.section-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+}
+
+.update-card {
+    display: flex;
+    background: rgba(30, 30, 35, 0.5);
+    border-radius: 8px;
+    padding: 1.2rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.update-version {
+    background: var(--primary-dark);
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    height: fit-content;
+    margin-right: 1.5rem;
+}
+
+.update-content h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #fff;
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+.update-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.update-list li {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: #ccc;
+}
+
+.tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.tag.new {
+    background: #2ecc71;
+    color: #fff;
+}
+
+.tag.improved {
+    background: #3498db;
+    color: #fff;
+}
+
+.tag.fixed {
+    background: #e74c3c;
+    color: #fff;
+}
+
+/* Tutorial Section */
+.tutorial-section {
+    background: rgba(25, 25, 30, 0.95);
+    border-radius: 16px;
+    padding: 2.5rem 2rem 2rem 2rem;
+    margin-bottom: 2.5rem;
+    margin-top: 1.5rem;
+    text-align: center;
+    box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+}
+
+.tutorial-section h2 {
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: 1.2rem;
+    font-weight: 700;
+}
+
+.tutorial-section p {
+    color: #b0b0b0;
+    font-size: 1.1rem;
+    margin-bottom: 2.2rem;
+}
+
+.tutorial-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 1.4rem;
+    margin-bottom: 1.8rem;
+}
+
+.tutorial-card {
+    background: rgba(30, 30, 35, 0.7);
+    border-radius: 12px;
+    padding: 1.2rem 1rem 1.2rem 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-align: center;
+}
+
+.tutorial-card:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.16);
+}
+
+.tutorial-icon {
+    font-size: 2.2rem;
+    color: var(--primary);
+    margin-bottom: 0.7rem;
+}
+
+.tutorial-card h3 {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.tutorial-footer {
+    margin-top: 1.1rem;
+}
+
+#close-tutorial {
+    padding: 0.6rem 1.5rem;
+    font-size: 1.08rem;
+}
+
+/* Tutorial Overlay */
+.tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 999;
+    display: none;
+}
+
+/* Animations */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 15px rgba(var(--primary-rgb), 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0);
+    }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .welcome-hero {
+        padding: 30px 20px;
+    }
+    
+    .welcome-hero h1 {
+        font-size: 2.2rem;
+    }
+    
+    .hero-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .update-card {
+        flex-direction: column;
+    }
+    
+    .update-version {
+        align-self: flex-start;
+    }
+}
+</style>
+
+<!-- Load Welcome Tab JS for Tour Functionality -->
+<script src="../../js/tabs/welcome.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof initWelcomeTab === 'function') {
+      initWelcomeTab();
+    }
+  });
+</script>

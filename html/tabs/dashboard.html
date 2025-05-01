@@ -1,0 +1,89 @@
+<div id="tab-dashboard" class="tab-content">
+    <h1 class="tab-title"><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+    <div class="tab-description">Monitor system performance, view system information, and access tools to help you manage your system.</div>
+    
+    <div class="dashboard-container custom-scrollbar" style="max-height: calc(100vh - 150px); overflow-y: auto; padding-bottom: 2rem;">
+      <!-- System Overview Section -->
+      <div class="dashboard-section">
+        <h3><i class="fas fa-chart-line"></i> System Overview</h3>
+        
+        <div class="dashboard-cards">
+          <div class="info-card">
+            <div class="label">OS</div>
+            <div class="value" id="sys-os">Loading...</div>
+          </div>
+          
+          <div class="info-card">
+            <div class="label">Hostname</div>
+            <div class="value" id="sys-host">Loading...</div>
+          </div>
+          
+          <div class="info-card">
+            <div class="label">User</div>
+            <div class="value" id="sys-user">Loading...</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Performance Monitoring Section -->
+      <div class="dashboard-section">
+        <h3><i class="fas fa-tachometer-alt"></i> Performance Monitoring</h3>
+        
+        <div class="dashboard-cards">
+          <div class="info-card">
+            <div class="label">CPU Usage</div>
+            <div class="value" id="cpu-usage">Loading...</div>
+            <div class="progress-bar">
+              <div class="progress-fill cpu-fill" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <div class="info-card">
+            <div class="label">RAM Usage</div>
+            <div class="value" id="ram-usage">Loading...</div>
+            <div class="progress-bar">
+              <div class="progress-fill ram-fill" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <div class="info-card">
+            <div class="label">Disk C: Usage</div>
+            <div class="value" id="disk-usage">Loading...</div>
+            <div class="progress-bar">
+              <div class="progress-fill disk-fill" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <div class="info-card">
+            <div class="label">System Uptime</div>
+            <div class="value" id="dashboard-uptime">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+
+<style>
+    .tab-title {
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--primary);
+    }
+    
+    .tab-description {
+        font-size: 1rem;
+        color: #b0b0b0;
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Hide scrollbars while maintaining scroll functionality */
+    .dashboard-container {
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE and Edge */
+    }
+    
+    .dashboard-container::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
+    }
+</style>

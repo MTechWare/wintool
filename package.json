@@ -1,6 +1,6 @@
 {
   "name": "wintool",
-  "version": "0.0.3a",
+  "version": "0.0.4a",
   "main": "main.js",
   "description": "WinTool - Windows Management and Tweaks",
   "author": "MTech",
@@ -29,15 +29,12 @@
       "index.html",
       "styles.css",
       "applications.json",
-      "packages.js",
-      "package-actions.js",
-      "system-info.js",
-      "system-commands.js",
-      "tweaks.js",
       "preload.js",
       "WT.png",
       "WinTool.png",
-      "registry-utils.js"
+      "Boge.ttf",
+      "js/**/*",
+      "html/**/*"
     ],
     "asarUnpack": []
   },
