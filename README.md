@@ -27,17 +27,6 @@
 - **Custom Font Support:** Application-wide support for custom fonts.
 - **Direct Download Links:** Improved handling of direct download links by opening them in the default browser.
 
-## 🆕 Previous Features (v0.0.3a+)
-
-- **Added support for custom accent colors:** Personalize the app’s accent color from Settings.
-- **FPS Counter toggle in Settings tab:** Easily turn the FPS overlay on/off.
-- **Gaming & Performance tab:** Access new gaming tweaks and performance tools.
-- **Move tabs and save the order:** Drag and drop tabs to reorder them; your layout is remembered.
-- **Fold Sidebar Tabs toggle in Settings tab:** Collapse the sidebar to show only icons, or expand to show labels.
-- **Reset tab order to default in Settings:** Quickly restore the original tab layout.
-- **Improved error handling throughout the app:** More robust and informative error messages.
-- **Splash screen can be a custom color:** The splash screen now uses your selected accent color.
-
 ---
 
 ## 📋 Requirements
