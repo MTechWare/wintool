@@ -14,19 +14,6 @@
 
 </div>
 
-## 🆕 Latest Features (v0.0.4a+)
-
-- **First-Time User Tutorial:** A modal tutorial now guides new users through the main features and tabs, accessible anytime via the Welcome page.
-- **Show Tutorial Button:** Added a prominent button on the Welcome page to launch the tutorial overlay at any time.
-- **Scrollable Tabs:** All main tabs (System Tools, Unattended Setup, Settings, etc.) are now fully scrollable for improved usability.
-- **Table-Based Package Management:** Packages tab now uses a table layout with checkboxes for multi-select installation.
-- **Package Installation Progress:** Added progress bar and status display during package installation.
-- **Package Uninstallation:** Implemented uninstall feature for individual or multiple packages.
-- **Draggable Window:** Custom title bar for window dragging, minimize, maximize, and close.
-- **Consistent Accent Colors:** Accent color is now applied consistently across all tabs.
-- **Custom Font Support:** Application-wide support for custom fonts.
-- **Direct Download Links:** Improved handling of direct download links by opening them in the default browser.
-
 ---
 
 ## 📋 Requirements
