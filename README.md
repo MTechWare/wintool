@@ -9,6 +9,7 @@
 ### 🎯 A Modern Windows System Management Suite
 
 *Streamline your Windows experience with an elegant, all-in-one system management tool.*
+*This utility is in alpha. Some features might not work as intended!*
 
 **[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Requirements](#-requirements)**
 
