@@ -18,7 +18,7 @@
 
 ### System Requirements
 - Windows 10/11
-- 8GB RAM (minimum)
+- 4GB RAM (minimum)
 - 70MB free disk space
 
 ### Build from Source (Recommended for Developers)
