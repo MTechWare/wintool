@@ -1,0 +1,19 @@
+File: WinTool_Installer.ps1
+
+Purpose: PowerShell script to automate installation or setup of the WinTool application on Windows.
+
+Key Elements:
+- Checks for required dependencies (Node.js, npm)
+- Installs Node.js if missing (optional)
+- Clones or updates the WinTool repository
+- Runs npm install to fetch dependencies
+- Builds or launches the Electron app
+- Optionally creates desktop/start menu shortcuts
+
+Usage:
+- Run as administrator in PowerShell
+- Used for quick setup by end users or IT admins
+
+Notes:
+- Must be run with elevated privileges
+- Can be customized for portable or installer builds

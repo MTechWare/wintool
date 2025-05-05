@@ -1,0 +1,20 @@
+File: main.js
+
+Purpose: Main Electron process script. Initializes the application, manages windows, handles IPC, and integrates backend Node.js functionality.
+
+Key Elements:
+- Electron app lifecycle management (ready, window-all-closed, etc.)
+- Admin rights elevation check
+- Creates main BrowserWindow (frameless, custom controls)
+- Handles IPC for window controls, system info, package management, tweaks, etc.
+- Loads preload.js for secure context bridging
+- Integrates backend modules (system-info, packages, tweaks, etc.)
+
+Usage:
+- Entry point specified in package.json ("main": "main.js")
+- Runs in Node.js (Electron main process)
+- Communicates with renderer via IPC (ipcMain)
+
+Notes:
+- All system-level actions (package install, tweaks, tools) handled here
+- Security: contextIsolation enabled, no nodeIntegration in renderer

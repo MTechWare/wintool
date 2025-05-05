@@ -1,0 +1,21 @@
+File: tweaks.html + tweaks.js
+
+Purpose: Implements the Tweaks tab. Allows users to view and apply common Windows registry and privacy tweaks.
+
+Key UI Elements (HTML):
+- List of tweak categories and toggles (Visual Effects, Privacy, Taskbar, etc.)
+- Loading indicator and feedback
+
+Styling:
+- List/grouped layout with toggle switches
+- Responsive and accessible
+
+JavaScript Functionality (tweaks.js):
+- `initTweaksTab()`: Initializes tweaks tab and fetches available tweaks from the system.
+- `fetchTweaks()`: Loads current system tweak states from Electron backend.
+- `renderTweaksList()`: Renders tweak categories and toggles, applies changes, handles notifications and errors.
+- Toggle event listeners: Apply tweaks via Electron API and update UI with feedback.
+- Exports `window.initTweaksTab` for tab initialization.
+
+Notes:
+- All tweaks handled via Electron API. Designed for power users seeking quick Windows customizations.

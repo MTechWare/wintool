@@ -1,0 +1,18 @@
+File: tools.html + tools.js
+
+Purpose: Implements the System Tools tab. Provides quick access to common system utilities (e.g., Task Manager, Disk Cleanup, Power Options, etc.).
+
+Key UI Elements (HTML):
+- Tool cards/buttons for each system utility
+- Visual feedback on click
+
+Styling:
+- Card-based layout, accent color on hover/active
+- Scrollable tab with padding
+
+JavaScript Functionality (tools.js):
+- `initToolsTab()`: Initializes the tools tab and sets up tool card click handlers.
+- `setupToolCards()`: Adds click listeners to each tool card, launches system utility via Electron API, and provides visual feedback.
+
+Notes:
+- All tool actions handled via Electron API. Designed for fast access to core Windows tools.

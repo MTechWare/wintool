@@ -18,75 +18,63 @@ function initGamingTab() {
     setupPerformanceMonitor();
 }
 
-// Game Mode Toggle
+// Game Mode Toggle 
 function setupGameModeToggle() {
-    const gameModeToggle = document.getElementById('toggle-game-mode');
-    if (gameModeToggle) {
-        // Check current state from system
-        window.electronAPI.getGameModeStatus()
-            .then(enabled => {
-                gameModeToggle.checked = enabled;
-            })
-            .catch(err => {
-                console.error('Failed to get Game Mode status:', err);
-            });
-            
-        // Add change event listener
-        gameModeToggle.addEventListener('change', async function() {
+    const toggle = document.getElementById('toggle-game-mode');
+    if (toggle) {
+        // Get initial state
+        window.electronAPI.getGameModeStatus().then(enabled => {
+            toggle.checked = enabled;
+        });
+
+        toggle.addEventListener('change', async function() {
             try {
                 await window.electronAPI.setGameMode(this.checked);
                 showNotification(`Game Mode ${this.checked ? 'enabled' : 'disabled'}.`, { type: 'success' });
             } catch (err) {
-                console.error('Failed to set Game Mode:', err);
-                showErrorNotification('Failed to set Game Mode: ' + err.message);
-                // Revert the toggle to its previous state
-                this.checked = !this.checked;
+                showErrorNotification(err.message);
+                this.checked = !this.checked; // Revert on failure
             }
         });
     }
 }
 
-// Performance Profiles
 function setupPerformanceProfiles() {
     const balancedBtn = document.getElementById('btn-power-balanced');
     const highPerfBtn = document.getElementById('btn-power-high');
-    
-    if (balancedBtn) {
-        balancedBtn.addEventListener('click', async function() {
-            try {
-                await window.electronAPI.setPowerPlan('balanced');
-                showNotification('Switched to Balanced power plan.', { type: 'success' });
-            } catch (err) {
-                showErrorNotification('Failed to set power plan: ' + err.message);
-            }
-        });
-    }
-    
-    if (highPerfBtn) {
-        highPerfBtn.addEventListener('click', async function() {
-            try {
-                await window.electronAPI.setPowerPlan('high');
-                showNotification('Switched to High Performance power plan.', { type: 'success' });
-            } catch (err) {
-                showErrorNotification('Failed to set power plan: ' + err.message);
-            }
-        });
-    }
+
+    [balancedBtn, highPerfBtn].forEach(btn => {
+        if (btn) {
+            btn.addEventListener('click', async function() {
+                try {
+                    const plan = this.id === 'btn-power-high' ? 'high' : 'balanced';
+                    await window.electronAPI.setPowerPlan(plan);
+                    
+                    // Update button states
+                    balancedBtn?.classList.toggle('active', plan === 'balanced');
+                    highPerfBtn?.classList.toggle('active', plan === 'high');
+                    
+                    showNotification(`Switched to ${plan === 'high' ? 'High Performance' : 'Balanced'} power plan.`, { type: 'success' });
+                } catch (err) {
+                    showErrorNotification(err.message);
+                }
+            });
+        }
+    });
 }
 
-// Memory Optimizer
 function setupMemoryOptimizer() {
-    const optimizeRamBtn = document.getElementById('btn-optimize-ram');
-    if (optimizeRamBtn) {
-        optimizeRamBtn.addEventListener('click', async function() {
+    const button = document.getElementById('btn-optimize-ram');
+    if (button) {
+        button.addEventListener('click', async function() {
             try {
                 this.disabled = true;
                 this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Optimizing...';
                 
                 await window.electronAPI.optimizeMemory();
-                showNotification('Memory optimization complete.', { type: 'success' });
+                showNotification('Memory optimization completed.', { type: 'success' });
             } catch (err) {
-                showErrorNotification('Failed to optimize memory: ' + err.message);
+                showErrorNotification(err.message);
             } finally {
                 this.disabled = false;
                 this.innerHTML = 'Optimize RAM';
@@ -137,43 +125,44 @@ function setupSystemCleanup() {
     }
 }
 
-// Game Booster
 function setupGameBooster() {
-    const gameBoosterBtn = document.getElementById('btn-game-booster');
-    const undoGameBoosterBtn = document.getElementById('btn-undo-game-booster');
+    const activateBtn = document.getElementById('btn-game-booster');
+    const deactivateBtn = document.getElementById('btn-undo-game-booster');
     
-    if (gameBoosterBtn) {
-        gameBoosterBtn.addEventListener('click', async function() {
+    if (activateBtn && deactivateBtn) {
+        activateBtn.addEventListener('click', async function() {
             try {
                 this.disabled = true;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Activating...';
+                activateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Activating...';
                 
-                await window.electronAPI.activateGameBooster();
-                showNotification('Game Booster activated. FPS counter enabled.', { type: 'success' });
-                showFpsOverlay(true);
+                await window.electronAPI.setGameBooster(true);
+                showNotification('Game Booster activated.', { type: 'success' });
+                
+                activateBtn.style.display = 'none';
+                deactivateBtn.style.display = 'block';
             } catch (err) {
-                showErrorNotification('Failed to activate Game Booster: ' + err.message);
+                showErrorNotification(err.message);
             } finally {
                 this.disabled = false;
-                this.innerHTML = 'Activate Booster';
+                activateBtn.innerHTML = 'Activate Booster';
             }
         });
-    }
-    
-    if (undoGameBoosterBtn) {
-        undoGameBoosterBtn.addEventListener('click', async function() {
+        
+        deactivateBtn.addEventListener('click', async function() {
             try {
                 this.disabled = true;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deactivating...';
+                deactivateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deactivating...';
                 
-                await window.electronAPI.deactivateGameBooster();
+                await window.electronAPI.setGameBooster(false);
                 showNotification('Game Booster deactivated.', { type: 'success' });
-                showFpsOverlay(false);
+                
+                activateBtn.style.display = 'block';
+                deactivateBtn.style.display = 'none';
             } catch (err) {
-                showErrorNotification('Failed to deactivate Game Booster: ' + err.message);
+                showErrorNotification(err.message);
             } finally {
                 this.disabled = false;
-                this.innerHTML = 'Undo Boost';
+                deactivateBtn.innerHTML = 'Deactivate Boost';
             }
         });
     }

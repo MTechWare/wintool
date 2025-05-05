@@ -99,20 +99,23 @@
                 <div class="setting-item">
                     <div class="setting-label">
                         <label>Update Channel</label>
-                        <span class="setting-description">Current update channel for WinTool</span>
+                        <span class="setting-description">Select which update channel to use</span>
                     </div>
                     <div class="setting-control">
-                        <span class="badge badge-success">Stable</span>
+                        <select class="select-field" disabled>
+                            <option value="stable">Stable</option>
+                            <option value="beta">Beta</option>
+                        </select>
                     </div>
                 </div>
                 
                 <div class="setting-item">
                     <div class="setting-label">
                         <label>Current Version</label>
-                        <span class="setting-description">Installed version of WinTool</span>
+                        <span class="setting-description">The version of WinTool you're using</span>
                     </div>
                     <div class="setting-control">
-                        <span class="badge badge-info">v0.0.4a</span>
+                        <span class="badge badge-info">v0.0.5a</span>
                     </div>
                 </div>
                 
@@ -126,6 +129,22 @@
                             <i class="fas fa-sync-alt"></i> Reset Order
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab Visibility Settings -->
+        <div class="settings-section">
+            <div class="section-header">
+                <i class="fas fa-eye"></i>
+                <h3>Tab Visibility & Pinning</h3>
+            </div>
+            
+            <div id="tab-visibility-section" class="settings-grid">
+                <!-- This will be populated dynamically by JavaScript -->
+                <div class="setting-description" style="padding: 0 15px 15px 15px;">
+                    Manage which tabs are visible in the sidebar and pin important tabs to the top. 
+                    You can also right-click on any tab in the sidebar to quickly hide or pin it.
                 </div>
             </div>
         </div>

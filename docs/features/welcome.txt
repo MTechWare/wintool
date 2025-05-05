@@ -1,0 +1,22 @@
+File: welcome.html + welcome.js
+
+Purpose: Implements the Welcome tab. Greets users, highlights new features, and provides a first-time tutorial.
+
+Key UI Elements (HTML):
+- Welcome message and app highlights
+- Feature links to navigate to other tabs
+- Tutorial overlay for first-time users
+- Button to start/replay tutorial
+
+Styling:
+- Friendly, visually engaging layout
+- Accent color for highlights and buttons
+
+JavaScript Functionality (welcome.js):
+- `initWelcomeTab()`: Initializes the welcome tab, sets up feature links and tutorial logic.
+- `setupFeatureLinks()`: Adds click handlers to feature links for tab navigation.
+- `setupTutorial()`: Manages tutorial overlay, first-time checks, and replay.
+- Exports `window.initWelcomeTab` for tab initialization.
+
+Notes:
+- Tutorial shown on first run, can be replayed. All navigation handled via JS and Electron API.

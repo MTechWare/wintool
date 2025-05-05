@@ -98,6 +98,7 @@ function initSettingsTab() {
                 accentColorPicker.value = defaultColor;
             }
             
+            
             // Update active tab color
             const activeTab = document.querySelector('.tab-item.active');
             if (activeTab) {
@@ -116,9 +117,17 @@ function initSettingsTab() {
     if (resetTabOrderBtn) {
         resetTabOrderBtn.addEventListener('click', function() {
             localStorage.removeItem('tabOrder');
-            showNotification('Tab order has been reset to default. Please restart the application.');
+            showNotification('Tab order has been reset to default. Restarting the application...');
+            if (window.electronAPI && window.electronAPI.reloadWindow) {
+                window.electronAPI.reloadWindow();
+            } else {
+                window.location.reload();
+            }
         });
     }
+    
+    // Set up tab visibility manager
+    setupTabVisibilityManager();
     
     // Set up check for updates button
     const checkUpdatesBtn = document.getElementById('check-updates');
@@ -143,6 +152,8 @@ function initSettingsTab() {
                 localStorage.removeItem('sidebarCollapsed');
                 localStorage.removeItem('fpsCounter');
                 localStorage.removeItem('alwaysOnTop');
+                localStorage.removeItem('hiddenTabs');
+                localStorage.removeItem('pinnedTabs');
                 
                 showNotification('All settings have been reset to default. Restarting the application...');
                 setTimeout(() => {
@@ -155,6 +166,126 @@ function initSettingsTab() {
             }
         });
     }
+}
+
+// Set up tab visibility manager in settings
+function setupTabVisibilityManager() {
+    const tabVisibilitySection = document.getElementById('tab-visibility-section');
+    if (!tabVisibilitySection) return;
+    
+    // Get hidden and pinned tabs from localStorage
+    const hiddenTabs = JSON.parse(localStorage.getItem('hiddenTabs') || '[]');
+    const pinnedTabs = JSON.parse(localStorage.getItem('pinnedTabs') || '[]');
+    
+    // Clear existing content
+    tabVisibilitySection.innerHTML = '';
+    
+    // Create header
+    const header = document.createElement('h3');
+    header.className = 'settings-section-title';
+    header.innerHTML = '<i class="fas fa-eye"></i> Tab Visibility & Pinning';
+    tabVisibilitySection.appendChild(header);
+    
+    // Create description
+    const description = document.createElement('p');
+    description.className = 'settings-section-desc';
+    description.textContent = 'Manage which tabs are visible in the sidebar and pin important tabs to the top.';
+    tabVisibilitySection.appendChild(description);
+    
+    // Create tab list container
+    const tabListContainer = document.createElement('div');
+    tabListContainer.className = 'tab-visibility-container';
+    tabVisibilitySection.appendChild(tabListContainer);
+    
+    // Get all available tabs
+    const tabItems = document.querySelectorAll('.tab-item');
+    
+    // Create tab visibility controls
+    tabItems.forEach(tab => {
+        const tabName = tab.getAttribute('data-tab');
+        const tabDisplayName = tab.querySelector('span').textContent;
+        const tabIcon = tab.querySelector('i').className;
+        
+        const isHidden = hiddenTabs.includes(tabName);
+        const isPinned = pinnedTabs.includes(tabName);
+        
+        // Create tab control item
+        const tabControl = document.createElement('div');
+        tabControl.className = 'tab-visibility-item';
+        
+        // Tab info
+        const tabInfo = document.createElement('div');
+        tabInfo.className = 'tab-visibility-info';
+        tabInfo.innerHTML = `<i class="${tabIcon}"></i> <span>${tabDisplayName}</span>`;
+        tabControl.appendChild(tabInfo);
+        
+        // Tab controls
+        const tabControls = document.createElement('div');
+        tabControls.className = 'tab-visibility-controls';
+        
+        // Visibility toggle
+        const visibilityToggle = document.createElement('div');
+        visibilityToggle.className = 'tab-control-toggle';
+        visibilityToggle.innerHTML = `
+            <label class="switch">
+                <input type="checkbox" class="tab-visibility-toggle" data-tab="${tabName}" ${!isHidden ? 'checked' : ''}>
+                <span class="slider round"></span>
+            </label>
+            <span class="toggle-label">${isHidden ? 'Hidden' : 'Visible'}</span>
+        `;
+        tabControls.appendChild(visibilityToggle);
+        
+        // Pin toggle
+        const pinToggle = document.createElement('div');
+        pinToggle.className = 'tab-control-toggle';
+        pinToggle.innerHTML = `
+            <label class="switch">
+                <input type="checkbox" class="tab-pin-toggle" data-tab="${tabName}" ${isPinned ? 'checked' : ''}>
+                <span class="slider round"></span>
+            </label>
+            <span class="toggle-label">${isPinned ? 'Pinned' : 'Unpinned'}</span>
+        `;
+        tabControls.appendChild(pinToggle);
+        
+        tabControl.appendChild(tabControls);
+        tabListContainer.appendChild(tabControl);
+    });
+    
+    // Add event listeners for visibility toggles
+    const visibilityToggles = document.querySelectorAll('.tab-visibility-toggle');
+    visibilityToggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const tabName = this.getAttribute('data-tab');
+            const isVisible = this.checked;
+            const toggleLabel = this.parentElement.nextElementSibling;
+            
+            // Update toggle label
+            toggleLabel.textContent = isVisible ? 'Visible' : 'Hidden';
+            
+            // Call the global toggle function
+            if (window.toggleTabVisibility) {
+                window.toggleTabVisibility(tabName);
+            }
+        });
+    });
+    
+    // Add event listeners for pin toggles
+    const pinToggles = document.querySelectorAll('.tab-pin-toggle');
+    pinToggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const tabName = this.getAttribute('data-tab');
+            const isPinned = this.checked;
+            const toggleLabel = this.parentElement.nextElementSibling;
+            
+            // Update toggle label
+            toggleLabel.textContent = isPinned ? 'Pinned' : 'Unpinned';
+            
+            // Call the global toggle function
+            if (window.toggleTabPin) {
+                window.toggleTabPin(tabName);
+            }
+        });
+    });
 }
 
 // Export the initialization function

@@ -9,13 +9,10 @@
 ### 🎯 A Modern Windows System Management Suite
 
 *Streamline your Windows experience with an elegant, all-in-one system management tool.*
-*This utility is in alpha. Some features might not work as intended!*
 
 **[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Requirements](#-requirements)**
 
 </div>
-
----
 
 ## 📋 Requirements
 
@@ -39,7 +36,7 @@ npx electron-builder
 - If you see `'electron-builder' is not recognized`, make sure you ran `npm install` and use `npx electron-builder` instead of `npm run dist`.
 
 ### Option 2: Download Release (if available)
-1. Visit the [Releases Page](https://github.com/MTechWare/wintool/releases)
+1. Visit the [Releases Page](https://github.com/MTechWare/wintools)
 2. Download the latest version
 3. Run the installer or executable to start the application
 
@@ -60,20 +57,6 @@ npx electron-builder
   - Frequently used tools
 - **First-Time Tutorial**
   - Access the onboarding tutorial from the Welcome page at any time
-
-### 🆕 New Features (v0.0.3a+)
-
-- **Custom Accent Colors**
-  - Choose your own accent color for the entire app
-- **FPS Counter Toggle**
-  - Enable/disable FPS overlay from Settings
-- **Gaming & Performance Tab**
-  - Access performance tweaks and gaming utilities
-- **Draggable & Reorderable Tabs**
-  - Move tabs and save your preferred order
-- **Fold Sidebar Tabs**
-  - Fold/unfold sidebar tabs to show only icons (toggle in Settings)
-  - Sidebar state is remembered between sessions
 
 ### ⚡ Tweaks
 
@@ -127,9 +110,6 @@ npx electron-builder
 - **Windows Configuration**
   - Custom installation settings
   - System preferences
-- **Automation**
-  - Scripted setup
-  - Configuration profiles
 
 ## 🎨 Themes & Design
 

@@ -1,7 +1,11 @@
 // Import necessary Electron modules and Node.js built-in modules
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+// Electron Modules
+const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
+// Node.js Built-in Modules
 const path = require('path');
-const { exec } = require('child_process');
+const { exec, execFile } = require('child_process');
+const util = require('util');
+const execAsync = util.promisify(exec);
 const portscanner = require('portscanner');
 const sudo = require('sudo-prompt');
 const os = require('os');
@@ -9,38 +13,63 @@ const dns = require('dns');
 const fetch = require('node-fetch');
 const fs = require('fs');
 
+// Initialize store
+let store;
+(async () => {
+    const Store = await import('electron-store');
+    store = new Store.default();
+})();
+
+const { executeCommand } = require('./js/terminal-commands');
+
 app.whenReady().then(async () => {
   console.log('[WinTool] Electron app is ready. Checking admin rights...');
   const isElevated = require('is-elevated');
   const elevated = await isElevated();
   console.log('[WinTool] Is elevated:', elevated);
-  if (!elevated) {
-    const options = { name: 'WinTool' };
-    // Launch Electron with the app directory or main.js for elevation
-    const electronPath = process.execPath;
-    const appPath = process.argv[1] || __dirname;
-    console.log(`[WinTool] Relaunch command: "${electronPath}" "${appPath}"`);
-    sudo.exec(`"${electronPath}" "${appPath}"`, options, (error) => {
-      if (error) {
-        console.error('[WinTool] Failed to elevate:', error);
-        const { dialog } = require('electron');
-        dialog.showErrorBox('Administrator Rights Required',
-          'This app must be run as administrator. Please restart with elevated permissions.');
-        app.quit();
-      } else {
-        console.log('[WinTool] Relaunched as admin. Quitting original process.');
-        app.quit();
-      }
-    });
+  
+  // For development purposes, allow running without admin rights
+  const skipElevation = process.env.SKIP_ELEVATION === 'true';
+  
+  if (!elevated && !skipElevation) {
+    try {
+      const options = { name: 'WinTool' };
+      // Launch Electron with the app directory or main.js for elevation
+      const electronPath = process.execPath;
+      const appPath = path.join(__dirname); // Use absolute path
+      console.log(`[WinTool] Relaunch command: "${electronPath}" "${appPath}"`);
+      
+      sudo.exec(`"${electronPath}" "${appPath}"`, options, (error) => {
+        if (error) {
+          console.error('[WinTool] Failed to elevate:', error);
+          // Show error dialog but continue without elevation
+          dialog.showMessageBox({
+            type: 'warning',
+            title: 'Administrator Rights',
+            message: 'Some features may be limited without administrator rights.',
+            detail: 'You can continue using WinTool with limited functionality.',
+            buttons: ['Continue Anyway']
+          }).then(() => {
+            createWindow();
+          });
+        } else {
+          console.log('[WinTool] Relaunched as admin. Quitting original process.');
+          app.quit();
+        }
+      });
+    } catch (error) {
+      console.error('[WinTool] Error during elevation:', error);
+      createWindow(); // Continue without elevation
+    }
   } else {
-    console.log('[WinTool] Running as admin. Creating main window...');
+    console.log('[WinTool] Running with current permissions. Creating main window...');
     createWindow();
   }
 });
 
 // --- Function to Create the Application Window ---
 function createWindow() {
-  console.log("Creating application window...");
+  console.log("Creating main window..."); // Verify console.log in main.js
   // Create the browser window with specified options
   const win = new BrowserWindow({
     width: 1200,
@@ -115,17 +144,45 @@ ipcMain.on('reload-window', (event) => {
 });
 
 // --- Require backend modules ---
+// System Modules
 const { getSystemInfo } = require('./js/system-info');
 const { launchTaskManager, launchDiskCleanup } = require('./js/system-commands');
+// Package Modules
 const { getPackages } = require('./js/packages');
 const { packageAction } = require('./js/package-actions');
+// Tweaks Modules
 const { getCurrentTweaks, applyTweaks } = require('./js/tweaks');
+// Hardware Monitoring Modules
+const hardwareMonitor = require('./js/hardware-monitor');
+// Privacy Guard Modules
+const { setPrivacyGuard, getPrivacyGuardStatus } = require('./js/privacy-guard');
+// Gaming Features Module
+const gamingFeatures = require('./js/gaming-features');
 
-// --- IPC handlers ---
+// ===================================================
+// SYSTEM TOOLS TAB IPC HANDLERS
+// ===================================================
+
+// System Info IPC Handler
 ipcMain.handle('get-system-info', async () => {
+    try {
+        const systemInfo = await getSystemInfo();
+        return systemInfo;
+    } catch (error) {
+        console.error('System info error:', error);
+        return { error: error.message };
+    }
+});
+
+// Test hardware monitor functionality
+ipcMain.handle('test-hardware-monitor', async () => {
   try {
-    return await getSystemInfo();
+    console.log('Testing hardware monitor...');
+    const result = await hardwareMonitor.testHardwareMonitor();
+    console.log('Hardware monitor test result:', result);
+    return result;
   } catch (error) {
+    console.error('Hardware monitor test error:', error);
     return { error: error.message };
   }
 });
@@ -137,13 +194,12 @@ ipcMain.handle('launch-task-manager', async () => {
     return { error: error.message };
   }
 });
-ipcMain.handle('launch-disk-cleanup', async () => {
-  try {
-    return await launchDiskCleanup();
-  } catch (error) {
-    return { error: error.message };
-  }
-});
+
+
+// ===================================================
+// PACKAGES TAB IPC HANDLERS
+// ===================================================
+
 ipcMain.handle('get-packages', async () => {
   try {
     return await getPackages();
@@ -329,6 +385,10 @@ ipcMain.handle('install-packages', async (event, packageIds) => {
   }
 });
 
+// ===================================================
+// TWEAKS TAB IPC HANDLERS
+// ===================================================
+
 ipcMain.handle('get-current-tweaks', async () => {
   try {
     return await getCurrentTweaks();
@@ -343,93 +403,35 @@ ipcMain.handle('apply-tweaks', async (event, tweaks) => {
     return { error: error.message };
   }
 });
+
+// ===================================================
+// WINDOW MANAGEMENT IPC HANDLERS
+// ===================================================
+
 ipcMain.handle('close-window', async () => {
   const win = BrowserWindow.getFocusedWindow();
   if (win) win.close();
 });
-ipcMain.handle('launch-system-tool', async (event, toolName) => {
-    // Map tool names to Windows commands
-    const toolCommands = {
-        'taskmgr': 'start taskmgr',
-        'task_manager': 'start taskmgr',
-        'cmd': 'start cmd',
-        'powershell': 'start powershell',
-        'explorer': 'start explorer',
-        'notepad': 'start notepad',
-        'control': 'start control',
-        'disk_cleanup': 'start cleanmgr',
-        'msconfig': 'start msconfig',
-        'system_info': 'start msinfo32',
-        // Add more as needed
-    };
-    const cmd = toolCommands[toolName];
-    if (!cmd) throw new Error('Unknown system tool: ' + toolName);
-    return new Promise((resolve, reject) => {
-        exec(cmd, (err) => {
-            if (err) reject(err);
-            else resolve();
-        });
-    });
-});
-ipcMain.handle('setFpsCounter', async (event, enabled) => {
-  // Placeholder: Just log and return success for now
-  console.log('[FPS Counter] Set to:', enabled);
-  return { success: true };
+
+ipcMain.on('resize-window', (event, height, width) => {
+  const win = BrowserWindow.getFocusedWindow();
+  if (win && width && height) {
+    console.log(`Resizing window to: ${width}x${height}`);
+    try {
+      win.setSize(parseInt(width, 10), parseInt(height, 10), true);
+    } catch (e) {
+      console.error("Failed to resize window:", e);
+    }
+  } else if (!win) {
+    console.warn("Resize request received but no focused window found.");
+  } else {
+    console.warn("Resize request received with invalid dimensions:", width, height);
+  }
 });
 
-// MOVED: setGameMode handler moved to tweaks.js
-
-ipcMain.handle('setPowerPlan', async (event, plan) => {
-  // GUIDs for built-in power plans
-  const plans = {
-    balanced: '381b4222-f694-41f0-9685-ff5bb260df2e',
-    high: '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c',
-    ultimate: 'e9a42b02-d5df-448d-aa00-03f14749eb61',
-  };
-  const guid = plans[plan];
-  if (!guid) throw new Error('Unknown power plan');
-  // First, check if plan exists; if not, add/duplicate it (for ultimate)
-  function planExists(guid) {
-    return new Promise((resolve) => {
-      exec(`powercfg /list`, { shell: true }, (err, stdout) => {
-        resolve(stdout && stdout.toLowerCase().includes(guid));
-      });
-    });
-  }
-  if (plan === 'ultimate') {
-    const exists = await planExists(guid);
-    if (!exists) {
-      await new Promise((resolve, reject) => {
-        exec(`powercfg -duplicatescheme ${guid}`, { shell: true }, (error, stdout, stderr) => {
-          if (error) return reject(new Error(stderr || error.message));
-          resolve();
-        });
-      });
-    }
-  }
-  // Now set active
-  return new Promise((resolve, reject) => {
-    exec(`powercfg /setactive ${guid}`, { shell: true }, (error, stdout, stderr) => {
-      if (error) return reject(new Error(stderr || error.message));
-      resolve({ success: true });
-    });
-  });
-});
-ipcMain.handle('optimizeRam', async () => {
-  // Use RAMMap.exe to clear standby memory if available
-  const rammapPath = path.join(__dirname, 'rammap.exe');
-  return new Promise((resolve, reject) => {
-    const fs = require('fs');
-    if (fs.existsSync(rammapPath)) {
-      exec(`"${rammapPath}" -E`, (error) => {
-        if (error) return reject(new Error(stderr || error.message));
-        resolve({ success: true });
-      });
-    } else {
-      reject(new Error('rammap.exe not found in app directory. Please download RAMMap from Microsoft Sysinternals and place rammap.exe in the app folder.'));
-    }
-  });
-});
+// ===================================================
+// NETWORK TAB IPC HANDLERS
+// ===================================================
 
 ipcMain.handle('get-network-status', async () => {
   const interfaces = os.networkInterfaces();
@@ -465,46 +467,46 @@ ipcMain.handle('get-network-status', async () => {
   };
 });
 
-// --- IPC Handlers ---
-ipcMain.on('resize-window', (event, height, width) => {
-  const win = BrowserWindow.getFocusedWindow();
-  if (win && width && height) {
-    console.log(`Resizing window to: ${width}x${height}`);
-    try {
-      win.setSize(parseInt(width, 10), parseInt(height, 10), true);
-    } catch (e) {
-      console.error("Failed to resize window:", e);
-    }
-  } else if (!win) {
-    console.warn("Resize request received but no focused window found.");
-  } else {
-    console.warn("Resize request received with invalid dimensions:", width, height);
-  }
-});
-
-// --- Gaming Performance Functions ---
-ipcMain.handle('optimizeMemory', async () => {
+ipcMain.handle('getNetworkInfo', async () => {
   try {
-    console.log('Optimizing system memory...');
+    console.log('Getting network information...');
     
-    // Execute memory optimization commands
-    await new Promise(resolve => {
-      exec('powershell -Command "EmptyStandbyList workingsets"', (error) => {
-        if (error) {
-          console.warn('Could not empty working sets, using fallback method');
+    // Get network interfaces
+    const interfaces = os.networkInterfaces();
+    let ipAddress = 'Not available';
+    let connectionType = 'Unknown';
+    
+    // Find the active network interface (non-internal with IPv4)
+    for (const [name, netInterface] of Object.entries(interfaces)) {
+      for (const iface of netInterface) {
+        if (!iface.internal && iface.family === 'IPv4') {
+          ipAddress = iface.address;
+          connectionType = name.includes('Wi-Fi') ? 'Wi-Fi' : 
+                          name.includes('Ethernet') ? 'Ethernet' : 
+                          name.includes('VPN') ? 'VPN' : 'Wired';
+          break;
         }
-      });
-      
-      // Simulate memory optimization with a delay
-      setTimeout(() => {
-        console.log('Memory optimization completed');
-        resolve();
-      }, 1500);
-    });
+      }
+    }
+    // Check internet connectivity
+    let internetConnected = false;
+    try {
+      await fetch('https://www.google.com', { timeout: 5000 });
+      internetConnected = true;
+    } catch (e) {
+      internetConnected = false;
+    }
+    // Get DNS servers (simplified - in a real implementation, this would use system commands)
+    const dnsServers = ['8.8.8.8', '8.8.4.4']; // Example Google DNS
     
-    return { success: true, message: 'Memory optimization completed successfully' };
+    return {
+      connectionType,
+      ipAddress,
+      dnsServers,
+      internetConnected
+    };
   } catch (error) {
-    console.error('Memory optimization error:', error);
+    console.error('Network info error:', error);
     return { error: error.message };
   }
 });
@@ -526,84 +528,552 @@ ipcMain.handle('optimizeNetwork', async () => {
   }
 });
 
-ipcMain.handle('cleanupSystem', async () => {
+ipcMain.handle('flushDns', async () => {
   try {
-    console.log('Running system cleanup...');
+    console.log('Flushing DNS cache...');
     
-    // Simulate system cleanup with a delay
-    await new Promise(resolve => setTimeout(resolve, 2500));
-    
-    // In a real implementation, this would execute cleanup commands
-    // For example: Clearing temp files, browser caches, etc.
-    
-    return { success: true, message: 'System cleanup completed successfully' };
+    // Execute ipconfig /flushdns command
+    return new Promise((resolve) => {
+      exec('ipconfig /flushdns', (error, stdout, stderr) => {
+        if (error) {
+          console.error('DNS flush error:', error);
+          resolve({ error: error.message });
+        } else {
+          console.log('DNS cache flushed successfully');
+          resolve({ success: true, message: 'DNS cache flushed successfully' });
+        }
+      });
+    });
   } catch (error) {
-    console.error('System cleanup error:', error);
+    console.error('DNS flush error:', error);
     return { error: error.message };
   }
 });
 
-ipcMain.handle('launchPerformanceMonitor', async () => {
+ipcMain.handle('releaseRenewIp', async () => {
   try {
-    console.log('Launching performance monitor...');
+    console.log('Releasing and renewing IP address...');
     
-    // Launch Windows Performance Monitor
-    exec('perfmon.exe', (error) => {
-      if (error) {
-        console.error('Failed to launch Performance Monitor:', error);
-        throw new Error('Failed to launch Performance Monitor');
-      }
+    // Execute ipconfig /release and ipconfig /renew commands
+    return new Promise((resolve) => {
+      exec('ipconfig /release && ipconfig /renew', (error, stdout, stderr) => {
+        if (error) {
+          console.error('IP release/renew error:', error);
+          resolve({ error: error.message });
+        } else {
+          console.log('IP address released and renewed successfully');
+          resolve({ success: true, message: 'IP address released and renewed successfully' });
+        }
+      });
     });
+  } catch (error) {
+    console.error('IP release/renew error:', error);
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('resetNetwork', async () => {
+  try {
+    console.log('Resetting network adapters...');
+    
+    // Execute netsh commands to reset network adapters
+    return new Promise((resolve) => {
+      exec('netsh winsock reset && netsh int ip reset', (error, stdout, stderr) => {
+        if (error) {
+          console.error('Network reset error:', error);
+          resolve({ error: error.message });
+        } else {
+          console.log('Network reset successfully');
+          resolve({ success: true, message: 'Network reset successfully. You may need to restart your computer.' });
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Network reset error:', error);
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('openNetworkSettings', async () => {
+  try {
+    console.log('Opening network settings...');
+    
+    // Open Windows network settings
+    exec('start ms-settings:network');
+    return { success: true };
+  } catch (error) {
+    console.error('Open network settings error:', error);
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('runPingTest', async (event, target) => {
+  try {
+    console.log(`Running ping test for ${target}...`);
+    
+    // Execute ping command
+    return new Promise((resolve) => {
+      exec(`ping -n 4 ${target}`, (error, stdout, stderr) => {
+        if (error) {
+          console.error('Ping test error:', error);
+          resolve({ error: error.message });
+        } else {
+          console.log('Ping test completed');
+          resolve({ success: true, output: stdout });
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Ping test error:', error);
+    return { error: error.message };
+  }
+});
+
+// ===================================================
+// GAMING & PERFORMANCE IPC HANDLERS
+// ===================================================
+ipcMain.handle('setGameBooster', (_, enabled) => gamingFeatures.setGameBooster(enabled));
+ipcMain.handle('getGameBoosterStatus', () => gamingFeatures.getGameBoosterStatus());
+ipcMain.handle('setPowerPlan', (_, plan) => gamingFeatures.setPowerPlan(plan));
+ipcMain.handle('setGameMode', (_, enabled) => gamingFeatures.setGameMode(enabled));
+ipcMain.handle('getGameModeStatus', () => gamingFeatures.getGameModeStatus());
+
+// ===================================================
+// SYSTEM UTILITIES IPC HANDLERS
+// ===================================================
+
+ipcMain.handle('launch-system-tool', async (event, toolName) => {
+    // Map tool names to Windows commands
+    const toolCommands = {
+        'taskmgr': 'start taskmgr',
+        'task_manager': 'start taskmgr',
+        'cmd': 'start cmd',
+        'powershell': 'start powershell',
+        'explorer': 'start explorer',
+        'notepad': 'start notepad',
+        'control': 'start control',
+        'disk_cleanup': 'start cleanmgr',
+        'msconfig': 'start msconfig',
+        'system_info': 'start msinfo32',
+        // Add more as needed
+    };
+    const cmd = toolCommands[toolName];
+    if (!cmd) throw new Error('Unknown system tool: ' + toolName);
+    return new Promise((resolve, reject) => {
+        exec(cmd, (err) => {
+            if (err) reject(err);
+            else resolve();
+        });
+    });
+});
+
+// ===================================================
+// PRIVACY TAB IPC HANDLERS
+// ===================================================
+
+ipcMain.handle('getPrivacyStates', async () => {
+    try {
+        const states = {};
+        const commands = {
+            location: [
+                'Get-ItemProperty -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location" -Name "Value"',
+                'Get-ItemProperty -Path "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location" -Name "Value"'
+            ],
+            camera: [
+                'Get-ItemProperty -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\webcam" -Name "Value"',
+                'Get-ItemProperty -Path "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\webcam" -Name "Value"'
+            ],
+            microphone: [
+                `Get-ItemProperty -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone" -Name "Value"`,
+                `Get-ItemProperty -Path "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone" -Name "Value"`
+            ],
+            activity: [
+                'Get-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Privacy" -Name "EnableActivityFeed"'
+            ]
+        };
+
+        for (const [key, commandList] of Object.entries(commands)) {
+            try {
+                let value = false;
+                for (const command of commandList) {
+                    const { stdout } = await new Promise((resolve, reject) => {
+                        exec(`powershell -Command "${command}"`, (error, stdout, stderr) => {
+                            if (key === 'activity') {
+                                resolve(!error && stdout.includes('1'));
+                            } else {
+                                resolve(!error && stdout.includes('Allow'));
+                            }
+                        });
+                    });
+
+                    if (stdout && (stdout.includes('Allow') || stdout.includes('1'))) {
+                        value = true;
+                        break;
+                    }
+                }
+                states[key] = value;
+                console.log(`Privacy setting ${key}:`, value);
+            } catch (error) {
+                console.error(`Error checking ${key}:`, error);
+                states[key] = false;
+            }
+        }
+        
+        console.log('Final privacy settings:', states);
+        return states;
+    } catch (error) {
+        console.error('Error getting privacy states:', error);
+        return {
+            location: false,
+            camera: false,
+            microphone: false,
+            activity: false
+        };
+    }
+});
+
+ipcMain.handle('setPrivacySetting', async (event, setting, value) => {
+    try {
+        const regCommands = {
+            camera: [
+                `reg add "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\webcam" /v Value /t REG_SZ /d "${value ? 'Allow' : 'Deny'}" /f`,
+                `reg add "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\webcam" /v Value /t REG_SZ /d "${value ? 'Allow' : 'Deny'}" /f`
+            ],
+            microphone: [
+                `reg add "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone" /v Value /t REG_SZ /d "${value ? 'Allow' : 'Deny'}" /f`,
+                `reg add "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone" /v Value /t REG_SZ /d "${value ? 'Allow' : 'Deny'}" /f`
+            ],
+            location: [
+                `reg add "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location" /v Value /t REG_SZ /d "${value ? 'Allow' : 'Deny'}" /f`,
+                `reg add "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location" /v Value /t REG_SZ /d "${value ? 'Allow' : 'Deny'}" /f`
+            ],
+            activity: [
+                `reg add "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Privacy" /v EnableActivityFeed /t REG_DWORD /d ${value ? 1 : 0} /f`
+            ]
+        };
+
+        const commands = regCommands[setting];
+        if (!commands) {
+            throw new Error('Invalid privacy setting');
+        }
+
+        // Execute all registry commands for the setting
+        for (const command of commands) {
+            await new Promise((resolve, reject) => {
+                exec(command, { windowsHide: true }, (error) => {
+                    if (error) {
+                        console.warn(`Command failed: ${command}`, error);
+                    }
+                    resolve();
+                });
+            });
+        }
+
+        return { success: true };
+    } catch (error) {
+        console.error('Error setting privacy setting:', error);
+        return { error: `Failed to apply ${setting} setting` };
+    }
+});
+
+ipcMain.handle('applyPrivacyLockdown', async () => {
+    try {
+        const commands = [
+            // Telemetry
+            `Set-ItemProperty -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection" -Name "AllowTelemetry" -Value 0`,
+            `Set-ItemProperty -Path "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" -Name "AllowTelemetry" -Value 0`,
+            // App Diagnostics
+            `Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\appDiagnostics" -Name "Value" -Value "Deny"`,
+            // Advertising Info
+            `Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo" -Name "Enabled" -Value 0`,
+            // Location
+            `Set-ItemProperty -Path "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location" -Name "Value" -Value "Deny"`,
+            // Camera
+            `Set-ItemProperty -Path "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\webcam" -Name "Value" -Value "Deny"`,
+            // Microphone
+            `Set-ItemProperty -Path "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone" -Name "Value" -Value "Deny"`,
+            // Activity History
+            `New-Item -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Privacy" -Force; Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Privacy" -Name "EnableActivityFeed" -Value 0 -Type DWord`
+        ];
+
+        for (const command of commands) {
+            await new Promise((resolve, reject) => {
+                exec(`powershell -Command "${command}"`, (error) => {
+                    if (error) {
+                        console.warn(`Command failed: ${command}`, error);
+                        resolve(); // Continue with other commands even if one fails
+                    } else {
+                        resolve();
+                    }
+                });
+            });
+        }
+
+        return { success: true };
+    } catch (error) {
+        console.error('Error applying privacy lockdown:', error);
+        return { error: error.message };
+    }
+});
+
+ipcMain.handle('getSystemPrivacySettings', async () => {
+    try {
+        const commands = {
+            location: [
+                'Get-ItemProperty -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location" -Name "Value" -ErrorAction SilentlyContinue',
+                'Get-ItemProperty -Path "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location" -Name "Value" -ErrorAction SilentlyContinue'
+            ],
+            camera: [
+                'Get-ItemProperty -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\webcam" -Name "Value" -ErrorAction SilentlyContinue',
+                'Get-ItemProperty -Path "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\webcam" -Name "Value" -ErrorAction SilentlyContinue'
+            ],
+            microphone: [
+                `Get-ItemProperty -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone" -Name "Value" -ErrorAction SilentlyContinue`,
+                `Get-ItemProperty -Path "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone" -Name "Value" -ErrorAction SilentlyContinue`
+            ],
+            activity: [
+                'Get-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Privacy" -Name "EnableActivityFeed" -ErrorAction SilentlyContinue'
+            ]
+        };
+
+        const results = {};
+        for (const [setting, commandList] of Object.entries(commands)) {
+            try {
+                let value = false;
+                for (const command of commandList) {
+                    const { stdout } = await new Promise((resolve, reject) => {
+                        exec(`powershell -Command "${command}"`, (error, stdout, stderr) => {
+                            if (error) {
+                                console.log(`Command failed for ${setting}:`, error);
+                                resolve({ stdout: '' });
+                            } else {
+                                resolve({ stdout });
+                            }
+                        });
+                    });
+
+                    if (stdout && (stdout.includes('Allow') || stdout.includes('1'))) {
+                        value = true;
+                        break;
+                    }
+                }
+                results[setting] = value;
+                console.log(`Privacy setting ${setting}:`, value);
+            } catch (error) {
+                console.error(`Error checking ${setting}:`, error);
+                results[setting] = false;
+            }
+        }
+        
+        console.log('Final privacy settings:', results);
+        return results;
+    } catch (error) {
+        console.error('Error in getSystemPrivacySettings:', error);
+        return {
+            location: false,
+            camera: false,
+            microphone: false,
+            activity: false
+        };
+    }
+});
+
+ipcMain.handle('getPrivacyGuardStatus', async () => {
+    try {
+        return await getPrivacyGuardStatus();
+    } catch (error) {
+        console.error('Error getting privacy guard status:', error);
+        return false;
+    }
+});
+
+ipcMain.handle('setPrivacyGuard', async (event, enabled) => {
+    try {
+        await setPrivacyGuard(enabled);
+        return { success: true };
+    } catch (error) {
+        console.error('Error setting privacy guard:', error);
+        return { error: 'Failed to set privacy guard' };
+    }
+});
+
+// ===================================================
+// TELEMETRY IPC HANDLERS
+// ===================================================
+
+ipcMain.handle('getTelemetryState', async () => {
+    try {
+        // Wait for store to be initialized
+        if (!store) {
+            const Store = await import('electron-store');
+            store = new Store.default();
+        }
+        return store.get('telemetry.enabled', true);
+    } catch (error) {
+        console.error('Error getting telemetry state:', error);
+        return true; // Default to enabled on error
+    }
+});
+
+ipcMain.handle('setTelemetry', async (event, enabled) => {
+    try {
+        // Wait for store to be initialized
+        if (!store) {
+            const Store = await import('electron-store');
+            store = new Store.default();
+        }
+
+        const commands = [
+            `reg add "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection" /v AllowTelemetry /t REG_DWORD /d ${enabled ? 1 : 0} /f`,
+            `reg add "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d ${enabled ? 1 : 0} /f`,
+            `reg add "HKLM:\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection" /v AllowTelemetry /t REG_DWORD /d ${enabled ? 1 : 0} /f`,
+            // Disable services if telemetry is being disabled
+            ...(enabled ? [] : [
+                'reg add "HKLM:\\SYSTEM\\CurrentControlSet\\Services\\DiagTrack" /v Start /t REG_DWORD /d 4 /f',
+                'reg add "HKLM:\\SYSTEM\\CurrentControlSet\\Services\\dmwappushservice" /v Start /t REG_DWORD /d 4 /f'
+            ])
+        ];
+
+        // Execute commands
+        for (const command of commands) {
+            await new Promise((resolve) => {
+                exec(command, { windowsHide: true }, (error) => {
+                    if (error) {
+                        console.warn(`Command failed: ${command}`, error);
+                    }
+                    resolve();
+                });
+            });
+        }
+
+        // Save state
+        store.set('telemetry.enabled', enabled);
+        return { success: true };
+    } catch (error) {
+        console.error('Error setting telemetry:', error);
+        return { error: 'Failed to set telemetry settings' };
+    }
+});
+
+// ===================================================
+// CLEANUP TAB IPC HANDLERS
+// ===================================================
+
+ipcMain.handle('runQuickCleanup', async () => {
+  try {
+    // Run basic cleanup commands
+    await execAsync('del /q/f/s %TEMP%\\*');
+    await execAsync('del /q/f/s C:\\Windows\\Temp\\*');
+    await execAsync('del /q/f/s C:\\Windows\\Prefetch\\*');
+    await execAsync('wevtutil cl System');
+    await execAsync('wevtutil cl Application');
     
     return { success: true };
   } catch (error) {
-    console.error('Performance monitor launch error:', error);
+    console.error('Quick cleanup error:', error);
     return { error: error.message };
   }
 });
 
-ipcMain.handle('activateGameBooster', async () => {
+ipcMain.handle('runAdvancedCleanup', async (event, options) => {
   try {
-    console.log('Activating Game Booster...');
+    const commands = [];
     
-    // Simulate game booster activation with a delay
-    await new Promise(resolve => setTimeout(resolve, 1800));
+    if (options.temp) {
+      commands.push(
+        'del /q/f/s %TEMP%\\*',
+        'del /q/f/s C:\\Windows\\Temp\\*'
+      );
+    }
     
-    // In a real implementation, this would:
-    // 1. Suspend non-essential background processes
-    // 2. Set CPU priority for games
-    // 3. Clear memory cache
-    // 4. Apply other performance tweaks
+    if (options.prefetch) {
+      commands.push('del /q/f/s C:\\Windows\\Prefetch\\*');
+    }
     
-    return { success: true, message: 'Game Booster activated successfully' };
+    if (options.windowsLogs) {
+      commands.push('del /q/f/s C:\\Windows\\Logs\\*');
+    }
+    
+    if (options.dnsCache) {
+      commands.push('ipconfig /flushdns');
+    }
+    
+    if (options.updates) {
+      commands.push(
+        'net stop wuauserv',
+        'del /q/f/s %windir%\\SoftwareDistribution\\Download\\*',
+        'net start wuauserv'
+      );
+    }
+    
+    if (options.installers) {
+      commands.push('del /q/f/s C:\\Windows\\Installer\\*');
+    }
+    
+    if (options.eventLogs) {
+      commands.push(
+        'wevtutil cl System',
+        'wevtutil cl Application',
+        'wevtutil cl Security'
+      );
+    }
+    
+    // Execute all selected commands
+    for (const cmd of commands) {
+      await execAsync(cmd);
+    }
+    
+    return { success: true };
   } catch (error) {
-    console.error('Game Booster activation error:', error);
+    console.error('Advanced cleanup error:', error);
     return { error: error.message };
   }
 });
 
-ipcMain.handle('deactivateGameBooster', async () => {
+// ===================================================
+// APP LIFECYCLE EVENTS
+// ===================================================
+
+// Add file browser dialog handler
+ipcMain.handle('browseForFile', async (event, options) => {
   try {
-    console.log('Deactivating Game Booster...');
+    const win = BrowserWindow.getAllWindows()[0];
+    if (!win) {
+      throw new Error('No window available');
+    }
     
-    // Simulate game booster deactivation with a delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Set default options
+    const dialogOptions = {
+      title: options.title || 'Select File',
+      buttonLabel: options.buttonLabel,
+      properties: options.properties || ['openFile'],
+      filters: options.filters || [{ name: 'All Files', extensions: ['*'] }]
+    };
     
-    // In a real implementation, this would:
-    // 1. Resume suspended processes
-    // 2. Reset CPU priorities
-    // 3. Restore original system settings
+    // If defaultPath is provided, add it to options
+    if (options.defaultPath) {
+      dialogOptions.defaultPath = options.defaultPath;
+    }
     
-    return { success: true, message: 'Game Booster deactivated successfully' };
+    // Show dialog and return result
+    const result = await dialog.showOpenDialog(win, dialogOptions);
+    
+    // Format the result
+    return {
+      canceled: result.canceled,
+      filePath: result.filePaths && result.filePaths.length > 0 ? result.filePaths[0] : null,
+      filePaths: result.filePaths
+    };
   } catch (error) {
-    console.error('Game Booster deactivation error:', error);
+    console.error('Error in browseForFile handler:', error);
     return { error: error.message };
   }
 });
 
-// --- App Lifecycle Events ---
 app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
   console.warn(`Certificate error for ${url}: ${error}`);
+  
+  // Allow self-signed certificates in development
   event.preventDefault();
   callback(true);
 });
@@ -616,4 +1086,66 @@ app.on('window-all-closed', () => {
   } else {
     console.log('App remains running (macOS standard behavior).');
   }
+});
+
+ipcMain.handle('check-for-updates', async () => {
+    // This would use the Windows Update API in production
+    return ipcMain.handlers['get-available-updates']();
+});
+
+ipcMain.handle('get-services', async () => {
+    try {
+        return new Promise((resolve, reject) => {
+            // Use PowerShell to get Windows services
+            exec('powershell -Command "Get-Service | Select-Object Name, DisplayName, Status, StartType | ConvertTo-Json -Depth 1 -Compress"', 
+                { encoding: 'utf8', maxBuffer: 1024 * 1024 * 10 }, // Increase buffer size for large output
+                (error, stdout, stderr) => {
+                    if (error) {
+                        console.error('Error getting services:', error);
+                        reject(error);
+                        return;
+                    }
+                    
+                    try {
+                        const services = JSON.parse(stdout);
+                        // Format the services data and limit to first 20 for demo purposes
+                        const formattedServices = Array.isArray(services) ? services : [services];
+                        const limitedServices = formattedServices.slice(0, 20).map(service => ({
+                            name: service.DisplayName || service.Name,
+                            description: `Windows service: ${service.Name}`,
+                            status: service.Status.toLowerCase(),
+                            startupType: (service.StartType || 'Manual').toLowerCase()
+                        }));
+                        resolve(limitedServices);
+                    } catch (parseError) {
+                        console.error('Error parsing services data:', parseError);
+                        reject(parseError);
+                    }
+                }
+            );
+        });
+    } catch (error) {
+        console.error('Error in get-services handler:', error);
+        return { error: error.message };
+    }
+});
+
+// Add terminal command handler
+ipcMain.handle('execute-command', async (event, cmd, shell) => {
+    try {
+        const output = await executeCommand(cmd, shell);
+        return { success: true, output };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+// Add open-device-manager handler
+ipcMain.handle('open-device-manager', async () => {
+    try {
+        shell.openExternal('ms-settings:devices');
+        return { success: true, message: 'Opening Device Manager.' };
+    } catch (error) {
+        return { success: false, message: 'Failed to open Device Manager.' };
+    }
 });

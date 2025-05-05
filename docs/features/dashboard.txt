@@ -1,0 +1,22 @@
+File: dashboard.html + dashboard.js
+
+Purpose: Implements the Dashboard tab. Provides a summary of system status, performance, and hardware details.
+
+Key UI Elements (HTML):
+- System Overview (OS, Hostname, User)
+- Performance Monitoring (CPU, RAM, Disk usage, System uptime)
+- Hardware Details (CPU/GPU model, temp, clock, load)
+
+Styling:
+- Card-based layout with grid for performance/hardware
+- Accent color for key metrics and icons
+- Custom scrollbars, responsive design
+
+JavaScript Functionality (dashboard.js):
+- `initDashboardTab()`: Initializes the dashboard, sets up periodic system info updates, hover animations.
+- `updateSystemInfo()`: Fetches and updates all system and hardware metrics from Electron backend.
+- `quickAction(action)`: Handles quick system actions (disk cleanup, task manager, power options, etc).
+- `cleanupDashboardTab()`: Stops data polling when leaving tab.
+
+Notes:
+- Designed for quick system health/status overview. All metrics dynamically updated via JS.

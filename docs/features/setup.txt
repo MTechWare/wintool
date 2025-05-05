@@ -1,0 +1,25 @@
+File: setup.html + setup.js
+
+Purpose: Implements the Unattended Setup tab. Guides users through creating automated Windows setup configurations, including system, user, privacy, network, partition, and app settings.
+
+Key UI Elements (HTML):
+- Sidebar navigation for setup sections
+- Forms for system/user/network/partition/app settings
+- Template buttons (Basic, Gaming, Office, Developer)
+- Export buttons (JSON, XML)
+
+Styling:
+- Multi-panel navigation with progress
+- Responsive forms and controls
+
+JavaScript Functionality (setup.js):
+- `initSetupTab()`: Initializes all setup UI, navigation, export, and templates.
+- Navigation: sidebar and next/prev buttons for multi-step forms.
+- Dynamic form sections for network/partition options.
+- App chips for quick selection.
+- Config templates: apply pre-defined setups.
+- Export: gathers form data and exports as JSON/XML for unattended installs.
+- Exports `window.initSetupTab` for tab initialization.
+
+Notes:
+- Designed for IT pros and advanced users automating Windows deployments. Heavy use of dynamic DOM manipulation and Electron API for integration.

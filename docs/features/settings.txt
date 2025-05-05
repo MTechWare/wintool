@@ -1,0 +1,26 @@
+File: settings.html + settings.js
+
+Purpose: Implements the Settings tab. Allows users to customize the application's appearance, behavior, and manage tab visibility/pinning.
+
+Key UI Elements (HTML):
+- Theme selector (light/dark)
+- Accent color picker (with live preview/reset)
+- Sidebar fold toggle
+- FPS counter toggle
+- Always-on-top toggle
+- Tab visibility and pinning manager
+
+Styling:
+- Uses accent color for primary theme
+- Responsive controls and toggles
+
+JavaScript Functionality (settings.js):
+- `initSettingsTab()`: Initializes all settings controls, loads/saves preferences to localStorage, applies changes.
+- Accent color picker and reset: live updates, persists to storage, reloads UI.
+- Toggles for sidebar, FPS, always-on-top: updates UI and persists state.
+- Tab visibility/pinning: dynamically manages available tabs (with toggles and switches).
+- `setupTabVisibilityManager()`: Builds and manages tab visibility/pin controls and event listeners.
+- Exports `window.initSettingsTab` for tab initialization.
+
+Notes:
+- Integrates with Electron API for window-level settings. All user preferences are persistent.

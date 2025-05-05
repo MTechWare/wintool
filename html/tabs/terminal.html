@@ -1,0 +1,123 @@
+<div id="tab-terminal" class="tab-content" style="overflow-y:auto; max-height:100vh;">
+    <h1 class="tab-title"><i class="fas fa-terminal"></i> Terminal & PowerShell Commands</h1>
+    <div class="tab-description">Execute common system commands and scripts</div>
+
+    <div class="terminal-wrapper">
+        <div class="terminal-tabs">
+            <button class="terminal-tab active" data-shell="powershell">
+                <i class="fab fa-windows"></i> PowerShell
+            </button>
+        </div>
+
+        <div class="terminal-container">
+            <div class="terminal-sidebar">
+                <div class="command-category">
+                    <div class="category-header">
+                        <i class="fas fa-desktop"></i>
+                        <span>System</span>
+                    </div>
+                    <div class="terminal-pane" id="system-info">
+                        <button class="command-btn" data-cmd="systeminfo">
+                            <i class="fas fa-info-circle"></i>
+                            <span>System Info</span>
+                        </button>
+                        <button class="command-btn" data-cmd="top-cpu">
+                            <i class="fas fa-microchip"></i>
+                            <span>Top CPU Processes</span>
+                        </button>
+                        <button class="command-btn" data-cmd="services">
+                            <i class="fas fa-cogs"></i>
+                            <span>Running Services</span>
+                        </button>
+                        <button class="command-btn" data-cmd="uptime">
+                            <i class="fas fa-clock"></i>
+                            <span>System Uptime</span>
+                        </button>
+                        <button class="command-btn" data-cmd="env">
+                            <i class="fas fa-list"></i>
+                            <span>Environment Variables</span>
+                        </button>
+                        <button class="command-btn" data-cmd="users">
+                            <i class="fas fa-users"></i>
+                            <span>Logged In Users</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="command-category">
+                    <div class="category-header">
+                        <i class="fas fa-network-wired"></i>
+                        <span>Network</span>
+                    </div>
+                    <div class="terminal-pane" id="network-tools">
+                        <button class="command-btn" data-cmd="ipconfig">
+                            <i class="fas fa-sitemap"></i>
+                            <span>DNS Settings</span>
+                        </button>
+                        <button class="command-btn" data-cmd="netadapter">
+                            <i class="fas fa-ethernet"></i>
+                            <span>Network Adapters</span>
+                        </button>
+                        <button class="command-btn" data-cmd="diskinfo">
+                            <i class="fas fa-hdd"></i>
+                            <span>Disk Information</span>
+                        </button>
+                        <button class="command-btn" data-cmd="ping">
+                            <i class="fas fa-bullseye"></i>
+                            <span>Ping google.com</span>
+                        </button>
+                        <button class="command-btn" data-cmd="tracert">
+                            <i class="fas fa-route"></i>
+                            <span>Traceroute google.com</span>
+                        </button>
+                        <button class="command-btn" data-cmd="netstat">
+                            <i class="fas fa-stream"></i>
+                            <span>Active Connections</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="command-category">
+                    <div class="category-header">
+                        <i class="fab fa-windows"></i>
+                        <span>Windows</span>
+                    </div>
+                    <div class="terminal-pane" id="windows-tools">
+                        <button class="command-btn" data-cmd="tasklist">
+                            <i class="fas fa-tasks"></i>
+                            <span>Task List</span>
+                        </button>
+                        <button class="command-btn" data-cmd="schtasks">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Scheduled Tasks</span>
+                        </button>
+                        <button class="command-btn" data-cmd="wmic">
+                            <i class="fas fa-database"></i>
+                            <span>WMIC BIOS Info</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="terminal-main">
+                <div class="output-header">
+                    <div class="output-title">
+                        <i class="fas fa-terminal"></i>
+                        <span>Terminal Output</span>
+                    </div>
+                    <div class="output-actions">
+                        <button id="copy-output" title="Copy Output">
+                            <i class="fas fa-copy"></i>
+                            <span>Copy</span>
+                        </button>
+                        <button id="clear-output" title="Clear Output">
+                            <i class="fas fa-trash"></i>
+                            <span>Clear</span>
+                        </button>
+                    </div>
+                </div>
+                <pre id="terminal-output" class="custom-scrollbar">Terminal output will appear here...</pre>
+            </div>
+        </div>
+    </div>
+</div>

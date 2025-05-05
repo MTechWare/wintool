@@ -1,0 +1,22 @@
+File: gaming.html + gaming.js
+
+Purpose: Implements the Gaming & Performance tab. Provides tools and quick actions to optimize the system for gaming.
+
+Key UI Elements (HTML):
+- Quick Actions (Game Booster, Memory Optimization)
+- Performance Settings (Game Mode toggle, Power Profile)
+- Additional Tools (Network Optimizer, System Cleanup, Performance Monitor)
+- Game Booster Settings modal for advanced options
+
+Styling:
+- Split columns for quick actions and settings
+- Card-based UI, accent color for icons
+- Custom scrollbars, responsive
+
+JavaScript Functionality (gaming.js):
+- `initGamingTab()`: Initializes the tab, sets up all controls and event listeners.
+- Functions for toggling Game Mode, switching power plans, optimizing memory/network, launching tools, and handling Game Booster modal/settings.
+- `cleanupGamingTab()`: Cleans up overlays when leaving tab.
+
+Notes:
+- Focused on gamers and power users seeking performance boosts. Heavy use of Electron API for system tweaks.

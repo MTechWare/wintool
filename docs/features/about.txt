@@ -1,0 +1,22 @@
+File: about.html + about.js
+
+Purpose: Implements the About tab for the WinTool application. Provides static information about the app, author, GitHub, and open source status.
+
+Key UI Elements (HTML):
+- Title with info icon
+- Brief tab description
+- Author and GitHub link
+- Copyright/open source notice
+
+Styling:
+- Custom styles for title, description, and content area
+- Uses the primary color theme
+
+JavaScript Functionality (about.js):
+- `initAboutTab()`: Initializes the about tab, updates copyright year, sets up links.
+- `updateCopyrightYear()`: Dynamically sets the copyright year.
+- `setupLinks()`: Placeholder for special link/button event handlers.
+- Exports `window.initAboutTab` for tab initialization.
+
+Notes:
+- Purely static informational content, with minimal dynamic JS for copyright year and potential future link handling.

@@ -46,10 +46,16 @@
 
     <!-- Splash Screen (animated loader only) -->
     <div id="splash-screen" class="splash-overlay">
-        <div class="loader">
-            <div class="inner one"></div>
-            <div class="inner two"></div>
-            <div class="inner three"></div>
+        <div class="splash-content">
+            <div class="loader">
+                <div class="inner one"></div>
+                <div class="inner two"></div>
+                <div class="inner three"></div>
+            </div>
+            <div class="splash-text">
+                <div class="splash-loading-text">Loading...</div>
+                <div id="splash-status-text" class="splash-status-text">Initializing system components</div>
+            </div>
         </div>
     </div>
     
@@ -59,13 +65,20 @@
                 <span class="logo-full">WinTool</span>
                 <span class="logo-collapsed">MT</span>
             </div>
-            <ul class="tab-list" id="winToolTabs">
+            <div class="sidebar-search" style="padding: 0.6em 1em 0.2em 1em;">
+                <input id="tab-search" type="text" placeholder="Search tabs..." style="width: 100%; padding: 0.45em 0.8em; border-radius: 0.6em; border: 1px solid #23232a; background: #18181f; color: #fff; font-size: 1em; outline: none;">
+            </div>
+            <ul class="tab-list" id="winToolTabs" style="max-height: 85vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #333 #18181f; margin-bottom: 0; padding-bottom: 24px;">
                 <li class="tab-item active" data-tab="welcome"><i class="fas fa-home"></i><span>Welcome</span></li>
                 <li class="tab-item" data-tab="dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></li>
                 <li class="tab-item" data-tab="tweaks"><i class="fas fa-bolt"></i><span>Tweaks</span></li>
                 <li class="tab-item" data-tab="packages"><i class="fas fa-box-open"></i><span>Packages</span></li>
                 <li class="tab-item" data-tab="tools"><i class="fas fa-toolbox"></i><span>System Tools</span></li>
+                <li class="tab-item" data-tab="terminal"><i class="fas fa-terminal"></i><span>Terminal</span></li>
+                <li class="tab-item" data-tab="network"><i class="fas fa-network-wired"></i><span>Network</span></li>
                 <li class="tab-item" data-tab="gaming"><i class="fas fa-gamepad"></i><span>Gaming & Performance</span></li>
+                <li class="tab-item" data-tab="cleanup"><i class="fas fa-broom"></i><span>Cleanup</span></li>
+                <li class="tab-item" data-tab="privacy"><i class="fas fa-shield-alt"></i><span>Privacy</span></li>
                 <li class="tab-item" data-tab="setup"><i class="fas fa-cog"></i><span>Unattended Setup</span></li>
                 <li class="tab-item" data-tab="settings"><i class="fas fa-sliders-h"></i><span>Settings</span></li>
                 <li class="tab-item" data-tab="about"><i class="fas fa-info-circle"></i><span>About</span></li>
@@ -78,7 +91,11 @@
             <div id="tab-tweaks" class="tab-content" data-loaded="false"></div>
             <div id="tab-packages" class="tab-content" data-loaded="false"></div>
             <div id="tab-tools" class="tab-content" data-loaded="false"></div>
+            <div id="tab-network" class="tab-content" data-loaded="false"></div>
             <div id="tab-gaming" class="tab-content" style="max-height: 80vh; overflow-y: auto; padding-bottom: 2rem;" data-loaded="false"></div>
+            <div id="tab-cleanup" class="tab-content" data-loaded="false"></div>
+            <div id="tab-privacy" class="tab-content" data-loaded="false"></div>
+            <div id="tab-terminal" class="tab-content" data-loaded="false"></div>
             <div id="tab-setup" class="tab-content" data-loaded="false"></div>
             <div id="tab-settings" class="tab-content" data-loaded="false"></div>
             <div id="tab-about" class="tab-content" style="max-width: 700px; margin: 0 auto;" data-loaded="false"></div>
@@ -111,12 +128,18 @@
     <!-- Tab-specific scripts -->
     <script src="js/tabs/dashboard.js"></script>
     <script src="js/tabs/packages.js"></script>
+    <script src="js/tabs/terminal.js"></script>
     <script src="js/tabs/tools.js"></script>
     <script src="js/tabs/tweaks.js"></script>
     <script src="js/tabs/setup.js"></script>
     <script src="js/tabs/settings.js"></script>
     <script src="js/tabs/gaming.js"></script>
+    <script src="js/tabs/privacy.js"></script>
+    <script src="js/tabs/network.js"></script>
     <script src="js/tabs/welcome.js"></script>
+    <script src="js/tabs/cleanup.js"></script>
+    <script src="js/driver-management.js"></script>
+    <script src="js/tabs/driver.js"></script>
     
     <!-- Main JavaScript -->
     <script src="js/main.js"></script>

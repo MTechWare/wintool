@@ -1,0 +1,23 @@
+File: network.html + network.js
+
+Purpose: Implements the Network tab. Provides network diagnostics, optimization, and status tools.
+
+Key UI Elements (HTML):
+- Network Status (connection type, IP, DNS, internet status)
+- Network Tools (flush DNS, release/renew IP, reset, open settings)
+- Network Optimization (checkboxes for DNS/TCP/netsh, run optimization)
+- Network Diagnostics (ping test, results)
+
+Styling:
+- Card/grid layout for tools
+- Accent color for icons, buttons
+- Responsive and accessible
+
+JavaScript Functionality (network.js):
+- `initNetworkTab()`: Initializes the tab, sets up all event listeners.
+- `updateNetworkStatus()`: Fetches and updates network info from Electron backend.
+- Tool actions: flush DNS, release/renew IP, reset, open settings, optimize network, run ping test.
+- Dynamic status/notification updates for all actions.
+
+Notes:
+- Designed for troubleshooting and improving network experience. All actions handled via JS and Electron API.
