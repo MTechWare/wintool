@@ -74,12 +74,10 @@ function Show-Spinner {
 
 # Configuration
 $appName = "WinTool"
-$companyName = "MTechWare"
+$companyName = "MTech"
 $version = "0.0.6a"
 $installDir = "$env:LOCALAPPDATA\MTechTool"
-# For testing purposes, use a local file or a known good URL
-# $exeUrl = "https://github.com/MTechWare/wintool/releases/download/latest/WinTool.exe"
-$exeUrl = "https://github.com/git-for-windows/git/releases/download/v2.45.1.windows.1/Git-2.45.1-64-bit.exe"
+$exeUrl = "https://github.com/MTechWare/wintool/releases/download/release/WinTool.exe"
 $desktop = [Environment]::GetFolderPath("Desktop")
 $shortcutPath = Join-Path $desktop "$appName.lnk"
 $exePath = Join-Path $installDir "$appName.exe"
@@ -211,7 +209,7 @@ if (!(Test-Path $exePath)) {
     # Get file information
     $fileInfo = Get-Item $exePath
     $fileSize = [math]::Round($fileInfo.Length / 1MB, 2)
-    Write-StatusMsg "File size" "$fileSize MB" "Cyan"
+    Write-StatusMsg "File size" "$fileSize MB" "Yellow"
 }
 
 # Create desktop shortcut
@@ -264,7 +262,7 @@ for ($i = 3; $i -gt 0; $i--) {
     Write-Host "`rLaunching in $i..." -NoNewline -ForegroundColor "Yellow"
     Start-Sleep -Seconds 1
 }
-Write-Host "`rLaunching now!    " -ForegroundColor "Green"
+Write-Host "`rLaunching now!    " -ForegroundColor "Yellow"
 
 # Start the app
 Start-Process -FilePath $exePath
