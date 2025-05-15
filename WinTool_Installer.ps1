@@ -61,7 +61,7 @@ function Show-Spinner {
 
 # ======================================================================
 # WinTool Installer Script
-# Created by MTech
+# Created by MTechWare
 # Version: 1.0.0
 # ======================================================================
 # This script will:
@@ -74,7 +74,7 @@ function Show-Spinner {
 
 # Configuration
 $appName = "WinTool"
-$companyName = "MTech"
+$companyName = "MTechWare"
 $version = "0.0.6a"
 $installDir = "$env:LOCALAPPDATA\MTechTool"
 # For testing purposes, use a local file or a known good URL
