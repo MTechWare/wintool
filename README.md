@@ -264,7 +264,7 @@
 
 <div align="center">
 
-[<img src="https://img.shields.io/badge/Download-Portable_(zip)-orange?style=for-the-badge" alt="Download Portable">](https://github.com/MTechWare/wintool/releases/latest/download/WinTool-Portable.zip)
+[<img src="https://img.shields.io/badge/Download-App_(EXE)-orange?style=for-the-badge" alt="Download Portable">](https://github.com/MTechWare/wintool/releases/tag/release)
 
 </div>
 
