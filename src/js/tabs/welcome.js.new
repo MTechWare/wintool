@@ -1,0 +1,60 @@
+/**
+ * Welcome Tab Functionality
+ * Handles the welcome tab initialization and feature links
+ */
+
+// Initialize the welcome tab
+function initWelcomeTab() {
+    console.log('Initializing welcome tab');
+    
+    // Set up feature links to navigate to other tabs
+    setupFeatureLinks();
+    
+    // Set up the tutorial button
+    setupTutorialButton();
+}
+
+// Set up feature links to navigate to other tabs
+function setupFeatureLinks() {
+    const featureLinks = document.querySelectorAll('.feature-link');
+    
+    featureLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const tabName = this.getAttribute('data-tab');
+            if (tabName) {
+                console.log(`Navigating to tab: ${tabName}`);
+                
+                // Use the global loadTabContent function to load the tab
+                if (typeof window.loadTabContent === 'function') {
+                    window.loadTabContent(tabName);
+                }
+            }
+        });
+    });
+}
+
+// Set up the tutorial button
+function setupTutorialButton() {
+    const tutorialBtn = document.getElementById('start-tutorial-btn');
+    
+    if (tutorialBtn) {
+        tutorialBtn.addEventListener('click', function() {
+            console.log('Starting tutorial');
+            
+            // Check if the tutorial function exists
+            if (typeof window.startTutorial === 'function') {
+                window.startTutorial();
+            } else {
+                console.error('Tutorial function not found');
+                
+                // Show a simple alert if the tutorial function doesn't exist
+                alert('Tutorial feature is coming soon!');
+            }
+        });
+    }
+}
+
+// Make the initialization function available globally
+window.initWelcomeTab = initWelcomeTab;

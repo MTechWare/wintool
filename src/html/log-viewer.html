@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Viewer</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .log-viewer-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .log-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .log-output {
+            flex: 1;
+            background-color: #1e1e1e;
+            border-radius: 5px;
+            padding: 10px;
+            overflow: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            height: calc(100% - 100px);
+        }
+
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        .log-level-DEBUG {
+            color: #6a9955;
+        }
+
+        .log-level-INFO {
+            color: #569cd6;
+        }
+
+        .log-level-WARN {
+            color: #dcdcaa;
+        }
+
+        .log-level-ERROR {
+            color: #f14c4c;
+        }
+
+        .log-level-FATAL {
+            color: #ff0000;
+            font-weight: bold;
+        }
+
+        .log-category {
+            display: inline-block;
+            padding: 1px 5px;
+            border-radius: 3px;
+            margin-right: 5px;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+
+        .log-category-SYSTEM {
+            background-color: #007acc;
+            color: white;
+        }
+
+        .log-category-NETWORK {
+            background-color: #6a9955;
+            color: white;
+        }
+
+        .log-category-ADMIN {
+            background-color: #d7ba7d;
+            color: black;
+        }
+
+        .log-category-TWEAKS {
+            background-color: #c586c0;
+            color: white;
+        }
+
+        .log-category-DRIVERS {
+            background-color: #4ec9b0;
+            color: black;
+        }
+
+        .log-category-PACKAGES {
+            background-color: #9cdcfe;
+            color: black;
+        }
+
+        .log-category-UI {
+            background-color: #ce9178;
+            color: black;
+        }
+
+        .log-category-HARDWARE {
+            background-color: #569cd6;
+            color: white;
+        }
+
+        .log-category-SECURITY {
+            background-color: #f14c4c;
+            color: white;
+        }
+
+        .log-category-GENERAL {
+            background-color: #b5cea8;
+            color: black;
+        }
+
+        .log-category-PERFORMANCE {
+            background-color: #dcdcaa;
+            color: black;
+        }
+
+        .log-category-USER {
+            background-color: #d16969;
+            color: white;
+        }
+
+        .log-timestamp {
+            color: #808080;
+            margin-right: 5px;
+        }
+
+        .log-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 15px;
+            gap: 10px;
+        }
+
+        select, input, button {
+            background-color: #2d2d2d;
+            color: #e0e0e0;
+            border: 1px solid #3e3e3e;
+            border-radius: 3px;
+            padding: 5px 10px;
+        }
+
+        button {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #3e3e3e;
+        }
+
+        .export-button {
+            background-color: #0e639c;
+        }
+
+        .export-button:hover {
+            background-color: #1177bb;
+        }
+
+        .refresh-button {
+            background-color: #6a9955;
+        }
+
+        .refresh-button:hover {
+            background-color: #7baa66;
+        }
+
+        .clear-button {
+            background-color: #d16969;
+        }
+
+        .clear-button:hover {
+            background-color: #e27979;
+        }
+
+        /* Notification styles */
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .notification {
+            background-color: #333;
+            color: white;
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-width: 250px;
+            max-width: 450px;
+            opacity: 0;
+            transform: translateX(50px);
+            transition: all 0.3s ease;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background-color: #43a047;
+            border-left: 4px solid #2e7d32;
+        }
+
+        .notification.error {
+            background-color: #e53935;
+            border-left: 4px solid #c62828;
+        }
+
+        .notification.warning {
+            background-color: #fb8c00;
+            border-left: 4px solid #ef6c00;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            margin-left: 10px;
+            opacity: 0.7;
+        }
+
+        .notification-close:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Notification container -->
+    <div class="notification-container" id="notification-container"></div>
+
+    <div class="log-viewer-container">
+        <h2>Log Viewer</h2>
+
+        <div class="log-controls">
+            <div class="filter-group">
+                <label for="log-level">Level:</label>
+                <select id="log-level">
+                    <option value="0">DEBUG</option>
+                    <option value="1" selected>INFO</option>
+                    <option value="2">WARN</option>
+                    <option value="3">ERROR</option>
+                    <option value="4">FATAL</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="log-category">Category:</label>
+                <select id="log-category">
+                    <option value="">All Categories</option>
+                    <option value="SYSTEM">System</option>
+                    <option value="NETWORK">Network</option>
+                    <option value="ADMIN">Admin</option>
+                    <option value="TWEAKS">Tweaks</option>
+                    <option value="DRIVERS">Drivers</option>
+                    <option value="PACKAGES">Packages</option>
+                    <option value="UI">UI</option>
+                    <option value="HARDWARE">Hardware</option>
+                    <option value="SECURITY">Security</option>
+                    <option value="GENERAL">General</option>
+                    <option value="PERFORMANCE">Performance</option>
+                    <option value="USER">User</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="log-search">Search:</label>
+                <input type="text" id="log-search" placeholder="Filter logs...">
+            </div>
+
+            <div class="filter-group">
+                <button id="refresh-logs" class="refresh-button">Refresh</button>
+                <button id="clear-filters" class="clear-button">Clear Filters</button>
+            </div>
+        </div>
+
+        <div class="log-output" id="log-output">
+            <!-- Log entries will be displayed here -->
+        </div>
+
+        <div class="log-actions">
+            <button id="export-logs" class="export-button">Export Logs</button>
+            <button id="clear-logs">Clear Display</button>
+        </div>
+    </div>
+
+    <script src="../js/log-viewer.js"></script>
+</body>
+</html>

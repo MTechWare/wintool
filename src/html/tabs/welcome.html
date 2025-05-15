@@ -1,0 +1,840 @@
+<div id="tab-welcome" class="tab-content custom-scrollbar">
+    <h1 class="tab-title"><i class="fas fa-home"></i> Welcome to WinTool</h1>
+    <div class="tab-description">Your all-in-one Windows management and optimization suite</div>
+
+    <div class="welcome-content">
+        <!-- Hero Section -->
+        <div class="welcome-hero">
+            <div class="hero-content">
+                <div class="logo-container">
+                    <span class="hero-logo" style="font-family: 'Boge', sans-serif;">WinTool</span>
+                    <i class="fas fa-tools logo-icon"></i>
+                </div>
+                <p class="hero-subtitle">Optimize, manage, and enhance your Windows experience</p>
+                <div class="hero-buttons">
+                    <a href="https://discord.gg/nCmEQ8za7" target="_blank" class="btn btn-secondary">
+                        <i class="fab fa-discord"></i> Join Community
+                    </a>
+                    <button id="start-tutorial-btn" class="btn btn-primary">
+                        <i class="fas fa-graduation-cap"></i> Quick Tour
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="features-section">
+            <h2 class="section-title"><i class="fas fa-star"></i> Key Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>System Optimization</h3>
+                    <p>Boost performance with one-click optimizations and tweaks</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <h3>Network Tools</h3>
+                    <p>Monitor and optimize your network connections</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-box-open"></i>
+                    </div>
+                    <h3>Software Manager</h3>
+                    <p>Install and manage software with ease</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Access Section -->
+        <div class="quick-access-section">
+            <h2 class="section-title"><i class="fas fa-rocket"></i> Quick Access</h2>
+            <div class="quick-access-grid">
+                <button class="quick-access-btn" data-tab="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button class="quick-access-btn" data-tab="tweaks">
+                    <i class="fas fa-sliders-h"></i>
+                    <span>Tweaks</span>
+                </button>
+                <button class="quick-access-btn" data-tab="packages">
+                    <i class="fas fa-box-open"></i>
+                    <span>Packages</span>
+                </button>
+                <button class="quick-access-btn" data-tab="tools">
+                    <i class="fas fa-tools"></i>
+                    <span>Tools</span>
+                </button>
+                <button class="quick-access-btn" data-tab="terminal">
+                    <i class="fas fa-terminal"></i>
+                    <span>Terminal</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .tab-title {
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--primary);
+    }
+
+    .tab-description {
+        font-size: 1rem;
+        color: #b0b0b0;
+        margin-bottom: 1.5rem;
+    }
+
+    #tab-welcome {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .welcome-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 1rem 2rem 1rem;
+        margin-top: 1rem;
+    }
+
+    /* Hero Section */
+    .welcome-hero {
+        background: linear-gradient(135deg, rgba(30, 32, 40, 0.9) 0%, rgba(20, 22, 28, 0.9) 100%);
+        border-radius: 16px;
+        padding: 2.5rem 2rem;
+        text-align: center;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .welcome-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at 70% 30%, rgba(var(--primary-rgb), 0.15) 0%, rgba(10, 10, 12, 0) 70%);
+        pointer-events: none;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .logo-container {
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .hero-logo {
+        font-size: 3.5rem;
+        color: var(--primary);
+        letter-spacing: 1px;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .logo-icon {
+        font-size: 2.5rem;
+        color: var(--primary);
+        animation: pulse 2s infinite;
+    }
+
+    .hero-subtitle {
+        font-size: 1.2rem;
+        color: #b0b0b0;
+        margin-bottom: 2rem;
+    }
+
+    .hero-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+    }
+
+    .btn {
+        padding: 0.8rem 1.8rem;
+        font-size: 1rem;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+    }
+
+    .btn-primary {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-light, #ffb74d);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(var(--primary-rgb), 0.3);
+    }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Features Section */
+    .features-section {
+        margin-bottom: 2.5rem;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .section-title i {
+        color: var(--primary);
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .feature-card {
+        background: rgba(30, 32, 40, 0.5);
+        border-radius: 12px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        border-color: rgba(var(--primary-rgb), 0.3);
+        background: rgba(35, 37, 45, 0.6);
+    }
+
+    .feature-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(var(--primary-rgb), 0.15);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.2rem;
+    }
+
+    .feature-icon i {
+        font-size: 1.8rem;
+        color: var(--primary);
+    }
+
+    .feature-card h3 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 0.8rem;
+        color: #fff;
+    }
+
+    .feature-card p {
+        color: #b0b0b0;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    /* Quick Access Section */
+    .quick-access-section {
+        margin-bottom: 2rem;
+    }
+
+    .quick-access-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+
+    .quick-access-btn {
+        background: rgba(30, 32, 40, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 1.2rem 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        color: #fff;
+    }
+
+    .quick-access-btn:hover {
+        background: rgba(var(--primary-rgb), 0.15);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        border-color: rgba(var(--primary-rgb), 0.3);
+    }
+
+    .quick-access-btn i {
+        font-size: 1.8rem;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .quick-access-btn span {
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    /* Animations */
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+        .welcome-hero {
+            padding: 2rem 1.5rem;
+        }
+
+        .hero-logo {
+            font-size: 2.8rem;
+        }
+
+        .hero-buttons {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .features-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .quick-access-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    /* Tutorial Modal Styles */
+    .tutorial-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 9998;
+        display: none;
+    }
+
+    .tutorial-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 9999;
+        width: 90%;
+        max-width: 1000px;
+        max-height: 85vh;
+        background: rgba(25, 28, 36, 0.95);
+        border-radius: 16px;
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+        display: none;
+        border: 1px solid rgba(var(--primary-rgb), 0.3);
+        overflow: hidden;
+    }
+
+    .tutorial-content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        max-height: 85vh;
+    }
+
+    .tutorial-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(20, 22, 28, 0.8);
+    }
+
+    .tutorial-header h2 {
+        margin: 0;
+        color: var(--primary);
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 1.2rem;
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .close-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--primary);
+    }
+
+    .tutorial-body {
+        padding: 1.5rem;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    /* Tutorial Cards */
+    .tutorial-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+        padding: 0.5rem;
+    }
+
+    .tutorial-card {
+        background: rgba(30, 33, 43, 0.6);
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        animation: fadeIn 0.5s ease;
+    }
+
+    .tutorial-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+        border-color: rgba(var(--primary-rgb), 0.3);
+        background: rgba(35, 38, 48, 0.7);
+    }
+
+    .card-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(var(--primary-rgb), 0.15);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.2rem;
+    }
+
+    .card-icon i {
+        font-size: 1.8rem;
+        color: var(--primary);
+    }
+
+    .tutorial-card h3 {
+        margin-top: 0;
+        color: #fff;
+        font-size: 1.3rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .tutorial-card p {
+        color: #b0b0b0;
+        margin-bottom: 1.2rem;
+        line-height: 1.6;
+        font-size: 0.95rem;
+    }
+
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 1.5rem 0;
+    }
+
+    .feature-list li {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        color: #ccc;
+        font-size: 0.9rem;
+    }
+
+    .feature-list li i {
+        color: var(--primary);
+        font-size: 0.8rem;
+    }
+
+    .card-footer {
+        margin-top: auto;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-preview {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(var(--primary-rgb), 0.15);
+        color: var(--primary);
+        padding: 0.7rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid rgba(var(--primary-rgb), 0.3);
+        font-size: 0.9rem;
+    }
+
+    .tab-preview:hover {
+        background: rgba(var(--primary-rgb), 0.25);
+        transform: translateY(-2px);
+    }
+
+    .tutorial-footer {
+        padding: 1.2rem 1.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: rgba(20, 22, 28, 0.8);
+    }
+
+    #close-tutorial-btn {
+        padding: 0.8rem 2rem;
+        font-size: 1rem;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive adjustments for tutorial */
+    @media (max-width: 768px) {
+        .tutorial-modal {
+            width: 95%;
+            max-height: 90vh;
+        }
+
+        .tutorial-cards {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<!-- Tutorial Modal -->
+<div id="tutorial-modal" class="tutorial-modal">
+    <div class="tutorial-content">
+        <div class="tutorial-header">
+            <h2><i class="fas fa-graduation-cap"></i> Getting Started with WinTool</h2>
+            <button id="close-tutorial" class="close-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="tutorial-body">
+            <div class="tutorial-cards">
+                <!-- Welcome Card -->
+                <div class="tutorial-card">
+                    <div class="card-icon">
+                        <i class="fas fa-home"></i>
+                    </div>
+                    <h3>Welcome to WinTool</h3>
+                    <p>WinTool is your all-in-one solution for managing and optimizing your Windows system. Explore the features below to get started.</p>
+                </div>
+
+                <!-- Dashboard Card -->
+                <div class="tutorial-card">
+                    <div class="card-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <h3>Dashboard</h3>
+                    <p>The Dashboard provides an overview of your system's performance and status. You can monitor CPU, RAM usage, and access quick tools.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> System performance monitoring</li>
+                        <li><i class="fas fa-check"></i> Disk space visualization</li>
+                        <li><i class="fas fa-check"></i> Quick access to common tools</li>
+                    </ul>
+                    <div class="card-footer">
+                        <button class="tab-preview" data-tab="dashboard">
+                            <i class="fas fa-external-link-alt"></i> Open Dashboard
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tweaks Card -->
+                <div class="tutorial-card">
+                    <div class="card-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>System Tweaks</h3>
+                    <p>The Tweaks tab allows you to optimize Windows with one-click performance enhancements and customizations.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Performance optimizations</li>
+                        <li><i class="fas fa-check"></i> Visual effects settings</li>
+                        <li><i class="fas fa-check"></i> Privacy enhancements</li>
+                    </ul>
+                    <div class="card-footer">
+                        <button class="tab-preview" data-tab="tweaks">
+                            <i class="fas fa-external-link-alt"></i> Open Tweaks
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Packages Card -->
+                <div class="tutorial-card">
+                    <div class="card-icon">
+                        <i class="fas fa-box-open"></i>
+                    </div>
+                    <h3>Software Management</h3>
+                    <p>The Packages tab lets you install, update, and manage software with ease. Browse popular applications and tools.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> One-click software installation</li>
+                        <li><i class="fas fa-check"></i> Bulk app management</li>
+                        <li><i class="fas fa-check"></i> Curated software recommendations</li>
+                    </ul>
+                    <div class="card-footer">
+                        <button class="tab-preview" data-tab="packages">
+                            <i class="fas fa-external-link-alt"></i> Open Packages
+                        </button>
+                    </div>
+                </div>
+
+
+
+                <!-- Tools Card -->
+                <div class="tutorial-card">
+                    <div class="card-icon">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <h3>System Tools</h3>
+                    <p>Access a collection of useful system tools and utilities to manage and maintain your Windows system.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> System cleanup utilities</li>
+                        <li><i class="fas fa-check"></i> Diagnostic tools</li>
+                        <li><i class="fas fa-check"></i> Windows management features</li>
+                    </ul>
+                    <div class="card-footer">
+                        <button class="tab-preview" data-tab="tools">
+                            <i class="fas fa-external-link-alt"></i> Open Tools
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Terminal Card -->
+                <div class="tutorial-card">
+                    <div class="card-icon">
+                        <i class="fas fa-terminal"></i>
+                    </div>
+                    <h3>Terminal</h3>
+                    <p>Access PowerShell and Command Prompt directly within WinTool for advanced system management.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Integrated PowerShell console</li>
+                        <li><i class="fas fa-check"></i> Command history and suggestions</li>
+                        <li><i class="fas fa-check"></i> Common command templates</li>
+                    </ul>
+                    <div class="card-footer">
+                        <button class="tab-preview" data-tab="terminal">
+                            <i class="fas fa-external-link-alt"></i> Open Terminal
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hardware Monitor Card -->
+                <div class="tutorial-card">
+                    <div class="card-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Hardware Monitor</h3>
+                    <p>Monitor your system's hardware performance including CPU and GPU temperatures, usage, and other vital statistics.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Real-time hardware monitoring</li>
+                        <li><i class="fas fa-check"></i> Temperature tracking</li>
+                        <li><i class="fas fa-check"></i> Performance statistics</li>
+                    </ul>
+                    <div class="card-footer">
+                        <button class="tab-preview" data-tab="hardware">
+                            <i class="fas fa-external-link-alt"></i> Open Hardware Monitor
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Network Card -->
+                <div class="tutorial-card">
+                    <div class="card-icon">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <h3>Network</h3>
+                    <p>Monitor and manage your network connections, run diagnostics, and optimize network performance.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Network status monitoring</li>
+                        <li><i class="fas fa-check"></i> Connection diagnostics</li>
+                        <li><i class="fas fa-check"></i> IP configuration tools</li>
+                    </ul>
+                    <div class="card-footer">
+                        <button class="tab-preview" data-tab="network">
+                            <i class="fas fa-external-link-alt"></i> Open Network
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Gaming Card -->
+                <div class="tutorial-card">
+                    <div class="card-icon">
+                        <i class="fas fa-gamepad"></i>
+                    </div>
+                    <h3>Gaming & Performance</h3>
+                    <p>Optimize your system for gaming with performance tweaks and game-specific settings.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Gaming performance optimizations</li>
+                        <li><i class="fas fa-check"></i> Game-specific settings</li>
+                        <li><i class="fas fa-check"></i> System resource prioritization</li>
+                    </ul>
+                    <div class="card-footer">
+                        <button class="tab-preview" data-tab="gaming">
+                            <i class="fas fa-external-link-alt"></i> Open Gaming
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cleanup Card -->
+                <div class="tutorial-card">
+                    <div class="card-icon">
+                        <i class="fas fa-broom"></i>
+                    </div>
+                    <h3>Cleanup</h3>
+                    <p>Free up disk space by removing temporary files, system caches, and other unnecessary data.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Temporary file cleanup</li>
+                        <li><i class="fas fa-check"></i> System cache management</li>
+                        <li><i class="fas fa-check"></i> Disk space optimization</li>
+                    </ul>
+                    <div class="card-footer">
+                        <button class="tab-preview" data-tab="cleanup">
+                            <i class="fas fa-external-link-alt"></i> Open Cleanup
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Setup Card -->
+                <div class="tutorial-card">
+                    <div class="card-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <h3>Unattended Setup</h3>
+                    <p>Create custom Windows installation configurations and automate system setup tasks.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Custom installation profiles</li>
+                        <li><i class="fas fa-check"></i> Automated setup scripts</li>
+                        <li><i class="fas fa-check"></i> System configuration templates</li>
+                    </ul>
+                    <div class="card-footer">
+                        <button class="tab-preview" data-tab="setup">
+                            <i class="fas fa-external-link-alt"></i> Open Setup
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Settings Card -->
+                <div class="tutorial-card">
+                    <div class="card-icon">
+                        <i class="fas fa-sliders-h"></i>
+                    </div>
+                    <h3>Settings</h3>
+                    <p>Customize WinTool's appearance, behavior, and functionality to suit your preferences.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Theme and appearance options</li>
+                        <li><i class="fas fa-check"></i> Application behavior settings</li>
+                        <li><i class="fas fa-check"></i> Advanced configuration options</li>
+                    </ul>
+                    <div class="card-footer">
+                        <button class="tab-preview" data-tab="settings">
+                            <i class="fas fa-external-link-alt"></i> Open Settings
+                        </button>
+                    </div>
+                </div>
+
+                <!-- About Card -->
+                <div class="tutorial-card">
+                    <div class="card-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <h3>About</h3>
+                    <p>Learn more about WinTool, check for updates, and access documentation and support resources.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Version information</li>
+                        <li><i class="fas fa-check"></i> Update checking</li>
+                        <li><i class="fas fa-check"></i> Documentation and support links</li>
+                    </ul>
+                    <div class="card-footer">
+                        <button class="tab-preview" data-tab="about">
+                            <i class="fas fa-external-link-alt"></i> Open About
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="tutorial-footer">
+            <button id="close-tutorial-btn" class="btn btn-primary">Got it! <i class="fas fa-check"></i></button>
+        </div>
+    </div>
+</div>
+
+<!-- Tutorial Overlay -->
+<div id="tutorial-overlay" class="tutorial-overlay"></div>
+
+<!-- Load Welcome Tab JS for Tour Functionality -->
+<script src="../../js/tabs/welcome.js"></script>

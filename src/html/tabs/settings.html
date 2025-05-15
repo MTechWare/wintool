@@ -1,0 +1,566 @@
+<div id="tab-settings" class="tab-content custom-scrollbar">
+    <h1 class="tab-title"><i class="fas fa-cog"></i> Settings</h1>
+    <div class="tab-description">Configure WinTool options, manage updates, and customize behavior.</div>
+
+    <div class="settings-container">
+        <!-- Appearance Settings -->
+        <div class="settings-section">
+            <div class="section-header">
+                <i class="fas fa-paint-brush"></i>
+                <h3>Appearance</h3>
+            </div>
+
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <label for="theme-select">Theme</label>
+                        <span class="setting-description">Choose your preferred interface theme</span>
+                    </div>
+                    <div class="setting-control">
+                        <select id="theme-select" class="select-field">
+                            <option value="dark">Dark (Default)</option>
+                            <option value="light" disabled>Light (Coming Soon)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <label for="accent-color-picker">Accent Color</label>
+                        <span class="setting-description">Customize the application's accent color</span>
+                    </div>
+                    <div class="setting-control color-control">
+                        <input type="color" id="accent-color-picker" value="#ff9800">
+                        <button class="btn btn-secondary" id="reset-accent-color-btn" type="button">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <label for="sidebar-fold-toggle">Fold Sidebar Tabs</label>
+                        <span class="setting-description">Show only icons in the sidebar to save space</span>
+                    </div>
+                    <div class="setting-control">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="sidebar-fold-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Settings -->
+        <div class="settings-section">
+            <div class="section-header">
+                <i class="fas fa-tachometer-alt"></i>
+                <h3>Performance</h3>
+            </div>
+
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <label for="fps-counter-toggle">FPS Counter</label>
+                        <span class="setting-description">Show frames per second in the corner of the window</span>
+                    </div>
+                    <div class="setting-control">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="fps-counter-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <label for="alwaysOnTopToggle">Always on Top</label>
+                        <span class="setting-description">Keep WinTool window on top of other windows</span>
+                    </div>
+                    <div class="setting-control">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="alwaysOnTopToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <label for="showLogViewerToggle">Show Log Viewer</label>
+                        <span class="setting-description">Show the log viewer on startup for monitoring application activity</span>
+                    </div>
+                    <div class="setting-control">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="showLogViewerToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Settings -->
+        <div class="settings-section">
+            <div class="section-header">
+                <i class="fas fa-desktop"></i>
+                <h3>System</h3>
+            </div>
+
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <label for="adminPrivilegesToggle">Run with Admin Privileges</label>
+                        <span class="setting-description">Enable to run WinTool with administrator privileges on startup</span>
+                    </div>
+                    <div class="setting-control">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="adminPrivilegesToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <label>Update Channel</label>
+                        <span class="setting-description">Select which update channel to use</span>
+                    </div>
+                    <div class="setting-control">
+                        <select class="select-field" disabled>
+                            <option value="stable">Stable</option>
+                            <option value="beta">Beta</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <label>Tab Order</label>
+                        <span class="setting-description">Reset the order of tabs in the sidebar</span>
+                    </div>
+                    <div class="setting-control">
+                        <button class="btn btn-secondary" id="reset-tab-order-btn">
+                            <i class="fas fa-sync-alt"></i> Reset Order
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Visibility Settings -->
+        <div class="settings-section">
+            <div class="section-header">
+                <i class="fas fa-eye"></i>
+                <h3>Tab Visibility & Pinning</h3>
+            </div>
+
+            <div id="tab-visibility-section" class="settings-grid">
+                <!-- This will be populated dynamically by JavaScript -->
+                <div class="setting-description" style="padding: 0 15px 15px 15px;">
+                    Manage which tabs are visible in the sidebar and pin important tabs to the top.
+                    You can also right-click on any tab in the sidebar to quickly hide or pin it.
+                </div>
+            </div>
+        </div>
+
+        <!-- Backup & Restore Section -->
+        <div class="settings-section">
+            <div class="section-header">
+                <i class="fas fa-save"></i>
+                <h3>Backup & Restore</h3>
+            </div>
+
+            <div class="settings-grid">
+                <div class="setting-description" style="padding: 0 0 15px 0;">
+                    Create backups of your settings and configurations, or restore from a previous backup.
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <label>Create Backup</label>
+                        <span class="setting-description">Save your current settings and configurations</span>
+                    </div>
+                    <div class="setting-control">
+                        <button class="btn btn-secondary" id="create-backup-btn">
+                            <i class="fas fa-download"></i> Create Backup
+                        </button>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <label>Restore from Backup</label>
+                        <span class="setting-description">Restore settings from a previous backup</span>
+                    </div>
+                    <div class="setting-control">
+                        <button class="btn btn-secondary" id="restore-backup-btn">
+                            <i class="fas fa-upload"></i> Restore
+                        </button>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <label>Backup History</label>
+                        <span class="setting-description">View and manage your previous backups</span>
+                    </div>
+                    <div class="setting-control">
+                        <button class="btn btn-secondary" id="view-backup-history-btn">
+                            <i class="fas fa-history"></i> View History
+                        </button>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <label for="auto-backup-toggle">Automatic Backups</label>
+                        <span class="setting-description">Create backups automatically on a schedule</span>
+                    </div>
+                    <div class="setting-control">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="auto-backup-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <button class="btn btn-secondary" id="configure-backup-schedule-btn" style="margin-left: 10px;">
+                            <i class="fas fa-cog"></i> Configure Schedule
+                        </button>
+                    </div>
+                </div>
+
+                <div class="setting-item" id="backup-schedule-info" style="display: none;">
+                    <div class="setting-label">
+                        <label>Backup Schedule</label>
+                        <span class="setting-description">Current backup schedule settings</span>
+                    </div>
+                    <div class="setting-control">
+                        <div class="info-box">
+                            <div class="info-row">
+                                <span class="info-label">Frequency:</span>
+                                <span class="info-value" id="backup-frequency-info">-</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Next Backup:</span>
+                                <span class="info-value" id="next-backup-info">-</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Last Backup:</span>
+                                <span class="info-value" id="last-backup-info">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Troubleshooting Section -->
+        <div class="settings-section">
+            <div class="section-header">
+                <i class="fas fa-bug"></i>
+                <h3>Troubleshooting</h3>
+            </div>
+
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <label>Application Logs</label>
+                        <span class="setting-description">View detailed logs to help troubleshoot issues</span>
+                    </div>
+                    <div class="setting-control">
+                        <button class="btn btn-secondary" id="open-log-viewer-btn">
+                            <i class="fas fa-file-alt"></i> Open Log Viewer
+                        </button>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <label>Export Diagnostics</label>
+                        <span class="setting-description">Export system information and logs for support</span>
+                    </div>
+                    <div class="setting-control">
+                        <button class="btn btn-secondary" id="export-diagnostics-btn">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="settings-actions">
+            <button class="btn btn-primary" id="check-updates">
+                <i class="fas fa-sync-alt"></i> Check for Updates
+            </button>
+            <button class="btn btn-danger" id="reset-all-settings" style="font-size: 16px; padding: 10px 15px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+                <i class="fas fa-trash-alt"></i> Clear All Settings & User Data
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .tab-title {
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--primary);
+    }
+
+    .tab-description {
+        font-size: 1rem;
+        color: #b0b0b0;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Hide scrollbars while maintaining scroll functionality */
+    .settings-container {
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE and Edge */
+    }
+
+    .settings-container::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
+    }
+
+    .settings-container {
+        max-height: calc(100vh - 180px);
+        overflow-y: auto;
+        padding-right: 10px;
+        padding-bottom: 30px;
+    }
+
+    .settings-section {
+        background-color: #1e1e24;
+        border-radius: 8px;
+        border: 1px solid #2e2e36;
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        background-color: #27272f;
+        border-bottom: 1px solid #2e2e36;
+    }
+
+    .section-header i {
+        font-size: 1.2rem;
+        color: var(--primary);
+        margin-right: 10px;
+    }
+
+    .section-header h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #f0f0f0;
+        margin: 0;
+    }
+
+    .settings-grid {
+        padding: 15px;
+    }
+
+    .setting-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 15px;
+        border-bottom: 1px solid #2e2e36;
+    }
+
+    .setting-item:last-child {
+        border-bottom: none;
+    }
+
+    .setting-label {
+        flex: 1;
+        padding-right: 15px;
+    }
+
+    .setting-label label {
+        display: block;
+        font-weight: 500;
+        color: #e0e0e0;
+        margin-bottom: 4px;
+    }
+
+    .setting-description {
+        display: block;
+        font-size: 0.85rem;
+        color: #a0a0a0;
+    }
+
+    .setting-control {
+        display: flex;
+        align-items: center;
+    }
+
+    .color-control {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .color-control input[type="color"] {
+        width: 2.5rem;
+        height: 2.5rem;
+        border: none;
+        background: none;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+
+    .select-field {
+        background-color: #27272f;
+        border: 1px solid #3e3e46;
+        border-radius: 4px;
+        color: #e0e0e0;
+        padding: 8px 12px;
+        min-width: 150px;
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 26px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #3e3e46;
+        transition: .3s;
+        border-radius: 34px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+        background-color: var(--primary);
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(24px);
+    }
+
+    .settings-actions {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 25px;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+    }
+
+    .btn i {
+        margin-right: 8px;
+    }
+
+    .btn-primary {
+        background-color: var(--primary);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: var(--primary-dark);
+    }
+
+    .btn-secondary {
+        background-color: #3e3e46;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #4e4e56;
+    }
+
+    .btn-danger {
+        background-color: #e53935;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background-color: #c62828;
+    }
+
+    .badge {
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .badge-success {
+        background-color: #43a047;
+        color: white;
+    }
+
+    .badge-info {
+        background-color: #1976d2;
+        color: white;
+    }
+
+    /* Admin-related badge styles have been removed */
+
+    @media (max-width: 768px) {
+        .setting-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .setting-label {
+            margin-bottom: 10px;
+            padding-right: 0;
+        }
+    }
+
+    #tab-settings {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .settings-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 1rem 2rem 1rem;
+        margin-top: 1rem;
+    }
+</style>

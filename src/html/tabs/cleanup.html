@@ -1,0 +1,527 @@
+<div id="tab-cleanup" class="tab-content custom-scrollbar">
+    <h1 class="tab-title"><i class="fas fa-broom"></i> System Cleanup</h1>
+    <div class="tab-description">Clean temporary files, system caches, and optimize disk space.</div>
+
+    <div class="cleanup-content">
+        <!-- Disk Space Analysis Section -->
+        <div class="dashboard-section disk-space-section">
+            <h3 class="purple-heading"><i class="fas fa-chart-pie"></i> Disk Space Analysis</h3>
+            <div class="disk-space-container">
+                <div class="disk-space-chart">
+                    <canvas id="disk-space-chart"></canvas>
+                </div>
+                <div class="disk-space-info">
+                    <div class="disk-info-item">
+                        <div class="disk-info-label">Total Space:</div>
+                        <div class="disk-info-value" id="disk-total">Scanning...</div>
+                    </div>
+                    <div class="disk-info-item">
+                        <div class="disk-info-label">Used Space:</div>
+                        <div class="disk-info-value" id="disk-used">Scanning...</div>
+                    </div>
+                    <div class="disk-info-item">
+                        <div class="disk-info-label">Free Space:</div>
+                        <div class="disk-info-value" id="disk-free">Scanning...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="disk-space-actions">
+                <button id="btn-scan-disk" class="action-button purple-button">
+                    <i class="fas fa-search"></i> Scan Disk
+                </button>
+                <button id="btn-analyze-large-files" class="action-button purple-button">
+                    <i class="fas fa-file-alt"></i> Find Large Files
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Cleanup Section -->
+        <div class="dashboard-section">
+            <h3><i class="fas fa-bolt"></i> Quick Cleanup</h3>
+            <p class="section-description">Quickly clean common temporary files and caches with one click.</p>
+            <div class="quick-cleanup-info">
+                <div class="quick-cleanup-item">
+                    <i class="fas fa-trash-alt"></i>
+                    <span>Temporary Files</span>
+                </div>
+                <div class="quick-cleanup-item">
+                    <i class="fas fa-history"></i>
+                    <span>Prefetch Cache</span>
+                </div>
+                <div class="quick-cleanup-item">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Windows Logs</span>
+                </div>
+            </div>
+            <button id="btn-quick-cleanup" class="action-button accent-button mt-2">
+                <i class="fas fa-play"></i> Run Quick Cleanup
+            </button>
+        </div>
+
+        <!-- Advanced Cleanup Section -->
+        <div class="dashboard-section">
+            <h3><i class="fas fa-tools"></i> Advanced Cleanup</h3>
+            <p class="section-description">Select specific items to clean up.</p>
+
+            <div class="cleanup-categories">
+                <!-- System Files Category -->
+                <div class="cleanup-category">
+                    <div class="category-header">
+                        <i class="fas fa-laptop"></i>
+                        <span>System Files</span>
+                    </div>
+                    <div class="checkbox-list">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="cleanup-temp" checked>
+                            <span>Temporary Files</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="cleanup-prefetch" checked>
+                            <span>Prefetch Cache</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="cleanup-windows-logs" checked>
+                            <span>Windows Logs</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="cleanup-event-logs">
+                            <span>Event Logs</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Windows Updates Category -->
+                <div class="cleanup-category">
+                    <div class="category-header">
+                        <i class="fas fa-sync"></i>
+                        <span>Windows Updates</span>
+                    </div>
+                    <div class="checkbox-list">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="cleanup-updates">
+                            <span>Update Cache</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="cleanup-installers">
+                            <span>Installer Cache</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="cleanup-delivery-optimization">
+                            <span>Delivery Optimization Files</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Browser Data Category -->
+                <div class="cleanup-category">
+                    <div class="category-header">
+                        <i class="fas fa-globe"></i>
+                        <span>Browser Data</span>
+                    </div>
+                    <div class="checkbox-list">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="cleanup-browser-cache">
+                            <span>Browser Cache</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="cleanup-browser-cookies">
+                            <span>Cookies</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="cleanup-browser-history">
+                            <span>Browsing History</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Network Category -->
+                <div class="cleanup-category">
+                    <div class="category-header">
+                        <i class="fas fa-network-wired"></i>
+                        <span>Network</span>
+                    </div>
+                    <div class="checkbox-list">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="cleanup-dns-cache">
+                            <span>DNS Cache</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="cleanup-network-data">
+                            <span>Network Data</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <button id="btn-advanced-cleanup" class="action-button mt-3">
+                <i class="fas fa-play"></i> Run Advanced Cleanup
+            </button>
+        </div>
+
+        <!-- Cleanup Profiles Section -->
+        <div class="dashboard-section">
+            <h3><i class="fas fa-save"></i> Cleanup Profiles</h3>
+            <p class="section-description">Save and load custom cleanup configurations.</p>
+
+            <div class="profiles-container">
+                <div class="profile-info">
+                    <div class="profile-description">
+                        <div class="profile-item">
+                            <span class="profile-name">Safe Cleanup:</span>
+                            <span class="profile-desc">Cleans temporary files and caches without affecting system settings.</span>
+                        </div>
+                        <div class="profile-item">
+                            <span class="profile-name">Moderate Cleanup:</span>
+                            <span class="profile-desc">Includes browser cache and Windows update files for more space savings.</span>
+                        </div>
+                        <div class="profile-item">
+                            <span class="profile-name">Aggressive Cleanup:</span>
+                            <span class="profile-desc">Maximum cleanup including browser data and all system caches.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-actions">
+                    <button id="btn-save-profile" class="action-button accent-button">
+                        <i class="fas fa-save"></i> Save Current Selection
+                    </button>
+                    <select id="profile-select" class="profile-select">
+                        <option value="">-- Select Profile --</option>
+                        <option value="safe">Safe Cleanup</option>
+                        <option value="moderate">Moderate Cleanup</option>
+                        <option value="aggressive">Aggressive Cleanup</option>
+                    </select>
+                    <button id="btn-load-profile" class="action-button">
+                        <i class="fas fa-folder-open"></i> Load
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cleanup Results Section -->
+        <div class="dashboard-section" id="cleanup-results" style="display: none;">
+            <h3><i class="fas fa-check-circle"></i> Cleanup Results</h3>
+            <div class="results-container">
+                <div class="result-item">
+                    <div class="result-label">Space Freed:</div>
+                    <div class="result-value" id="space-freed">0 MB</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Items Cleaned:</div>
+                    <div class="result-value" id="items-cleaned">0</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Time Taken:</div>
+                    <div class="result-value" id="time-taken">0s</div>
+                </div>
+            </div>
+            <div class="cleanup-log" id="cleanup-log">
+                <div class="log-header">Cleanup Log:</div>
+                <div class="log-content invisible-scrollbar" id="log-content"></div>
+            </div>
+        </div>
+
+        <!-- Progress Container -->
+        <div class="progress-container" style="display: none;">
+            <div class="progress-text">Cleaning system files...</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <div class="current-task" id="current-task"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #tab-cleanup {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: auto; /* Changed from hidden to auto */
+    }
+
+    .cleanup-content {
+        flex: 1;
+        padding: 0 1rem 2rem 1rem;
+        margin-top: 1rem;
+    }
+
+    .section-description {
+        color: #b0b0b0;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Disk Space Analysis Styles */
+    .disk-space-container {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .disk-space-chart {
+        flex: 1;
+        min-height: 200px;
+        max-height: 200px;
+        position: relative;
+    }
+
+    .disk-space-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.8rem;
+    }
+
+    .disk-info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: rgba(30, 30, 35, 0.5);
+        border-radius: 6px;
+    }
+
+    .disk-info-label {
+        font-weight: 500;
+        color: #e0e0e0;
+    }
+
+    .disk-info-value {
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    .disk-space-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    /* Quick Cleanup Styles */
+    .quick-cleanup-info {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .quick-cleanup-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        background: rgba(30, 30, 35, 0.5);
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .quick-cleanup-item i {
+        font-size: 1.5rem;
+        color: var(--primary);
+    }
+
+    /* Advanced Cleanup Styles */
+    .cleanup-categories {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .cleanup-category {
+        background: rgba(30, 30, 35, 0.5);
+        border-radius: 8px;
+        padding: 1rem;
+    }
+
+    .category-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.8rem;
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 1.05rem;
+    }
+
+    /* Profiles Styles */
+    .profiles-container {
+        margin-top: 1rem;
+    }
+
+    .profile-info {
+        margin-bottom: 1.5rem;
+    }
+
+    .profile-description {
+        background: rgba(30, 30, 35, 0.5);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .profile-item {
+        margin-bottom: 0.8rem;
+        padding-bottom: 0.8rem;
+        border-bottom: 1px solid rgba(60, 60, 70, 0.5);
+    }
+
+    .profile-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .profile-name {
+        font-weight: 600;
+        color: var(--primary);
+        display: block;
+        margin-bottom: 0.3rem;
+    }
+
+    .profile-desc {
+        font-size: 0.9rem;
+        color: #b0b0b0;
+    }
+
+    .profile-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .profile-select {
+        flex: 1;
+        padding: 0.5rem;
+        background: rgba(30, 30, 35, 0.7);
+        border: 1px solid #3f3f46;
+        border-radius: 6px;
+        color: #e0e0e0;
+    }
+
+    /* Results Styles */
+    .results-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .result-item {
+        background: rgba(30, 30, 35, 0.5);
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .result-label {
+        color: #b0b0b0;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .result-value {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    .cleanup-log {
+        background: rgba(20, 20, 25, 0.7);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .log-header {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #e0e0e0;
+    }
+
+    .log-content {
+        font-family: 'Consolas', monospace;
+        font-size: 0.9rem;
+        color: #b0b0b0;
+        max-height: 200px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        scrollbar-width: none; /* Firefox */
+    }
+
+    /* Apply invisible scrollbar to log content */
+    .log-content::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        background: transparent;
+    }
+
+    /* Progress Styles */
+    .progress-container {
+        background: rgba(30, 30, 35, 0.8);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+        text-align: center;
+    }
+
+    .progress-text {
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #e0e0e0;
+    }
+
+    .progress-bar {
+        height: 8px;
+        background: rgba(20, 20, 25, 0.7);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 0.5rem;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: var(--primary);
+        width: 0%;
+        transition: width 0.3s ease;
+    }
+
+    .current-task {
+        font-size: 0.9rem;
+        color: #b0b0b0;
+        margin-top: 0.5rem;
+    }
+
+    /* Button Styles */
+    .accent-button {
+        background: var(--primary);
+        color: #1e1e24;
+    }
+
+    .accent-button:hover {
+        background: var(--primary-dark);
+    }
+
+    /* Custom scrollbar styles */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(30, 34, 40, 0.6);
+        border-radius: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: var(--primary);
+        border-radius: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: var(--primary-dark);
+    }
+</style>

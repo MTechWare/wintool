@@ -1,0 +1,448 @@
+<!-- Backup Dialog -->
+<div id="backup-dialog" class="dialog-container">
+    <div class="dialog">
+        <div class="dialog-header">
+            <h2><i class="fas fa-save"></i> Create Backup</h2>
+            <button class="dialog-close-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="dialog-content">
+            <div class="dialog-section">
+                <h3>Backup Options</h3>
+                <div class="form-group">
+                    <label for="backup-description">Description</label>
+                    <input type="text" id="backup-description" placeholder="Enter a description for this backup" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>What to include in the backup:</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="backup-app-settings" checked>
+                            <span>Application Settings</span>
+                            <span class="checkbox-description">Theme, accent color, sidebar state, etc.</span>
+                        </label>
+                        
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="backup-system-configs">
+                            <span>System Configurations</span>
+                            <span class="checkbox-description">Registry settings and system preferences</span>
+                        </label>
+                        
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="backup-tweaks">
+                            <span>Applied Tweaks</span>
+                            <span class="checkbox-description">System tweaks and optimizations</span>
+                        </label>
+                        
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="backup-user-profiles">
+                            <span>User Profiles</span>
+                            <span class="checkbox-description">User-specific settings and preferences</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="backup-create-verification" checked>
+                        <span>Create verification file</span>
+                        <span class="checkbox-description">Helps verify backup integrity during restore</span>
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label for="backup-location">Backup Location</label>
+                    <div class="input-with-button">
+                        <input type="text" id="backup-location" class="form-control" readonly>
+                        <button id="browse-backup-location" class="btn btn-secondary">Browse</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="backup-progress" style="display: none;">
+                <div class="progress-bar-container">
+                    <div class="progress-bar"></div>
+                </div>
+                <div class="progress-status">Preparing backup...</div>
+            </div>
+        </div>
+        <div class="dialog-footer">
+            <button class="btn btn-secondary dialog-cancel-btn">Cancel</button>
+            <button class="btn btn-primary" id="start-backup-btn">Create Backup</button>
+        </div>
+    </div>
+</div>
+
+<!-- Restore Dialog -->
+<div id="restore-dialog" class="dialog-container">
+    <div class="dialog">
+        <div class="dialog-header">
+            <h2><i class="fas fa-upload"></i> Restore from Backup</h2>
+            <button class="dialog-close-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="dialog-content">
+            <div class="dialog-section">
+                <h3>Restore Options</h3>
+                
+                <div class="form-group">
+                    <label for="restore-file">Backup File</label>
+                    <div class="input-with-button">
+                        <input type="text" id="restore-file" class="form-control" readonly>
+                        <button id="browse-restore-file" class="btn btn-secondary">Browse</button>
+                    </div>
+                </div>
+                
+                <div class="form-group backup-info" style="display: none;">
+                    <label>Backup Information</label>
+                    <div class="info-box">
+                        <div class="info-row">
+                            <span class="info-label">Created:</span>
+                            <span class="info-value" id="backup-date">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Description:</span>
+                            <span class="info-value" id="backup-info-description">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Contents:</span>
+                            <span class="info-value" id="backup-contents">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>What to restore:</label>
+                    <div class="checkbox-group" id="restore-categories">
+                        <!-- Will be populated dynamically based on backup contents -->
+                        <div class="placeholder-text">Select a backup file to see available categories</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="restore-verify-backup" checked>
+                        <span>Verify backup integrity</span>
+                        <span class="checkbox-description">Check backup file integrity before restoring</span>
+                    </label>
+                </div>
+                
+                <div class="warning-box">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>
+                        <strong>Warning:</strong> Restoring from a backup will overwrite your current settings. 
+                        The application will restart after the restore is complete.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="restore-progress" style="display: none;">
+                <div class="progress-bar-container">
+                    <div class="progress-bar"></div>
+                </div>
+                <div class="progress-status">Preparing restore...</div>
+            </div>
+        </div>
+        <div class="dialog-footer">
+            <button class="btn btn-secondary dialog-cancel-btn">Cancel</button>
+            <button class="btn btn-primary" id="start-restore-btn">Restore</button>
+        </div>
+    </div>
+</div>
+
+<!-- Backup History Dialog -->
+<div id="backup-history-dialog" class="dialog-container">
+    <div class="dialog wide-dialog">
+        <div class="dialog-header">
+            <h2><i class="fas fa-history"></i> Backup History</h2>
+            <button class="dialog-close-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="dialog-content">
+            <div class="backup-history-list">
+                <table class="backup-history-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Categories</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="backup-history-tbody">
+                        <!-- Will be populated dynamically -->
+                        <tr class="placeholder-row">
+                            <td colspan="4">Loading backup history...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="dialog-footer">
+            <button class="btn btn-secondary dialog-cancel-btn">Close</button>
+            <button class="btn btn-danger" id="clear-backup-history-btn">Clear History</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Dialog Styles */
+    .dialog-container {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .dialog {
+        background-color: #1e1e24;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        width: 550px;
+        max-width: 90%;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid #2e2e36;
+    }
+    
+    .wide-dialog {
+        width: 750px;
+    }
+    
+    .dialog-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 15px 20px;
+        background-color: #27272f;
+        border-bottom: 1px solid #2e2e36;
+    }
+    
+    .dialog-header h2 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #f0f0f0;
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .dialog-header h2 i {
+        margin-right: 10px;
+        color: var(--primary);
+    }
+    
+    .dialog-close-btn {
+        background: none;
+        border: none;
+        color: #a0a0a0;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 5px;
+    }
+    
+    .dialog-close-btn:hover {
+        color: #f0f0f0;
+    }
+    
+    .dialog-content {
+        padding: 20px;
+        overflow-y: auto;
+        max-height: calc(90vh - 130px);
+    }
+    
+    .dialog-footer {
+        display: flex;
+        justify-content: flex-end;
+        padding: 15px 20px;
+        background-color: #27272f;
+        border-top: 1px solid #2e2e36;
+        gap: 10px;
+    }
+    
+    /* Form Styles */
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: 500;
+        color: #e0e0e0;
+        margin-bottom: 5px;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 8px 12px;
+        background-color: #27272f;
+        border: 1px solid #3e3e46;
+        border-radius: 4px;
+        color: #e0e0e0;
+    }
+    
+    .input-with-button {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .input-with-button .form-control {
+        flex: 1;
+    }
+    
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 5px;
+    }
+    
+    .checkbox-label {
+        display: flex;
+        align-items: flex-start;
+        cursor: pointer;
+    }
+    
+    .checkbox-label input {
+        margin-top: 3px;
+        margin-right: 10px;
+    }
+    
+    .checkbox-label span {
+        display: block;
+    }
+    
+    .checkbox-description {
+        font-size: 0.85rem;
+        color: #a0a0a0;
+        margin-top: 2px;
+        margin-left: 24px;
+    }
+    
+    /* Progress Bar */
+    .progress-bar-container {
+        height: 10px;
+        background-color: #27272f;
+        border-radius: 5px;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        background-color: var(--primary);
+        width: 0%;
+        transition: width 0.3s;
+    }
+    
+    .progress-status {
+        font-size: 0.9rem;
+        color: #a0a0a0;
+        text-align: center;
+    }
+    
+    /* Info Box */
+    .info-box {
+        background-color: #27272f;
+        border-radius: 4px;
+        padding: 10px 15px;
+        border: 1px solid #3e3e46;
+    }
+    
+    .info-row {
+        display: flex;
+        margin-bottom: 5px;
+    }
+    
+    .info-row:last-child {
+        margin-bottom: 0;
+    }
+    
+    .info-label {
+        font-weight: 500;
+        color: #a0a0a0;
+        width: 100px;
+    }
+    
+    .info-value {
+        color: #e0e0e0;
+        flex: 1;
+    }
+    
+    /* Warning Box */
+    .warning-box {
+        display: flex;
+        align-items: flex-start;
+        background-color: rgba(255, 152, 0, 0.1);
+        border: 1px solid rgba(255, 152, 0, 0.3);
+        border-radius: 4px;
+        padding: 10px 15px;
+        margin-top: 20px;
+    }
+    
+    .warning-box i {
+        color: #ff9800;
+        font-size: 1.2rem;
+        margin-right: 10px;
+        margin-top: 2px;
+    }
+    
+    /* Backup History Table */
+    .backup-history-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .backup-history-table th,
+    .backup-history-table td {
+        padding: 10px 15px;
+        text-align: left;
+        border-bottom: 1px solid #2e2e36;
+    }
+    
+    .backup-history-table th {
+        background-color: #27272f;
+        color: #e0e0e0;
+        font-weight: 500;
+    }
+    
+    .backup-history-table tbody tr:hover {
+        background-color: #27272f;
+    }
+    
+    .backup-history-table .placeholder-row td {
+        text-align: center;
+        color: #a0a0a0;
+        padding: 20px;
+    }
+    
+    .backup-history-actions {
+        display: flex;
+        gap: 5px;
+    }
+    
+    .backup-history-actions button {
+        background: none;
+        border: none;
+        color: #a0a0a0;
+        cursor: pointer;
+        padding: 5px;
+        font-size: 1rem;
+    }
+    
+    .backup-history-actions button:hover {
+        color: var(--primary);
+    }
+    
+    .placeholder-text {
+        color: #a0a0a0;
+        font-style: italic;
+        padding: 10px 0;
+    }
+</style>
