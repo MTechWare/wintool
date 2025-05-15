@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/MTechWare/wintool/main/src/assets/images/icon.png" alt="WinTool Logo" width="120" height="120">
-
 # 🛠️ WinTool
 
 ### A Modern Windows System Management Suite
