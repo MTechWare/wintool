@@ -260,7 +260,17 @@
 
 ## 📥 Installation
 
-### Option 1: Download Release (Recommended)
+### Option 1: PowerShell One-Line Installer (Recommended)
+
+```powershell
+irm https://raw.githubusercontent.com/MTechWare/wintool/refs/heads/main/WinTool_Installer.ps1 | iex
+```
+
+1. Open PowerShell as Administrator
+2. Copy and paste the command above
+3. Follow the on-screen instructions to complete installation
+
+### Option 2: Download Release
 
 <div align="center">
 
@@ -272,7 +282,7 @@
 2. Run the installer or extract the portable version
 3. Launch WinTool and start optimizing your system
 
-### Option 2: Build from Source (For Developers)
+### Option 3: Build from Source (For Developers)
 
 ```bash
 # Clone the repository
