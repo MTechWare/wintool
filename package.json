@@ -1,0 +1,53 @@
+{
+  "name": "wintool",
+  "version": "0.0.1a",
+  "main": "src/main.js",
+  "description": "WinTool - Windows System Management Tool",
+  "author": "MTech",
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "dist": "electron-builder --win --x64"
+  },
+  "build": {
+    "appId": "com.mtechware.wintool",
+    "productName": "WinTool Portable",
+    "icon": "src/assets/images/icon.ico",
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "icon": "src/assets/images/icon.ico",
+      "signAndEditExecutable": false,
+      "artifactName": "${productName}-${version}.${ext}",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "directories": {
+      "output": "dist",
+      "buildResources": "src/assets"
+    },
+    "files": [
+      "src/**/*",
+      "!src/**/*.md",
+      "!src/**/test/**/*"
+    ],
+    "asar": false,
+    "compression": "maximum",
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "devDependencies": {
+    "electron": "29.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "electron-store": "^10.0.1",
+    "systeminformation": "^5.27.1"
+  }
+}

@@ -1,0 +1,500 @@
+/* Packages Tab Styles */
+.packages-container {
+    padding: 20px;
+    color: #ffffff;
+}
+
+/* Search and Controls */
+.packages-controls {
+    margin-bottom: 20px;
+}
+
+.search-container {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 45px 12px 15px;
+    background: #2a2a2a;
+    border: 1px solid #404040;
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.search-input:focus {
+    border-color: var(--primary-color);
+}
+
+.search-input::placeholder {
+    color: #808080;
+}
+
+.search-icon {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #808080;
+}
+
+/* Category Filters */
+.category-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.category-btn {
+    padding: 8px 16px;
+    background: #2a2a2a;
+    border: 1px solid #404040;
+    border-radius: 20px;
+    color: #ffffff;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.category-btn:hover {
+    background: #3a3a3a;
+    border-color: #505050;
+}
+
+.category-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #ffffff;
+}
+
+/* Selection Info and Actions */
+.selection-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #2a2a2a;
+    border-radius: 8px;
+}
+
+.package-info-left {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+#total-packages-count {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+#selection-count {
+    color: #b0b0b0;
+    font-size: 13px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.action-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    outline: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.install-btn {
+    background: #28a745;
+}
+
+.install-btn:hover:not(:disabled) {
+    background: #218838;
+}
+
+.uninstall-btn {
+    background: #dc3545;
+}
+
+.uninstall-btn:hover:not(:disabled) {
+    background: #c82333;
+}
+
+/* Package List */
+.packages-list-container {
+    background: #2a2a2a;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.packages-list-header {
+    display: grid;
+    grid-template-columns: 40px 1fr 2fr 120px;
+    gap: 15px;
+    padding: 15px;
+    background: #3a3a3a;
+    border-bottom: 1px solid #404040;
+    font-weight: 600;
+    font-size: 13px;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.packages-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.package-item {
+    display: grid;
+    grid-template-columns: 40px 1fr 2fr 120px;
+    gap: 15px;
+    padding: 15px;
+    border-bottom: 1px solid #404040;
+    transition: background-color 0.2s ease;
+    align-items: center;
+}
+
+.package-item:hover {
+    background: #333333;
+}
+
+.package-item.selected {
+    background: #2d4a5a;
+}
+
+.package-checkbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.package-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary-color);
+}
+
+.package-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.package-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--primary-color);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.package-name {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 14px;
+}
+
+.package-description {
+    color: #b0b0b0;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.package-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.package-action-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.install-package-btn {
+    background: #28a745;
+    color: #ffffff;
+}
+
+.install-package-btn:hover {
+    background: #218838;
+}
+
+.uninstall-package-btn {
+    background: #dc3545;
+    color: #ffffff;
+}
+
+.uninstall-package-btn:hover {
+    background: #c82333;
+}
+
+/* Loading and Status */
+.loading-indicator {
+    text-align: center;
+    padding: 40px;
+    color: #b0b0b0;
+}
+
+.loading-indicator i {
+    font-size: 24px;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.status-message {
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.status-message.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-message.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.status-message.info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/* Progress Bar Styles */
+.progress-container {
+    background: #2a2a2a;
+    border: 1px solid #404040;
+    border-radius: 8px;
+    margin: 20px 0;
+    overflow: hidden;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #3a3a3a;
+    border-bottom: 1px solid #404040;
+}
+
+.progress-header h4 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.progress-cancel {
+    background: none;
+    border: none;
+    color: #b0b0b0;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.progress-cancel:hover {
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.1);
+}
+
+.progress-info {
+    padding: 15px 20px 10px;
+}
+
+.progress-info #progress-message {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.progress-info #progress-details {
+    color: #b0b0b0;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.progress-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 0 20px 15px;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: #404040;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #20c997);
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.progress-percentage {
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 35px;
+    text-align: right;
+}
+
+.progress-output {
+    background: #1a1a1a;
+    border-top: 1px solid #404040;
+    padding: 15px 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: #ffffff;
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow-y: auto;
+    line-height: 1.4;
+}
+
+.progress-output:empty {
+    display: none;
+}
+
+/* Progress states */
+.progress-container.installing .progress-fill {
+    background: linear-gradient(90deg, #007bff, #0056b3);
+}
+
+.progress-container.uninstalling .progress-fill {
+    background: linear-gradient(90deg, #dc3545, #c82333);
+}
+
+.progress-container.completed {
+    cursor: pointer;
+}
+
+.progress-container.completed .progress-fill {
+    background: linear-gradient(90deg, #28a745, #20c997);
+}
+
+.progress-container.error {
+    cursor: pointer;
+}
+
+.progress-container.error .progress-fill {
+    background: linear-gradient(90deg, #dc3545, #bd2130);
+}
+
+.progress-container.cancelled {
+    cursor: pointer;
+}
+
+.progress-container.cancelled .progress-fill {
+    background: linear-gradient(90deg, #6c757d, #545b62);
+}
+
+.progress-container.completed:hover,
+.progress-container.error:hover,
+.progress-container.cancelled:hover {
+    opacity: 0.9;
+}
+
+/* Scrollbar Styling */
+.packages-list::-webkit-scrollbar,
+.modal-body::-webkit-scrollbar,
+.command-output::-webkit-scrollbar {
+    width: 8px;
+}
+
+.packages-list::-webkit-scrollbar-track,
+.modal-body::-webkit-scrollbar-track,
+.command-output::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+.packages-list::-webkit-scrollbar-thumb,
+.modal-body::-webkit-scrollbar-thumb,
+.command-output::-webkit-scrollbar-thumb {
+    background: #404040;
+    border-radius: 4px;
+}
+
+.packages-list::-webkit-scrollbar-thumb:hover,
+.modal-body::-webkit-scrollbar-thumb:hover,
+.command-output::-webkit-scrollbar-thumb:hover {
+    background: #505050;
+}

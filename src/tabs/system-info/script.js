@@ -1,0 +1,177 @@
+// System Info Tab JavaScript - Final Clean Version
+console.log('=== System Info tab JavaScript loaded! ===');
+
+// Simple initialization
+setTimeout(function() {
+    console.log('Looking for tab container...');
+    
+    // Find the container
+    let container = null;
+    if (typeof tabContainer !== 'undefined') {
+        container = tabContainer;
+        console.log('Using provided tabContainer');
+    }
+    if (!container) {
+        container = document.querySelector('[data-tab="folder-system-info"]');
+        console.log('Found container via data-tab selector');
+    }
+    if (!container) {
+        container = document.querySelector('.folder-tab-container');
+        console.log('Found container via class selector');
+    }
+    
+    console.log('Found container:', container);
+    console.log('Container innerHTML length:', container ? container.innerHTML.length : 'N/A');
+    console.log('Container children count:', container ? container.children.length : 'N/A');
+    
+    if (container) {
+        loadSystemInfo(container);
+    } else {
+        console.error('No container found for system info tab');
+        // Try to load anyway using global selectors
+        console.log('Attempting to load system info using global selectors...');
+        loadSystemInfo(document);
+    }
+}, 200);
+
+async function loadSystemInfo(container) {
+    try {
+        console.log('loadSystemInfo called with container:', container);
+        
+        // Get system info from Electron API
+        if (window && window.electronAPI) {
+            console.log('electronAPI available, calling getSystemInfo...');
+            const sysInfo = await window.electronAPI.getSystemInfo();
+            console.log('System info received:', sysInfo);
+            
+            // Update basic system overview
+            updateElement(container, 'platform-info', sysInfo.platform || 'Unknown');
+            updateElement(container, 'arch-info', sysInfo.arch || 'Unknown');
+            updateElement(container, 'hostname-info', sysInfo.hostname || 'Unknown');
+            updateElement(container, 'uptime-info', sysInfo.uptime || 'Unknown');
+            
+            // Update CPU information
+            updateElement(container, 'cpu-brand', sysInfo.cpuBrand || 'Unknown');
+            updateElement(container, 'cpu-manufacturer', sysInfo.cpuManufacturer || 'Unknown');
+            updateElement(container, 'cpu-cores-info', `${sysInfo.cpuCores || 0} cores`);
+            updateElement(container, 'cpu-speed-info', sysInfo.cpuSpeed || 'Unknown');
+            updateElement(container, 'cpu-temperature-info', sysInfo.cpuTemperature || 'N/A');
+            
+            // Update detailed CPU information
+            updateElement(container, 'cpu-speed', sysInfo.cpuSpeed || 'Unknown');
+            updateElement(container, 'cpu-current-speed', sysInfo.cpuCurrentSpeed || 'Unknown');
+            updateElement(container, 'cpu-speed-min', sysInfo.cpuSpeedMin || 'Unknown');
+            updateElement(container, 'cpu-speed-max', sysInfo.cpuSpeedMax || 'Unknown');
+            updateElement(container, 'cpu-cores', sysInfo.cpuCores || 'Unknown');
+            updateElement(container, 'cpu-physical-cores', sysInfo.cpuPhysicalCores || 'Unknown');
+            updateElement(container, 'cpu-processors', sysInfo.cpuProcessors || 'Unknown');
+            updateElement(container, 'cpu-socket', sysInfo.cpuSocket || 'Unknown');
+            
+            // Update CPU cache information
+            if (sysInfo.cpuCache) {
+                updateElement(container, 'cpu-cache-l1d', sysInfo.cpuCache.l1d || 'N/A');
+                updateElement(container, 'cpu-cache-l1i', sysInfo.cpuCache.l1i || 'N/A');
+                updateElement(container, 'cpu-cache-l2', sysInfo.cpuCache.l2 || 'N/A');
+                updateElement(container, 'cpu-cache-l3', sysInfo.cpuCache.l3 || 'N/A');
+            }
+            
+            // Update memory information
+            updateElement(container, 'total-memory', sysInfo.totalMemory || 'Unknown');
+            updateElement(container, 'used-memory', sysInfo.usedMemory || 'Unknown');
+            updateElement(container, 'free-memory', sysInfo.freeMemory || 'Unknown');
+            updateElement(container, 'available-memory', sysInfo.availableMemory || 'Unknown');
+            
+            // Update hardware information
+            updateElement(container, 'system-manufacturer', sysInfo.systemManufacturer || 'Unknown');
+            updateElement(container, 'system-model', sysInfo.systemModel || 'Unknown');
+            updateElement(container, 'system-version', sysInfo.systemVersion || 'Unknown');
+            updateElement(container, 'system-serial', sysInfo.systemSerial || 'Unknown');
+            updateElement(container, 'system-virtual', sysInfo.isVirtual ? 'Yes' : 'No');
+            
+            // Update motherboard information
+            updateElement(container, 'motherboard-manufacturer', sysInfo.motherboardManufacturer || 'Unknown');
+            updateElement(container, 'motherboard-model', sysInfo.motherboardModel || 'Unknown');
+            updateElement(container, 'motherboard-version', sysInfo.motherboardVersion || 'Unknown');
+            updateElement(container, 'motherboard-serial', sysInfo.motherboardSerial || 'Unknown');
+            
+            // Update BIOS information
+            updateElement(container, 'bios-vendor', sysInfo.biosVendor || 'Unknown');
+            updateElement(container, 'bios-version', sysInfo.biosVersion || 'Unknown');
+            updateElement(container, 'bios-release-date', sysInfo.biosReleaseDate || 'Unknown');
+            
+            // Update chassis information
+            updateElement(container, 'chassis-manufacturer', sysInfo.chassisManufacturer || 'Unknown');
+            updateElement(container, 'chassis-model', sysInfo.chassisModel || 'Unknown');
+            updateElement(container, 'chassis-type', sysInfo.chassisType || 'Unknown');
+            
+            // Update operating system information
+            updateElement(container, 'os-distro', sysInfo.osDistro || 'Unknown');
+            updateElement(container, 'os-release', sysInfo.osRelease || 'Unknown');
+            updateElement(container, 'os-codename', sysInfo.osCodename || 'Unknown');
+            updateElement(container, 'os-kernel', sysInfo.osKernel || 'Unknown');
+            updateElement(container, 'os-build', sysInfo.osBuild || 'Unknown');
+            updateElement(container, 'os-serial', sysInfo.osSerial || 'Unknown');
+            
+            // Update battery information if available
+            if (sysInfo.battery && sysInfo.battery.hasBattery) {
+                const batterySection = container.querySelector('#battery-section') || document.querySelector('#battery-section');
+                if (batterySection) {
+                    batterySection.style.display = 'block';
+                    updateElement(container, 'battery-percent', `${sysInfo.battery.percent}%`);
+                    updateElement(container, 'battery-status', sysInfo.battery.isCharging ? 'Charging' : 'Discharging');
+                    updateElement(container, 'battery-type', sysInfo.battery.type || 'Unknown');
+                    updateElement(container, 'battery-model', sysInfo.battery.model || 'Unknown');
+                    updateElement(container, 'battery-manufacturer', sysInfo.battery.manufacturer || 'Unknown');
+                    updateElement(container, 'battery-ac-connected', sysInfo.battery.acConnected ? 'Yes' : 'No');
+                }
+            }
+            
+            console.log('System info updated successfully');
+
+        } else {
+            console.log('electronAPI not available, using fallback');
+            updateElement(container, 'platform-info', 'Browser Mode');
+            updateElement(container, 'arch-info', 'N/A');
+            updateElement(container, 'hostname-info', 'localhost');
+            updateElement(container, 'uptime-info', 'N/A');
+        }
+
+        // Signal that this tab is ready
+        if (window.markTabAsReady && typeof tabId !== 'undefined') {
+            console.log('Marking system-info tab as ready');
+            window.markTabAsReady(tabId);
+        }
+
+    } catch (error) {
+        console.error('Error loading system info:', error);
+        // Still signal ready even if there was an error
+        if (window.markTabAsReady && typeof tabId !== 'undefined') {
+            console.log('Marking system-info tab as ready (after error)');
+            window.markTabAsReady(tabId);
+        }
+    }
+}
+
+// Simple helper function to update elements
+function updateElement(container, id, value) {
+    try {
+        console.log('Looking for element with ID:', id, 'in container:', container);
+        const element = container.querySelector('#' + id);
+        if (element) {
+            element.textContent = value;
+            console.log('Updated', id, 'with value:', value);
+        } else {
+            console.warn('Element not found:', id);
+            // Try to find it in the whole document as a fallback
+            const globalElement = document.querySelector('#' + id);
+            if (globalElement) {
+                globalElement.textContent = value;
+                console.log('Updated', id, 'globally with value:', value);
+            } else {
+                console.warn('Element not found globally either:', id);
+            }
+        }
+    } catch (error) {
+        console.error('Error updating element', id, ':', error);
+    }
+}

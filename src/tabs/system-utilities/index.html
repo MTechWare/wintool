@@ -1,0 +1,303 @@
+<div class="tab-header">
+    <h1><i class="fas fa-tools"></i> System Utilities</h1>
+    <p>Quick access to Windows system utilities and administrative tools</p>
+</div>
+
+<div class="system-utilities-content">
+    <!-- Search and Controls -->
+    <div class="utilities-controls">
+        <div class="search-container">
+            <input type="text" id="utilities-search" placeholder="Search utilities..." class="search-input">
+            <i class="fas fa-search search-icon"></i>
+        </div>
+        <div class="utilities-info">
+            <span id="total-utilities-count">24 utilities available</span>
+            <span id="filtered-utilities-count"></span>
+        </div>
+    </div>
+    <!-- System Management Section -->
+    <div class="utilities-section">
+        <h3><i class="fas fa-cogs"></i> System Management</h3>
+        <div class="utilities-grid">
+            <div class="utility-card" onclick="launchUtility('devmgmt.msc')" title="Manage hardware devices and drivers">
+                <div class="utility-icon">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>Device Manager</h4>
+                    <p>Manage hardware devices and drivers</p>
+                </div>
+            </div>
+
+            <div class="utility-card" onclick="launchUtility('diskmgmt.msc')" title="Manage disk partitions and storage">
+                <div class="utility-icon">
+                    <i class="fas fa-hdd"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>Disk Management</h4>
+                    <p>Manage disk partitions and storage</p>
+                </div>
+            </div>
+
+            <div class="utility-card" onclick="launchUtility('compmgmt.msc')" title="Comprehensive system management console">
+                <div class="utility-icon">
+                    <i class="fas fa-desktop"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>Computer Management</h4>
+                    <p>Comprehensive system management</p>
+                </div>
+            </div>
+
+            <div class="utility-card" onclick="launchUtility('msconfig')" title="Configure system startup and services">
+                <div class="utility-icon">
+                    <i class="fas fa-sliders-h"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>System Configuration</h4>
+                    <p>Configure startup and services</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registry & Services Section -->
+    <div class="utilities-section">
+        <h3><i class="fas fa-database"></i> Registry & Services</h3>
+        <div class="utilities-grid">
+            <div class="utility-card" onclick="launchUtility('regedit')" title="Edit Windows registry (Advanced users only)">
+                <div class="utility-icon">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>Registry Editor</h4>
+                    <p>Edit Windows registry</p>
+                </div>
+            </div>
+
+            <div class="utility-card" onclick="launchUtility('services.msc')" title="Manage Windows services">
+                <div class="utility-icon">
+                    <i class="fas fa-server"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>Services</h4>
+                    <p>Manage Windows services</p>
+                </div>
+            </div>
+
+            <div class="utility-card" onclick="launchUtility('taskmgr')" title="Monitor and manage running processes">
+                <div class="utility-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>Task Manager</h4>
+                    <p>Monitor running processes</p>
+                </div>
+            </div>
+
+            <div class="utility-card" onclick="launchUtility('gpedit.msc')" title="Edit local group policy settings">
+                <div class="utility-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>Group Policy Editor</h4>
+                    <p>Edit local group policies</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Network Tools Section -->
+    <div class="utilities-section">
+        <h3><i class="fas fa-network-wired"></i> Network Tools</h3>
+        <div class="utilities-grid">
+            <div class="utility-card" onclick="launchUtility('ncpa.cpl')" title="Manage network connections">
+                <div class="utility-icon">
+                    <i class="fas fa-wifi"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>Network Connections</h4>
+                    <p>Manage network adapters</p>
+                </div>
+            </div>
+
+            <div class="utility-card" onclick="launchUtility('control /name Microsoft.NetworkAndSharingCenter')" title="Network and sharing settings">
+                <div class="utility-icon">
+                    <i class="fas fa-share-alt"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>Network Center</h4>
+                    <p>Network and sharing settings</p>
+                </div>
+            </div>
+
+            <div class="utility-card" onclick="launchUtility('cmd')" title="Command line interface">
+                <div class="utility-icon">
+                    <i class="fas fa-terminal"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>Command Prompt</h4>
+                    <p>Command line interface</p>
+                </div>
+            </div>
+
+            <div class="utility-card" onclick="launchUtility('powershell')" title="PowerShell command interface">
+                <div class="utility-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>PowerShell</h4>
+                    <p>Advanced command interface</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Information Section -->
+    <div class="utilities-section">
+        <h3><i class="fas fa-info-circle"></i> System Information</h3>
+        <div class="utilities-grid">
+            <div class="utility-card" onclick="launchUtility('msinfo32')" title="Detailed system information">
+                <div class="utility-icon">
+                    <i class="fas fa-laptop"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>System Information</h4>
+                    <p>Detailed system information</p>
+                </div>
+            </div>
+
+            <div class="utility-card" onclick="launchUtility('eventvwr.msc')" title="View system and application logs">
+                <div class="utility-icon">
+                    <i class="fas fa-list-alt"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>Event Viewer</h4>
+                    <p>View system logs</p>
+                </div>
+            </div>
+
+            <div class="utility-card" onclick="launchUtility('perfmon.msc')" title="Monitor system performance">
+                <div class="utility-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>Performance Monitor</h4>
+                    <p>Monitor system performance</p>
+                </div>
+            </div>
+
+            <div class="utility-card" onclick="launchUtility('resmon')" title="Real-time resource monitoring">
+                <div class="utility-icon">
+                    <i class="fas fa-tachometer-alt"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>Resource Monitor</h4>
+                    <p>Real-time resource monitoring</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Management Section -->
+    <div class="utilities-section">
+        <h3><i class="fas fa-users"></i> User Management</h3>
+        <div class="utilities-grid">
+            <div class="utility-card" onclick="launchUtility('netplwiz')" title="Manage user accounts">
+                <div class="utility-icon">
+                    <i class="fas fa-user-cog"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>User Accounts</h4>
+                    <p>Manage user accounts</p>
+                </div>
+            </div>
+
+            <div class="utility-card" onclick="launchUtility('lusrmgr.msc')" title="Local users and groups management">
+                <div class="utility-icon">
+                    <i class="fas fa-users-cog"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>Local Users & Groups</h4>
+                    <p>Advanced user management</p>
+                </div>
+            </div>
+
+            <div class="utility-card" onclick="launchUtility('control userpasswords')" title="User account control panel">
+                <div class="utility-icon">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>User Control Panel</h4>
+                    <p>User account settings</p>
+                </div>
+            </div>
+
+            <div class="utility-card" onclick="launchUtility('secpol.msc')" title="Local security policy settings">
+                <div class="utility-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>Security Policy</h4>
+                    <p>Local security settings</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disk Tools Section -->
+    <div class="utilities-section">
+        <h3><i class="fas fa-tools"></i> Disk Tools</h3>
+        <div class="utilities-grid">
+            <div class="utility-card" onclick="launchUtility('cleanmgr')" title="Clean up disk space">
+                <div class="utility-icon">
+                    <i class="fas fa-broom"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>Disk Cleanup</h4>
+                    <p>Clean up disk space</p>
+                </div>
+            </div>
+
+            <div class="utility-card" onclick="launchUtility('dfrgui')" title="Defragment and optimize drives">
+                <div class="utility-icon">
+                    <i class="fas fa-puzzle-piece"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>Disk Defragmenter</h4>
+                    <p>Optimize drives</p>
+                </div>
+            </div>
+
+            <div class="utility-card" onclick="launchDiskCheck()" title="Check disk for errors">
+                <div class="utility-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>Check Disk</h4>
+                    <p>Check disk for errors</p>
+                </div>
+            </div>
+
+            <div class="utility-card" onclick="launchUtility('diskpart')" title="Advanced disk partitioning tool">
+                <div class="utility-icon">
+                    <i class="fas fa-cut"></i>
+                </div>
+                <div class="utility-info">
+                    <h4>DiskPart</h4>
+                    <p>Advanced disk partitioning</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- No Results Message -->
+    <div id="no-results" class="no-results" style="display: none;">
+        <i class="fas fa-search"></i>
+        <h3>No utilities found</h3>
+        <p>Try adjusting your search terms to find the utility you're looking for.</p>
+    </div>
+
+    <!-- Status Messages -->
+    <div id="status-message" class="status-message" style="display: none;"></div>
+</div>

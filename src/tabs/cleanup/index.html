@@ -1,0 +1,123 @@
+<div class="tab-header">
+    <h1><i class="fas fa-broom"></i> System Cleanup</h1>
+    <p>Clean temporary files and optimize your Windows system</p>
+</div>
+
+<div class="cleanup-content">
+    <!-- Disk Space Overview -->
+    <div class="disk-overview">
+        <h3><i class="fas fa-hdd"></i> Disk Space Overview</h3>
+        <div class="disk-stats">
+            <div class="disk-item">
+                <div class="disk-label">Total Space</div>
+                <div class="disk-value" id="total-space">Loading...</div>
+                <div class="disk-bar">
+                    <div class="disk-bar-fill" id="total-space-bar"></div>
+                </div>
+            </div>
+            <div class="disk-item">
+                <div class="disk-label">Used Space</div>
+                <div class="disk-value" id="used-space">Loading...</div>
+                <div class="disk-bar">
+                    <div class="disk-bar-fill" id="used-space-bar"></div>
+                </div>
+            </div>
+            <div class="disk-item">
+                <div class="disk-label">Free Space</div>
+                <div class="disk-value" id="free-space">Loading...</div>
+                <div class="disk-bar">
+                    <div class="disk-bar-fill" id="free-space-bar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Cleanup Section -->
+    <div class="main-cleanup">
+        <h3><i class="fas fa-broom"></i> System Cleanup</h3>
+        <div class="cleanup-card">
+            <div class="cleanup-header">
+                <div class="cleanup-icon">
+                    <i class="fas fa-magic"></i>
+                </div>
+                <div class="cleanup-title">
+                    <h4>Clean System Files</h4>
+                    <p>Remove temporary files, cache, logs, and system junk</p>
+                </div>
+            </div>
+
+            <div class="cleanup-description">
+                This will clean:
+                <ul>
+                    <li><i class="fas fa-file-alt"></i> Temporary files and folders</li>
+                    <li><i class="fas fa-database"></i> System cache and logs</li>
+                    <li><i class="fas fa-trash"></i> Windows update cache</li>
+                    <li><i class="fas fa-bug"></i> Error reports and dump files</li>
+                </ul>
+            </div>
+
+            <div class="cleanup-actions">
+                <button class="btn btn-primary btn-large" onclick="startCleanup()" id="cleanup-btn">
+                    <i class="fas fa-broom"></i> Start Cleanup
+                </button>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="cleanup-progress" id="cleanup-progress" style="display: none;">
+                <div class="progress-header">
+                    <span class="progress-text" id="progress-text">Preparing cleanup...</span>
+                    <span class="progress-percentage" id="progress-percentage">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-bar-fill" id="progress-bar-fill"></div>
+                </div>
+                <div class="progress-details" id="progress-details">Initializing cleanup process...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="results-section" id="results-section" style="display: none;">
+        <h3><i class="fas fa-check-circle"></i> Cleanup Complete</h3>
+        <div class="results-container">
+            <div class="results-summary">
+                <div class="result-item">
+                    <div class="result-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="result-info">
+                        <span class="result-label">Files Cleaned</span>
+                        <span class="result-value" id="files-cleaned">0</span>
+                    </div>
+                </div>
+                <div class="result-item">
+                    <div class="result-icon">
+                        <i class="fas fa-hdd"></i>
+                    </div>
+                    <div class="result-info">
+                        <span class="result-label">Space Freed</span>
+                        <span class="result-value" id="space-freed">0 MB</span>
+                    </div>
+                </div>
+                <div class="result-item">
+                    <div class="result-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="result-info">
+                        <span class="result-label">Time Taken</span>
+                        <span class="result-value" id="time-taken">0s</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-actions">
+                <button class="btn btn-primary" onclick="startCleanup()" id="cleanup-again-btn">
+                    <i class="fas fa-redo"></i> Clean Again
+                </button>
+                <button class="btn btn-secondary" onclick="openDiskCleanup()">
+                    <i class="fas fa-external-link-alt"></i> Windows Disk Cleanup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

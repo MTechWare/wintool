@@ -1,0 +1,324 @@
+<div class="tab-header">
+    <h1><i class="fas fa-desktop"></i> System Information</h1>
+    <p>Detailed information about your system and environment</p>
+</div>
+
+<div class="system-info-content">
+    <!-- System Overview -->
+    <div class="system-overview">
+        <h3>System Overview</h3>
+        <div class="overview-grid">
+            <div class="overview-card" id="platform-card">
+                <i class="fas fa-laptop"></i>
+                <h4>Platform</h4>
+                <p id="platform-info">Loading...</p>
+            </div>
+            <div class="overview-card" id="arch-card">
+                <i class="fas fa-microchip"></i>
+                <h4>Architecture</h4>
+                <p id="arch-info">Loading...</p>
+            </div>
+            <div class="overview-card" id="hostname-card">
+                <i class="fas fa-server"></i>
+                <h4>Hostname</h4>
+                <p id="hostname-info">Loading...</p>
+            </div>
+            <div class="overview-card" id="uptime-card">
+                <i class="fas fa-clock"></i>
+                <h4>Uptime</h4>
+                <p id="uptime-info">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hardware Information -->
+    <div class="hardware-section">
+        <h3>Hardware Information</h3>
+        <div class="hardware-grid">
+            <div class="hardware-card">
+                <h4><i class="fas fa-desktop"></i> System</h4>
+                <div class="hardware-details">
+                    <div class="detail-row">
+                        <span class="label">Manufacturer:</span>
+                        <span id="system-manufacturer">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Model:</span>
+                        <span id="system-model">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Version:</span>
+                        <span id="system-version">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Serial:</span>
+                        <span id="system-serial">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Virtual:</span>
+                        <span id="system-virtual">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hardware-card">
+                <h4><i class="fas fa-memory"></i> Motherboard</h4>
+                <div class="hardware-details">
+                    <div class="detail-row">
+                        <span class="label">Manufacturer:</span>
+                        <span id="motherboard-manufacturer">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Model:</span>
+                        <span id="motherboard-model">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Version:</span>
+                        <span id="motherboard-version">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Serial:</span>
+                        <span id="motherboard-serial">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hardware-card">
+                <h4><i class="fas fa-cog"></i> BIOS</h4>
+                <div class="hardware-details">
+                    <div class="detail-row">
+                        <span class="label">Vendor:</span>
+                        <span id="bios-vendor">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Version:</span>
+                        <span id="bios-version">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Release Date:</span>
+                        <span id="bios-release-date">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hardware-card">
+                <h4><i class="fas fa-cube"></i> Chassis</h4>
+                <div class="hardware-details">
+                    <div class="detail-row">
+                        <span class="label">Manufacturer:</span>
+                        <span id="chassis-manufacturer">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Model:</span>
+                        <span id="chassis-model">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Type:</span>
+                        <span id="chassis-type">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CPU Information -->
+    <div class="cpu-section">
+        <h3>CPU Information</h3>
+        <div class="cpu-container">
+            <div class="cpu-main-info">
+                <div class="cpu-icon">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <div class="cpu-details">
+                    <div class="cpu-brand" id="cpu-brand">Loading...</div>
+                    <div class="cpu-manufacturer" id="cpu-manufacturer">Loading...</div>
+                    <div class="cpu-specs">
+                        <span id="cpu-cores-info">Loading...</span> •
+                        <span id="cpu-speed-info">Loading...</span> •
+                        <span id="cpu-temperature-info">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cpu-detailed-grid">
+                <div class="cpu-detail-card">
+                    <h5>Performance</h5>
+                    <div class="detail-row">
+                        <span class="label">Base Speed:</span>
+                        <span id="cpu-speed">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Current Speed:</span>
+                        <span id="cpu-current-speed">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Min Speed:</span>
+                        <span id="cpu-speed-min">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Max Speed:</span>
+                        <span id="cpu-speed-max">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="cpu-detail-card">
+                    <h5>Architecture</h5>
+                    <div class="detail-row">
+                        <span class="label">Cores:</span>
+                        <span id="cpu-cores">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Physical Cores:</span>
+                        <span id="cpu-physical-cores">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Processors:</span>
+                        <span id="cpu-processors">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Socket:</span>
+                        <span id="cpu-socket">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="cpu-detail-card">
+                    <h5>Cache</h5>
+                    <div class="detail-row">
+                        <span class="label">L1 Data:</span>
+                        <span id="cpu-cache-l1d">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">L1 Instruction:</span>
+                        <span id="cpu-cache-l1i">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">L2 Cache:</span>
+                        <span id="cpu-cache-l2">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">L3 Cache:</span>
+                        <span id="cpu-cache-l3">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Memory Information -->
+    <div class="memory-section">
+        <h3>Memory Information</h3>
+        <div class="memory-overview">
+            <div class="memory-stats">
+                <div class="memory-item">
+                    <div class="memory-label">Total Memory</div>
+                    <div class="memory-value" id="total-memory">Loading...</div>
+                    <div class="memory-bar">
+                        <div class="memory-bar-fill" id="total-memory-bar"></div>
+                    </div>
+                </div>
+                <div class="memory-item">
+                    <div class="memory-label">Used Memory</div>
+                    <div class="memory-value" id="used-memory">Loading...</div>
+                    <div class="memory-bar">
+                        <div class="memory-bar-fill" id="used-memory-bar"></div>
+                    </div>
+                </div>
+                <div class="memory-item">
+                    <div class="memory-label">Free Memory</div>
+                    <div class="memory-value" id="free-memory">Loading...</div>
+                    <div class="memory-bar">
+                        <div class="memory-bar-fill" id="free-memory-bar"></div>
+                    </div>
+                </div>
+                <div class="memory-item">
+                    <div class="memory-label">Available Memory</div>
+                    <div class="memory-value" id="available-memory">Loading...</div>
+                    <div class="memory-bar">
+                        <div class="memory-bar-fill" id="available-memory-bar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Operating System Information -->
+    <div class="os-section">
+        <h3>Operating System Information</h3>
+        <div class="os-grid">
+            <div class="os-card">
+                <h4><i class="fas fa-desktop"></i> System</h4>
+                <div class="os-details">
+                    <div class="detail-row">
+                        <span class="label">Distribution:</span>
+                        <span id="os-distro">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Release:</span>
+                        <span id="os-release">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Codename:</span>
+                        <span id="os-codename">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Kernel:</span>
+                        <span id="os-kernel">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Build:</span>
+                        <span id="os-build">Loading...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Serial:</span>
+                        <span id="os-serial">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Battery Information -->
+    <div class="battery-section" id="battery-section" style="display: none;">
+        <h3>Battery Information</h3>
+        <div class="battery-container">
+            <div class="battery-card">
+                <div class="battery-icon">
+                    <i class="fas fa-battery-half" id="battery-icon"></i>
+                </div>
+                <div class="battery-details">
+                    <div class="battery-level">
+                        <span id="battery-percent">0%</span>
+                        <span id="battery-status">Unknown</span>
+                    </div>
+                    <div class="battery-info">
+                        <div class="detail-row">
+                            <span class="label">Type:</span>
+                            <span id="battery-type">Unknown</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Model:</span>
+                            <span id="battery-model">Unknown</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Manufacturer:</span>
+                            <span id="battery-manufacturer">Unknown</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Time Remaining:</span>
+                            <span id="battery-time-remaining">Unknown</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">AC Connected:</span>
+                            <span id="battery-ac-connected">Unknown</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+</div>

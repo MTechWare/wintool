@@ -1,0 +1,90 @@
+<div class="tab-header">
+    <h1><i class="fas fa-box"></i> Package Manager</h1>
+    <p>Manage Windows packages using winget</p>
+</div>
+
+<div class="packages-container">
+
+    <!-- Search and Controls -->
+    <div class="packages-controls">
+        <div class="search-container">
+            <input type="text" id="package-search" placeholder="Search packages..." class="search-input">
+            <i class="fas fa-search search-icon"></i>
+        </div>
+        
+        <div class="category-filters">
+            <button class="category-btn active" data-category="all">All</button>
+            <button class="category-btn" data-category="Browsers">Browsers</button>
+            <button class="category-btn" data-category="Communications">Communications</button>
+            <button class="category-btn" data-category="Development">Development</button>
+            <button class="category-btn" data-category="Document">Document</button>
+            <button class="category-btn" data-category="Games">Games</button>
+            <button class="category-btn" data-category="Microsoft Tools">Microsoft Tools</button>
+            <button class="category-btn" data-category="Multimedia Tools">Multimedia Tools</button>
+            <button class="category-btn" data-category="Pro Tools">Pro Tools</button>
+            <button class="category-btn" data-category="Utilities">Utilities</button>
+        </div>
+    </div>
+
+    <!-- Package Info and Actions -->
+    <div class="selection-info">
+        <div class="package-info-left">
+            <span id="total-packages-count">Loading packages...</span>
+            <span id="selection-count">0 packages selected</span>
+        </div>
+        <div class="action-buttons">
+            <button id="install-selected" class="action-btn install-btn" disabled>
+                <i class="fas fa-download"></i> Install Selected
+            </button>
+            <button id="uninstall-selected" class="action-btn uninstall-btn" disabled>
+                <i class="fas fa-trash"></i> Uninstall Selected
+            </button>
+        </div>
+    </div>
+
+    <!-- Progress Bar Container -->
+    <div id="progress-container" class="progress-container" style="display: none;" onclick="packageManager.handleProgressClick(event)">
+        <div class="progress-header">
+            <h4 id="progress-title">Package Operation</h4>
+            <button class="progress-cancel" onclick="packageManager.cancelOperation()" title="Cancel Operation">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="progress-info">
+            <div id="progress-message">Preparing...</div>
+            <div id="progress-details"></div>
+        </div>
+        <div class="progress-bar-container">
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <div id="progress-percentage">0%</div>
+        </div>
+        <div id="progress-output" class="progress-output"></div>
+    </div>
+
+    <!-- Package List -->
+    <div class="packages-list-container">
+        <div class="packages-list-header">
+            <div class="header-checkbox">
+                <input type="checkbox" id="select-all">
+            </div>
+            <div class="header-package">Package</div>
+            <div class="header-description">Description</div>
+            <div class="header-actions">Actions</div>
+        </div>
+        
+        <div id="packages-list" class="packages-list">
+            <!-- Packages will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="loading-indicator" class="loading-indicator" style="display: none;">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>Loading packages...</span>
+    </div>
+
+    <!-- Status messages -->
+    <div id="status-message" class="status-message" style="display: none;"></div>
+</div>

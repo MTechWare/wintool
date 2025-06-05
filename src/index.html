@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WinTool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="assets/icon.ico">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Custom Title Bar -->
+    <div class="title-bar">
+        <div class="title-bar-text">
+            <i class="fas fa-tools"></i>
+            WinTool Portable
+        </div>
+        <div class="title-bar-controls">
+            <button id="minimize-btn" class="title-bar-btn" title="Minimize">
+                <i class="fas fa-window-minimize"></i>
+            </button>
+            <button id="maximize-btn" class="title-bar-btn" title="Maximize">
+                <i class="fas fa-window-maximize"></i>
+            </button>
+            <button id="close-btn" class="title-bar-btn close-btn" title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-content">
+            <div class="splash-logo">
+                <div class="splash-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="splash-glow"></div>
+            </div>
+            <h1 class="splash-title">WinTool Portable</h1>
+            <p class="splash-subtitle">Loading system tools...</p>
+
+            <div class="splash-progress">
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <div id="progress-text" class="progress-text">Initializing...</div>
+            </div>
+
+            <div class="splash-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application Container -->
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2 class="app-title">
+                    WinTool
+                </h2>
+                <!-- Tab Search -->
+                <div class="tab-search-container">
+                    <input type="text" id="tab-search" placeholder="Search tabs..." class="tab-search-input">
+                    <i class="fas fa-search tab-search-icon"></i>
+                </div>
+            </div>
+
+            <!-- Tab List -->
+            <ul class="tab-list" id="tab-list">
+                <li class="tab-item active" data-tab="welcome">
+                    <i class="fas fa-home"></i>
+                    <span>Welcome</span>
+                </li>
+            </ul>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <button class="settings-btn" onclick="showSettings()">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="content-area">
+            <!-- Welcome Tab Content -->
+            <div id="tab-welcome" class="tab-content active">
+                <div class="tab-header">
+                    <h1><i class="fas fa-home"></i> Welcome to WinTool Portable</h1>
+                    <p>Professional Windows System Management Suite</p>
+                </div>
+
+                <div class="welcome-content">
+                    <!-- Hero Section -->
+                    <div class="hero-section">
+                        <div class="hero-background"></div>
+                        <div class="hero-content">
+                            <div class="hero-icon-wrapper">
+                                <div class="hero-icon">
+                                    <i class="fas fa-rocket"></i>
+                                </div>
+                                <div class="hero-icon-glow"></div>
+                            </div>
+                            <h2>Comprehensive. Intuitive. Professional.</h2>
+                            <p>Complete Windows system management toolkit with real-time data, powerful utilities, and seamless administration.</p>
+
+                            <div class="hero-stats">
+                                <div class="stat-item">
+                                    <span class="stat-number">6</span>
+                                    <span class="stat-label">Management Tools</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-number">24+</span>
+                                    <span class="stat-label">System Utilities</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-number">Real-time</span>
+                                    <span class="stat-label">System Data</span>
+                                </div>
+                            </div>
+
+                            <div class="hero-buttons">
+                                <button class="btn btn-primary hero-btn" onclick="switchToTab('folder-system-info')">
+                                    <i class="fas fa-desktop"></i> View System Info
+                                </button>
+                                <button class="btn btn-secondary hero-btn" onclick="switchToTab('folder-system-utilities')">
+                                    <i class="fas fa-tools"></i> System Utilities
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Features -->
+                    <div class="features-section">
+                        <h3>Available Tools & Features</h3>
+                        <div class="features-grid">
+                            <div class="feature-card">
+                                <i class="fas fa-desktop"></i>
+                                <h4>System Information</h4>
+                                <p>Real-time system data, hardware details, and performance metrics</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-tools"></i>
+                                <h4>System Utilities</h4>
+                                <p>Quick access to 24 Windows administrative tools and utilities</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-cogs"></i>
+                                <h4>Services Manager</h4>
+                                <p>Start, stop, restart Windows services with customizable quick access</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-box"></i>
+                                <h4>Package Manager</h4>
+                                <p>Install and manage Windows packages using winget</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-network-wired"></i>
+                                <h4>Network Tools</h4>
+                                <p>View network interfaces and connectivity information</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-broom"></i>
+                                <h4>System Cleanup</h4>
+                                <p>Clean temporary files and optimize Windows performance</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Key Features -->
+                    <div class="features-section">
+                        <h3>Key Features</h3>
+                        <div class="features-grid">
+                            <div class="feature-card">
+                                <i class="fas fa-search"></i>
+                                <h4>Tab Search</h4>
+                                <p>Quickly find and navigate to any tab or feature</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-arrows-alt"></i>
+                                <h4>Draggable Tabs</h4>
+                                <p>Organize tabs in your preferred order with saved layout</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-palette"></i>
+                                <h4>Customizable</h4>
+                                <p>Personalize appearance, behavior, and advanced settings</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <h4>Real-time Data</h4>
+                                <p>Live system monitoring with automatic data refresh</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Getting Started -->
+                    <div class="getting-started">
+                        <h3>Getting Started</h3>
+                        <div class="steps">
+                            <div class="step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <h4>Explore the Tabs</h4>
+                                    <p>Navigate through the available tools using the sidebar or tab search functionality</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <h4>Customize Your Experience</h4>
+                                    <p>Access Settings to personalize colors, window size, and behavior preferences</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <h4>Organize Your Workspace</h4>
+                                    <p>Drag tabs to reorder them and use quick access features for frequently used tools</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="quick-actions-section">
+                        <h3>Quick Actions</h3>
+                        <div class="quick-actions-grid">
+                            <button class="quick-action-btn" onclick="switchToTab('folder-services')" title="Manage Windows Services">
+                                <i class="fas fa-cogs"></i>
+                                <span>Services</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="switchToTab('folder-packages')" title="Install/Manage Packages">
+                                <i class="fas fa-box"></i>
+                                <span>Packages</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="switchToTab('folder-cleanup')" title="Clean System Files">
+                                <i class="fas fa-broom"></i>
+                                <span>Cleanup</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="switchToTab('folder-networking')" title="Network Information">
+                                <i class="fas fa-network-wired"></i>
+                                <span>Network</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="showSettings()" title="Application Settings">
+                                <i class="fas fa-cog"></i>
+                                <span>Settings</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- System Info Modal -->
+    <div id="system-info-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>System Information</h3>
+                <button class="modal-close" onclick="closeModal('system-info-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="system-info-content">
+                    <p>Loading system information...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeModal('system-info-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal" style="display: none;">
+        <div class="modal-content settings-modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-cog"></i> Settings</h3>
+                <button class="modal-close" onclick="closeModal('settings-modal')">&times;</button>
+            </div>
+            <div class="modal-body settings-modal-body">
+                <div class="settings-sidebar">
+                    <div class="settings-nav">
+                        <div class="settings-nav-item active" data-settings-tab="appearance">
+                            <i class="fas fa-palette"></i>
+                            <span>Appearance</span>
+                        </div>
+                        <div class="settings-nav-item" data-settings-tab="behavior">
+                            <i class="fas fa-cogs"></i>
+                            <span>Behavior</span>
+                        </div>
+                        <div class="settings-nav-item" data-settings-tab="advanced">
+                            <i class="fas fa-sliders-h"></i>
+                            <span>Advanced</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-content">
+                    <!-- Appearance Settings -->
+                    <div id="settings-appearance" class="settings-panel active">
+                        <h4>Appearance Settings</h4>
+                        <div class="settings-group">
+                            <label class="settings-label">Primary Color</label>
+                            <div class="color-picker-group">
+                                <input type="color" id="primary-color-picker" class="color-picker" value="#ff9800">
+                                <span class="color-preview" id="primary-color-preview">#ff9800</span>
+                            </div>
+                            <p class="settings-description">Choose the primary accent color for the application</p>
+                        </div>
+                        <div class="settings-group">
+                            <label class="settings-label">Window Size</label>
+                            <select id="window-size-select" class="settings-select">
+                                <option value="60">60% of screen (Default)</option>
+                                <option value="50">50% of screen</option>
+                                <option value="70">70% of screen</option>
+                                <option value="80">80% of screen</option>
+                                <option value="90">90% of screen</option>
+                            </select>
+                            <p class="settings-description">Default window size when opening the application</p>
+                        </div>
+                    </div>
+
+                    <!-- Behavior Settings -->
+                    <div id="settings-behavior" class="settings-panel">
+                        <h4>Behavior Settings</h4>
+                        <div class="settings-group">
+                            <label class="settings-label">
+                                <input type="checkbox" id="remember-last-tab" class="settings-checkbox">
+                                Remember Last Active Tab
+                            </label>
+                            <p class="settings-description">Restore the last active tab when opening the application</p>
+                        </div>
+                        <div class="settings-group">
+                            <label class="settings-label">
+                                <input type="checkbox" id="auto-refresh-data" class="settings-checkbox">
+                                Auto-refresh System Data
+                            </label>
+                            <p class="settings-description">Automatically refresh system information every 30 seconds</p>
+                        </div>
+
+                    </div>
+
+                    <!-- Advanced Settings -->
+                    <div id="settings-advanced" class="settings-panel">
+                        <h4>Advanced Settings</h4>
+
+                        <div class="settings-group">
+                            <label class="settings-label">
+                                <input type="checkbox" id="enable-dev-tools" class="settings-checkbox">
+                                Enable Developer Tools
+                            </label>
+                            <p class="settings-description">Allow access to developer tools (requires restart)</p>
+                        </div>
+                        <div class="settings-group">
+                            <label class="settings-label">Data Refresh Interval</label>
+                            <select id="refresh-interval-select" class="settings-select">
+                                <option value="10">10 seconds</option>
+                                <option value="30">30 seconds (Default)</option>
+                                <option value="60">1 minute</option>
+                                <option value="300">5 minutes</option>
+                                <option value="0">Manual only</option>
+                            </select>
+                            <p class="settings-description">How often to refresh system data automatically</p>
+                        </div>
+                        <div class="settings-group">
+                            <button class="btn btn-secondary" onclick="resetSettings()">
+                                <i class="fas fa-undo"></i>
+                                Reset to Defaults
+                            </button>
+                            <p class="settings-description">Reset all settings to their default values</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('settings-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveSettings()">
+                    <i class="fas fa-save"></i>
+                    Save Settings
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- JavaScript -->
+    <script src="js/tab-loader.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
