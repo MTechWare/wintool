@@ -61,7 +61,7 @@ WinTool Portable is a comprehensive Windows system management application design
 |-------------|---------------|
 | **Operating System** | Windows 10/11 (64-bit) |
 | **Memory** | 4 GB RAM minimum, 8 GB recommended |
-| **Storage** | 200 MB available space |
+| **Storage** | 80 MB available space |
 | **Display** | 1366x768 minimum resolution |
 | **Network** | Internet connection for package management |
 
