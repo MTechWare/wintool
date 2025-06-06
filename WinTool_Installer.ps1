@@ -75,7 +75,7 @@ function Show-Spinner {
 # Configuration
 $appName = "WinTool"
 $companyName = "MTech"
-$version = "0.0.6a"
+$version = "0.0.2w"
 $installDir = "$env:LOCALAPPDATA\MTechTool"
 $exeUrl = "https://github.com/MTechWare/wintool/releases/download/release/WinTool.exe"
 $desktop = [Environment]::GetFolderPath("Desktop")
