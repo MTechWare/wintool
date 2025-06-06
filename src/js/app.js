@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     initTabSystem();
     initModals();
     initSystemTrayListeners();
+    initGlobalKeyboardShortcuts();
 
     // Update splash progress
     updateSplashProgress('Loading settings...', 20);
@@ -176,15 +177,94 @@ function initTabSearch() {
             searchInput.blur();
         }
     });
+}
 
-    // Add Ctrl+F shortcut to focus search
+// Default keyboard shortcuts
+const DEFAULT_SHORTCUTS = {
+    'focus-search': 'Ctrl+F',
+    'refresh-tab': 'Ctrl+R',
+    'refresh-system': 'F5',
+    'open-settings': 'Ctrl+S',
+    'close-modal': 'Escape'
+};
+
+// Current keyboard shortcuts (loaded from settings)
+let currentShortcuts = { ...DEFAULT_SHORTCUTS };
+
+/**
+ * Initialize global keyboard shortcuts
+ */
+function initGlobalKeyboardShortcuts() {
+    // Load custom shortcuts from settings
+    loadCustomShortcuts();
+
     document.addEventListener('keydown', (e) => {
-        if (e.ctrlKey && e.key === 'f') {
+        // Don't handle shortcuts if user is typing in an input field
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+            // Exception: still handle Escape key to close modals
+            if (matchesShortcut(e, currentShortcuts['close-modal'])) {
+                const openModal = document.querySelector('.modal[style*="flex"]');
+                if (openModal) {
+                    e.preventDefault();
+                    closeModal(openModal.id);
+                }
+            }
+            return;
+        }
+
+        // Check each shortcut
+        if (matchesShortcut(e, currentShortcuts['focus-search'])) {
             e.preventDefault();
-            searchInput.focus();
-            searchInput.select();
+            const searchInput = document.getElementById('tab-search');
+            if (searchInput) {
+                searchInput.focus();
+                searchInput.select();
+            }
+        } else if (matchesShortcut(e, currentShortcuts['refresh-tab'])) {
+            e.preventDefault();
+            refreshCurrentTab();
+        } else if (matchesShortcut(e, currentShortcuts['open-settings'])) {
+            e.preventDefault();
+            showSettings();
+        } else if (matchesShortcut(e, currentShortcuts['refresh-system'])) {
+            e.preventDefault();
+            refreshSystemInformation();
+        } else if (matchesShortcut(e, currentShortcuts['close-modal'])) {
+            const openModal = document.querySelector('.modal[style*="flex"]');
+            if (openModal) {
+                e.preventDefault();
+                closeModal(openModal.id);
+            }
         }
     });
+}
+
+/**
+ * Check if a keyboard event matches a shortcut string
+ */
+function matchesShortcut(event, shortcutString) {
+    if (!shortcutString) return false;
+
+    const parts = shortcutString.split('+').map(part => part.trim());
+    const key = parts[parts.length - 1].toLowerCase();
+    const modifiers = parts.slice(0, -1).map(mod => mod.toLowerCase());
+
+    // Check if the key matches
+    const eventKey = event.key.toLowerCase();
+    if (eventKey !== key.toLowerCase() && event.code.toLowerCase() !== key.toLowerCase()) {
+        return false;
+    }
+
+    // Check modifiers
+    const hasCtrl = modifiers.includes('ctrl');
+    const hasAlt = modifiers.includes('alt');
+    const hasShift = modifiers.includes('shift');
+    const hasMeta = modifiers.includes('meta') || modifiers.includes('cmd');
+
+    return event.ctrlKey === hasCtrl &&
+           event.altKey === hasAlt &&
+           event.shiftKey === hasShift &&
+           event.metaKey === hasMeta;
 }
 
 /**
@@ -727,6 +807,9 @@ async function loadCurrentSettings() {
             if (refreshIntervalSelect) {
                 refreshIntervalSelect.value = refreshInterval;
             }
+
+            // Load keyboard shortcuts
+            await loadKeyboardShortcutsSettings();
         }
     } catch (error) {
         console.error('Error loading settings:', error);
@@ -801,6 +884,9 @@ async function saveSettings() {
 
             const refreshInterval = document.getElementById('refresh-interval-select')?.value || '30';
             await window.electronAPI.setSetting('refreshInterval', refreshInterval);
+
+            // Save keyboard shortcuts
+            await saveKeyboardShortcuts();
 
             // Apply settings immediately
             applySettings();
@@ -1006,6 +1092,400 @@ async function quitApplication() {
     }
 }
 
+/**
+ * Refresh the current active tab's data
+ */
+async function refreshCurrentTab() {
+    console.log(`Refreshing current tab: ${currentTab}`);
+
+    try {
+        // Get the active tab content element
+        const activeTabContent = document.querySelector('.tab-content.active');
+        if (!activeTabContent) {
+            console.warn('No active tab found to refresh');
+            return;
+        }
+
+        // Show a brief loading indicator
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.className = 'refresh-indicator';
+        loadingIndicator.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+        loadingIndicator.style.cssText = `
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--primary-color);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        `;
+        activeTabContent.style.position = 'relative';
+        activeTabContent.appendChild(loadingIndicator);
+
+        // Remove loading indicator after 2 seconds
+        setTimeout(() => {
+            if (loadingIndicator.parentNode) {
+                loadingIndicator.remove();
+            }
+        }, 2000);
+
+        // Handle different tab types
+        if (currentTab === 'system-info' || currentTab === 'folder-system-info') {
+            // Refresh system information
+            await refreshSystemInformation();
+        } else if (currentTab === 'networking' || currentTab === 'folder-networking') {
+            // Refresh networking information
+            const container = activeTabContent;
+            if (window.loadNetworkingInfo && typeof window.loadNetworkingInfo === 'function') {
+                await window.loadNetworkingInfo(container);
+            }
+        } else if (currentTab === 'services' || currentTab === 'folder-services') {
+            // Refresh services
+            const refreshBtn = activeTabContent.querySelector('[id*="refresh-services"]');
+            if (refreshBtn) {
+                refreshBtn.click();
+            }
+        } else if (currentTab === 'environment-variables' || currentTab === 'folder-environment-variables') {
+            // Refresh environment variables
+            if (window.refreshEnvironmentVariables && typeof window.refreshEnvironmentVariables === 'function') {
+                await window.refreshEnvironmentVariables();
+            }
+        } else if (currentTab === 'applications' || currentTab === 'folder-applications') {
+            // Refresh applications
+            const refreshBtn = activeTabContent.querySelector('[id*="refresh-applications"]');
+            if (refreshBtn) {
+                refreshBtn.click();
+            }
+        } else if (currentTab === 'cleanup' || currentTab === 'folder-cleanup') {
+            // Refresh cleanup data
+            const refreshBtn = activeTabContent.querySelector('[id*="refresh-cleanup"]');
+            if (refreshBtn) {
+                refreshBtn.click();
+            }
+        } else {
+            // For other tabs, try to find and click any refresh button
+            const refreshBtn = activeTabContent.querySelector('button[id*="refresh"], .refresh-btn, [data-action="refresh"]');
+            if (refreshBtn) {
+                refreshBtn.click();
+            } else {
+                console.log(`No specific refresh handler found for tab: ${currentTab}`);
+            }
+        }
+
+        console.log(`Tab ${currentTab} refreshed successfully`);
+    } catch (error) {
+        console.error('Error refreshing current tab:', error);
+    }
+}
+
+/**
+ * Refresh system information across all relevant tabs
+ */
+async function refreshSystemInformation() {
+    console.log('Refreshing system information...');
+
+    try {
+        // Show global refresh indicator
+        const refreshIndicator = document.createElement('div');
+        refreshIndicator.className = 'global-refresh-indicator';
+        refreshIndicator.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Refreshing System Information...';
+        refreshIndicator.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-color);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: slideDown 0.3s ease-out;
+        `;
+
+        // Add animation keyframes if not already present
+        if (!document.querySelector('#refresh-animations')) {
+            const style = document.createElement('style');
+            style.id = 'refresh-animations';
+            style.textContent = `
+                @keyframes slideDown {
+                    from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+                    to { transform: translateX(-50%) translateY(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        document.body.appendChild(refreshIndicator);
+
+        // Remove indicator after 3 seconds
+        setTimeout(() => {
+            if (refreshIndicator.parentNode) {
+                refreshIndicator.remove();
+            }
+        }, 3000);
+
+        // Refresh system info tab if it exists
+        const systemInfoTab = document.getElementById('tab-system-info') || document.getElementById('tab-folder-system-info');
+        if (systemInfoTab) {
+            if (window.loadSystemInfo && typeof window.loadSystemInfo === 'function') {
+                await window.loadSystemInfo(systemInfoTab);
+            }
+        }
+
+        // Refresh networking tab if it exists
+        const networkingTab = document.getElementById('tab-networking') || document.getElementById('tab-folder-networking');
+        if (networkingTab) {
+            if (window.loadNetworkingInfo && typeof window.loadNetworkingInfo === 'function') {
+                await window.loadNetworkingInfo(networkingTab);
+            }
+        }
+
+        console.log('System information refreshed successfully');
+    } catch (error) {
+        console.error('Error refreshing system information:', error);
+    }
+}
+
+/**
+ * Load custom keyboard shortcuts from settings
+ */
+async function loadCustomShortcuts() {
+    try {
+        if (window.electronAPI) {
+            const savedShortcuts = await window.electronAPI.getSetting('keyboardShortcuts', DEFAULT_SHORTCUTS);
+            currentShortcuts = { ...DEFAULT_SHORTCUTS, ...savedShortcuts };
+        }
+    } catch (error) {
+        console.error('Error loading custom shortcuts:', error);
+        currentShortcuts = { ...DEFAULT_SHORTCUTS };
+    }
+}
+
+/**
+ * Load keyboard shortcuts into the settings UI
+ */
+async function loadKeyboardShortcutsSettings() {
+    try {
+        if (window.electronAPI) {
+            const savedShortcuts = await window.electronAPI.getSetting('keyboardShortcuts', DEFAULT_SHORTCUTS);
+
+            // Update input fields with saved shortcuts
+            Object.keys(DEFAULT_SHORTCUTS).forEach(key => {
+                const input = document.getElementById(`shortcut-${key}`);
+                if (input) {
+                    input.value = savedShortcuts[key] || DEFAULT_SHORTCUTS[key];
+                }
+            });
+
+            // Initialize shortcut input listeners
+            initShortcutInputs();
+        }
+    } catch (error) {
+        console.error('Error loading keyboard shortcuts settings:', error);
+    }
+}
+
+/**
+ * Initialize shortcut input event listeners
+ */
+function initShortcutInputs() {
+    Object.keys(DEFAULT_SHORTCUTS).forEach(key => {
+        const input = document.getElementById(`shortcut-${key}`);
+        if (input) {
+            input.addEventListener('focus', () => startRecordingShortcut(input, key));
+            input.addEventListener('blur', () => stopRecordingShortcut(input));
+        }
+    });
+}
+
+/**
+ * Start recording a new keyboard shortcut
+ */
+function startRecordingShortcut(input, shortcutKey) {
+    input.classList.add('recording');
+    input.value = 'Press keys...';
+
+    const recordKeydown = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Build shortcut string
+        const parts = [];
+        if (e.ctrlKey) parts.push('Ctrl');
+        if (e.altKey) parts.push('Alt');
+        if (e.shiftKey) parts.push('Shift');
+        if (e.metaKey) parts.push('Meta');
+
+        // Add the main key
+        let key = e.key;
+        if (key === ' ') key = 'Space';
+        else if (key === 'Control' || key === 'Alt' || key === 'Shift' || key === 'Meta') {
+            return; // Don't record modifier-only shortcuts
+        }
+
+        parts.push(key);
+        const shortcutString = parts.join('+');
+
+        // Check for conflicts
+        const conflict = checkShortcutConflict(shortcutString, shortcutKey);
+        if (conflict) {
+            input.classList.add('shortcut-conflict');
+            input.value = `${shortcutString} (conflicts with ${conflict})`;
+        } else {
+            input.classList.remove('shortcut-conflict');
+            input.value = shortcutString;
+        }
+
+        // Remove event listener
+        document.removeEventListener('keydown', recordKeydown, true);
+        input.classList.remove('recording');
+    };
+
+    document.addEventListener('keydown', recordKeydown, true);
+}
+
+/**
+ * Stop recording a keyboard shortcut
+ */
+function stopRecordingShortcut(input) {
+    input.classList.remove('recording');
+    if (input.value === 'Press keys...') {
+        // Restore original value if no key was pressed
+        const shortcutKey = input.id.replace('shortcut-', '');
+        input.value = currentShortcuts[shortcutKey] || DEFAULT_SHORTCUTS[shortcutKey];
+    }
+}
+
+/**
+ * Check if a shortcut conflicts with existing shortcuts
+ */
+function checkShortcutConflict(shortcutString, excludeKey) {
+    for (const [key, value] of Object.entries(currentShortcuts)) {
+        if (key !== excludeKey && value === shortcutString) {
+            return key.replace('-', ' ');
+        }
+    }
+    return null;
+}
+
+/**
+ * Save keyboard shortcuts to settings
+ */
+async function saveKeyboardShortcuts() {
+    try {
+        if (window.electronAPI) {
+            const shortcuts = {};
+
+            Object.keys(DEFAULT_SHORTCUTS).forEach(key => {
+                const input = document.getElementById(`shortcut-${key}`);
+                if (input && input.value && !input.classList.contains('shortcut-conflict')) {
+                    shortcuts[key] = input.value;
+                }
+            });
+
+            await window.electronAPI.setSetting('keyboardShortcuts', shortcuts);
+            currentShortcuts = { ...DEFAULT_SHORTCUTS, ...shortcuts };
+
+            console.log('Keyboard shortcuts saved:', shortcuts);
+        }
+    } catch (error) {
+        console.error('Error saving keyboard shortcuts:', error);
+    }
+}
+
+/**
+ * Reset a single shortcut to default
+ */
+function resetShortcut(shortcutKey) {
+    const input = document.getElementById(`shortcut-${shortcutKey}`);
+    if (input) {
+        input.value = DEFAULT_SHORTCUTS[shortcutKey];
+        input.classList.remove('shortcut-conflict');
+    }
+}
+
+/**
+ * Reset all shortcuts to defaults
+ */
+function resetAllShortcuts() {
+    if (confirm('Are you sure you want to reset all keyboard shortcuts to their defaults?')) {
+        Object.keys(DEFAULT_SHORTCUTS).forEach(key => {
+            resetShortcut(key);
+        });
+    }
+}
+
+/**
+ * Export shortcuts to a JSON file
+ */
+async function exportShortcuts() {
+    try {
+        const shortcuts = {};
+        Object.keys(DEFAULT_SHORTCUTS).forEach(key => {
+            const input = document.getElementById(`shortcut-${key}`);
+            if (input) {
+                shortcuts[key] = input.value;
+            }
+        });
+
+        const dataStr = JSON.stringify(shortcuts, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = 'wintool-shortcuts.json';
+        link.click();
+
+        console.log('Shortcuts exported successfully');
+    } catch (error) {
+        console.error('Error exporting shortcuts:', error);
+    }
+}
+
+/**
+ * Import shortcuts from a JSON file
+ */
+function importShortcuts() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const shortcuts = JSON.parse(e.target.result);
+
+                    // Validate and apply shortcuts
+                    Object.keys(DEFAULT_SHORTCUTS).forEach(key => {
+                        if (shortcuts[key]) {
+                            const input = document.getElementById(`shortcut-${key}`);
+                            if (input) {
+                                input.value = shortcuts[key];
+                            }
+                        }
+                    });
+
+                    console.log('Shortcuts imported successfully');
+                } catch (error) {
+                    console.error('Error importing shortcuts:', error);
+                    alert('Error importing shortcuts: Invalid file format');
+                }
+            };
+            reader.readAsText(file);
+        }
+    };
+
+    input.click();
+}
+
 // Global functions for HTML onclick handlers
 window.closeModal = closeModal;
 window.showSystemInfo = showSystemInfo;
@@ -1019,6 +1499,12 @@ window.quitApplication = quitApplication;
 window.showSplashScreen = showSplashScreen;
 window.updateSplashProgress = updateSplashProgress;
 window.hideSplashScreen = hideSplashScreen;
+window.refreshCurrentTab = refreshCurrentTab;
+window.refreshSystemInformation = refreshSystemInformation;
+window.resetShortcut = resetShortcut;
+window.resetAllShortcuts = resetAllShortcuts;
+window.exportShortcuts = exportShortcuts;
+window.importShortcuts = importShortcuts;
 
 
 console.log('WinTool app.js loaded');

@@ -78,6 +78,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // System utilities
     launchSystemUtility: (utilityCommand) => ipcRenderer.invoke('launch-system-utility', utilityCommand),
 
+    // Environment variables management
+    getEnvironmentVariables: () => ipcRenderer.invoke('get-environment-variables'),
+    setEnvironmentVariable: (name, value, target) => ipcRenderer.invoke('set-environment-variable', name, value, target),
+    deleteEnvironmentVariable: (name, target) => ipcRenderer.invoke('delete-environment-variable', name, target),
+
+    // File operations for Windows unattend export
+    saveFileDialog: (options) => ipcRenderer.invoke('save-file-dialog', options),
+    writeFile: (filePath, content) => ipcRenderer.invoke('write-file', filePath, content),
+
     // Event listeners (for future use)
     onMessage: (callback) => ipcRenderer.on('message', callback),
     removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel)

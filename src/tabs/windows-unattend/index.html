@@ -1,0 +1,385 @@
+<div class="tab-header">
+    <h1><i class="fas fa-cogs"></i> Windows Unattend Generator</h1>
+    <p>Create and export Windows unattend.xml files for automated installations and deployments</p>
+</div>
+
+<div class="windows-unattend-content">
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <div class="action-card" onclick="loadPreset('basic')">
+            <i class="fas fa-rocket"></i>
+            <h4>Basic Setup</h4>
+            <p>Standard installation with minimal configuration</p>
+        </div>
+        <div class="action-card" onclick="loadPreset('enterprise')">
+            <i class="fas fa-building"></i>
+            <h4>Enterprise</h4>
+            <p>Corporate environment with domain join</p>
+        </div>
+        <div class="action-card" onclick="loadPreset('secure')">
+            <i class="fas fa-shield-alt"></i>
+            <h4>Secure</h4>
+            <p>Enhanced security settings enabled</p>
+        </div>
+    </div>
+
+    <!-- Export Controls -->
+    <div class="export-controls">
+        <button id="preview-xml" class="preview-btn">
+            <i class="fas fa-eye"></i>
+            Preview XML
+        </button>
+        <button id="export-unattend" class="export-btn">
+            <i class="fas fa-download"></i>
+            Export Unattend.xml
+        </button>
+        <button id="reset-form" class="reset-btn">
+            <i class="fas fa-undo"></i>
+            Reset Form
+        </button>
+    </div>
+
+    <!-- User Accounts Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-users"></i> User Accounts & Authentication</h3>
+        <div class="section-content">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="admin-username">Administrator Username:</label>
+                    <input type="text" id="admin-username" placeholder="Administrator" value="Administrator">
+                </div>
+                <div class="form-group">
+                    <label for="admin-password">Administrator Password:</label>
+                    <input type="password" id="admin-password" placeholder="Enter secure password" value="P@ssw0rd123">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="user-username">Standard User Username:</label>
+                    <input type="text" id="user-username" placeholder="User" value="User">
+                </div>
+                <div class="form-group">
+                    <label for="user-password">Standard User Password:</label>
+                    <input type="password" id="user-password" placeholder="Enter user password" value="User123">
+                </div>
+            </div>
+            <div class="checkbox-row">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="auto-logon" checked>
+                    <label for="auto-logon">Enable automatic logon for standard user</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="hide-admin" checked>
+                    <label for="hide-admin">Hide administrator account from login screen</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Regional Settings Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-globe"></i> Regional & Language Settings</h3>
+        <div class="section-content">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="timezone">Time Zone:</label>
+                    <select id="timezone">
+                        <option value="Eastern Standard Time" selected>Eastern Time (US & Canada)</option>
+                        <option value="Central Standard Time">Central Time (US & Canada)</option>
+                        <option value="Mountain Standard Time">Mountain Time (US & Canada)</option>
+                        <option value="Pacific Standard Time">Pacific Time (US & Canada)</option>
+                        <option value="UTC">UTC</option>
+                        <option value="GMT Standard Time">GMT (London)</option>
+                        <option value="Central European Standard Time">Central European Time</option>
+                        <option value="W. Europe Standard Time">Western European Time</option>
+                        <option value="Tokyo Standard Time">Tokyo Time</option>
+                        <option value="China Standard Time">China Standard Time</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="language">System Language:</label>
+                    <select id="language">
+                        <option value="en-US" selected>English (United States)</option>
+                        <option value="en-GB">English (United Kingdom)</option>
+                        <option value="en-CA">English (Canada)</option>
+                        <option value="es-ES">Spanish (Spain)</option>
+                        <option value="es-MX">Spanish (Mexico)</option>
+                        <option value="fr-FR">French (France)</option>
+                        <option value="fr-CA">French (Canada)</option>
+                        <option value="de-DE">German (Germany)</option>
+                        <option value="it-IT">Italian (Italy)</option>
+                        <option value="pt-BR">Portuguese (Brazil)</option>
+                        <option value="ja-JP">Japanese (Japan)</option>
+                        <option value="ko-KR">Korean (Korea)</option>
+                        <option value="zh-CN">Chinese (Simplified)</option>
+                        <option value="zh-TW">Chinese (Traditional)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="keyboard">Keyboard Layout:</label>
+                    <select id="keyboard">
+                        <option value="0409:00000409" selected>US English (QWERTY)</option>
+                        <option value="0809:00000809">UK English (QWERTY)</option>
+                        <option value="1009:00000409">Canadian English</option>
+                        <option value="040c:0000040c">French (AZERTY)</option>
+                        <option value="0407:00000407">German (QWERTZ)</option>
+                        <option value="0410:00000410">Italian (QWERTY)</option>
+                        <option value="040a:0000040a">Spanish (QWERTY)</option>
+                        <option value="0416:00000416">Portuguese (Brazil)</option>
+                        <option value="0411:00000411">Japanese</option>
+                        <option value="0412:00000412">Korean</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="locale">Regional Format:</label>
+                    <select id="locale">
+                        <option value="en-US" selected>English (United States)</option>
+                        <option value="en-GB">English (United Kingdom)</option>
+                        <option value="en-CA">English (Canada)</option>
+                        <option value="fr-FR">French (France)</option>
+                        <option value="de-DE">German (Germany)</option>
+                        <option value="es-ES">Spanish (Spain)</option>
+                        <option value="it-IT">Italian (Italy)</option>
+                        <option value="ja-JP">Japanese (Japan)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Computer Settings Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-desktop"></i> Computer & Organization Settings</h3>
+        <div class="section-content">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="computer-name">Computer Name:</label>
+                    <input type="text" id="computer-name" placeholder="WIN-PC" value="WIN-DESKTOP">
+                    <small>Leave empty to generate random name</small>
+                </div>
+                <div class="form-group">
+                    <label for="workgroup">Workgroup:</label>
+                    <input type="text" id="workgroup" placeholder="WORKGROUP" value="WORKGROUP">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="organization">Organization:</label>
+                    <input type="text" id="organization" placeholder="Your Organization" value="My Company">
+                </div>
+                <div class="form-group">
+                    <label for="owner">Registered Owner:</label>
+                    <input type="text" id="owner" placeholder="User" value="System Administrator">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="description">Computer Description:</label>
+                <input type="text" id="description" placeholder="Windows workstation" value="Windows 11 Workstation">
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Key & Edition Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-key"></i> Product Key & Windows Edition</h3>
+        <div class="section-content">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="windows-edition">Windows Edition:</label>
+                    <select id="windows-edition">
+                        <option value="Windows 11 Pro" selected>Windows 11 Pro</option>
+                        <option value="Windows 11 Home">Windows 11 Home</option>
+                        <option value="Windows 11 Enterprise">Windows 11 Enterprise</option>
+                        <option value="Windows 11 Education">Windows 11 Education</option>
+                        <option value="Windows 10 Pro">Windows 10 Pro</option>
+                        <option value="Windows 10 Home">Windows 10 Home</option>
+                        <option value="Windows 10 Enterprise">Windows 10 Enterprise</option>
+                        <option value="Windows 10 Education">Windows 10 Education</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="architecture">Architecture:</label>
+                    <select id="architecture">
+                        <option value="amd64" selected>64-bit (x64)</option>
+                        <option value="x86">32-bit (x86)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="product-key">Windows Product Key:</label>
+                <input type="text" id="product-key" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX">
+                <small>Leave empty to skip product key during installation (will prompt later)</small>
+            </div>
+            <div class="checkbox-row">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="accept-eula" checked>
+                    <label for="accept-eula">Automatically accept EULA</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="skip-oem" checked>
+                    <label for="skip-oem">Skip OEM registration screens</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Network & Domain Settings Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-network-wired"></i> Network & Domain Settings</h3>
+        <div class="section-content">
+            <div class="checkbox-row">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="enable-network" checked>
+                    <label for="enable-network">Enable network during installation</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="skip-network-setup" checked>
+                    <label for="skip-network-setup">Skip network setup in OOBE</label>
+                </div>
+            </div>
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="join-domain">
+                <label for="join-domain">Join domain after installation</label>
+            </div>
+            <div class="domain-settings" id="domain-settings" style="display: none;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="domain-name">Domain Name:</label>
+                        <input type="text" id="domain-name" placeholder="example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="domain-username">Domain Join Username:</label>
+                        <input type="text" id="domain-username" placeholder="domain\admin">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="domain-password">Domain Join Password:</label>
+                    <input type="password" id="domain-password" placeholder="Domain admin password">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Windows Features & Privacy Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-puzzle-piece"></i> Windows Features & Privacy</h3>
+        <div class="section-content">
+            <h4>Security Features</h4>
+            <div class="features-grid">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-defender" checked>
+                    <label for="feature-defender">Enable Windows Defender</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-firewall" checked>
+                    <label for="feature-firewall">Enable Windows Firewall</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-uac" checked>
+                    <label for="feature-uac">Enable User Account Control</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-smartscreen" checked>
+                    <label for="feature-smartscreen">Enable SmartScreen</label>
+                </div>
+            </div>
+
+            <h4>Privacy & Telemetry</h4>
+            <div class="features-grid">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-telemetry" checked>
+                    <label for="feature-telemetry">Disable telemetry & data collection</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-cortana" checked>
+                    <label for="feature-cortana">Disable Cortana</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-location" checked>
+                    <label for="feature-location">Disable location services</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-ads" checked>
+                    <label for="feature-ads">Disable advertising ID</label>
+                </div>
+            </div>
+
+            <h4>System Features</h4>
+            <div class="features-grid">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-updates" checked>
+                    <label for="feature-updates">Enable automatic updates</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-hibernation">
+                    <label for="feature-hibernation">Enable hibernation</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-remote-desktop">
+                    <label for="feature-remote-desktop">Enable Remote Desktop</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-powershell" checked>
+                    <label for="feature-powershell">Enable PowerShell execution</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OOBE Settings Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-magic"></i> Out-of-Box Experience (OOBE)</h3>
+        <div class="section-content">
+            <div class="features-grid">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="oobe-skip-machine-oobe" checked>
+                    <label for="oobe-skip-machine-oobe">Skip machine OOBE</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="oobe-skip-user-oobe" checked>
+                    <label for="oobe-skip-user-oobe">Skip user OOBE</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="oobe-hide-eula" checked>
+                    <label for="oobe-hide-eula">Hide EULA page</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="oobe-hide-wireless" checked>
+                    <label for="oobe-hide-wireless">Hide wireless setup</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="oobe-protect-pc" checked>
+                    <label for="oobe-protect-pc">Enable recommended security settings</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="oobe-hide-online-account" checked>
+                    <label for="oobe-hide-online-account">Hide online account screens</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- XML Preview Modal -->
+    <div id="xml-preview-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-code"></i> XML Preview</h3>
+                <button class="modal-close" onclick="closeXMLPreview()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <pre id="xml-preview-content"></pre>
+            </div>
+            <div class="modal-footer">
+                <button onclick="copyXMLToClipboard()" class="copy-btn">
+                    <i class="fas fa-copy"></i> Copy to Clipboard
+                </button>
+                <button onclick="closeXMLPreview()" class="close-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Messages -->
+    <div id="status-message" class="status-message" style="display: none;"></div>
+</div>

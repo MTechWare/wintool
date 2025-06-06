@@ -23,7 +23,7 @@ WinTool Portable is a comprehensive Windows system management application design
 
 ### ✨ Why WinTool Portable?
 
-- **🎯 Unified Interface**: Access 24+ Windows utilities from a single, intuitive dashboard
+- **🎯 Unified Interface**: Access 8 management tools and 24+ Windows utilities from a single, intuitive dashboard
 - **📊 Real-time Monitoring**: Live system data with automatic refresh capabilities
 - **🔧 Professional Tools**: Production-ready interfaces for system administration
 - **🎨 Customizable**: Personalize appearance, behavior, and workspace layout
@@ -43,15 +43,30 @@ WinTool Portable is a comprehensive Windows system management application design
 | **Package Manager** | Software package management | Install/uninstall packages via winget integration |
 | **Network Tools** | Network monitoring & analysis | Interface status, connectivity information |
 | **System Cleanup** | Performance optimization | Clean temporary files, optimize system performance |
+| **Environment Variables** | Environment variable management | Manage system and user environment variables |
+| **Windows Unattend** | Automated installation files | Create and export Windows unattend.xml files |
 
 ### Advanced Features
 
 - **🔍 Tab Search**: Quickly find and navigate to any feature
 - **📌 Draggable Tabs**: Organize workspace with persistent layout
 - **⚙️ Customizable Settings**: Appearance, behavior, and advanced options
+- **⌨️ Keyboard Shortcuts**: Customizable hotkeys for quick access
 - **📱 Responsive Design**: Optimized for different screen sizes
 - **🎨 Theme Support**: Professional dark theme with customizable colors
 - **💾 Settings Persistence**: Automatic saving of user preferences
+
+### Keyboard Shortcuts
+
+| Shortcut | Action | Description |
+|----------|--------|-------------|
+| **Ctrl+F** | Focus Tab Search | Quickly search for and navigate to specific tabs |
+| **Ctrl+R** | Refresh Current Tab | Refresh data in the currently active tab |
+| **F5** | Refresh System Info | Globally refresh system information across all tabs |
+| **Ctrl+S** | Open Settings | Open the settings panel |
+| **Escape** | Close Modals | Close any open modal dialog or popup |
+
+*All keyboard shortcuts are customizable through the Settings panel*
 
 ---
 
@@ -61,7 +76,7 @@ WinTool Portable is a comprehensive Windows system management application design
 |-------------|---------------|
 | **Operating System** | Windows 10/11 (64-bit) |
 | **Memory** | 4 GB RAM minimum, 8 GB recommended |
-| **Storage** | 80 MB available space |
+| **Storage** | 200 MB available space |
 | **Display** | 1366x768 minimum resolution |
 | **Network** | Internet connection for package management |
 
@@ -117,6 +132,35 @@ npm start
    - Use System Utilities for quick access to Windows tools
    - Monitor real-time data in System Information
    - Manage services with the Services Manager
+   - Install packages with the Package Manager
+   - Configure environment variables
+   - Create Windows unattend files for automated installations
+
+---
+
+## 🧩 Tab System Architecture
+
+WinTool Portable uses a modular tab system where each tool is a self-contained module:
+
+```
+src/tabs/
+├── system-info/          # Real-time system monitoring
+├── system-utilities/     # Windows administrative tools
+├── services/            # Windows service management
+├── packages/            # Package management via winget
+├── networking/          # Network interface monitoring
+├── cleanup/             # System cleanup and optimization
+├── environment-variables/ # Environment variable management
+└── windows-unattend/    # Windows unattend file creation
+```
+
+Each tab contains:
+- **config.json** - Tab metadata and configuration
+- **index.html** - Tab content and interface
+- **styles.css** - Tab-specific styling
+- **script.js** - Tab functionality and logic
+
+This modular approach allows for easy maintenance, updates, and potential future expansion.
 
 ---
 
@@ -132,6 +176,8 @@ WinTool Portable stores settings in the user's application data directory:
 - **Window Size**: Default window dimensions (60% of screen)
 - **Auto-refresh**: System data refresh intervals
 - **Tab Layout**: Saved tab order and preferences
+- **Keyboard Shortcuts**: Customizable hotkey configurations
+- **Behavior**: Remember last tab, auto-refresh settings
 
 ---
 

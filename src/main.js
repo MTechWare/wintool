@@ -409,6 +409,215 @@ ipcMain.handle('restart-application', () => {
     }
 });
 
+// Environment Variables Management IPC handlers
+ipcMain.handle('get-environment-variables', async () => {
+    console.log('get-environment-variables handler called');
+    const { spawn } = require('child_process');
+
+    return new Promise((resolve, reject) => {
+        // PowerShell script to get both user and system environment variables
+        const psScript = `
+        $userVars = [Environment]::GetEnvironmentVariables([EnvironmentVariableTarget]::User)
+        $systemVars = [Environment]::GetEnvironmentVariables([EnvironmentVariableTarget]::Machine)
+
+        $result = @{
+            user = @{}
+            system = @{}
+        }
+
+        foreach ($key in $userVars.Keys) {
+            $result.user[$key] = $userVars[$key]
+        }
+
+        foreach ($key in $systemVars.Keys) {
+            $result.system[$key] = $systemVars[$key]
+        }
+
+        $result | ConvertTo-Json -Depth 3
+        `.trim();
+
+        const psProcess = spawn('powershell.exe', [
+            '-NoProfile',
+            '-ExecutionPolicy', 'Bypass',
+            '-Command', psScript
+        ], {
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
+
+        let output = '';
+        let errorOutput = '';
+
+        psProcess.stdout.on('data', (data) => {
+            output += data.toString();
+        });
+
+        psProcess.stderr.on('data', (data) => {
+            errorOutput += data.toString();
+        });
+
+        psProcess.on('close', (code) => {
+            if (code === 0) {
+                try {
+                    const envVars = JSON.parse(output);
+                    resolve(envVars);
+                } catch (parseError) {
+                    console.error('Error parsing environment variables JSON:', parseError);
+                    reject(new Error(`Failed to parse environment variables: ${parseError.message}`));
+                }
+            } else {
+                console.error('PowerShell error:', errorOutput);
+                reject(new Error(`PowerShell exited with code ${code}: ${errorOutput}`));
+            }
+        });
+
+        psProcess.on('error', (error) => {
+            console.error('PowerShell process error:', error);
+            reject(new Error(`Failed to execute PowerShell: ${error.message}`));
+        });
+    });
+});
+
+ipcMain.handle('set-environment-variable', async (event, name, value, target) => {
+    console.log(`set-environment-variable handler called: ${name} = ${value} (${target})`);
+    const { spawn } = require('child_process');
+
+    // Rate limiting
+    if (!checkRateLimit('env-var-set')) {
+        throw new Error('Rate limit exceeded. Please wait before making more requests.');
+    }
+
+    // Input validation
+    if (!name || typeof name !== 'string') {
+        throw new Error('Invalid variable name parameter');
+    }
+    if (typeof value !== 'string') {
+        throw new Error('Invalid variable value parameter');
+    }
+    if (!target || (target !== 'User' && target !== 'Machine')) {
+        throw new Error('Invalid target parameter. Must be "User" or "Machine"');
+    }
+
+    // Sanitize variable name and value
+    const sanitizedName = name.replace(/[^a-zA-Z0-9_]/g, '');
+    if (sanitizedName !== name) {
+        throw new Error('Variable name contains invalid characters');
+    }
+
+    return new Promise((resolve, reject) => {
+        const psScript = `
+        try {
+            [Environment]::SetEnvironmentVariable("${sanitizedName}", "${value.replace(/"/g, '""')}", [EnvironmentVariableTarget]::${target})
+            Write-Output "SUCCESS"
+        } catch {
+            Write-Error $_.Exception.Message
+        }
+        `.trim();
+
+        const psProcess = spawn('powershell.exe', [
+            '-NoProfile',
+            '-ExecutionPolicy', 'Bypass',
+            '-Command', psScript
+        ], {
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
+
+        let output = '';
+        let errorOutput = '';
+
+        psProcess.stdout.on('data', (data) => {
+            output += data.toString();
+        });
+
+        psProcess.stderr.on('data', (data) => {
+            errorOutput += data.toString();
+        });
+
+        psProcess.on('close', (code) => {
+            if (code === 0 && output.includes('SUCCESS')) {
+                resolve({
+                    success: true,
+                    message: `Environment variable ${sanitizedName} set successfully`
+                });
+            } else {
+                reject(new Error(`Failed to set environment variable: ${errorOutput || 'Unknown error'}`));
+            }
+        });
+
+        psProcess.on('error', (error) => {
+            reject(new Error(`Failed to execute PowerShell: ${error.message}`));
+        });
+    });
+});
+
+ipcMain.handle('delete-environment-variable', async (event, name, target) => {
+    console.log(`delete-environment-variable handler called: ${name} (${target})`);
+    const { spawn } = require('child_process');
+
+    // Rate limiting
+    if (!checkRateLimit('env-var-delete')) {
+        throw new Error('Rate limit exceeded. Please wait before making more requests.');
+    }
+
+    // Input validation
+    if (!name || typeof name !== 'string') {
+        throw new Error('Invalid variable name parameter');
+    }
+    if (!target || (target !== 'User' && target !== 'Machine')) {
+        throw new Error('Invalid target parameter. Must be "User" or "Machine"');
+    }
+
+    // Sanitize variable name
+    const sanitizedName = name.replace(/[^a-zA-Z0-9_]/g, '');
+    if (sanitizedName !== name) {
+        throw new Error('Variable name contains invalid characters');
+    }
+
+    return new Promise((resolve, reject) => {
+        const psScript = `
+        try {
+            [Environment]::SetEnvironmentVariable("${sanitizedName}", $null, [EnvironmentVariableTarget]::${target})
+            Write-Output "SUCCESS"
+        } catch {
+            Write-Error $_.Exception.Message
+        }
+        `.trim();
+
+        const psProcess = spawn('powershell.exe', [
+            '-NoProfile',
+            '-ExecutionPolicy', 'Bypass',
+            '-Command', psScript
+        ], {
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
+
+        let output = '';
+        let errorOutput = '';
+
+        psProcess.stdout.on('data', (data) => {
+            output += data.toString();
+        });
+
+        psProcess.stderr.on('data', (data) => {
+            errorOutput += data.toString();
+        });
+
+        psProcess.on('close', (code) => {
+            if (code === 0 && output.includes('SUCCESS')) {
+                resolve({
+                    success: true,
+                    message: `Environment variable ${sanitizedName} deleted successfully`
+                });
+            } else {
+                reject(new Error(`Failed to delete environment variable: ${errorOutput || 'Unknown error'}`));
+            }
+        });
+
+        psProcess.on('error', (error) => {
+            reject(new Error(`Failed to execute PowerShell: ${error.message}`));
+        });
+    });
+});
+
 
 
 // Comprehensive system info handler using systeminformation
@@ -1615,6 +1824,41 @@ $result | ConvertTo-Json -Depth 2
             reject(new Error(`Failed to execute PowerShell: ${error.message}`));
         });
     });
+});
+
+// File save dialog and export functionality for Windows unattend
+ipcMain.handle('save-file-dialog', async (event, options) => {
+    console.log('save-file-dialog handler called with options:', options);
+    const { dialog } = require('electron');
+
+    try {
+        const result = await dialog.showSaveDialog(mainWindow, {
+            title: options.title || 'Save File',
+            defaultPath: options.defaultPath || 'unattend.xml',
+            filters: options.filters || [
+                { name: 'XML Files', extensions: ['xml'] },
+                { name: 'All Files', extensions: ['*'] }
+            ]
+        });
+
+        return result;
+    } catch (error) {
+        console.error('Error showing save dialog:', error);
+        throw new Error(`Failed to show save dialog: ${error.message}`);
+    }
+});
+
+ipcMain.handle('write-file', async (event, filePath, content) => {
+    console.log('write-file handler called for:', filePath);
+    const fs = require('fs').promises;
+
+    try {
+        await fs.writeFile(filePath, content, 'utf8');
+        return { success: true, message: 'File saved successfully' };
+    } catch (error) {
+        console.error('Error writing file:', error);
+        throw new Error(`Failed to write file: ${error.message}`);
+    }
 });
 
 

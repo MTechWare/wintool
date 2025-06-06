@@ -112,7 +112,7 @@
 
                             <div class="hero-stats">
                                 <div class="stat-item">
-                                    <span class="stat-number">6</span>
+                                    <span class="stat-number">8</span>
                                     <span class="stat-label">Management Tools</span>
                                 </div>
                                 <div class="stat-item">
@@ -170,6 +170,16 @@
                                 <h4>System Cleanup</h4>
                                 <p>Clean temporary files and optimize Windows performance</p>
                             </div>
+                            <div class="feature-card">
+                                <i class="fas fa-code"></i>
+                                <h4>Environment Variables</h4>
+                                <p>Manage system and user environment variables</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-cogs"></i>
+                                <h4>Windows Unattend</h4>
+                                <p>Create and export Windows unattend.xml files for automated installations</p>
+                            </div>
                         </div>
                     </div>
 
@@ -186,6 +196,11 @@
                                 <i class="fas fa-arrows-alt"></i>
                                 <h4>Draggable Tabs</h4>
                                 <p>Organize tabs in your preferred order with saved layout</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-keyboard"></i>
+                                <h4>Keyboard Shortcuts</h4>
+                                <p>Customizable hotkeys for quick access to all features</p>
                             </div>
                             <div class="feature-card">
                                 <i class="fas fa-palette"></i>
@@ -248,6 +263,14 @@
                                 <i class="fas fa-network-wired"></i>
                                 <span>Network</span>
                             </button>
+                            <button class="quick-action-btn" onclick="switchToTab('folder-environment-variables')" title="Manage Environment Variables">
+                                <i class="fas fa-code"></i>
+                                <span>Environment</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="switchToTab('folder-windows-unattend')" title="Create Windows Unattend Files">
+                                <i class="fas fa-cogs"></i>
+                                <span>Unattend</span>
+                            </button>
                             <button class="quick-action-btn" onclick="showSettings()" title="Application Settings">
                                 <i class="fas fa-cog"></i>
                                 <span>Settings</span>
@@ -296,6 +319,10 @@
                         <div class="settings-nav-item" data-settings-tab="behavior">
                             <i class="fas fa-cogs"></i>
                             <span>Behavior</span>
+                        </div>
+                        <div class="settings-nav-item" data-settings-tab="shortcuts">
+                            <i class="fas fa-keyboard"></i>
+                            <span>Keyboard Shortcuts</span>
                         </div>
                         <div class="settings-nav-item" data-settings-tab="advanced">
                             <i class="fas fa-sliders-h"></i>
@@ -346,6 +373,83 @@
                             <p class="settings-description">Automatically refresh system information every 30 seconds</p>
                         </div>
 
+                    </div>
+
+                    <!-- Keyboard Shortcuts Settings -->
+                    <div id="settings-shortcuts" class="settings-panel">
+                        <h4>Keyboard Shortcuts</h4>
+                        <p class="settings-description">Customize keyboard shortcuts for quick access to features. Click on a shortcut field and press the desired key combination.</p>
+
+                        <div class="shortcuts-section">
+                            <h5>Navigation & Search</h5>
+                            <div class="shortcut-item">
+                                <label class="shortcut-label">Focus Tab Search</label>
+                                <input type="text" id="shortcut-focus-search" class="shortcut-input" readonly placeholder="Ctrl+F">
+                                <button class="btn btn-small btn-secondary" onclick="resetShortcut('focus-search')">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <p class="shortcut-description">Quickly search for and navigate to specific tabs</p>
+                            </div>
+                        </div>
+
+                        <div class="shortcuts-section">
+                            <h5>Data Refresh</h5>
+                            <div class="shortcut-item">
+                                <label class="shortcut-label">Refresh Current Tab</label>
+                                <input type="text" id="shortcut-refresh-tab" class="shortcut-input" readonly placeholder="Ctrl+R">
+                                <button class="btn btn-small btn-secondary" onclick="resetShortcut('refresh-tab')">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <p class="shortcut-description">Refresh data in the currently active tab</p>
+                            </div>
+                            <div class="shortcut-item">
+                                <label class="shortcut-label">Refresh System Info</label>
+                                <input type="text" id="shortcut-refresh-system" class="shortcut-input" readonly placeholder="F5">
+                                <button class="btn btn-small btn-secondary" onclick="resetShortcut('refresh-system')">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <p class="shortcut-description">Globally refresh system information across all tabs</p>
+                            </div>
+                        </div>
+
+                        <div class="shortcuts-section">
+                            <h5>Settings & Dialogs</h5>
+                            <div class="shortcut-item">
+                                <label class="shortcut-label">Open Settings</label>
+                                <input type="text" id="shortcut-open-settings" class="shortcut-input" readonly placeholder="Ctrl+S">
+                                <button class="btn btn-small btn-secondary" onclick="resetShortcut('open-settings')">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <p class="shortcut-description">Open the settings panel</p>
+                            </div>
+                            <div class="shortcut-item">
+                                <label class="shortcut-label">Close Modals</label>
+                                <input type="text" id="shortcut-close-modal" class="shortcut-input" readonly placeholder="Escape">
+                                <button class="btn btn-small btn-secondary" onclick="resetShortcut('close-modal')">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <p class="shortcut-description">Close any open modal dialog or popup</p>
+                            </div>
+                        </div>
+
+                        <div class="shortcuts-section">
+                            <h5>Actions</h5>
+                            <div class="shortcut-actions">
+                                <button class="btn btn-secondary" onclick="resetAllShortcuts()">
+                                    <i class="fas fa-undo"></i>
+                                    Reset All to Defaults
+                                </button>
+                                <button class="btn btn-secondary" onclick="exportShortcuts()">
+                                    <i class="fas fa-download"></i>
+                                    Export Shortcuts
+                                </button>
+                                <button class="btn btn-secondary" onclick="importShortcuts()">
+                                    <i class="fas fa-upload"></i>
+                                    Import Shortcuts
+                                </button>
+                            </div>
+                            <p class="settings-description">Manage your keyboard shortcut configurations</p>
+                        </div>
                     </div>
 
                     <!-- Advanced Settings -->
