@@ -147,8 +147,6 @@ function initTabSystem() {
     // Initialize draggable tabs functionality
     initDraggableTabs();
 
-    // Add tab button removed - no longer needed
-
     // Register the welcome tab
     tabs.set('welcome', {
         name: 'Welcome',
@@ -776,8 +774,6 @@ async function continueNormalStartup() {
 async function loadCurrentSettings() {
     try {
         if (window.electronAPI) {
-
-
             // Load primary color
             const primaryColor = await window.electronAPI.getSetting('primaryColor', '#ff9800');
             const colorPicker = document.getElementById('primary-color-picker');
@@ -787,12 +783,7 @@ async function loadCurrentSettings() {
                 colorPreview.textContent = primaryColor;
             }
 
-            // Load window size
-            const windowSize = await window.electronAPI.getSetting('windowSize', '60');
-            const windowSizeSelect = document.getElementById('window-size-select');
-            if (windowSizeSelect) {
-                windowSizeSelect.value = windowSize;
-            }
+            // Remove window size loading and applying
 
             // Load behavior settings
             const rememberLastTab = await window.electronAPI.getSetting('rememberLastTab', false);
@@ -807,21 +798,11 @@ async function loadCurrentSettings() {
                 autoRefreshCheckbox.checked = autoRefreshData;
             }
 
-
-
-
-
             // Load advanced settings
             const enableDevTools = await window.electronAPI.getSetting('enableDevTools', true);
             const enableDevToolsCheckbox = document.getElementById('enable-dev-tools');
             if (enableDevToolsCheckbox) {
                 enableDevToolsCheckbox.checked = enableDevTools;
-            }
-
-            const refreshInterval = await window.electronAPI.getSetting('refreshInterval', '30');
-            const refreshIntervalSelect = document.getElementById('refresh-interval-select');
-            if (refreshIntervalSelect) {
-                refreshIntervalSelect.value = refreshInterval;
             }
 
             // Load keyboard shortcuts
@@ -882,10 +863,7 @@ async function saveSettings() {
             console.log('Saving primary color:', primaryColor);
             await window.electronAPI.setSetting('primaryColor', primaryColor);
 
-            // Save window size
-            const windowSize = document.getElementById('window-size-select')?.value || '60';
-            console.log('Saving window size:', windowSize);
-            await window.electronAPI.setSetting('windowSize', windowSize);
+            // Remove window size saving and applying
 
             // Save behavior settings
             const rememberLastTab = document.getElementById('remember-last-tab')?.checked || false;
@@ -900,10 +878,6 @@ async function saveSettings() {
             const enableDevTools = document.getElementById('enable-dev-tools')?.checked || true;
             console.log('Saving enable dev tools:', enableDevTools);
             await window.electronAPI.setSetting('enableDevTools', enableDevTools);
-
-            const refreshInterval = document.getElementById('refresh-interval-select')?.value || '30';
-            console.log('Saving refresh interval:', refreshInterval);
-            await window.electronAPI.setSetting('refreshInterval', refreshInterval);
 
             // Save keyboard shortcuts
             console.log('Saving keyboard shortcuts...');
@@ -942,7 +916,48 @@ function cancelSettings() {
     }
 }
 
-// ...existing code...
+/**
+ * Reset settings to default values
+ */
+function resetSettings() {
+    if (!confirm('Are you sure you want to reset all settings to their default values?')) {
+        return;
+    }
+
+    // Appearance
+    const defaultColor = '#ff9800';
+    const colorPicker = document.getElementById('primary-color-picker');
+    const colorPreview = document.getElementById('primary-color-preview');
+    if (colorPicker && colorPreview) {
+        colorPicker.value = defaultColor;
+        colorPreview.textContent = defaultColor;
+        updatePrimaryColorVariables(defaultColor);
+    }
+    // Remove window size reset
+
+    // Behavior
+    const rememberLastTabCheckbox = document.getElementById('remember-last-tab');
+    if (rememberLastTabCheckbox) {
+        rememberLastTabCheckbox.checked = false;
+    }
+    const autoRefreshCheckbox = document.getElementById('auto-refresh-data');
+    if (autoRefreshCheckbox) {
+        autoRefreshCheckbox.checked = true;
+    }
+
+    // Advanced
+    const enableDevToolsCheckbox = document.getElementById('enable-dev-tools');
+    if (enableDevToolsCheckbox) {
+        enableDevToolsCheckbox.checked = true;
+    }
+
+    // Keyboard Shortcuts
+    Object.keys(DEFAULT_SHORTCUTS).forEach(key => {
+        resetShortcut(key);
+    });
+
+    showNotification('Settings reset to defaults. Click Save Settings to apply.', 'success');
+}
 
 /**
  * Load and apply settings on startup
@@ -1027,6 +1042,8 @@ function applySettings() {
     // Apply primary color and related variables
     const primaryColor = document.getElementById('primary-color-picker')?.value || '#ff9800';
     updatePrimaryColorVariables(primaryColor);
+
+    // Remove window size apply
 
     // Note: Other settings like window size, dev tools, etc. may require app restart
     // This could be enhanced to show a notification about restart requirements
@@ -1611,3 +1628,11 @@ window.cancelSettings = cancelSettings;
 
 
 console.log('WinTool app.js loaded');
+
+/**
+ * Set the window size via electronAPI
+ * @param {string|number} percent - Percentage of screen width (e.g., "60")
+ */
+function setWindowSize(percent) {
+    // Function no longer needed, but keep for compatibility if called elsewhere
+}

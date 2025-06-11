@@ -1,9 +1,9 @@
-# WinTool
+# WinTool Portable
 
 <div align="center">
 
 ![WinTool Portable](https://img.shields.io/badge/WinTool-Portable-orange?style=for-the-badge&logo=windows&logoColor=white)
-![Version](https://img.shields.io/badge/Version-0.0.3-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey?style=for-the-badge&logo=windows)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
@@ -126,7 +126,6 @@ npm start
 3. **Customize Your Experience**
    - Access Settings to personalize appearance
    - Drag tabs to organize your preferred layout
-   - Configure auto-refresh intervals
 
 4. **Access System Tools**
    - Use System Utilities for quick access to Windows tools
@@ -173,7 +172,6 @@ WinTool Portable stores settings in the user's application data directory:
 
 ### Key Settings
 - **Theme Colors**: Customize primary and accent colors
-- **Window Size**: Default window dimensions (60% of screen)
 - **Auto-refresh**: System data refresh intervals
 - **Tab Layout**: Saved tab order and preferences
 - **Keyboard Shortcuts**: Customizable hotkey configurations

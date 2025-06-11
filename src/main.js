@@ -91,15 +91,8 @@ function createWindow() {
     const primaryDisplay = screen.getPrimaryDisplay();
     const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
 
-    // Calculate window size based on settings (default 60% of screen)
-    let windowSizePercent = 0.6; // default
-
-    // Load window size setting if store is available
-    if (store) {
-        const savedWindowSize = store.get('windowSize', '60');
-        windowSizePercent = parseInt(savedWindowSize) / 100;
-    }
-
+    // Always use 60% of screen for window size
+    const windowSizePercent = 0.6;
     const windowWidth = Math.round(screenWidth * windowSizePercent);
     const windowHeight = Math.round(screenHeight * windowSizePercent);
 
