@@ -483,7 +483,7 @@ function createPathEntry(path, index) {
     return entry;
 }
 
-// Add new PATH entry
+// Securely add new PATH entry
 function addPathEntry() {
     const pathList = document.getElementById('path-list');
     if (!pathList) return;
@@ -491,13 +491,90 @@ function addPathEntry() {
     const entries = pathList.querySelectorAll('.path-entry');
     const newIndex = entries.length;
 
-    const newEntry = createPathEntry('', newIndex);
-    pathList.appendChild(newEntry);
+    const newEntry = createPathEntrySecure('', newIndex);
+    if (newEntry) {
+        pathList.appendChild(newEntry);
 
-    // Focus on the new input
-    const newInput = newEntry.querySelector('.path-input');
-    if (newInput) newInput.focus();
+        // Focus on the new input
+        const newInput = newEntry.querySelector('.path-input');
+        if (newInput) newInput.focus();
+    }
 }
+
+// Securely validate PATH entry
+function validatePathEntrySecure(input) {
+    const path = input.value.trim();
+    const entry = input.closest('.path-entry');
+
+    if (!entry) return;
+
+    // Remove existing validation classes
+    entry.classList.remove('invalid', 'warning');
+
+    if (!path) {
+        // Empty entries are allowed
+        return;
+    }
+
+    if (!validatePathEntry(path)) {
+        entry.classList.add('invalid');
+        entry.title = 'Invalid path: too long or contains invalid characters';
+        return;
+    }
+
+    // Check for potentially dangerous paths
+    const dangerousPaths = [
+        'C:\\Windows\\System32',
+        'C:\\Windows',
+        'C:\\Program Files',
+        'C:\\Program Files (x86)'
+    ];
+
+    if (dangerousPaths.some(dangerous => path.toLowerCase().startsWith(dangerous.toLowerCase()))) {
+        entry.classList.add('warning');
+        entry.title = 'Warning: This is a critical system directory';
+    }
+
+    // Check if path exists (visual feedback only)
+    if (window.electronAPI && window.electronAPI.pathExists) {
+        window.electronAPI.pathExists(path).then(exists => {
+            if (!exists) {
+                entry.classList.add('warning');
+                entry.title = 'Warning: This path does not exist';
+            }
+        }).catch(() => {
+            // Ignore errors in path checking
+        });
+    }
+}
+
+// Securely remove PATH entry
+function removePathEntrySecure(button) {
+    const entry = button.closest('.path-entry');
+    if (!entry) return;
+
+    const input = entry.querySelector('.path-input');
+    const path = input ? input.value.trim() : '';
+
+    // Warn about removing important paths
+    if (path && (path.includes('System32') || path.includes('Windows'))) {
+        const confirmed = confirm(
+            `Warning: You are about to remove a system path:\n\n"${path}"\n\n` +
+            `Removing this path may prevent system programs from running correctly.\n\n` +
+            `Are you sure you want to remove this path?`
+        );
+
+        if (!confirmed) {
+            return;
+        }
+    }
+
+    entry.remove();
+}
+
+// Legacy functions for backward compatibility (deprecated)
+window.validatePathEntry = validatePathEntrySecure;
+window.removePathEntry = removePathEntrySecure;
 
 // Remove PATH entry
 function removePathEntry(button) {
@@ -772,6 +849,83 @@ window.validatePathEntry = validatePathEntry;
 window.validatePathEntries = validatePathEntries;
 window.savePathVariable = savePathVariable;
 window.toggleValueExpansion = toggleValueExpansion;
+
+// Security configuration and validation functions
+const ENV_SECURITY_CONFIG = {
+    variableNameMaxLength: 255,
+    variableValueMaxLength: 32767, // Windows registry limit
+    variableNamePattern: /^[a-zA-Z_][a-zA-Z0-9_]*$/,
+    pathEntryMaxLength: 260, // Windows MAX_PATH
+    criticalVariables: [
+        'PATH', 'PATHEXT', 'WINDIR', 'SYSTEMROOT', 'PROGRAMFILES', 'PROGRAMFILES(X86)',
+        'PROGRAMDATA', 'USERPROFILE', 'ALLUSERSPROFILE', 'APPDATA', 'LOCALAPPDATA',
+        'TEMP', 'TMP', 'COMSPEC', 'PROCESSOR_ARCHITECTURE', 'NUMBER_OF_PROCESSORS'
+    ],
+    systemOnlyVariables: [
+        'WINDIR', 'SYSTEMROOT', 'PROGRAMFILES', 'PROGRAMFILES(X86)', 'PROGRAMDATA',
+        'PROCESSOR_ARCHITECTURE', 'NUMBER_OF_PROCESSORS'
+    ]
+};
+
+function validateVariableNameString(name) {
+    if (!name || typeof name !== 'string') {
+        return false;
+    }
+
+    if (name.length > ENV_SECURITY_CONFIG.variableNameMaxLength) {
+        return false;
+    }
+
+    return ENV_SECURITY_CONFIG.variableNamePattern.test(name);
+}
+
+function isCriticalVariable(name) {
+    return ENV_SECURITY_CONFIG.criticalVariables.includes(name.toUpperCase());
+}
+
+function isSystemOnlyVariable(name) {
+    return ENV_SECURITY_CONFIG.systemOnlyVariables.includes(name.toUpperCase());
+}
+
+// Notification system for environment variables
+function showNotification(message, type = 'info', duration = 5000) {
+    // Remove existing notifications
+    const existingNotifications = document.querySelectorAll('.env-notification');
+    existingNotifications.forEach(notification => notification.remove());
+
+    const notification = document.createElement('div');
+    notification.className = `env-notification ${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : type === 'warning' ? '#ffc107' : '#17a2b8'};
+        color: ${type === 'warning' ? '#212529' : 'white'};
+        padding: 12px 20px;
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        max-width: 400px;
+        word-wrap: break-word;
+        animation: slideInRight 0.3s ease-out;
+    `;
+
+    const icon = type === 'success' ? 'check-circle' :
+                 type === 'error' ? 'exclamation-triangle' :
+                 type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+
+    notification.innerHTML = `<i class="fas fa-${icon}"></i> ${message}`;
+
+    document.body.appendChild(notification);
+
+    // Auto-remove after duration
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.style.animation = 'slideOutRight 0.3s ease-in';
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, duration);
+}
 
 // Initialize the tab when the script loads
 if (typeof tabId !== 'undefined') {

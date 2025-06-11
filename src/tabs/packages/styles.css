@@ -9,6 +9,64 @@
     margin-bottom: 20px;
 }
 
+/* Package Manager Selector */
+.package-manager-selector {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.package-manager-selector label {
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.package-manager-select {
+    padding: 8px 12px;
+    background: #2a2a2a;
+    border: 1px solid #404040;
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s ease;
+    min-width: 250px;
+}
+
+.package-manager-select:focus {
+    border-color: var(--primary-color);
+}
+
+.package-manager-select option {
+    background: #2a2a2a;
+    color: #ffffff;
+}
+
+.package-manager-select option:disabled {
+    color: #808080;
+}
+
+.package-manager-info {
+    margin-top: 5px;
+}
+
+.package-manager-info small {
+    color: #b0b0b0;
+    font-size: 12px;
+}
+
+.package-manager-info a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.package-manager-info a:hover {
+    text-decoration: underline;
+}
+
 .search-container {
     position: relative;
     margin-bottom: 20px;

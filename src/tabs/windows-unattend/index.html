@@ -6,17 +6,20 @@
 <div class="windows-unattend-content">
     <!-- Quick Actions -->
     <div class="quick-actions">
-        <div class="action-card" onclick="loadPreset('basic')">
+        <div class="action-card" onclick="loadPreset('basic')"
+             data-tooltip="Loads a basic Windows installation preset with standard settings, automatic login, and minimal privacy tweaks. Good for personal computers and simple deployments.">
             <i class="fas fa-rocket"></i>
             <h4>Basic Setup</h4>
             <p>Standard installation with minimal configuration</p>
         </div>
-        <div class="action-card" onclick="loadPreset('enterprise')">
+        <div class="action-card" onclick="loadPreset('enterprise')"
+             data-tooltip="Loads an enterprise preset optimized for corporate environments with domain joining, enhanced security features, and business-focused settings.">
             <i class="fas fa-building"></i>
             <h4>Enterprise</h4>
             <p>Corporate environment with domain join</p>
         </div>
-        <div class="action-card" onclick="loadPreset('secure')">
+        <div class="action-card" onclick="loadPreset('secure')"
+             data-tooltip="Loads a security-focused preset with maximum privacy settings, disabled telemetry, enhanced security features, and minimal data collection.">
             <i class="fas fa-shield-alt"></i>
             <h4>Secure</h4>
             <p>Enhanced security settings enabled</p>
@@ -25,15 +28,18 @@
 
     <!-- Export Controls -->
     <div class="export-controls">
-        <button id="preview-xml" class="preview-btn">
+        <button id="preview-xml" class="preview-btn"
+                data-tooltip="Preview the generated unattend.xml file content before exporting. Shows the complete XML structure with your current settings.">
             <i class="fas fa-eye"></i>
             Preview XML
         </button>
-        <button id="export-unattend" class="export-btn">
+        <button id="export-unattend" class="export-btn"
+                data-tooltip="Generate and download the unattend.xml file with your current configuration. This file can be used for automated Windows installations.">
             <i class="fas fa-download"></i>
             Export Unattend.xml
         </button>
-        <button id="reset-form" class="reset-btn">
+        <button id="reset-form" class="reset-btn"
+                data-tooltip="Reset all form fields to their default values. This will clear all your current settings and start fresh.">
             <i class="fas fa-undo"></i>
             Reset Form
         </button>
@@ -46,30 +52,36 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="admin-username">Administrator Username:</label>
-                    <input type="text" id="admin-username" placeholder="Administrator" value="Administrator">
+                    <input type="text" id="admin-username" placeholder="Administrator" value="Administrator"
+                           data-tooltip="The username for the built-in administrator account. This account has full system privileges.">
                 </div>
                 <div class="form-group">
                     <label for="admin-password">Administrator Password:</label>
-                    <input type="password" id="admin-password" placeholder="Enter secure password" value="P@ssw0rd123">
+                    <input type="password" id="admin-password" placeholder="Enter secure password" value="P@ssw0rd123"
+                           data-tooltip="Password for the administrator account. Use a strong password with mixed case, numbers, and symbols.">
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group">
                     <label for="user-username">Standard User Username:</label>
-                    <input type="text" id="user-username" placeholder="User" value="User">
+                    <input type="text" id="user-username" placeholder="User" value="User"
+                           data-tooltip="Username for the standard user account. This account has limited privileges for daily use.">
                 </div>
                 <div class="form-group">
                     <label for="user-password">Standard User Password:</label>
-                    <input type="password" id="user-password" placeholder="Enter user password" value="User123">
+                    <input type="password" id="user-password" placeholder="Enter user password" value="User123"
+                           data-tooltip="Password for the standard user account. Can be simpler than admin password.">
                 </div>
             </div>
             <div class="checkbox-row">
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="auto-logon" checked>
+                    <input type="checkbox" id="auto-logon" checked
+                           data-tooltip="Automatically log in the standard user after Windows starts, skipping the login screen.">
                     <label for="auto-logon">Enable automatic logon for standard user</label>
                 </div>
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="hide-admin" checked>
+                    <input type="checkbox" id="hide-admin" checked
+                           data-tooltip="Hide the administrator account from the Windows login screen for security.">
                     <label for="hide-admin">Hide administrator account from login screen</label>
                 </div>
             </div>
@@ -83,7 +95,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="timezone">Time Zone:</label>
-                    <select id="timezone">
+                    <select id="timezone" data-tooltip="Sets the system time zone. Choose the time zone where the computer will be used.">
                         <option value="Eastern Standard Time" selected>Eastern Time (US & Canada)</option>
                         <option value="Central Standard Time">Central Time (US & Canada)</option>
                         <option value="Mountain Standard Time">Mountain Time (US & Canada)</option>
@@ -98,7 +110,7 @@
                 </div>
                 <div class="form-group">
                     <label for="language">System Language:</label>
-                    <select id="language">
+                    <select id="language" data-tooltip="Sets the default display language for Windows interface, menus, and dialogs.">
                         <option value="en-US" selected>English (United States)</option>
                         <option value="en-GB">English (United Kingdom)</option>
                         <option value="en-CA">English (Canada)</option>
@@ -119,7 +131,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="keyboard">Keyboard Layout:</label>
-                    <select id="keyboard">
+                    <select id="keyboard" data-tooltip="Sets the keyboard layout and input method. Choose based on your physical keyboard.">
                         <option value="0409:00000409" selected>US English (QWERTY)</option>
                         <option value="0809:00000809">UK English (QWERTY)</option>
                         <option value="1009:00000409">Canadian English</option>
@@ -134,7 +146,7 @@
                 </div>
                 <div class="form-group">
                     <label for="locale">Regional Format:</label>
-                    <select id="locale">
+                    <select id="locale" data-tooltip="Sets number, currency, date, and time formats based on regional conventions.">
                         <option value="en-US" selected>English (United States)</option>
                         <option value="en-GB">English (United Kingdom)</option>
                         <option value="en-CA">English (Canada)</option>
@@ -156,27 +168,32 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="computer-name">Computer Name:</label>
-                    <input type="text" id="computer-name" placeholder="WIN-PC" value="WIN-DESKTOP">
+                    <input type="text" id="computer-name" placeholder="WIN-PC" value="WIN-DESKTOP"
+                           data-tooltip="The name that identifies this computer on the network. Must be unique on the network.">
                     <small>Leave empty to generate random name</small>
                 </div>
                 <div class="form-group">
                     <label for="workgroup">Workgroup:</label>
-                    <input type="text" id="workgroup" placeholder="WORKGROUP" value="WORKGROUP">
+                    <input type="text" id="workgroup" placeholder="WORKGROUP" value="WORKGROUP"
+                           data-tooltip="The workgroup name for peer-to-peer networking. Default is 'WORKGROUP'.">
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group">
                     <label for="organization">Organization:</label>
-                    <input type="text" id="organization" placeholder="Your Organization" value="My Company">
+                    <input type="text" id="organization" placeholder="Your Organization" value="My Company"
+                           data-tooltip="The organization name displayed in Windows system properties and about dialogs.">
                 </div>
                 <div class="form-group">
                     <label for="owner">Registered Owner:</label>
-                    <input type="text" id="owner" placeholder="User" value="System Administrator">
+                    <input type="text" id="owner" placeholder="User" value="System Administrator"
+                           data-tooltip="The registered owner name displayed in Windows system properties.">
                 </div>
             </div>
             <div class="form-group">
                 <label for="description">Computer Description:</label>
-                <input type="text" id="description" placeholder="Windows workstation" value="Windows 11 Workstation">
+                <input type="text" id="description" placeholder="Windows workstation" value="Windows 11 Workstation"
+                       data-tooltip="A description of this computer's purpose or role, visible in network browsing.">
             </div>
         </div>
     </div>
@@ -188,7 +205,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="windows-edition">Windows Edition:</label>
-                    <select id="windows-edition">
+                    <select id="windows-edition" data-tooltip="Select the Windows edition to install. Must match your installation media and license.">
                         <option value="Windows 11 Pro" selected>Windows 11 Pro</option>
                         <option value="Windows 11 Home">Windows 11 Home</option>
                         <option value="Windows 11 Enterprise">Windows 11 Enterprise</option>
@@ -201,7 +218,7 @@
                 </div>
                 <div class="form-group">
                     <label for="architecture">Architecture:</label>
-                    <select id="architecture">
+                    <select id="architecture" data-tooltip="Select the processor architecture. 64-bit (x64) is recommended for modern systems.">
                         <option value="amd64" selected>64-bit (x64)</option>
                         <option value="x86">32-bit (x86)</option>
                     </select>
@@ -209,16 +226,19 @@
             </div>
             <div class="form-group">
                 <label for="product-key">Windows Product Key:</label>
-                <input type="text" id="product-key" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX">
+                <input type="text" id="product-key" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+                       data-tooltip="25-character Windows product key. Leave empty to enter key after installation.">
                 <small>Leave empty to skip product key during installation (will prompt later)</small>
             </div>
             <div class="checkbox-row">
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="accept-eula" checked>
+                    <input type="checkbox" id="accept-eula" checked
+                           data-tooltip="Automatically accept the End User License Agreement during installation.">
                     <label for="accept-eula">Automatically accept EULA</label>
                 </div>
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="skip-oem" checked>
+                    <input type="checkbox" id="skip-oem" checked
+                           data-tooltip="Skip manufacturer registration and setup screens during installation.">
                     <label for="skip-oem">Skip OEM registration screens</label>
                 </div>
             </div>
@@ -231,32 +251,38 @@
         <div class="section-content">
             <div class="checkbox-row">
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="enable-network" checked>
+                    <input type="checkbox" id="enable-network" checked
+                           data-tooltip="Enable network connectivity during Windows installation for updates and drivers.">
                     <label for="enable-network">Enable network during installation</label>
                 </div>
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="skip-network-setup" checked>
+                    <input type="checkbox" id="skip-network-setup" checked
+                           data-tooltip="Skip the network setup wizard during the Out-of-Box Experience.">
                     <label for="skip-network-setup">Skip network setup in OOBE</label>
                 </div>
             </div>
             <div class="form-group checkbox-group">
-                <input type="checkbox" id="join-domain">
+                <input type="checkbox" id="join-domain"
+                       data-tooltip="Automatically join this computer to a Windows domain after installation.">
                 <label for="join-domain">Join domain after installation</label>
             </div>
             <div class="domain-settings" id="domain-settings" style="display: none;">
                 <div class="form-row">
                     <div class="form-group">
                         <label for="domain-name">Domain Name:</label>
-                        <input type="text" id="domain-name" placeholder="example.com">
+                        <input type="text" id="domain-name" placeholder="example.com"
+                               data-tooltip="The fully qualified domain name (FQDN) to join, e.g., 'company.local'.">
                     </div>
                     <div class="form-group">
                         <label for="domain-username">Domain Join Username:</label>
-                        <input type="text" id="domain-username" placeholder="domain\admin">
+                        <input type="text" id="domain-username" placeholder="domain\admin"
+                               data-tooltip="Username with domain join privileges, in format 'domain\username' or 'username@domain.com'.">
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="domain-password">Domain Join Password:</label>
-                    <input type="password" id="domain-password" placeholder="Domain admin password">
+                    <input type="password" id="domain-password" placeholder="Domain admin password"
+                           data-tooltip="Password for the domain join account. This will be stored in the unattend file.">
                 </div>
             </div>
         </div>
@@ -269,19 +295,23 @@
             <h4>Security Features</h4>
             <div class="features-grid">
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="feature-defender" checked>
+                    <input type="checkbox" id="feature-defender" checked
+                           data-tooltip="Enable Windows Defender Antivirus for real-time protection against malware.">
                     <label for="feature-defender">Enable Windows Defender</label>
                 </div>
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="feature-firewall" checked>
+                    <input type="checkbox" id="feature-firewall" checked
+                           data-tooltip="Enable Windows Firewall to block unauthorized network connections.">
                     <label for="feature-firewall">Enable Windows Firewall</label>
                 </div>
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="feature-uac" checked>
+                    <input type="checkbox" id="feature-uac" checked
+                           data-tooltip="Enable User Account Control to prompt for administrator approval on system changes.">
                     <label for="feature-uac">Enable User Account Control</label>
                 </div>
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="feature-smartscreen" checked>
+                    <input type="checkbox" id="feature-smartscreen" checked
+                           data-tooltip="Enable SmartScreen to protect against malicious websites and downloads.">
                     <label for="feature-smartscreen">Enable SmartScreen</label>
                 </div>
             </div>
@@ -289,19 +319,23 @@
             <h4>Privacy & Telemetry</h4>
             <div class="features-grid">
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="feature-telemetry" checked>
+                    <input type="checkbox" id="feature-telemetry" checked
+                           data-tooltip="Disable Windows telemetry and diagnostic data collection for privacy.">
                     <label for="feature-telemetry">Disable telemetry & data collection</label>
                 </div>
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="feature-cortana" checked>
+                    <input type="checkbox" id="feature-cortana" checked
+                           data-tooltip="Disable Cortana voice assistant and related data collection.">
                     <label for="feature-cortana">Disable Cortana</label>
                 </div>
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="feature-location" checked>
+                    <input type="checkbox" id="feature-location" checked
+                           data-tooltip="Disable location services to prevent apps from accessing your location.">
                     <label for="feature-location">Disable location services</label>
                 </div>
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="feature-ads" checked>
+                    <input type="checkbox" id="feature-ads" checked
+                           data-tooltip="Disable advertising ID to prevent personalized ads based on your activity.">
                     <label for="feature-ads">Disable advertising ID</label>
                 </div>
             </div>
@@ -309,19 +343,23 @@
             <h4>System Features</h4>
             <div class="features-grid">
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="feature-updates" checked>
+                    <input type="checkbox" id="feature-updates" checked
+                           data-tooltip="Enable automatic Windows updates to keep the system secure and up-to-date.">
                     <label for="feature-updates">Enable automatic updates</label>
                 </div>
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="feature-hibernation">
+                    <input type="checkbox" id="feature-hibernation"
+                           data-tooltip="Enable hibernation mode to save system state to disk for faster startup.">
                     <label for="feature-hibernation">Enable hibernation</label>
                 </div>
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="feature-remote-desktop">
+                    <input type="checkbox" id="feature-remote-desktop"
+                           data-tooltip="Enable Remote Desktop to allow remote connections to this computer.">
                     <label for="feature-remote-desktop">Enable Remote Desktop</label>
                 </div>
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="feature-powershell" checked>
+                    <input type="checkbox" id="feature-powershell" checked
+                           data-tooltip="Enable PowerShell script execution for system administration and automation.">
                     <label for="feature-powershell">Enable PowerShell execution</label>
                 </div>
             </div>
@@ -334,27 +372,33 @@
         <div class="section-content">
             <div class="features-grid">
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="oobe-skip-machine-oobe" checked>
+                    <input type="checkbox" id="oobe-skip-machine-oobe" checked
+                           data-tooltip="Skip the machine-level Out-of-Box Experience setup screens.">
                     <label for="oobe-skip-machine-oobe">Skip machine OOBE</label>
                 </div>
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="oobe-skip-user-oobe" checked>
+                    <input type="checkbox" id="oobe-skip-user-oobe" checked
+                           data-tooltip="Skip the user-level Out-of-Box Experience setup screens.">
                     <label for="oobe-skip-user-oobe">Skip user OOBE</label>
                 </div>
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="oobe-hide-eula" checked>
+                    <input type="checkbox" id="oobe-hide-eula" checked
+                           data-tooltip="Hide the End User License Agreement page during first boot.">
                     <label for="oobe-hide-eula">Hide EULA page</label>
                 </div>
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="oobe-hide-wireless" checked>
+                    <input type="checkbox" id="oobe-hide-wireless" checked
+                           data-tooltip="Hide the wireless network setup page during first boot.">
                     <label for="oobe-hide-wireless">Hide wireless setup</label>
                 </div>
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="oobe-protect-pc" checked>
+                    <input type="checkbox" id="oobe-protect-pc" checked
+                           data-tooltip="Automatically enable recommended security and privacy settings.">
                     <label for="oobe-protect-pc">Enable recommended security settings</label>
                 </div>
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="oobe-hide-online-account" checked>
+                    <input type="checkbox" id="oobe-hide-online-account" checked
+                           data-tooltip="Hide Microsoft account and online account setup screens.">
                     <label for="oobe-hide-online-account">Hide online account screens</label>
                 </div>
             </div>

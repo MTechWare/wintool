@@ -553,6 +553,17 @@ function initModals() {
             }
         }
     });
+
+    // Add click handlers to all modal close buttons
+    const closeButtons = document.querySelectorAll('.modal .close-btn');
+    closeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const modal = button.closest('.modal');
+            if (modal) {
+                closeModal(modal.id);
+            }
+        });
+    });
 }
 
 /**
@@ -617,9 +628,14 @@ async function switchToTab(tabName) {
  * Close a modal
  */
 function closeModal(modalId) {
+    console.log('Attempting to close modal:', modalId);
     const modal = document.getElementById(modalId);
     if (modal) {
+        console.log('Modal found, closing...');
         modal.style.display = 'none';
+        console.log('Modal closed successfully');
+    } else {
+        console.error('Modal not found:', modalId);
     }
 }
 
@@ -858,75 +874,75 @@ function initSettingsNavigation() {
  */
 async function saveSettings() {
     try {
+        console.log('Starting to save settings...');
+        
         if (window.electronAPI) {
-
-
             // Save primary color
             const primaryColor = document.getElementById('primary-color-picker')?.value || '#ff9800';
+            console.log('Saving primary color:', primaryColor);
             await window.electronAPI.setSetting('primaryColor', primaryColor);
 
             // Save window size
             const windowSize = document.getElementById('window-size-select')?.value || '60';
+            console.log('Saving window size:', windowSize);
             await window.electronAPI.setSetting('windowSize', windowSize);
 
             // Save behavior settings
             const rememberLastTab = document.getElementById('remember-last-tab')?.checked || false;
+            console.log('Saving remember last tab:', rememberLastTab);
             await window.electronAPI.setSetting('rememberLastTab', rememberLastTab);
 
             const autoRefreshData = document.getElementById('auto-refresh-data')?.checked || true;
+            console.log('Saving auto refresh data:', autoRefreshData);
             await window.electronAPI.setSetting('autoRefreshData', autoRefreshData);
-
-
 
             // Save advanced settings
             const enableDevTools = document.getElementById('enable-dev-tools')?.checked || true;
+            console.log('Saving enable dev tools:', enableDevTools);
             await window.electronAPI.setSetting('enableDevTools', enableDevTools);
 
             const refreshInterval = document.getElementById('refresh-interval-select')?.value || '30';
+            console.log('Saving refresh interval:', refreshInterval);
             await window.electronAPI.setSetting('refreshInterval', refreshInterval);
 
             // Save keyboard shortcuts
+            console.log('Saving keyboard shortcuts...');
             await saveKeyboardShortcuts();
 
             // Apply settings immediately
+            console.log('Applying settings...');
             applySettings();
 
-            // Close modal
-            closeModal('settings-modal');
-
-            console.log('Settings saved successfully');
+            console.log('Settings saved successfully, closing modal...');
+            
+            // Close modal after successful save
+            const modal = document.getElementById('settings-modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            
+            showNotification('Settings saved successfully!', 'success');
+        } else {
+            console.error('electronAPI not available');
+            showNotification('Error: electronAPI not available', 'error');
         }
     } catch (error) {
         console.error('Error saving settings:', error);
+        showNotification('Error saving settings: ' + error.message, 'error');
     }
 }
 
 /**
- * Reset settings to defaults
+ * Cancel settings changes and close modal
  */
-async function resetSettings() {
-    if (confirm('Are you sure you want to reset ALL settings to their default values? This will erase everything and restart the application.')) {
-        try {
-            if (window.electronAPI) {
-                console.log('Resetting all settings to defaults...');
-
-                // Clear all stored settings by calling the backend to clear the entire store
-                await window.electronAPI.clearAllSettings();
-
-                console.log('All settings cleared, restarting application...');
-
-                // Show a brief message before restart
-                alert('Settings have been reset to defaults. The application will now restart.');
-
-                // Restart the application to ensure clean state
-                await window.electronAPI.restartApplication();
-            }
-        } catch (error) {
-            console.error('Error resetting settings:', error);
-            alert('Error resetting settings. Please restart the application manually.');
-        }
+function cancelSettings() {
+    const modal = document.getElementById('settings-modal');
+    if (modal) {
+        modal.style.display = 'none';
     }
 }
+
+// ...existing code...
 
 /**
  * Load and apply settings on startup
@@ -1486,6 +1502,91 @@ function importShortcuts() {
     input.click();
 }
 
+/**
+ * Show notification to user
+ */
+function showNotification(message, type = 'info') {
+    // Create notification container if it doesn't exist
+    let container = document.querySelector('.notification-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'notification-container';
+        container.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            pointer-events: none;
+        `;
+        document.body.appendChild(container);
+    }
+
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    
+    // Set icon based on type
+    let icon = 'fas fa-info-circle';
+    let bgColor = 'var(--primary-color)';
+    
+    switch (type) {
+        case 'success':
+            icon = 'fas fa-check-circle';
+            bgColor = '#10b981';
+            break;
+        case 'error':
+            icon = 'fas fa-exclamation-circle';
+            bgColor = '#ef4444';
+            break;
+        case 'warning':
+            icon = 'fas fa-exclamation-triangle';
+            bgColor = '#f59e0b';
+            break;
+        default:
+            icon = 'fas fa-info-circle';
+            bgColor = 'var(--primary-color)';
+    }
+
+    notification.style.cssText = `
+        background: ${bgColor};
+        color: white;
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        max-width: 350px;
+        pointer-events: auto;
+        transform: translateX(100%);
+        transition: transform 0.3s ease-out;
+    `;
+
+    notification.innerHTML = `
+        <i class="${icon}"></i>
+        <span>${message}</span>
+    `;
+
+    container.appendChild(notification);
+
+    // Show notification with animation
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+
+    // Hide and remove notification after 4 seconds
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 4000);
+}
+
 // Global functions for HTML onclick handlers
 window.closeModal = closeModal;
 window.showSystemInfo = showSystemInfo;
@@ -1505,6 +1606,8 @@ window.resetShortcut = resetShortcut;
 window.resetAllShortcuts = resetAllShortcuts;
 window.exportShortcuts = exportShortcuts;
 window.importShortcuts = importShortcuts;
+window.showNotification = showNotification;
+window.cancelSettings = cancelSettings;
 
 
 console.log('WinTool app.js loaded');

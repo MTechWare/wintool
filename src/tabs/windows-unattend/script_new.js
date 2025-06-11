@@ -272,17 +272,22 @@ function generateUnattendXML() {
         </component>
         <component name="Microsoft-Windows-Setup" processorArchitecture="${architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">`;
 
+    // Always include UserData section - required for Windows Setup
+    xml += `
+            <UserData>`;
+
     if (productKey) {
         xml += `
-            <UserData>
                 <ProductKey>
                     <Key>${productKey}</Key>
-                </ProductKey>
-                <AcceptEula>${acceptEula}</AcceptEula>
-                <FullName>${owner}</FullName>
-                <Organization>${organization}</Organization>
-            </UserData>`;
+                </ProductKey>`;
     }
+
+    xml += `
+                <AcceptEula>${acceptEula}</AcceptEula>
+                <FullName>${owner || 'User'}</FullName>
+                <Organization>${organization || 'Organization'}</Organization>
+            </UserData>`;
 
     xml += `
             <UseConfigurationSet>true</UseConfigurationSet>
@@ -369,7 +374,7 @@ function generateUnattendXML() {
             </OOBE>
             <UserAccounts>
                 <AdministratorPassword>
-                    <Value>${btoa(adminPassword)}</Value>
+                    <Value>${adminPassword ? btoa(adminPassword) : ''}</Value>
                     <PlainText>false</PlainText>
                 </AdministratorPassword>`;
 
@@ -378,7 +383,7 @@ function generateUnattendXML() {
                 <LocalAccounts>
                     <LocalAccount wcm:action="add">
                         <Password>
-                            <Value>${btoa(userPassword)}</Value>
+                            <Value>${userPassword ? btoa(userPassword) : ''}</Value>
                             <PlainText>false</PlainText>
                         </Password>
                         <Description>User Account</Description>
@@ -396,7 +401,7 @@ function generateUnattendXML() {
         xml += `
             <AutoLogon>
                 <Password>
-                    <Value>${btoa(userPassword)}</Value>
+                    <Value>${userPassword ? btoa(userPassword) : ''}</Value>
                     <PlainText>false</PlainText>
                 </Password>
                 <Enabled>true</Enabled>
@@ -414,6 +419,38 @@ function generateUnattendXML() {
 }
 
 /**
+ * Validate XML content
+ */
+function validateXMLContent(xmlContent) {
+    try {
+        // Basic XML validation
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
+
+        // Check for parsing errors
+        const parseError = xmlDoc.getElementsByTagName('parsererror');
+        if (parseError.length > 0) {
+            throw new Error('Invalid XML structure: ' + parseError[0].textContent);
+        }
+
+        // Check for required elements
+        const unattendElement = xmlDoc.getElementsByTagName('unattend')[0];
+        if (!unattendElement) {
+            throw new Error('Missing required <unattend> root element');
+        }
+
+        const settingsElements = xmlDoc.getElementsByTagName('settings');
+        if (settingsElements.length === 0) {
+            throw new Error('Missing required <settings> elements');
+        }
+
+        return true;
+    } catch (error) {
+        throw new Error('XML validation failed: ' + error.message);
+    }
+}
+
+/**
  * Export unattend.xml file
  */
 async function exportUnattendXML() {
@@ -425,6 +462,9 @@ async function exportUnattendXML() {
 
         // Generate XML content
         const xmlContent = generateUnattendXML();
+
+        // Validate XML content before export
+        validateXMLContent(xmlContent);
 
         if (window.electronAPI && window.electronAPI.saveFileDialog) {
             // Show save dialog
@@ -574,11 +614,40 @@ function validateForm() {
     const userUsername = document.getElementById('user-username')?.value;
     const userPassword = document.getElementById('user-password')?.value;
     const autoLogon = document.getElementById('auto-logon')?.checked;
+    const computerName = document.getElementById('computer-name')?.value;
+    const productKey = document.getElementById('product-key')?.value;
 
     // Check if auto-logon is enabled but user account is not set up
     if (autoLogon && (!userUsername || !userPassword)) {
         showStatusMessage('warning', 'Auto-logon requires a user account with username and password');
         return false;
+    }
+
+    // Validate product key format if provided
+    if (productKey && productKey.trim()) {
+        const productKeyPattern = /^[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}$/;
+        if (!productKeyPattern.test(productKey.trim().toUpperCase())) {
+            showStatusMessage('error', 'Product key must be in format: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX');
+            return false;
+        }
+    }
+
+    // Validate computer name if provided
+    if (computerName && computerName.trim()) {
+        const computerNamePattern = /^[a-zA-Z0-9-]{1,15}$/;
+        if (!computerNamePattern.test(computerName.trim())) {
+            showStatusMessage('error', 'Computer name must be 1-15 characters and contain only letters, numbers, and hyphens');
+            return false;
+        }
+    }
+
+    // Validate username format if provided
+    if (userUsername && userUsername.trim()) {
+        const usernamePattern = /^[a-zA-Z0-9_-]{1,20}$/;
+        if (!usernamePattern.test(userUsername.trim())) {
+            showStatusMessage('error', 'Username must be 1-20 characters and contain only letters, numbers, underscores, and hyphens');
+            return false;
+        }
     }
 
     // Warn if no administrator password is set
@@ -669,6 +738,7 @@ window.showStatusMessage = showStatusMessage;
 window.initWindowsUnattend = initWindowsUnattend;
 window.generateUnattendXML = generateUnattendXML;
 window.validateForm = validateForm;
+window.validateXMLContent = validateXMLContent;
 window.toggleDomainSettings = toggleDomainSettings;
 window.showXMLPreview = showXMLPreview;
 window.closeXMLPreview = closeXMLPreview;

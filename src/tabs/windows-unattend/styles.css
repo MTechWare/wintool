@@ -525,3 +525,26 @@
         transform: rotate(360deg);
     }
 }
+
+/* Simple tooltip styles */
+.custom-tooltip {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Enhanced form element hover states */
+.form-group input[data-tooltip]:hover,
+.form-group select[data-tooltip]:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+}
+
+.checkbox-group:hover {
+    background: rgba(var(--primary-color-rgb), 0.05);
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.checkbox-group label:hover {
+    color: var(--primary-color);
+    cursor: pointer;
+}

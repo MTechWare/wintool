@@ -209,7 +209,31 @@ function loadPreset(presetName) {
     document.getElementById('oobe-protect-pc').checked = preset.oobeProtectPc;
     document.getElementById('oobe-hide-online-account').checked = preset.oobeHideOnlineAccount;
 
+    // Reinitialize tooltips after loading preset
+    setTimeout(() => {
+        initTooltips();
+    }, 100);
+
     showStatusMessage('success', `Loaded "${preset.name}" preset configuration`);
+}
+
+/**
+ * Encode password for Windows unattend.xml (UTF-16LE base64)
+ */
+function encodePasswordForWindows(password) {
+    if (!password) return '';
+
+    // Convert to UTF-16LE and then base64
+    const utf16leBytes = [];
+    for (let i = 0; i < password.length; i++) {
+        const charCode = password.charCodeAt(i);
+        utf16leBytes.push(charCode & 0xFF);
+        utf16leBytes.push((charCode >> 8) & 0xFF);
+    }
+
+    // Convert bytes to base64
+    const binaryString = String.fromCharCode.apply(null, utf16leBytes);
+    return btoa(binaryString);
 }
 
 /**
@@ -284,7 +308,45 @@ function generateUnattendXML() {
             <UILanguage>${language}</UILanguage>
             <UserLocale>${locale}</UserLocale>
         </component>
-        <component name="Microsoft-Windows-Setup" processorArchitecture="${architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">`;
+        <component name="Microsoft-Windows-Setup" processorArchitecture="${architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <DiskConfiguration>
+                <Disk wcm:action="add">
+                    <CreatePartitions>
+                        <CreatePartition wcm:action="add">
+                            <Order>1</Order>
+                            <Type>EFI</Type>
+                            <Size>100</Size>
+                        </CreatePartition>
+                        <CreatePartition wcm:action="add">
+                            <Order>2</Order>
+                            <Type>MSR</Type>
+                            <Size>16</Size>
+                        </CreatePartition>
+                        <CreatePartition wcm:action="add">
+                            <Order>3</Order>
+                            <Type>Primary</Type>
+                            <Extend>true</Extend>
+                        </CreatePartition>
+                    </CreatePartitions>
+                    <ModifyPartitions>
+                        <ModifyPartition wcm:action="add">
+                            <Order>1</Order>
+                            <PartitionID>1</PartitionID>
+                            <Label>System</Label>
+                            <Format>FAT32</Format>
+                        </ModifyPartition>
+                        <ModifyPartition wcm:action="add">
+                            <Order>2</Order>
+                            <PartitionID>3</PartitionID>
+                            <Label>Windows</Label>
+                            <Letter>C</Letter>
+                            <Format>NTFS</Format>
+                        </ModifyPartition>
+                    </ModifyPartitions>
+                    <DiskID>0</DiskID>
+                    <WillWipeDisk>true</WillWipeDisk>
+                </Disk>
+            </DiskConfiguration>`;
 
     if (productKey) {
         xml += `
@@ -299,14 +361,14 @@ function generateUnattendXML() {
     }
 
     xml += `
-            <UseConfigurationSet>true</UseConfigurationSet>
             <EnableNetwork>${enableNetwork}</EnableNetwork>
             <ImageInstall>
                 <OSImage>
                     <InstallTo>
                         <DiskID>0</DiskID>
-                        <PartitionID>2</PartitionID>
+                        <PartitionID>3</PartitionID>
                     </InstallTo>
+                    <WillShowUI>OnError</WillShowUI>
                     <InstallToAvailablePartition>false</InstallToAvailablePartition>
                 </OSImage>
             </ImageInstall>
@@ -315,7 +377,7 @@ function generateUnattendXML() {
 
     <!-- Specialize Pass -->
     <settings pass="specialize">
-        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="${architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <ComputerName>${computerName}</ComputerName>
             <TimeZone>${timezone}</TimeZone>`;
 
@@ -334,16 +396,25 @@ function generateUnattendXML() {
 
     if (!joinDomain) {
         xml += `
-        <component name="Microsoft-Windows-UnattendedJoin" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <component name="Microsoft-Windows-UnattendedJoin" processorArchitecture="${architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <Identification>
                 <JoinWorkgroup>${workgroup}</JoinWorkgroup>
             </Identification>
         </component>`;
     } else if (domainName) {
         xml += `
-        <component name="Microsoft-Windows-UnattendedJoin" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <component name="Microsoft-Windows-UnattendedJoin" processorArchitecture="${architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <Identification>
-                <JoinDomain>${domainName}</JoinDomain>
+                <JoinDomain>${domainName}</JoinDomain>`;
+        if (domainUsername && domainPassword) {
+            xml += `
+                <Credentials>
+                    <Domain>${domainName}</Domain>
+                    <Username>${domainUsername}</Username>
+                    <Password>${encodePasswordForWindows(domainPassword)}</Password>
+                </Credentials>`;
+        }
+        xml += `
             </Identification>
         </component>`;
     }
@@ -353,19 +424,21 @@ function generateUnattendXML() {
 
     <!-- OOBE System Pass -->
     <settings pass="oobeSystem">
-        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="${architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <OOBE>
-                <HideEULAPage>true</HideEULAPage>
+                <HideEULAPage>${oobeHideEula}</HideEULAPage>
                 <HideLocalAccountScreen>true</HideLocalAccountScreen>
-                <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
-                <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
-                <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
+                <HideOEMRegistrationScreen>${skipOem}</HideOEMRegistrationScreen>
+                <HideOnlineAccountScreens>${oobeHideOnlineAccount}</HideOnlineAccountScreens>
+                <HideWirelessSetupInOOBE>${oobeHideWireless}</HideWirelessSetupInOOBE>
                 <NetworkLocation>Work</NetworkLocation>
-                <ProtectYourPC>1</ProtectYourPC>
+                <ProtectYourPC>${oobeProtectPc ? '1' : '3'}</ProtectYourPC>
+                <SkipUserOOBE>${oobeSkipUser}</SkipUserOOBE>
+                <SkipMachineOOBE>${oobeSkipMachine}</SkipMachineOOBE>
             </OOBE>
             <UserAccounts>
                 <AdministratorPassword>
-                    <Value>${btoa(adminPassword)}</Value>
+                    <Value>${encodePasswordForWindows(adminPassword)}</Value>
                     <PlainText>false</PlainText>
                 </AdministratorPassword>`;
 
@@ -545,6 +618,21 @@ function validateForm() {
     const userPassword = document.getElementById('user-password')?.value;
     const autoLogon = document.getElementById('auto-logon')?.checked;
 
+    // Add stronger password validation
+    if (adminPassword && adminPassword.length < 8) {
+        showStatusMessage('error', 'Administrator password must be at least 8 characters');
+        return false;
+    }
+
+    // Add domain validation 
+    if (document.getElementById('join-domain')?.checked) {
+        const domainName = document.getElementById('domain-name')?.value;
+        if (!domainName || !domainName.includes('.')) {
+            showStatusMessage('error', 'Please enter a valid domain name');
+            return false;
+        }
+    }
+
     // Check if auto-logon is enabled but user account is not set up
     if (autoLogon && (!userUsername || !userPassword)) {
         showStatusMessage('warning', 'Auto-logon requires a user account with username and password');
@@ -559,6 +647,26 @@ function validateForm() {
     }
 
     return true;
+}
+
+// Add XML schema validation
+function validateXMLContent(xmlContent) {
+    try {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
+        
+        // Check for required elements
+        const requiredElements = ['unattend', 'settings', 'component'];
+        for (const element of requiredElements) {
+            if (xmlDoc.getElementsByTagName(element).length === 0) {
+                throw new Error(`Missing required <${element}> element`);
+            }
+        }
+        
+        return true;
+    } catch (error) {
+        throw new Error('XML validation failed: ' + error.message);
+    }
 }
 
 /**
@@ -620,6 +728,113 @@ async function copyXMLToClipboard() {
 let isInitialized = false;
 
 /**
+ * Simple tooltip implementation
+ */
+let currentTooltip = null;
+
+function showTooltip(element, text) {
+    hideTooltip();
+
+    if (!text) return;
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'custom-tooltip';
+    tooltip.textContent = text;
+    tooltip.style.cssText = `
+        position: fixed;
+        background: #333;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        z-index: 10000;
+        max-width: 250px;
+        word-wrap: break-word;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        pointer-events: none;
+    `;
+
+    document.body.appendChild(tooltip);
+
+    const rect = element.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+
+    let top = rect.top - tooltipRect.height - 8;
+    let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+
+    if (top < 8) {
+        top = rect.bottom + 8;
+    }
+
+    if (left < 8) {
+        left = 8;
+    } else if (left + tooltipRect.width > window.innerWidth - 8) {
+        left = window.innerWidth - tooltipRect.width - 8;
+    }
+
+    tooltip.style.top = top + 'px';
+    tooltip.style.left = left + 'px';
+
+    currentTooltip = tooltip;
+}
+
+function hideTooltip() {
+    if (currentTooltip) {
+        currentTooltip.remove();
+        currentTooltip = null;
+    }
+}
+
+function initTooltips() {
+    // Remove existing tooltip listeners
+    document.querySelectorAll('[data-tooltip]').forEach(element => {
+        element.removeEventListener('mouseenter', element._tooltipEnter);
+        element.removeEventListener('mouseleave', element._tooltipLeave);
+
+        // Also remove from associated elements
+        if (element._tooltipLabel) {
+            element._tooltipLabel.removeEventListener('mouseenter', element._tooltipEnter);
+            element._tooltipLabel.removeEventListener('mouseleave', element._tooltipLeave);
+        }
+        if (element._tooltipGroup) {
+            element._tooltipGroup.removeEventListener('mouseenter', element._tooltipEnter);
+            element._tooltipGroup.removeEventListener('mouseleave', element._tooltipLeave);
+        }
+    });
+
+    // Add new tooltip listeners
+    document.querySelectorAll('[data-tooltip]').forEach(element => {
+        const tooltipText = element.getAttribute('data-tooltip');
+
+        element._tooltipEnter = () => showTooltip(element, tooltipText);
+        element._tooltipLeave = () => hideTooltip();
+
+        // Add to the main element
+        element.addEventListener('mouseenter', element._tooltipEnter);
+        element.addEventListener('mouseleave', element._tooltipLeave);
+
+        // Special handling for checkboxes
+        if (element.type === 'checkbox') {
+            // Find the associated label
+            const label = element.nextElementSibling;
+            if (label && label.tagName === 'LABEL') {
+                label.addEventListener('mouseenter', element._tooltipEnter);
+                label.addEventListener('mouseleave', element._tooltipLeave);
+                element._tooltipLabel = label;
+            }
+
+            // Find the checkbox group container
+            const checkboxGroup = element.closest('.checkbox-group');
+            if (checkboxGroup) {
+                checkboxGroup.addEventListener('mouseenter', element._tooltipEnter);
+                checkboxGroup.addEventListener('mouseleave', element._tooltipLeave);
+                element._tooltipGroup = checkboxGroup;
+            }
+        }
+    });
+}
+
+/**
  * Initialize the Windows Unattend tab
  */
 function initWindowsUnattend() {
@@ -658,6 +873,9 @@ function initWindowsUnattend() {
     if (joinDomainCheckbox) {
         joinDomainCheckbox.addEventListener('change', toggleDomainSettings);
     }
+
+    // Initialize tooltips
+    initTooltips();
 
     // Setup form validation on key inputs
     const criticalInputs = ['admin-password', 'user-username', 'user-password'];

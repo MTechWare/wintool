@@ -307,7 +307,7 @@
         <div class="modal-content settings-modal-content">
             <div class="modal-header">
                 <h3><i class="fas fa-cog"></i> Settings</h3>
-                <button class="modal-close" onclick="closeModal('settings-modal')">&times;</button>
+                <button class="modal-close close-btn" onclick="closeModal('settings-modal')">&times;</button>
             </div>
             <div class="modal-body settings-modal-body">
                 <div class="settings-sidebar">
@@ -485,7 +485,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('settings-modal')">Cancel</button>
+                <button class="btn btn-secondary" onclick="cancelSettings()">Cancel</button>
                 <button class="btn btn-primary" onclick="saveSettings()">
                     <i class="fas fa-save"></i>
                     Save Settings

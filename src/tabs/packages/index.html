@@ -1,12 +1,27 @@
 <div class="tab-header">
     <h1><i class="fas fa-box"></i> Package Manager</h1>
-    <p>Manage Windows packages using winget</p>
+    <p id="package-manager-description">Manage Windows packages using winget</p>
 </div>
 
 <div class="packages-container">
 
     <!-- Search and Controls -->
     <div class="packages-controls">
+        <!-- Package Manager Selector -->
+        <div class="package-manager-selector">
+            <label for="package-manager-select">Package Manager:</label>
+            <select id="package-manager-select" class="package-manager-select">
+                <option value="winget" selected>Windows Package Manager (winget)</option>
+                <option value="choco">Chocolatey (choco)</option>
+            </select>
+            <div class="package-manager-info">
+                <small>
+                    <i class="fas fa-info-circle"></i>
+                    Don't have Chocolatey? <a href="https://chocolatey.org/install" target="_blank">Install it here</a>
+                </small>
+            </div>
+        </div>
+
         <div class="search-container">
             <input type="text" id="package-search" placeholder="Search packages..." class="search-input">
             <i class="fas fa-search search-icon"></i>

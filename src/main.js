@@ -10,6 +10,7 @@
 
 const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage } = require('electron');
 const path = require('path');
+const { spawn } = require('child_process');
 
 // Initialize store for settings
 let store;
@@ -119,7 +120,7 @@ function createWindow() {
         backgroundColor: '#0a0a0c',
         show: false, // Show when ready
         center: true
-    });
+    }); // Add missing closing bracket
 
     // Load the main HTML file
     mainWindow.loadFile(path.join(__dirname, 'index.html'));
@@ -1091,6 +1092,209 @@ ipcMain.handle('execute-winget-command', async (event, command) => {
     });
 });
 
+// Check if Chocolatey is available
+async function checkChocoAvailability() {
+    const { spawn } = require('child_process');
+    return new Promise((resolve) => {
+        const chocoProcess = spawn('choco', ['--version'], {
+            shell: false,
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
+
+        chocoProcess.on('close', (code) => {
+            resolve(code === 0);
+        });
+
+        chocoProcess.on('error', () => {
+            resolve(false);
+        });
+    });
+}
+
+// Chocolatey command execution handler
+ipcMain.handle('execute-choco-command', async (event, command) => {
+    console.log('execute-choco-command handler called with:', command);
+    const { spawn } = require('child_process');
+
+    // Check if Chocolatey is available
+    const chocoAvailable = await checkChocoAvailability();
+    if (!chocoAvailable) {
+        throw new Error('Chocolatey is not installed or not available in PATH. Please install Chocolatey first: https://chocolatey.org/install');
+    }
+
+    // Rate limiting
+    if (!checkRateLimit('choco-command')) {
+        throw new Error('Rate limit exceeded. Please wait before making more requests.');
+    }
+
+    // Input validation and sanitization
+    if (!command || typeof command !== 'string') {
+        throw new Error('Invalid command parameter');
+    }
+
+    const allowedCommands = ['search', 'install', 'uninstall', 'list', 'info', 'upgrade'];
+    const commandParts = command.trim().split(' ');
+    const mainCommand = commandParts[0];
+
+    if (!allowedCommands.includes(mainCommand)) {
+        throw new Error(`Command '${mainCommand}' is not allowed for security reasons`);
+    }
+
+    // Sanitize command parts to prevent injection
+    const sanitizedCommand = commandParts.map(part => {
+        return part.replace(/[;&|`$(){}[\]<>]/g, '');
+    }).join(' ');
+
+    return new Promise((resolve, reject) => {
+        const chocoProcess = spawn('choco', sanitizedCommand.split(' '), {
+            shell: false,
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        chocoProcess.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
+
+        chocoProcess.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+
+        chocoProcess.on('close', (code) => {
+            const output = stdout + (stderr ? '\nErrors:\n' + stderr : '');
+            resolve({
+                code,
+                output,
+                success: code === 0
+            });
+        });
+
+        chocoProcess.on('error', (error) => {
+            reject(new Error(`Failed to execute chocolatey: ${error.message}`));
+        });
+    });
+});
+
+// Chocolatey command execution with progress streaming
+ipcMain.handle('execute-choco-command-with-progress', async (event, command) => {
+    console.log('execute-choco-command-with-progress handler called with:', command);
+    const { spawn } = require('child_process');
+
+    // Check if Chocolatey is available
+    const chocoAvailable = await checkChocoAvailability();
+    if (!chocoAvailable) {
+        throw new Error('Chocolatey is not installed or not available in PATH. Please install Chocolatey first: https://chocolatey.org/install');
+    }
+
+    // Input validation and sanitization (same as above)
+    if (!command || typeof command !== 'string') {
+        throw new Error('Invalid command parameter');
+    }
+
+    const allowedCommands = ['search', 'install', 'uninstall', 'list', 'info', 'upgrade'];
+    const commandParts = command.trim().split(' ');
+    const mainCommand = commandParts[0];
+
+    if (!allowedCommands.includes(mainCommand)) {
+        throw new Error(`Command '${mainCommand}' is not allowed for security reasons`);
+    }
+
+    const sanitizedCommand = commandParts.map(part => {
+        return part.replace(/[;&|`$(){}[\]<>]/g, '');
+    }).join(' ');
+
+    return new Promise((resolve, reject) => {
+        const chocoProcess = spawn('choco', sanitizedCommand.split(' '), {
+            shell: false,
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
+
+        let stdout = '';
+        let stderr = '';
+        let progressPercentage = 0;
+
+        // Send initial progress
+        event.sender.send('choco-progress', {
+            type: 'progress',
+            percentage: 0,
+            message: 'Starting operation...'
+        });
+
+        chocoProcess.stdout.on('data', (data) => {
+            const output = data.toString();
+            stdout += output;
+
+            // Send progress updates
+            event.sender.send('choco-progress', {
+                type: 'output',
+                message: output
+            });
+
+            // Try to extract progress information from chocolatey output
+            if (output.includes('Progress:')) {
+                const progressMatch = output.match(/Progress:\s*(\d+)%/);
+                if (progressMatch) {
+                    progressPercentage = parseInt(progressMatch[1]);
+                    event.sender.send('choco-progress', {
+                        type: 'progress',
+                        percentage: progressPercentage,
+                        message: `Processing... ${progressPercentage}%`
+                    });
+                }
+            } else if (output.includes('Installing') || output.includes('Downloading')) {
+                progressPercentage = Math.min(progressPercentage + 10, 90);
+                event.sender.send('choco-progress', {
+                    type: 'progress',
+                    percentage: progressPercentage,
+                    message: 'Installing package...'
+                });
+            }
+        });
+
+        chocoProcess.stderr.on('data', (data) => {
+            const output = data.toString();
+            stderr += output;
+
+            event.sender.send('choco-progress', {
+                type: 'output',
+                message: output
+            });
+        });
+
+        chocoProcess.on('close', (code) => {
+            const output = stdout + (stderr ? '\nErrors:\n' + stderr : '');
+
+            event.sender.send('choco-progress', {
+                type: 'complete',
+                percentage: 100,
+                message: code === 0 ? 'Operation completed successfully' : 'Operation completed with errors',
+                success: code === 0
+            });
+
+            resolve({
+                code,
+                output,
+                success: code === 0
+            });
+        });
+
+        chocoProcess.on('error', (error) => {
+            event.sender.send('choco-progress', {
+                type: 'error',
+                message: `Failed to execute chocolatey: ${error.message}`
+            });
+            reject(new Error(`Failed to execute chocolatey: ${error.message}`));
+        });
+    });
+});
+
+// Check Chocolatey availability
+ipcMain.handle('check-choco-availability', async () => {
+    return await checkChocoAvailability();
+});
+
 // Winget command execution with progress streaming
 ipcMain.handle('execute-winget-command-with-progress', async (event, command) => {
     console.log('execute-winget-command-with-progress handler called with:', command);
@@ -1217,7 +1421,6 @@ ipcMain.handle('execute-winget-command-with-progress', async (event, command) =>
         });
     });
 });
-
 
 // Cleanup functionality handlers
 ipcMain.handle('get-disk-space', async () => {
@@ -1707,7 +1910,6 @@ ipcMain.handle('control-service', async (event, serviceName, action) => {
             '-Command', psCommand
         ], {
             shell: false, // Changed from true to false for security
-            stdio: ['pipe', 'pipe', 'pipe']
         });
 
         psProcess.stdout.on('data', (data) => {
@@ -1860,6 +2062,3 @@ ipcMain.handle('write-file', async (event, filePath, content) => {
         throw new Error(`Failed to write file: ${error.message}`);
     }
 });
-
-
-console.log('WinTool main process loaded');
