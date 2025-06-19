@@ -354,14 +354,14 @@ function generateUnattendXML() {
                 <ProductKey>
                     <Key>${productKey}</Key>
                 </ProductKey>
-                <AcceptEula>${acceptEula}</AcceptEula>
+                <AcceptEula>${acceptEula ? 'true' : 'false'}</AcceptEula>
                 <FullName>${owner}</FullName>
                 <Organization>${organization}</Organization>
             </UserData>`;
     }
 
     xml += `
-            <EnableNetwork>${enableNetwork}</EnableNetwork>
+            <EnableNetwork>${enableNetwork ? 'true' : 'false'}</EnableNetwork>
             <ImageInstall>
                 <OSImage>
                     <InstallTo>
@@ -426,15 +426,15 @@ function generateUnattendXML() {
     <settings pass="oobeSystem">
         <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="${architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <OOBE>
-                <HideEULAPage>${oobeHideEula}</HideEULAPage>
+                <HideEULAPage>${oobeHideEula ? 'true' : 'false'}</HideEULAPage>
                 <HideLocalAccountScreen>true</HideLocalAccountScreen>
-                <HideOEMRegistrationScreen>${skipOem}</HideOEMRegistrationScreen>
-                <HideOnlineAccountScreens>${oobeHideOnlineAccount}</HideOnlineAccountScreens>
-                <HideWirelessSetupInOOBE>${oobeHideWireless}</HideWirelessSetupInOOBE>
+                <HideOEMRegistrationScreen>${skipOem ? 'true' : 'false'}</HideOEMRegistrationScreen>
+                <HideOnlineAccountScreens>${oobeHideOnlineAccount ? 'true' : 'false'}</HideOnlineAccountScreens>
+                <HideWirelessSetupInOOBE>${oobeHideWireless ? 'true' : 'false'}</HideWirelessSetupInOOBE>
                 <NetworkLocation>Work</NetworkLocation>
                 <ProtectYourPC>${oobeProtectPc ? '1' : '3'}</ProtectYourPC>
-                <SkipUserOOBE>${oobeSkipUser}</SkipUserOOBE>
-                <SkipMachineOOBE>${oobeSkipMachine}</SkipMachineOOBE>
+                <SkipUserOOBE>${oobeSkipUser ? 'true' : 'false'}</SkipUserOOBE>
+                <SkipMachineOOBE>${oobeSkipMachine ? 'true' : 'false'}</SkipMachineOOBE>
             </OOBE>
             <UserAccounts>
                 <AdministratorPassword>
@@ -447,7 +447,7 @@ function generateUnattendXML() {
                 <LocalAccounts>
                     <LocalAccount wcm:action="add">
                         <Password>
-                            <Value>${btoa(userPassword)}</Value>
+                            <Value>${encodePasswordForWindows(userPassword)}</Value>
                             <PlainText>false</PlainText>
                         </Password>
                         <Description>User Account</Description>
@@ -465,7 +465,7 @@ function generateUnattendXML() {
         xml += `
             <AutoLogon>
                 <Password>
-                    <Value>${btoa(userPassword)}</Value>
+                    <Value>${encodePasswordForWindows(userPassword)}</Value>
                     <PlainText>false</PlainText>
                 </Password>
                 <Enabled>true</Enabled>
