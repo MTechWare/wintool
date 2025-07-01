@@ -1,6 +1,6 @@
 {
   "name": "wintool",
-  "version": "0.0.4w",
+  "version": "0.0.5w",
   "main": "src/main.js",
   "description": "WinTool - Windows System Management Tool",
   "author": "MTech",
@@ -29,7 +29,14 @@
       "buildResources": "src/assets"
     },
     "files": [
-      "src/**/*",
+      "src/main.js",
+      "src/preload.js",
+      "src/index.html",
+      "src/assets/**/*",
+      "src/css/**/*",
+      "src/js/**/*",
+      "src/tabs/**/*",
+      "src/*.ps1",
       "!src/**/*.md",
       "!src/**/test/**/*"
     ],

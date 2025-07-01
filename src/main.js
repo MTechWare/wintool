@@ -8,9 +8,12 @@
  * - Clear structure
  */
 
-const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, dialog } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
+const fs = require('fs').promises;
+const os = require('os');
+const si = require('systeminformation');
 
 // Initialize store for settings
 let store;
@@ -70,16 +73,20 @@ function withTimeout(promise, timeoutMs = 30000, operation = 'Operation') {
     ]);
 }
 
-// Load store asynchronously
-(async () => {
-    try {
-        const Store = await import('electron-store');
-        store = new Store.default();
-        console.log('Settings store initialized');
-    } catch (error) {
-        console.error('Failed to load electron-store:', error);
+// Load store on demand
+async function getStore() {
+    if (!store) {
+        try {
+            const Store = await import('electron-store');
+            store = new Store.default();
+            console.log('Settings store initialized');
+        } catch (error) {
+            console.error('Failed to load electron-store:', error);
+            return null;
+        }
     }
-})();
+    return store;
+}
 
 /**
  * Create the main application window
@@ -131,13 +138,14 @@ function createWindow() {
             hideWindow();
 
             // Show notification on first hide to tray
-            if (store && !store.get('trayNotificationShown', false)) {
+            const settingsStore = await getStore();
+            if (settingsStore && !settingsStore.get('trayNotificationShown', false)) {
                 tray.displayBalloon({
                     iconType: 'info',
                     title: 'WinTool',
                     content: 'Application was minimized to tray. Click the tray icon to restore.'
                 });
-                store.set('trayNotificationShown', true);
+                settingsStore.set('trayNotificationShown', true);
             }
         }
     });
@@ -314,13 +322,14 @@ ipcMain.handle('minimize-window', async () => {
         hideWindow();
 
         // Show notification on first hide to tray
-        if (store && !store.get('trayNotificationShown', false)) {
+        const settingsStore = await getStore();
+        if (settingsStore && !settingsStore.get('trayNotificationShown', false)) {
             tray.displayBalloon({
                 iconType: 'info',
                 title: 'WinTool Simple',
                 content: 'Application was minimized to tray. Click the tray icon to restore.'
             });
-            store.set('trayNotificationShown', true);
+            settingsStore.set('trayNotificationShown', true);
         }
     }
     return true;
@@ -359,27 +368,30 @@ ipcMain.handle('quit-app', () => {
 });
 
 // Settings IPC handlers
-ipcMain.handle('get-setting', (event, key, defaultValue) => {
-    if (!store) return defaultValue;
-    return store.get(key, defaultValue);
+ipcMain.handle('get-setting', async (event, key, defaultValue) => {
+    const settingsStore = await getStore();
+    if (!settingsStore) return defaultValue;
+    return settingsStore.get(key, defaultValue);
 });
 
-ipcMain.handle('set-setting', (event, key, value) => {
-    if (!store) return false;
-    store.set(key, value);
+ipcMain.handle('set-setting', async (event, key, value) => {
+    const settingsStore = await getStore();
+    if (!settingsStore) return false;
+    settingsStore.set(key, value);
     return true;
 });
 
 
 
 // Clear all settings handler
-ipcMain.handle('clear-all-settings', () => {
+ipcMain.handle('clear-all-settings', async () => {
     console.log('clear-all-settings handler called');
-    if (!store) return false;
+    const settingsStore = await getStore();
+    if (!settingsStore) return false;
 
     try {
         // Clear all data from the store
-        store.clear();
+        settingsStore.clear();
         console.log('All settings cleared successfully');
         return true;
     } catch (error) {
@@ -406,7 +418,6 @@ ipcMain.handle('restart-application', () => {
 // Environment Variables Management IPC handlers
 ipcMain.handle('get-environment-variables', async () => {
     console.log('get-environment-variables handler called');
-    const { spawn } = require('child_process');
 
     return new Promise((resolve, reject) => {
         // PowerShell script to get both user and system environment variables
@@ -473,7 +484,6 @@ ipcMain.handle('get-environment-variables', async () => {
 
 ipcMain.handle('set-environment-variable', async (event, name, value, target) => {
     console.log(`set-environment-variable handler called: ${name} = ${value} (${target})`);
-    const { spawn } = require('child_process');
 
     // Rate limiting
     if (!checkRateLimit('env-var-set')) {
@@ -545,7 +555,6 @@ ipcMain.handle('set-environment-variable', async (event, name, value, target) =>
 
 ipcMain.handle('delete-environment-variable', async (event, name, target) => {
     console.log(`delete-environment-variable handler called: ${name} (${target})`);
-    const { spawn } = require('child_process');
 
     // Rate limiting
     if (!checkRateLimit('env-var-delete')) {
@@ -617,8 +626,6 @@ ipcMain.handle('delete-environment-variable', async (event, name, target) => {
 // Comprehensive system info handler using systeminformation
 ipcMain.handle('get-system-info', async () => {
     console.log('get-system-info handler called');
-    const si = require('systeminformation');
-    const os = require('os');
 
     try {
         // Get comprehensive system information
@@ -839,7 +846,6 @@ ipcMain.handle('get-system-info', async () => {
 // Network statistics handler using systeminformation
 ipcMain.handle('get-network-stats', async () => {
     console.log('get-network-stats handler called');
-    const si = require('systeminformation');
 
     try {
         // Get network statistics for all interfaces
@@ -921,7 +927,6 @@ ipcMain.handle('get-network-stats', async () => {
 // Tab folder management handlers
 ipcMain.handle('get-tab-folders', async () => {
     console.log('get-tab-folders handler called');
-    const fs = require('fs').promises;
     const tabsPath = path.join(__dirname, 'tabs');
 
     try {
@@ -944,7 +949,6 @@ ipcMain.handle('get-tab-folders', async () => {
 
 ipcMain.handle('get-tab-content', async (event, tabFolder) => {
     console.log('get-tab-content handler called for:', tabFolder);
-    const fs = require('fs').promises;
     const tabPath = path.join(__dirname, 'tabs', tabFolder);
 
     try {
@@ -1005,7 +1009,6 @@ ipcMain.handle('get-tab-content', async (event, tabFolder) => {
 // Load applications.json file handler
 ipcMain.handle('get-applications-data', async () => {
     console.log('get-applications-data handler called');
-    const fs = require('fs').promises;
     const applicationsPath = path.join(__dirname, 'tabs', 'packages', 'applications.json');
 
     try {
@@ -1022,7 +1025,6 @@ ipcMain.handle('get-applications-data', async () => {
 // Winget command execution handler
 ipcMain.handle('execute-winget-command', async (event, command) => {
     console.log('execute-winget-command handler called with:', command);
-    const { spawn } = require('child_process');
 
     // Rate limiting
     if (!checkRateLimit('winget-command')) {
@@ -1087,7 +1089,6 @@ ipcMain.handle('execute-winget-command', async (event, command) => {
 
 // Check if Chocolatey is available
 async function checkChocoAvailability() {
-    const { spawn } = require('child_process');
     return new Promise((resolve) => {
         const chocoProcess = spawn('choco', ['--version'], {
             shell: false,
@@ -1107,7 +1108,6 @@ async function checkChocoAvailability() {
 // Chocolatey command execution handler
 ipcMain.handle('execute-choco-command', async (event, command) => {
     console.log('execute-choco-command handler called with:', command);
-    const { spawn } = require('child_process');
 
     // Check if Chocolatey is available
     const chocoAvailable = await checkChocoAvailability();
@@ -1173,7 +1173,6 @@ ipcMain.handle('execute-choco-command', async (event, command) => {
 // Chocolatey command execution with progress streaming
 ipcMain.handle('execute-choco-command-with-progress', async (event, command) => {
     console.log('execute-choco-command-with-progress handler called with:', command);
-    const { spawn } = require('child_process');
 
     // Check if Chocolatey is available
     const chocoAvailable = await checkChocoAvailability();
@@ -1291,7 +1290,6 @@ ipcMain.handle('check-choco-availability', async () => {
 // Winget command execution with progress streaming
 ipcMain.handle('execute-winget-command-with-progress', async (event, command) => {
     console.log('execute-winget-command-with-progress handler called with:', command);
-    const { spawn } = require('child_process');
 
     // Input validation and sanitization (same as above)
     if (!command || typeof command !== 'string') {
@@ -1418,8 +1416,6 @@ ipcMain.handle('execute-winget-command-with-progress', async (event, command) =>
 // Cleanup functionality handlers
 ipcMain.handle('get-disk-space', async () => {
     console.log('get-disk-space handler called');
-    const { spawn } = require('child_process');
-    const os = require('os');
 
     return new Promise((resolve, reject) => {
         // Use PowerShell script file for better reliability
@@ -1468,8 +1464,6 @@ ipcMain.handle('get-disk-space', async () => {
 
             // If we get here, use Node.js os module as fallback
             console.log('Using Node.js os module for disk space');
-            const os = require('os');
-            const fs = require('fs');
 
             try {
                 const stats = fs.statSync('C:\\');
@@ -1504,7 +1498,6 @@ ipcMain.handle('get-disk-space', async () => {
 
 ipcMain.handle('scan-cleanup-category', async (event, category) => {
     console.log('scan-cleanup-category handler called for:', category);
-    const { spawn } = require('child_process');
 
     return new Promise((resolve, reject) => {
         const path = require('path');
@@ -1574,7 +1567,6 @@ ipcMain.handle('scan-cleanup-category', async (event, category) => {
 
 ipcMain.handle('execute-cleanup', async (event, category) => {
     console.log('execute-cleanup handler called for:', category);
-    const { spawn } = require('child_process');
 
     return new Promise((resolve, reject) => {
         const path = require('path');
@@ -1652,7 +1644,6 @@ ipcMain.handle('execute-cleanup', async (event, category) => {
 
 ipcMain.handle('open-disk-cleanup', async () => {
     console.log('open-disk-cleanup handler called');
-    const { spawn } = require('child_process');
 
     return new Promise((resolve, reject) => {
         const cleanmgrProcess = spawn('cleanmgr', ['/d', 'C:'], {
@@ -1669,7 +1660,6 @@ ipcMain.handle('open-disk-cleanup', async () => {
 // System utilities launcher handler
 ipcMain.handle('launch-system-utility', async (event, utilityCommand) => {
     console.log('launch-system-utility handler called with:', utilityCommand);
-    const { spawn } = require('child_process');
 
     // Input validation and whitelist for security
     if (!utilityCommand || typeof utilityCommand !== 'string') {
@@ -1758,7 +1748,6 @@ ipcMain.handle('launch-system-utility', async (event, utilityCommand) => {
 // Services Management IPC handlers
 ipcMain.handle('get-services', async () => {
     console.log('get-services handler called');
-    const { spawn } = require('child_process');
 
     return new Promise((resolve, reject) => {
         let output = '';
@@ -1850,7 +1839,6 @@ function isCommonService(serviceName) {
 
 ipcMain.handle('control-service', async (event, serviceName, action) => {
     console.log(`control-service handler called: ${action} ${serviceName}`);
-    const { spawn } = require('child_process');
 
     // Rate limiting
     if (!checkRateLimit('service-control')) {
@@ -1936,7 +1924,6 @@ ipcMain.handle('control-service', async (event, serviceName, action) => {
 
 ipcMain.handle('get-service-details', async (event, serviceName) => {
     console.log(`get-service-details handler called for: ${serviceName}`);
-    const { spawn } = require('child_process');
 
     // Input validation
     if (!serviceName || typeof serviceName !== 'string') {
@@ -2024,7 +2011,6 @@ $result | ConvertTo-Json -Depth 2
 // File save dialog and export functionality for Windows unattend
 ipcMain.handle('save-file-dialog', async (event, options) => {
     console.log('save-file-dialog handler called with options:', options);
-    const { dialog } = require('electron');
 
     try {
         const result = await dialog.showSaveDialog(mainWindow, {
@@ -2045,7 +2031,6 @@ ipcMain.handle('save-file-dialog', async (event, options) => {
 
 ipcMain.handle('write-file', async (event, filePath, content) => {
     console.log('write-file handler called for:', filePath);
-    const fs = require('fs').promises;
 
     try {
         await fs.writeFile(filePath, content, 'utf8');

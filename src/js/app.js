@@ -26,7 +26,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Update splash progress
     updateSplashProgress('Loading settings...', 20);
-    await new Promise(resolve => setTimeout(resolve, 300));
 
     // Load and apply saved settings
     await loadAndApplyStartupSettings();
@@ -731,7 +730,6 @@ async function continueNormalStartup() {
     try {
         // Update splash progress
         updateSplashProgress('Initializing tabs...', 40);
-        await new Promise(resolve => setTimeout(resolve, 300));
 
         // Initialize tab loader for folder-based tabs
         if (window.TabLoader) {
@@ -754,11 +752,9 @@ async function continueNormalStartup() {
             await tabLoader.init();
         } else {
             // If no tab loader, restore last active tab and hide splash screen after a delay
-            setTimeout(async () => {
-                await restoreLastActiveTab();
-                updateSplashProgress('Ready!', 100);
-                setTimeout(hideSplashScreen, 500);
-            }, 1000);
+            await restoreLastActiveTab();
+            updateSplashProgress('Ready!', 100);
+            setTimeout(hideSplashScreen, 500);
         }
 
         console.log('WinTool startup complete');
@@ -973,9 +969,7 @@ async function loadAndApplyStartupSettings() {
             // See restoreLastActiveTab() function which is called from startTabRestorationProcess()
 
             // Load tab order after tabs are loaded
-            setTimeout(async () => {
-                await loadTabOrder();
-            }, 1000);
+            await loadTabOrder();
 
             console.log('Startup settings loaded and applied');
         }
@@ -1628,11 +1622,3 @@ window.cancelSettings = cancelSettings;
 
 
 console.log('WinTool app.js loaded');
-
-/**
- * Set the window size via electronAPI
- * @param {string|number} percent - Percentage of screen width (e.g., "60")
- */
-function setWindowSize(percent) {
-    // Function no longer needed, but keep for compatibility if called elsewhere
-}

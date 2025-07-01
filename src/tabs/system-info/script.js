@@ -2,37 +2,24 @@
 console.log('=== System Info tab JavaScript loaded! ===');
 
 // Simple initialization
-setTimeout(function() {
-    console.log('Looking for tab container...');
-    
-    // Find the container
-    let container = null;
-    if (typeof tabContainer !== 'undefined') {
-        container = tabContainer;
-        console.log('Using provided tabContainer');
-    }
-    if (!container) {
-        container = document.querySelector('[data-tab="folder-system-info"]');
-        console.log('Found container via data-tab selector');
-    }
-    if (!container) {
-        container = document.querySelector('.folder-tab-container');
-        console.log('Found container via class selector');
-    }
-    
-    console.log('Found container:', container);
-    console.log('Container innerHTML length:', container ? container.innerHTML.length : 'N/A');
-    console.log('Container children count:', container ? container.children.length : 'N/A');
-    
-    if (container) {
-        loadSystemInfo(container);
-    } else {
-        console.error('No container found for system info tab');
-        // Try to load anyway using global selectors
-        console.log('Attempting to load system info using global selectors...');
-        loadSystemInfo(document);
-    }
-}, 200);
+console.log('Looking for tab container...');
+
+// Find the container
+let container = null;
+if (typeof tabContainer !== 'undefined') {
+    container = tabContainer;
+    console.log('Using provided tabContainer');
+}
+if (!container) {
+    container = document.querySelector('[data-tab="folder-system-info"]');
+    console.log('Found container via data-tab selector');
+}
+
+if (container) {
+    loadSystemInfo(container);
+} else {
+    console.error('No container found for system info tab, cannot load data.');
+}
 
 async function loadSystemInfo(container) {
     try {

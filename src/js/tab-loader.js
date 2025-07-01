@@ -84,19 +84,14 @@ class TabLoader {
             // Update progress
             this.updateProgress('Loading tabs...', 0);
 
-            // Load each tab
-            for (let i = 0; i < tabFolders.length; i++) {
-                const folder = tabFolders[i];
-                await this.loadTab(folder);
+            // Load all tabs in parallel
+            const loadPromises = tabFolders.map(folder => this.loadTab(folder).then(() => {
                 this.loadedTabsCount++;
-
-                // Update progress for loading phase (0-50%)
                 const loadProgress = (this.loadedTabsCount / this.totalTabs) * 50;
-                this.updateProgress(`Loading ${folder}...`, loadProgress);
+                this.updateProgress(`Loaded ${folder}`, loadProgress);
+            }));
 
-                // Small delay to show progress
-                await new Promise(resolve => setTimeout(resolve, 200));
-            }
+            await Promise.all(loadPromises);
 
             // Update progress - loading complete, now waiting for initialization
             this.updateProgress('Waiting for tabs to initialize...', 50);
@@ -171,10 +166,10 @@ class TabLoader {
 
             // Execute tab-specific JavaScript after DOM is ready
             if (js.trim()) {
-                setTimeout(() => this.executeTabJS(tabId, js), 100);
+                this.executeTabJS(tabId, js);
             } else {
                 // If no JavaScript, mark as ready immediately
-                setTimeout(() => this.markTabAsReady(tabId), 100);
+                this.markTabAsReady(tabId);
             }
             
             console.log(`Successfully loaded tab: ${config.name} (${tabId})`);
