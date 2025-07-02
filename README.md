@@ -3,7 +3,7 @@
 <div align="center">
 
 ![WinTool Portable](https://img.shields.io/badge/WinTool-Portable-orange?style=for-the-badge&logo=windows&logoColor=white)
-![Version](https://img.shields.io/badge/Version-0.0.5w-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-0.0.6w-blue?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey?style=for-the-badge&logo=windows)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
@@ -216,12 +216,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Microsoft Windows team for comprehensive system APIs
 - Electron community for excellent documentation
 - Contributors and beta testers for valuable feedback
+- Open-source community for the libraries and tools that made this project possible
 
 ---
 
 <div align="center">
 
-**Made with ❤️ for Windows System Administrators**
+**Made with ❤️ by MTechWare**
 
 [⬆ Back to Top](#wintool-portable)
 

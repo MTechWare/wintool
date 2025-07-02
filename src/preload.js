@@ -23,6 +23,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Settings
     getSetting: (key, defaultValue) => ipcRenderer.invoke('get-setting', key, defaultValue),
     setSetting: (key, value) => ipcRenderer.invoke('set-setting', key, value),
+    setWindowOpacity: (opacity) => ipcRenderer.invoke('set-window-opacity', opacity),
+    setStartupBehavior: (shouldStartOnBoot) => ipcRenderer.invoke('set-startup-behavior', shouldStartOnBoot),
 
 
 
@@ -112,6 +114,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // File operations for Windows unattend export
     saveFileDialog: (options) => ipcRenderer.invoke('save-file-dialog', options),
     writeFile: (filePath, content) => ipcRenderer.invoke('write-file', filePath, content),
+
 
     // Event listeners (for future use)
     onMessage: (callback) => ipcRenderer.on('message', callback),

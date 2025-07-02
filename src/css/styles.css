@@ -10,17 +10,8 @@
 
 /* CSS Variables for easy theming */
 :root {
-    --primary-color: #ff9800;
-    --primary-dark: #f57c00;
-    --primary-darker: #e65100;
-    --primary-rgb: 255, 152, 0; /* RGB values for rgba() usage */
-    --background-dark: #0a0a0c;
-    --background-light: #111113;
-    --background-card: #1a1a1c;
     --text-primary: #ffffff;
     --text-secondary: #b0b0b0;
-    --border-color: #333333;
-    --hover-color: #23232a;
     --success-color: #4caf50;
     --error-color: #f44336;
 }
@@ -467,7 +458,7 @@ html, body {
 /* Content Area */
 .content-area {
     flex: 1;
-    background: var(--background-dark);
+    background: var(--background-content);
     overflow: hidden;
     position: relative;
 }
@@ -1120,7 +1111,7 @@ html, body {
     padding: 0;
     display: flex;
     max-height: 70vh;
-    overflow: hidden;
+    overflow: hidden; /* This will be overridden by the child */
 }
 
 .settings-sidebar {
@@ -1168,6 +1159,7 @@ html, body {
     flex: 1;
     padding: 24px;
     overflow-y: auto;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 .settings-panel {
@@ -1230,6 +1222,10 @@ html, body {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
+}
+
+.rainbow-active {
+    /* Animation is now handled by JavaScript for smoothness */
 }
 
 .settings-checkbox {

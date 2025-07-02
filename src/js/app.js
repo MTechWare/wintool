@@ -9,6 +9,7 @@
 let currentTab = 'welcome';
 let tabs = new Map();
 let tabLoader = null;
+let rainbowAnimationId = null;
 
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', async function() {
@@ -770,13 +771,45 @@ async function continueNormalStartup() {
 async function loadCurrentSettings() {
     try {
         if (window.electronAPI) {
+            // Load theme
+            const theme = await window.electronAPI.getSetting('theme', 'classic-dark');
+            const themeSelector = document.getElementById('theme-selector');
+            if (themeSelector) {
+                themeSelector.value = theme;
+            }
+
             // Load primary color
-            const primaryColor = await window.electronAPI.getSetting('primaryColor', '#ff9800');
+            const primaryColor = await window.electronAPI.getSetting('primaryColor', '#3498db');
             const colorPicker = document.getElementById('primary-color-picker');
             const colorPreview = document.getElementById('primary-color-preview');
             if (colorPicker && colorPreview) {
                 colorPicker.value = primaryColor;
                 colorPreview.textContent = primaryColor;
+            }
+
+            // Load rainbow mode settings
+            const rainbowMode = await window.electronAPI.getSetting('rainbowMode', false);
+            const rainbowModeCheckbox = document.getElementById('rainbow-mode-checkbox');
+            if (rainbowModeCheckbox) {
+                rainbowModeCheckbox.checked = rainbowMode;
+            }
+
+            const rainbowSpeed = await window.electronAPI.getSetting('rainbowSpeed', 5);
+            const rainbowSpeedSlider = document.getElementById('rainbow-speed-slider');
+            const rainbowSpeedValue = document.getElementById('rainbow-speed-value');
+            if (rainbowSpeedSlider && rainbowSpeedValue) {
+                rainbowSpeedSlider.value = rainbowSpeed;
+                rainbowSpeedValue.textContent = `${rainbowSpeed}s`;
+            }
+            toggleRainbowSpeedContainer(rainbowMode);
+
+            // Load transparency
+            const transparency = await window.electronAPI.getSetting('transparency', 1);
+            const transparencySlider = document.getElementById('transparency-slider');
+            const transparencyValue = document.getElementById('transparency-value');
+            if (transparencySlider && transparencyValue) {
+                transparencySlider.value = transparency;
+                transparencyValue.textContent = `${Math.round(transparency * 100)}%`;
             }
 
             // Remove window size loading and applying
@@ -793,6 +826,7 @@ async function loadCurrentSettings() {
             if (autoRefreshCheckbox) {
                 autoRefreshCheckbox.checked = autoRefreshData;
             }
+
 
             // Load advanced settings
             const enableDevTools = await window.electronAPI.getSetting('enableDevTools', true);
@@ -833,6 +867,19 @@ function initSettingsNavigation() {
         });
     });
 
+    // Initialize theme selector
+    const themeSelector = document.getElementById('theme-selector');
+    if (themeSelector) {
+        themeSelector.addEventListener('change', (e) => {
+            const selectedTheme = e.target.value;
+            applyTheme(selectedTheme);
+            const customThemeCreator = document.getElementById('custom-theme-creator');
+            if (customThemeCreator) {
+                customThemeCreator.style.display = selectedTheme === 'custom' ? 'block' : 'none';
+            }
+        });
+    }
+
     // Initialize color picker
     const colorPicker = document.getElementById('primary-color-picker');
     const colorPreview = document.getElementById('primary-color-preview');
@@ -844,6 +891,56 @@ function initSettingsNavigation() {
             updatePrimaryColorVariables(color);
         });
     }
+
+    // Initialize transparency slider
+    const transparencySlider = document.getElementById('transparency-slider');
+    const transparencyValue = document.getElementById('transparency-value');
+    if (transparencySlider && transparencyValue) {
+        transparencySlider.addEventListener('input', (e) => {
+            const value = e.target.value;
+            transparencyValue.textContent = `${Math.round(value * 100)}%`;
+            if (window.electronAPI && window.electronAPI.setWindowOpacity) {
+                window.electronAPI.setWindowOpacity(parseFloat(value));
+            }
+        });
+    }
+
+    // Initialize rainbow mode controls
+    const rainbowModeCheckbox = document.getElementById('rainbow-mode-checkbox');
+    if (rainbowModeCheckbox) {
+        rainbowModeCheckbox.addEventListener('change', (e) => {
+            const enabled = e.target.checked;
+            toggleRainbowSpeedContainer(enabled);
+            if (enabled) {
+                applyRainbowEffect();
+            } else {
+                removeRainbowEffect();
+                // Re-apply the selected primary color
+                const primaryColor = document.getElementById('primary-color-picker').value;
+                updatePrimaryColorVariables(primaryColor);
+            }
+        });
+    }
+
+    const rainbowSpeedSlider = document.getElementById('rainbow-speed-slider');
+    const rainbowSpeedValue = document.getElementById('rainbow-speed-value');
+    if (rainbowSpeedSlider && rainbowSpeedValue) {
+        rainbowSpeedSlider.addEventListener('input', (e) => {
+            const speed = e.target.value;
+            rainbowSpeedValue.textContent = `${speed}s`;
+            // If rainbow mode is active, re-apply the effect with the new speed
+            if (rainbowAnimationId) {
+                applyRainbowEffect(speed);
+            }
+        });
+    }
+}
+
+function toggleRainbowSpeedContainer(enabled) {
+    const container = document.getElementById('rainbow-speed-container');
+    if (container) {
+        container.style.display = enabled ? 'block' : 'none';
+    }
 }
 
 /**
@@ -851,49 +948,53 @@ function initSettingsNavigation() {
  */
 async function saveSettings() {
     try {
-        console.log('Starting to save settings...');
-        
         if (window.electronAPI) {
+            // Save theme
+            const theme = document.getElementById('theme-selector')?.value || 'classic-dark';
+            await window.electronAPI.setSetting('theme', theme);
+
             // Save primary color
-            const primaryColor = document.getElementById('primary-color-picker')?.value || '#ff9800';
-            console.log('Saving primary color:', primaryColor);
+            const primaryColor = document.getElementById('primary-color-picker')?.value || '#3498db';
             await window.electronAPI.setSetting('primaryColor', primaryColor);
 
-            // Remove window size saving and applying
+            // Save rainbow mode settings
+            const rainbowMode = document.getElementById('rainbow-mode-checkbox')?.checked || false;
+            await window.electronAPI.setSetting('rainbowMode', rainbowMode);
+
+            // Get and validate rainbow speed
+            let rainbowSpeed = parseInt(document.getElementById('rainbow-speed-slider')?.value, 10);
+            if (isNaN(rainbowSpeed) || rainbowSpeed < 1 || rainbowSpeed > 10) {
+                rainbowSpeed = 5; // Default to 5 if invalid
+            }
+            await window.electronAPI.setSetting('rainbowSpeed', rainbowSpeed);
+
+            // Save transparency
+            const transparency = document.getElementById('transparency-slider')?.value || 1;
+            await window.electronAPI.setSetting('transparency', parseFloat(transparency));
 
             // Save behavior settings
             const rememberLastTab = document.getElementById('remember-last-tab')?.checked || false;
-            console.log('Saving remember last tab:', rememberLastTab);
             await window.electronAPI.setSetting('rememberLastTab', rememberLastTab);
 
             const autoRefreshData = document.getElementById('auto-refresh-data')?.checked || true;
-            console.log('Saving auto refresh data:', autoRefreshData);
             await window.electronAPI.setSetting('autoRefreshData', autoRefreshData);
+
 
             // Save advanced settings
             const enableDevTools = document.getElementById('enable-dev-tools')?.checked || true;
-            console.log('Saving enable dev tools:', enableDevTools);
             await window.electronAPI.setSetting('enableDevTools', enableDevTools);
 
             // Save keyboard shortcuts
-            console.log('Saving keyboard shortcuts...');
             await saveKeyboardShortcuts();
 
             // Apply settings immediately
-            console.log('Applying settings...');
             applySettings();
 
-            console.log('Settings saved successfully, closing modal...');
-            
             // Close modal after successful save
-            const modal = document.getElementById('settings-modal');
-            if (modal) {
-                modal.style.display = 'none';
-            }
+            closeModal('settings-modal');
             
             showNotification('Settings saved successfully!', 'success');
         } else {
-            console.error('electronAPI not available');
             showNotification('Error: electronAPI not available', 'error');
         }
     } catch (error) {
@@ -921,6 +1022,12 @@ function resetSettings() {
     }
 
     // Appearance
+    const themeSelector = document.getElementById('theme-selector');
+    if (themeSelector) {
+        themeSelector.value = 'classic-dark';
+    }
+    applyTheme('classic-dark');
+
     const defaultColor = '#ff9800';
     const colorPicker = document.getElementById('primary-color-picker');
     const colorPreview = document.getElementById('primary-color-preview');
@@ -929,6 +1036,18 @@ function resetSettings() {
         colorPreview.textContent = defaultColor;
         updatePrimaryColorVariables(defaultColor);
     }
+    const rainbowModeCheckbox = document.getElementById('rainbow-mode-checkbox');
+    if (rainbowModeCheckbox) {
+        rainbowModeCheckbox.checked = false;
+        toggleRainbowSpeedContainer(false);
+    }
+    const rainbowSpeedSlider = document.getElementById('rainbow-speed-slider');
+    const rainbowSpeedValue = document.getElementById('rainbow-speed-value');
+    if (rainbowSpeedSlider && rainbowSpeedValue) {
+        rainbowSpeedSlider.value = 5;
+        rainbowSpeedValue.textContent = '5s';
+    }
+    removeRainbowEffect();
     // Remove window size reset
 
     // Behavior
@@ -940,6 +1059,7 @@ function resetSettings() {
     if (autoRefreshCheckbox) {
         autoRefreshCheckbox.checked = true;
     }
+
 
     // Advanced
     const enableDevToolsCheckbox = document.getElementById('enable-dev-tools');
@@ -961,9 +1081,27 @@ function resetSettings() {
 async function loadAndApplyStartupSettings() {
     try {
         if (window.electronAPI) {
-            // Load and apply primary color with all related variables
-            const primaryColor = await window.electronAPI.getSetting('primaryColor', '#ff9800');
-            updatePrimaryColorVariables(primaryColor);
+            const theme = await window.electronAPI.getSetting('theme', 'classic-dark');
+            if (theme === 'custom') {
+                await loadCustomTheme();
+            }
+            applyTheme(theme);
+
+            const rainbowMode = await window.electronAPI.getSetting('rainbowMode', false);
+            if (rainbowMode) {
+                const rainbowSpeed = await window.electronAPI.getSetting('rainbowSpeed', 5);
+                applyRainbowEffect(rainbowSpeed);
+            } else {
+                // Load and apply primary color with all related variables
+                const primaryColor = await window.electronAPI.getSetting('primaryColor', '#3498db');
+                updatePrimaryColorVariables(primaryColor);
+            }
+
+            // Load and apply transparency
+            const transparency = await window.electronAPI.getSetting('transparency', 1);
+            if (window.electronAPI && window.electronAPI.setWindowOpacity) {
+                window.electronAPI.setWindowOpacity(transparency);
+            }
 
             // Note: Tab restoration is now handled after all tabs are loaded
             // See restoreLastActiveTab() function which is called from startTabRestorationProcess()
@@ -1033,14 +1171,77 @@ async function restoreLastActiveTab() {
  * Apply settings immediately
  */
 function applySettings() {
-    // Apply primary color and related variables
-    const primaryColor = document.getElementById('primary-color-picker')?.value || '#ff9800';
-    updatePrimaryColorVariables(primaryColor);
+    const rainbowMode = document.getElementById('rainbow-mode-checkbox')?.checked || false;
+    if (rainbowMode) {
+        const rainbowSpeed = document.getElementById('rainbow-speed-slider')?.value || 5;
+        applyRainbowEffect(rainbowSpeed);
+    } else {
+        removeRainbowEffect();
+        // Apply primary color and related variables
+        const primaryColor = document.getElementById('primary-color-picker')?.value || '#3498db';
+        updatePrimaryColorVariables(primaryColor);
+    }
+
+    // Apply transparency
+    const transparency = document.getElementById('transparency-slider')?.value || 1;
+    if (window.electronAPI && window.electronAPI.setWindowOpacity) {
+        window.electronAPI.setWindowOpacity(parseFloat(transparency));
+    }
 
     // Remove window size apply
 
     // Note: Other settings like window size, dev tools, etc. may require app restart
     // This could be enhanced to show a notification about restart requirements
+}
+
+const THEMES = {
+    'classic-dark': {
+        '--primary-color': '#ff9800',
+        '--primary-dark': '#f57c00',
+        '--primary-darker': '#e65100',
+        '--primary-rgb': '255, 152, 0',
+        '--background-dark': '#0a0a0c',
+        '--background-light': '#111113',
+        '--background-card': '#1a1a1c',
+        '--border-color': '#333333',
+        '--hover-color': '#23232a',
+        '--background-content': '#0a0a0c'
+    },
+    'modern-gray': {
+        '--primary-color': '#ff9800',
+        '--primary-dark': '#2980b9',
+        '--primary-darker': '#2c3e50',
+        '--primary-rgb': '52, 152, 219',
+        '--background-dark': '#1c1c1e',
+        '--background-light': '#2c2c2e',
+        '--background-card': '#3a3a3c',
+        '--border-color': '#444444',
+        '--hover-color': '#4f4f52',
+        '--background-content': '#1c1c1e'
+    },
+    'custom': {}
+};
+
+function applyTheme(themeName) {
+    const theme = THEMES[themeName];
+    if (!theme) return;
+
+    if (themeName === 'custom') {
+        loadCustomTheme();
+    } else {
+        for (const [key, value] of Object.entries(theme)) {
+            document.documentElement.style.setProperty(key, value);
+        }
+    }
+
+    // Update color picker
+    const colorPicker = document.getElementById('primary-color-picker');
+    const colorPreview = document.getElementById('primary-color-preview');
+    if (colorPicker && colorPreview) {
+        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-color');
+        colorPicker.value = primaryColor.trim();
+        colorPreview.textContent = primaryColor.trim();
+    }
 }
 
 /**
@@ -1076,6 +1277,49 @@ function darkenColor(hex, percent) {
     return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
         (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
         (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+}
+
+function hslToHex(h, s, l) {
+    l /= 100;
+    const a = s * Math.min(l, 1 - l) / 100;
+    const f = n => {
+        const k = (n + h / 30) % 12;
+        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+
+function applyRainbowEffect(speed = 5) {
+    if (rainbowAnimationId) {
+        cancelAnimationFrame(rainbowAnimationId);
+    }
+
+    let hue = 0;
+    const cycleDuration = speed * 1000; // speed in seconds
+    let startTime = null;
+
+    function updateRainbowColors(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const elapsedTime = timestamp - startTime;
+        
+        hue = (elapsedTime / cycleDuration * 360) % 360;
+
+        const colorHex = hslToHex(hue, 100, 50);
+        updatePrimaryColorVariables(colorHex);
+        
+        rainbowAnimationId = requestAnimationFrame(updateRainbowColors);
+    }
+
+    rainbowAnimationId = requestAnimationFrame(updateRainbowColors);
+}
+
+function removeRainbowEffect() {
+    if (rainbowAnimationId) {
+        cancelAnimationFrame(rainbowAnimationId);
+        rainbowAnimationId = null;
+    }
 }
 
 /**
@@ -1619,6 +1863,112 @@ window.exportShortcuts = exportShortcuts;
 window.importShortcuts = importShortcuts;
 window.showNotification = showNotification;
 window.cancelSettings = cancelSettings;
+window.openThemeCreator = openThemeCreator;
+window.saveCustomTheme = saveCustomTheme;
+window.importTheme = importTheme;
+window.exportTheme = exportTheme;
+window.resetCustomTheme = resetCustomTheme;
 
+function openThemeCreator() {
+    const modal = document.getElementById('theme-creator-modal');
+    if (modal) {
+        // Load current custom theme settings into the creator
+        const customTheme = THEMES['custom'];
+        document.getElementById('theme-name-input').value = customTheme.name || 'My Custom Theme';
+        document.getElementById('theme-primary-color').value = customTheme['--primary-color'] || '#3498db';
+        document.getElementById('theme-background-dark').value = customTheme['--background-dark'] || '#1c1c1e';
+        document.getElementById('theme-background-light').value = customTheme['--background-light'] || '#2c2c2e';
+        document.getElementById('theme-background-card').value = customTheme['--background-card'] || '#3a3a3c';
+        document.getElementById('theme-border-color').value = customTheme['--border-color'] || '#444444';
+        document.getElementById('theme-hover-color').value = customTheme['--hover-color'] || '#4f4f52';
+        document.getElementById('theme-background-content').value = customTheme['--background-content'] || '#1c1c1e';
+        modal.style.display = 'flex';
+    }
+}
+
+async function saveCustomTheme() {
+    const themeName = document.getElementById('theme-name-input').value;
+    const theme = {
+        name: themeName,
+        '--primary-color': document.getElementById('theme-primary-color').value,
+        '--background-dark': document.getElementById('theme-background-dark').value,
+        '--background-light': document.getElementById('theme-background-light').value,
+        '--background-card': document.getElementById('theme-background-card').value,
+        '--border-color': document.getElementById('theme-border-color').value,
+        '--hover-color': document.getElementById('theme-hover-color').value,
+        '--background-content': document.getElementById('theme-background-content').value
+    };
+
+    THEMES['custom'] = theme;
+    await window.electronAPI.setSetting('customTheme', theme);
+    applyTheme('custom');
+    closeModal('theme-creator-modal');
+    showNotification('Custom theme saved!', 'success');
+}
+
+async function loadCustomTheme() {
+    const customTheme = await window.electronAPI.getSetting('customTheme', {});
+    THEMES['custom'] = customTheme;
+    if (Object.keys(customTheme).length > 0) {
+        for (const [key, value] of Object.entries(customTheme)) {
+            if (key !== 'name') {
+                document.documentElement.style.setProperty(key, value);
+            }
+        }
+    }
+}
+
+function importTheme() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const theme = JSON.parse(e.target.result);
+                    THEMES['custom'] = theme;
+                    await window.electronAPI.setSetting('customTheme', theme);
+                    applyTheme('custom');
+                    document.getElementById('theme-selector').value = 'custom';
+                    showNotification('Theme imported successfully!', 'success');
+                } catch (error) {
+                    showNotification('Error importing theme: Invalid file format', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+    };
+    input.click();
+}
+
+function exportTheme() {
+    const currentThemeName = document.getElementById('theme-selector').value;
+    if (currentThemeName === 'custom') {
+        const dataStr = JSON.stringify(THEMES['custom'], null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = 'wintool-custom-theme.json';
+        link.click();
+    } else {
+        showNotification('Please select the custom theme to export.', 'warning');
+    }
+}
+
+function resetCustomTheme() {
+    document.getElementById('theme-name-input').value = 'My Custom Theme';
+    document.getElementById('theme-primary-color').value = '#3498db';
+    document.getElementById('theme-background-dark').value = '#1c1c1e';
+    document.getElementById('theme-background-light').value = '#2c2c2e';
+    document.getElementById('theme-background-card').value = '#3a3a3c';
+    document.getElementById('theme-border-color').value = '#444444';
+    document.getElementById('theme-hover-color').value = '#4f4f52';
+    document.getElementById('theme-background-content').value = '#1c1c1e';
+    showNotification('Custom theme colors reset. Click "Save Theme" to apply.', 'success');
+}
 
 console.log('WinTool app.js loaded');
+

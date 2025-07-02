@@ -8,7 +8,7 @@
  * - Clear structure
  */
 
-const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, dialog, session } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs').promises;
@@ -98,8 +98,8 @@ function createWindow() {
     const primaryDisplay = screen.getPrimaryDisplay();
     const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
 
-    // Always use 60% of screen for window size
-    const windowSizePercent = 0.6;
+    // Always use % of screen for window size
+    const windowSizePercent = 0.8;
     const windowWidth = Math.round(screenWidth * windowSizePercent);
     const windowHeight = Math.round(screenHeight * windowSizePercent);
 
@@ -109,7 +109,7 @@ function createWindow() {
         height: windowHeight,
         minWidth: 800,
         minHeight: 600,
-        icon: path.join(__dirname, 'assets/icon.ico'),
+        icon: path.join(__dirname, 'assets/images/icon.ico'),
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
@@ -165,18 +165,15 @@ function createWindow() {
 function createTray() {
     console.log('Creating system tray...');
 
-    // Create tray icon using the existing WinTool.png
-    const trayIconPath = path.join(__dirname, 'assets/WinTool.png');
+    // Create tray icon using the application icon
+    const trayIconPath = path.join(__dirname, 'assets/images/icon.ico');
 
     try {
         // Create native image for tray icon
         const trayIcon = nativeImage.createFromPath(trayIconPath);
 
-        // Resize icon for tray (16x16 is standard for Windows system tray)
-        const resizedIcon = trayIcon.resize({ width: 16, height: 16 });
-
         // Create tray
-        tray = new Tray(resizedIcon);
+        tray = new Tray(trayIcon);
 
         // Set tooltip
         tray.setToolTip('WinTool');
@@ -290,6 +287,18 @@ function quitApplication() {
 app.whenReady().then(async () => {
     console.log('Electron app is ready');
 
+    // Configure Content Security Policy to allow Monaco Editor to load
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+        callback({
+            responseHeaders: {
+                ...details.responseHeaders,
+                'Content-Security-Policy': [
+                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com; worker-src blob:;"
+                ]
+            }
+        });
+    });
+
     // Create window and tray directly - admin privilege checking is now handled in the renderer process
     console.log('Creating window and tray...');
     createWindow();
@@ -381,6 +390,11 @@ ipcMain.handle('set-setting', async (event, key, value) => {
     return true;
 });
 
+ipcMain.handle('set-window-opacity', (event, opacity) => {
+    if (mainWindow) {
+        mainWindow.setOpacity(opacity);
+    }
+});
 
 
 // Clear all settings handler
@@ -939,8 +953,15 @@ ipcMain.handle('get-tab-folders', async () => {
             .filter(item => item.isDirectory())
             .map(item => item.name);
 
-        console.log('Found tab folders:', folders);
-        return folders;
+        // Sort folders to ensure "about" is always last
+        const sortedFolders = folders.sort((a, b) => {
+            if (a === 'about') return 1;
+            if (b === 'about') return -1;
+            return a.localeCompare(b);
+        });
+
+        console.log('Found and sorted tab folders:', sortedFolders);
+        return sortedFolders;
     } catch (error) {
         console.log('No tabs folder found or error reading tabs:', error.message);
         return [];
@@ -2008,6 +2029,28 @@ $result | ConvertTo-Json -Depth 2
     });
 });
 
+// PowerShell execution handler for debugging
+ipcMain.handle('execute-powershell', async (event, command) => {
+    console.log('execute-powershell handler called with command:', command);
+    return new Promise((resolve, reject) => {
+        const psProcess = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', command]);
+        let output = '';
+        let errorOutput = '';
+        psProcess.stdout.on('data', (data) => {
+            output += data.toString();
+        });
+        psProcess.stderr.on('data', (data) => {
+            errorOutput += data.toString();
+        });
+        psProcess.on('close', (code) => {
+            if (code === 0) {
+                resolve(output);
+            } else {
+                reject(new Error(errorOutput));
+            }
+        });
+    });
+});
 // File save dialog and export functionality for Windows unattend
 ipcMain.handle('save-file-dialog', async (event, options) => {
     console.log('save-file-dialog handler called with options:', options);
@@ -2040,3 +2083,4 @@ ipcMain.handle('write-file', async (event, filePath, content) => {
         throw new Error(`Failed to write file: ${error.message}`);
     }
 });
+

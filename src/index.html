@@ -335,12 +335,64 @@
                     <div id="settings-appearance" class="settings-panel active">
                         <h4>Appearance Settings</h4>
                         <div class="settings-group">
+                            <label class="settings-label">Theme</label>
+                            <select id="theme-selector" class="settings-select">
+                                <option value="modern-gray">Modern Gray</option>
+                                <option value="classic-dark">Classic Dark</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                            <p class="settings-description">Choose the application's color scheme</p>
+                        </div>
+                        <div class="settings-group" id="custom-theme-creator" style="display: none;">
+                            <label class="settings-label">Custom Theme</label>
+                            <div class="custom-theme-actions">
+                                <button class="btn btn-secondary" onclick="openThemeCreator()">
+                                    <i class="fas fa-palette"></i> Create/Edit Custom Theme
+                                </button>
+                            </div>
+                        </div>
+                        <div class="settings-group">
                             <label class="settings-label">Primary Color</label>
                             <div class="color-picker-group">
-                                <input type="color" id="primary-color-picker" class="color-picker" value="#ff9800">
-                                <span class="color-preview" id="primary-color-preview">#ff9800</span>
+                                <input type="color" id="primary-color-picker" class="color-picker" value="#3498db">
+                                <span class="color-preview" id="primary-color-preview">#3498db</span>
                             </div>
                             <p class="settings-description">Choose the primary accent color for the application</p>
+                        </div>
+                        <div class="settings-group">
+                            <label class="settings-label">
+                                <input type="checkbox" id="rainbow-mode-checkbox" class="settings-checkbox">
+                                Rainbow Mode
+                            </label>
+                            <p class="settings-description">Enable a cycling rainbow effect for the primary color</p>
+                        </div>
+                        <div class="settings-group" id="rainbow-speed-container" style="display: none;">
+                            <label class="settings-label">Rainbow Speed</label>
+                            <div class="slider-group">
+                                <input type="range" id="rainbow-speed-slider" min="1" max="10" step="1" value="5" class="slider">
+                                <span class="slider-value" id="rainbow-speed-value">5s</span>
+                            </div>
+                            <p class="settings-description">Set the speed of the rainbow color cycle (in seconds)</p>
+                        </div>
+                        <div class="settings-group">
+                            <label class="settings-label">App Transparency</label>
+                            <div class="slider-group">
+                                <input type="range" id="transparency-slider" min="0.1" max="1" step="0.05" value="1" class="slider">
+                                <span class="slider-value" id="transparency-value">100%</span>
+                            </div>
+                            <p class="settings-description">Adjust the transparency of the application window</p>
+                        </div>
+                        <div class="settings-group">
+                            <label class="settings-label">Theme Actions</label>
+                            <div class="shortcut-actions">
+                                <button class="btn btn-secondary" onclick="importTheme()">
+                                    <i class="fas fa-upload"></i> Import Theme
+                                </button>
+                                <button class="btn btn-secondary" onclick="exportTheme()">
+                                    <i class="fas fa-download"></i> Export Theme
+                                </button>
+                            </div>
+                            <p class="settings-description">Import or export your theme settings</p>
                         </div>
                     </div>
 
@@ -361,7 +413,6 @@
                             </label>
                             <p class="settings-description">Automatically refresh system information every 30 seconds</p>
                         </div>
-
                     </div>
 
                     <!-- Keyboard Shortcuts Settings -->
@@ -472,7 +523,54 @@
         </div>
     </div>
 
-
+    <!-- Theme Creator Modal -->
+    <div id="theme-creator-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create Custom Theme</h3>
+                <button class="modal-close" onclick="closeModal('theme-creator-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Theme Name</label>
+                    <input type="text" id="theme-name-input" class="form-input" placeholder="My Custom Theme">
+                </div>
+                <div class="form-group">
+                    <label>Primary Color</label>
+                    <input type="color" id="theme-primary-color" class="color-picker" value="#3498db">
+                </div>
+                <div class="form-group">
+                    <label>Background Dark</label>
+                    <input type="color" id="theme-background-dark" class="color-picker" value="#1c1c1e">
+                </div>
+                <div class="form-group">
+                    <label>Background Light</label>
+                    <input type="color" id="theme-background-light" class="color-picker" value="#2c2c2e">
+                </div>
+                <div class="form-group">
+                    <label>Background Card</label>
+                    <input type="color" id="theme-background-card" class="color-picker" value="#3a3a3c">
+                </div>
+                <div class="form-group">
+                    <label>Border Color</label>
+                    <input type="color" id="theme-border-color" class="color-picker" value="#444444">
+                </div>
+                <div class="form-group">
+                    <label>Hover Color</label>
+                    <input type="color" id="theme-hover-color" class="color-picker" value="#4f4f52">
+                </div>
+                <div class="form-group">
+                    <label>Content Background</label>
+                    <input type="color" id="theme-background-content" class="color-picker" value="#1c1c1e">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('theme-creator-modal')">Cancel</button>
+                <button class="btn btn-secondary" onclick="resetCustomTheme()">Reset Colors</button>
+                <button class="btn btn-primary" onclick="saveCustomTheme()">Save Theme</button>
+            </div>
+        </div>
+    </div>
 
     <!-- JavaScript -->
     <script src="js/tab-loader.js"></script>

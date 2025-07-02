@@ -84,14 +84,13 @@ class TabLoader {
             // Update progress
             this.updateProgress('Loading tabs...', 0);
 
-            // Load all tabs in parallel
-            const loadPromises = tabFolders.map(folder => this.loadTab(folder).then(() => {
+            // Load all tabs sequentially to preserve order
+            for (const folder of tabFolders) {
+                await this.loadTab(folder);
                 this.loadedTabsCount++;
                 const loadProgress = (this.loadedTabsCount / this.totalTabs) * 50;
                 this.updateProgress(`Loaded ${folder}`, loadProgress);
-            }));
-
-            await Promise.all(loadPromises);
+            }
 
             // Update progress - loading complete, now waiting for initialization
             this.updateProgress('Waiting for tabs to initialize...', 50);

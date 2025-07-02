@@ -207,7 +207,7 @@
 
 .packages-list-header {
     display: grid;
-    grid-template-columns: 40px 1fr 2fr 120px;
+    grid-template-columns: 40px 1fr 1fr 2fr 120px;
     gap: 15px;
     padding: 15px;
     background: #3a3a3a;
@@ -226,7 +226,7 @@
 
 .package-item {
     display: grid;
-    grid-template-columns: 40px 1fr 2fr 120px;
+    grid-template-columns: 40px 1fr 1fr 2fr 120px;
     gap: 15px;
     padding: 15px;
     border-bottom: 1px solid #404040;
@@ -277,6 +277,23 @@
     font-weight: 600;
     color: #ffffff;
     font-size: 14px;
+}
+
+.package-name a {
+    color: #ffffff;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.package-name a:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
+.package-publisher {
+    color: #b0b0b0;
+    font-size: 13px;
+    font-style: italic;
 }
 
 .package-description {

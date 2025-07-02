@@ -385,10 +385,25 @@ class PackageManager {
 
         const packageName = document.createElement('div');
         packageName.className = 'package-name';
-        packageName.textContent = pkg.content || 'Unknown Package';
+
+        if (pkg.link) {
+            const link = document.createElement('a');
+            link.href = pkg.link;
+            link.textContent = pkg.content || 'Unknown Package';
+            link.target = '_blank'; // Open in new tab
+            link.title = `Visit ${pkg.content} website`;
+            packageName.appendChild(link);
+        } else {
+            packageName.textContent = pkg.content || 'Unknown Package';
+        }
 
         packageInfo.appendChild(iconContainer);
         packageInfo.appendChild(packageName);
+
+        // Create publisher section
+        const publisher = document.createElement('div');
+        publisher.className = 'package-publisher';
+        publisher.textContent = pkg.publisher || 'N/A';
 
         // Create description section
         const description = document.createElement('div');
@@ -419,6 +434,7 @@ class PackageManager {
         // Assemble the item
         item.appendChild(checkboxContainer);
         item.appendChild(packageInfo);
+        item.appendChild(publisher);
         item.appendChild(description);
         item.appendChild(actions);
 
