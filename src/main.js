@@ -287,19 +287,75 @@ function quitApplication() {
 app.whenReady().then(async () => {
     console.log('Electron app is ready');
 
-    // Configure Content Security Policy to allow Monaco Editor to load
-    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-        callback({
-            responseHeaders: {
-                ...details.responseHeaders,
-                'Content-Security-Policy': [
-                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com; worker-src blob:;"
-                ]
-            }
-        });
-    });
+    const { default: isElevated } = await import('is-elevated');
+    const elevated = await isElevated();
+    const settingsStore = await getStore();
 
-    // Create window and tray directly - admin privilege checking is now handled in the renderer process
+    if (!elevated) {
+        const elevationChoice = settingsStore ? settingsStore.get('elevationChoice', 'ask') : 'ask';
+
+        if (elevationChoice === 'yes') {
+            const { exec } = require('child_process');
+            const cmd = `"${process.execPath}"`;
+            const args = process.argv.slice(1).join(' ');
+            exec(`powershell -Command "Start-Process -FilePath '${cmd}' -ArgumentList '${args}' -Verb RunAs"`, (err) => {
+                if (err) console.error(err);
+                app.quit();
+            });
+            return;
+        } else if (elevationChoice === 'no') {
+            // Continue without elevation
+        } else { // 'ask'
+            const promptWindow = new BrowserWindow({
+                width: 500,
+                height: 300,
+                frame: false,
+                resizable: false,
+                webPreferences: {
+                    nodeIntegration: true,
+                    contextIsolation: false
+                }
+            });
+
+            promptWindow.loadFile(path.join(__dirname, 'elevation-prompt.html'));
+
+            promptWindow.webContents.on('did-finish-load', async () => {
+                if (settingsStore) {
+                    const themeSettings = {
+                        theme: settingsStore.get('theme', 'classic-dark'),
+                        primaryColor: settingsStore.get('primaryColor', '#ff9800'),
+                        customTheme: settingsStore.get('customTheme', {}),
+                        rainbowMode: settingsStore.get('rainbowMode', false)
+                    };
+                    promptWindow.webContents.send('theme-data', themeSettings);
+                }
+            });
+
+            ipcMain.on('elevation-choice', (event, { choice, remember }) => {
+                promptWindow.close();
+
+                if (remember && settingsStore) {
+                    settingsStore.set('elevationChoice', choice ? 'yes' : 'no');
+                }
+
+                if (choice) {
+                    const { exec } = require('child_process');
+                    const cmd = `"${process.execPath}"`;
+                    const args = process.argv.slice(1).join(' ');
+                    exec(`powershell -Command "Start-Process -FilePath '${cmd}' -ArgumentList '${args}' -Verb RunAs"`, (err) => {
+                        if (err) console.error(err);
+                        app.quit();
+                    });
+                } else {
+                    createWindow();
+                    createTray();
+                }
+            });
+            return;
+        }
+    }
+
+    // Create window and tray directly
     console.log('Creating window and tray...');
     createWindow();
     createTray();
@@ -335,7 +391,7 @@ ipcMain.handle('minimize-window', async () => {
         if (settingsStore && !settingsStore.get('trayNotificationShown', false)) {
             tray.displayBalloon({
                 iconType: 'info',
-                title: 'WinTool Simple',
+                title: 'WinTool',
                 content: 'Application was minimized to tray. Click the tray icon to restore.'
             });
             settingsStore.set('trayNotificationShown', true);
@@ -936,6 +992,56 @@ ipcMain.handle('get-network-stats', async () => {
             error: 'Failed to get network statistics'
         };
     }
+});
+// Processes information handler
+ipcMain.handle('get-processes', async () => {
+    console.log('get-processes handler called');
+    try {
+        const processes = await si.processes();
+        return processes;
+    } catch (error) {
+        console.error('Error getting processes:', error);
+        return { error: 'Failed to get process information' };
+    }
+});
+// Terminate process handler
+ipcMain.handle('terminate-process', async (event, pid) => {
+    console.log(`terminate-process handler called for PID: ${pid}`);
+    const numericPid = parseInt(pid, 10);
+
+    if (isNaN(numericPid) || numericPid <= 0) {
+        throw new Error('Invalid PID');
+    }
+
+    return new Promise((resolve, reject) => {
+        const command = `taskkill /F /PID ${numericPid}`;
+        const childProcess = spawn('cmd.exe', ['/c', command], {
+            stdio: 'pipe'
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        childProcess.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
+
+        childProcess.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+
+        childProcess.on('close', (code) => {
+            if (code === 0) {
+                resolve({ success: true, message: stdout });
+            } else {
+                reject(new Error(stderr || `Failed to terminate process with PID ${pid}`));
+            }
+        });
+
+        childProcess.on('error', (error) => {
+            reject(error);
+        });
+    });
 });
 
 // Tab folder management handlers
@@ -1771,21 +1877,25 @@ ipcMain.handle('get-services', async () => {
     console.log('get-services handler called');
 
     return new Promise((resolve, reject) => {
-        let output = '';
-        let errorOutput = '';
-
-        // Use PowerShell to get services with detailed information
         const psScript = `
-Get-Service | Select-Object Name, DisplayName, Status, StartType, ServiceType | ConvertTo-Json -Depth 2
-        `.trim();
+            Get-Service | ForEach-Object {
+                [PSCustomObject]@{
+                    Name = $_.Name
+                    DisplayName = $_.DisplayName
+                    Status = $_.Status.ToString()
+                    StartType = $_.StartType.ToString()
+                }
+            } | ConvertTo-Json -Compress
+        `;
 
         const psProcess = spawn('powershell.exe', [
             '-NoProfile',
             '-ExecutionPolicy', 'Bypass',
             '-Command', psScript
-        ], {
-            stdio: ['pipe', 'pipe', 'pipe']
-        });
+        ]);
+
+        let output = '';
+        let errorOutput = '';
 
         psProcess.stdout.on('data', (data) => {
             output += data.toString();
@@ -1799,23 +1909,17 @@ Get-Service | Select-Object Name, DisplayName, Status, StartType, ServiceType | 
             if (code === 0) {
                 try {
                     const services = JSON.parse(output);
-                    // Ensure we always return an array
-                    const serviceArray = Array.isArray(services) ? services : [services];
-
-                    // Add additional metadata
-                    const enhancedServices = serviceArray.map(service => ({
-                        ...service,
-                        isCommonService: isCommonService(service.Name),
-                        DependentServices: [],
-                        ServicesDependedOn: [],
-                        dependentCount: 0,
-                        dependencyCount: 0
+                    const enhancedServices = services.map(service => ({
+                        Name: service.Name,
+                        DisplayName: service.DisplayName || service.Name, // Fallback to Name if DisplayName is empty
+                        Status: service.Status,
+                        StartType: service.StartType,
+                        isCommonService: isCommonService(service.Name)
                     }));
-
                     resolve(enhancedServices);
                 } catch (parseError) {
                     console.error('Error parsing services JSON:', parseError);
-                    reject(new Error(`Failed to parse services data: ${parseError.message}`));
+                    reject(new Error(`Failed to parse services: ${parseError.message}`));
                 }
             } else {
                 console.error('PowerShell error:', errorOutput);
@@ -1911,7 +2015,7 @@ ipcMain.handle('control-service', async (event, serviceName, action) => {
             '-ExecutionPolicy', 'Bypass',
             '-Command', psCommand
         ], {
-            shell: false, // Changed from true to false for security
+            shell: false
         });
 
         psProcess.stdout.on('data', (data) => {
@@ -2081,6 +2185,160 @@ ipcMain.handle('write-file', async (event, filePath, content) => {
     } catch (error) {
         console.error('Error writing file:', error);
         throw new Error(`Failed to write file: ${error.message}`);
+    }
+});
+
+// Script execution handler for the editor tab
+ipcMain.handle('execute-script', async (event, { script, shell }) => {
+    console.log(`execute-script handler called for shell: ${shell}`);
+
+    return new Promise((resolve, reject) => {
+        let childProcess;
+        const shellExecutable = shell === 'powershell' ? 'powershell.exe' : 'cmd.exe';
+        const shellArgs = shell === 'powershell' ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script] : ['/c', script];
+
+        try {
+            childProcess = spawn(shellExecutable, shellArgs, {
+                stdio: ['pipe', 'pipe', 'pipe'],
+                shell: true
+            });
+
+            let stdout = '';
+            let stderr = '';
+
+            childProcess.stdout.on('data', (data) => {
+                stdout += data.toString();
+            });
+
+            childProcess.stderr.on('data', (data) => {
+                stderr += data.toString();
+            });
+
+            childProcess.on('close', (code) => {
+                resolve({
+                    success: code === 0,
+                    stdout,
+                    stderr
+                });
+            });
+
+            childProcess.on('error', (error) => {
+                reject(error);
+            });
+
+        } catch (error) {
+            reject(error);
+        }
+    });
+});
+
+// File open dialog handler
+ipcMain.handle('open-file-dialog', async () => {
+    console.log('open-file-dialog handler called');
+    try {
+        const result = await dialog.showOpenDialog(mainWindow, {
+            properties: ['openFile'],
+            filters: [
+                { name: 'Scripts', extensions: ['ps1', 'bat', 'cmd', 'sh', 'js', 'txt'] },
+                { name: 'All Files', extensions: ['*'] }
+            ]
+        });
+
+        if (result.canceled || result.filePaths.length === 0) {
+            return null;
+        }
+
+        const filePath = result.filePaths[0];
+        const content = await fs.readFile(filePath, 'utf8');
+        return { filePath, content };
+
+    } catch (error) {
+        console.error('Error opening file dialog:', error);
+        throw new Error(`Failed to open file: ${error.message}`);
+    }
+});
+
+// Event Viewer IPC handler
+ipcMain.handle('get-event-logs', async (event, logName) => {
+    console.log(`get-event-logs handler called for: ${logName}`);
+
+    // Input validation
+    if (!logName || typeof logName !== 'string' || !['Application', 'System', 'Security'].includes(logName)) {
+        throw new Error('Invalid log name parameter');
+    }
+
+    return new Promise((resolve, reject) => {
+        const psScript = `
+            Get-WinEvent -LogName "${logName}" -MaxEvents 100 -ErrorAction Stop | Select-Object @{Name='TimeCreated';Expression={$_.TimeCreated.ToString('o')}}, LevelDisplayName, ProviderName, Id, Message | ConvertTo-Json
+        `.trim();
+
+        const psProcess = spawn('powershell.exe', [
+            '-NoProfile',
+            '-ExecutionPolicy', 'Bypass',
+            '-Command', psScript
+        ], {
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
+
+        let output = '';
+        let errorOutput = '';
+
+        psProcess.stdout.on('data', (data) => {
+            output += data.toString();
+        });
+
+        psProcess.stderr.on('data', (data) => {
+            errorOutput += data.toString();
+        });
+
+        psProcess.on('close', (code) => {
+            if (code === 0) {
+                try {
+                    const trimmedOutput = output.trim();
+                    if (!trimmedOutput) {
+                        resolve([]);
+                        return;
+                    }
+                    const events = JSON.parse(trimmedOutput);
+                    const eventArray = Array.isArray(events) ? events : [events];
+                    resolve(eventArray);
+                } catch (parseError) {
+                    console.error('Error parsing event logs JSON:', parseError, 'Raw output:', output);
+                    reject(new Error(`Failed to parse event logs: ${parseError.message}`));
+                }
+            } else {
+                console.error('PowerShell error:', errorOutput);
+                reject(new Error(`PowerShell exited with code ${code}: ${errorOutput}`));
+            }
+        });
+
+        psProcess.on('error', (error) => {
+            console.error('PowerShell process error:', error);
+            reject(new Error(`Failed to execute PowerShell: ${error.message}`));
+        });
+    });
+});
+
+ipcMain.handle('save-file-dialog-and-write', async (event, content, options) => {
+    const { title, defaultPath, filters } = options;
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+        title,
+        defaultPath,
+        filters,
+    });
+
+    if (canceled || !filePath) {
+        return { success: false, canceled: true };
+    }
+
+    try {
+        // The content is a data URL, so we need to convert it to a Buffer.
+        const data = Buffer.from(content.split(',')[1], 'base64');
+        await fs.writeFile(filePath, data);
+        return { success: true, filePath };
+    } catch (error) {
+        console.error('Failed to save file:', error);
+        return { success: false, error: error.message };
     }
 });
 

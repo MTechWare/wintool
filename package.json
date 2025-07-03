@@ -1,6 +1,6 @@
 {
   "name": "wintool",
-  "version": "0.0.6w",
+  "version": "0.0.7w",
   "main": "src/main.js",
   "description": "WinTool - Windows System Management Tool",
   "author": "MTech",
@@ -55,6 +55,7 @@
   },
   "dependencies": {
     "electron-store": "^10.0.1",
+    "is-elevated": "^4.0.0",
     "systeminformation": "^5.27.1"
   }
 }

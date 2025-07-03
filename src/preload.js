@@ -36,6 +36,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // System information
     getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
     getNetworkStats: () => ipcRenderer.invoke('get-network-stats'),
+    getProcesses: () => ipcRenderer.invoke('get-processes'),
+    terminateProcess: (pid) => ipcRenderer.invoke('terminate-process', pid),
 
     // Tab folder management
     getTabFolders: () => ipcRenderer.invoke('get-tab-folders'),
@@ -111,14 +113,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setEnvironmentVariable: (name, value, target) => ipcRenderer.invoke('set-environment-variable', name, value, target),
     deleteEnvironmentVariable: (name, target) => ipcRenderer.invoke('delete-environment-variable', name, target),
 
-    // File operations for Windows unattend export
-    saveFileDialog: (options) => ipcRenderer.invoke('save-file-dialog', options),
-    writeFile: (filePath, content) => ipcRenderer.invoke('write-file', filePath, content),
-
+    // File operations
+    showSaveDialog: (options) => ipcRenderer.invoke('save-file-dialog', options),
+    saveFile: (content, options) => ipcRenderer.invoke('save-file-dialog-and-write', content, options),
 
     // Event listeners (for future use)
     onMessage: (callback) => ipcRenderer.on('message', callback),
-    removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel)
+    removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel),
+
+    // Editor functions
+    executeScript: (script, shell) => ipcRenderer.invoke('execute-script', { script, shell }),
+    openFileDialog: () => ipcRenderer.invoke('open-file-dialog'),
+
+    // Event Viewer functions
+    getEventLogs: (logName) => ipcRenderer.invoke('get-event-logs', logName)
 });
 
 console.log('WinTool preload script loaded');

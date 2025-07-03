@@ -1,8 +1,7 @@
 // Networking Tab JavaScript
 console.log('=== Networking tab JavaScript loaded! ===');
 
-// Simple initialization
-setTimeout(function() {
+function initNetworkingTab() {
     console.log('Looking for networking tab container...');
     
     // Find the container
@@ -30,7 +29,14 @@ setTimeout(function() {
         console.log('Attempting to load networking info using global selectors...');
         loadNetworkingInfo(document);
     }
-}, 200);
+}
+
+// Initialize when the script is loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initNetworkingTab);
+} else {
+    initNetworkingTab();
+}
 
 async function loadNetworkingInfo(container) {
     try {

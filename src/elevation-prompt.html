@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Administrator Privileges Required</title>
+    <link rel="stylesheet" href="elevation-prompt.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Administrator Privileges Required</h1>
+        <p>This application requires administrator privileges to manage system services and perform other advanced tasks. Would you like to restart with administrator rights?</p>
+        <div class="buttons">
+            <button id="yes">Yes</button>
+            <button id="no">No</button>
+        </div>
+        <div class="remember-choice">
+            <input type="checkbox" id="remember">
+            <label for="remember">Remember my choice</label>
+        </div>
+    </div>
+    <script>
+        const { ipcRenderer } = require('electron');
+        document.getElementById('yes').addEventListener('click', () => {
+            const remember = document.getElementById('remember').checked;
+            ipcRenderer.send('elevation-choice', { choice: true, remember });
+        });
+        document.getElementById('no').addEventListener('click', () => {
+            const remember = document.getElementById('remember').checked;
+            ipcRenderer.send('elevation-choice', { choice: false, remember });
+        });
+
+        ipcRenderer.on('theme-data', (event, settings) => {
+            const THEMES = {
+                'classic-dark': {
+                    '--primary-color': '#ff9800', '--primary-dark': '#f57c00', '--primary-darker': '#e65100', '--primary-rgb': '255, 152, 0',
+                    '--background-dark': '#0a0a0c', '--background-light': '#111113', '--background-card': '#1a1a1c', '--border-color': '#333333',
+                    '--hover-color': '#23232a', '--background-content': '#0a0a0c', '--text-primary': '#ffffff', '--text-secondary': '#b0b0b0'
+                },
+                'modern-gray': {
+                    '--primary-color': '#ff9800', '--primary-dark': '#2980b9', '--primary-darker': '#2c3e50', '--primary-rgb': '52, 152, 219',
+                    '--background-dark': '#1c1c1e', '--background-light': '#2c2c2e', '--background-card': '#3a3a3c', '--border-color': '#444444',
+                    '--hover-color': '#4f4f52', '--background-content': '#1c1c1e', '--text-primary': '#ffffff', '--text-secondary': '#b0b0b0'
+                },
+                'custom': {}
+            };
+
+            function darkenColor(hex, percent) {
+                const num = parseInt(hex.replace('#', ''), 16), amt = Math.round(2.55 * percent * 100);
+                const R = (num >> 16) - amt, G = (num >> 8 & 0x00FF) - amt, B = (num & 0x0000FF) - amt;
+                return '#' + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255)).toString(16).slice(1);
+            }
+
+            function updatePrimaryColorVariables(color) {
+                const hex = color.replace('#', ''), r = parseInt(hex.substr(0,2),16), g = parseInt(hex.substr(2,2),16), b = parseInt(hex.substr(4,2),16);
+                document.documentElement.style.setProperty('--primary-color', color);
+                document.documentElement.style.setProperty('--primary-dark', darkenColor(color, 0.15));
+                document.documentElement.style.setProperty('--primary-darker', darkenColor(color, 0.3));
+                document.documentElement.style.setProperty('--primary-rgb', `${r},${g},${b}`);
+            }
+
+            function applyTheme(themeName, primaryColor, customTheme) {
+                THEMES.custom = customTheme;
+                let theme = THEMES[themeName] || THEMES['classic-dark'];
+                if (themeName === 'custom') {
+                    theme = { ...THEMES['classic-dark'], ...theme };
+                }
+                for (const [key, value] of Object.entries(theme)) {
+                    document.documentElement.style.setProperty(key, value);
+                }
+                if (themeName !== 'custom') {
+                    updatePrimaryColorVariables(primaryColor);
+                }
+            }
+
+            applyTheme(settings.theme, settings.primaryColor, settings.customTheme);
+        });
+    </script>
+</body>
+</html>

@@ -1604,4 +1604,103 @@ html, body {
     }
 }
 
+.tab-item.is-hidden {
+    display: none !important;
+}
 
+/* Context Menu Styles */
+.context-menu {
+    position: fixed;
+    z-index: 10000;
+    background: var(--background-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    padding: 8px 0;
+    min-width: 200px;
+    animation: contextMenuFadeIn 0.15s ease-out;
+}
+
+@keyframes contextMenuFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.context-menu-items {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-secondary);
+    font-size: 14px;
+    position: relative;
+}
+
+.context-menu-item:hover {
+    background: var(--hover-color);
+    color: var(--text-primary);
+}
+
+.context-menu-item i {
+    width: 16px;
+    text-align: center;
+    color: var(--primary-color);
+}
+
+.context-menu-item:hover i {
+    color: var(--primary-dark);
+}
+
+/* Submenu Styles */
+.context-menu-submenu {
+    position: relative;
+}
+
+.context-menu-submenu::after {
+    content: '\f0da'; /* Font Awesome right arrow */
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+}
+
+.context-submenu {
+    display: none;
+    position: absolute;
+    left: 100%;
+    top: -8px; /* Align with parent item */
+    background: var(--background-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    padding: 8px 0;
+    min-width: 200px;
+    max-height: 250px;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.context-menu-submenu:hover > .context-submenu {
+    display: block;
+}
+
+.context-submenu .context-menu-item {
+    padding-right: 30px; /* Space for scrollbar */
+}

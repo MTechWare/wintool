@@ -1,0 +1,49 @@
+<div class="tab-header">
+    <h1><i class="fas fa-clipboard-list"></i> Event Viewer</h1>
+    <p>View, search, and filter Windows Event Logs</p>
+</div>
+
+<div class="event-viewer-container">
+    <div class="event-viewer-controls">
+        <div class="controls-left">
+            <button id="refresh-events-btn" class="btn btn-primary"><i class="fas fa-sync-alt"></i> Refresh</button>
+            <button id="export-events-btn" class="btn btn-secondary"><i class="fas fa-file-export"></i> Export</button>
+        </div>
+        <div class="controls-right">
+            <select id="log-name-select" class="filter-select">
+                <option value="Application">Application</option>
+                <option value="System">System</option>
+                <option value="Security">Security</option>
+            </select>
+            <input type="text" id="event-search" placeholder="Search events..." class="search-input">
+        </div>
+    </div>
+
+    <div id="event-loading" class="loading-container" style="display: none;">
+        <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></div>
+        <p>Loading events...</p>
+    </div>
+
+    <div class="event-table-container">
+        <div style="overflow-y: auto; flex-grow: 1;">
+            <table class="event-table">
+                <thead>
+                    <tr>
+                        <th style="width: 10%;">Level</th>
+                        <th style="width: 20%;">Date and Time</th>
+                        <th style="width: 15%;">Source</th>
+                        <th style="width: 10%;">Event ID</th>
+                        <th style="width: 45%;">Message</th>
+                    </tr>
+                </thead>
+                <tbody id="event-table-body">
+                    <!-- Events will be populated here -->
+                </tbody>
+            </table>
+        </div>
+        <div id="event-detail-pane" class="event-detail-pane" style="display: none;">
+            <h3>Event Details</h3>
+            <pre id="event-detail-content"></pre>
+        </div>
+    </div>
+</div>

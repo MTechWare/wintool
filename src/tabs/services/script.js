@@ -86,12 +86,11 @@ const defaultCommonServiceNames = [
     'PlugPlay'       // Plug and Play
 ];
 
-// Initialize the tab when it loads
-setTimeout(() => {
+function initServicesTab() {
     console.log('Services Manager tab initializing...');
     
     // Find the container for this tab
-    const container = document.querySelector('[data-tab="folder-services"]') || 
+    const container = document.querySelector('[data-tab="folder-services"]') ||
                      document.querySelector('.services-container') ||
                      document;
     
@@ -105,7 +104,14 @@ setTimeout(() => {
         console.log('Attempting to initialize services manager using global selectors...');
         initializeServicesManager(document);
     }
-}, 200);
+}
+
+// Initialize the tab when it loads
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initServicesTab);
+} else {
+    initServicesTab();
+}
 
 async function initializeServicesManager(container) {
     try {

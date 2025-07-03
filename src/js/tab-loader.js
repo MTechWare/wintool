@@ -70,21 +70,46 @@ class TabLoader {
     /**
      * Initialize the tab loader and load all folder-based tabs
      */
-    async init() {
+    async init(defaultOrder = []) {
         console.log('Initializing tab loader...');
 
         try {
-            // Get list of tab folders from main process
             const tabFolders = await window.electronAPI.getTabFolders();
             console.log('Found tab folders:', tabFolders);
 
+            // Sort tab folders based on default order to ensure consistent loading
+            tabFolders.sort((a, b) => {
+                const indexA = defaultOrder.indexOf(a);
+                const indexB = defaultOrder.indexOf(b);
+
+                if (indexA !== -1 && indexB !== -1) {
+                    return indexA - indexB; // Both in default order, sort by it
+                }
+                if (indexA !== -1) {
+                    return -1; // A is in order, B is not
+                }
+                if (indexB !== -1) {
+                    return 1; // B is in order, A is not
+                }
+                return a.localeCompare(b); // Neither in order, sort alphabetically
+            });
+
+            console.log('Sorted tab folders:', tabFolders);
+
             this.totalTabs = tabFolders.length;
             this.loadedTabsCount = 0;
+            this.initializedTabsCount = 0;
 
-            // Update progress
+            if (this.totalTabs === 0) {
+                this.updateProgress('No tabs to load', 100);
+                if (this.onCompleteCallback) {
+                    setTimeout(() => this.onCompleteCallback(), 500);
+                }
+                return;
+            }
+
             this.updateProgress('Loading tabs...', 0);
 
-            // Load all tabs sequentially to preserve order
             for (const folder of tabFolders) {
                 await this.loadTab(folder);
                 this.loadedTabsCount++;
@@ -92,22 +117,12 @@ class TabLoader {
                 this.updateProgress(`Loaded ${folder}`, loadProgress);
             }
 
-            // Update progress - loading complete, now waiting for initialization
             this.updateProgress('Waiting for tabs to initialize...', 50);
-
             console.log(`Loaded ${tabFolders.length} folder-based tabs, waiting for initialization...`);
 
-            // Wait for all tabs to initialize (if any tabs were loaded)
-            if (this.totalTabs > 0) {
-                // The completion callback will be called by markTabAsReady when all tabs are ready
-                console.log('Waiting for all tabs to complete initialization...');
-            } else {
-                // No tabs to load, complete immediately
-                this.updateProgress('No tabs to load', 100);
-                if (this.onCompleteCallback) {
-                    setTimeout(() => this.onCompleteCallback(), 500);
-                }
-            }
+            // Set a timeout for all tabs to initialize
+            this.waitForInitialization();
+
         } catch (error) {
             console.error('Error initializing tab loader:', error);
             this.updateProgress('Error loading tabs', 100);
@@ -115,6 +130,44 @@ class TabLoader {
                 setTimeout(() => this.onCompleteCallback(), 1000);
             }
         }
+    }
+
+    /**
+     * Wait for all tabs to initialize with a global timeout
+     */
+    waitForInitialization() {
+        const timeout = 10000; // 10 seconds global timeout
+        const checkInterval = 100;
+        let elapsedTime = 0;
+
+        const intervalId = setInterval(() => {
+            elapsedTime += checkInterval;
+
+            // If all tabs are ready, stop checking
+            if (this.initializedTabsCount >= this.totalTabs) {
+                clearInterval(intervalId);
+                return;
+            }
+
+            // If timeout is reached
+            if (elapsedTime >= timeout) {
+                clearInterval(intervalId);
+                console.warn(`Tab initialization timed out after ${timeout / 1000}s.`);
+
+                const uninitializedTabs = Array.from(this.tabReadyCallbacks.keys());
+                if (uninitializedTabs.length > 0) {
+                    console.error('The following tabs failed to initialize in time:', uninitializedTabs);
+                    
+                    // To prevent the app from getting stuck, mark remaining tabs as ready
+                    uninitializedTabs.forEach(tabId => {
+                        console.warn(`Force marking tab as ready: ${tabId}`);
+                        this.markTabAsReady(tabId);
+                    });
+                }
+                
+                // The onCompleteCallback will be triggered by the last markTabAsReady call
+            }
+        }, checkInterval);
     }
 
     /**
@@ -138,7 +191,7 @@ class TabLoader {
             const { config, html, css, js } = tabData;
             
             // Generate unique tab ID
-            const tabId = `folder-${folderName}`;
+            const tabId = folderName;
             
             // Create tab item in sidebar
             this.createTabItem(tabId, config);
@@ -282,7 +335,7 @@ class TabLoader {
             // Create a function scope for the tab's JavaScript
             const tabScope = {
                 tabId: tabId,
-                tabContainer: document.querySelector(`[data-tab="${tabId}"]`),
+                tabContainer: document.querySelector(`.folder-tab-container[data-tab="${tabId}"]`),
                 console: console,
                 window: window,
                 document: document,
@@ -302,24 +355,16 @@ class TabLoader {
             const func = new Function(`
                 // Make tab-specific variables available
                 const tabId = "${tabId}";
-                const tabContainer = document.querySelector('[data-tab="${tabId}"]');
+                const tabContainer = document.querySelector('.folder-tab-container[data-tab="${tabId}"]');
 
                 // Make tab loader available for ready signaling
                 const tabLoader = window.tabLoader;
 
                 ${js}
 
-                // Auto-mark as ready if the tab script doesn't do it manually
-                // This provides a fallback for tabs that don't explicitly signal readiness
-                if (tabLoader && typeof tabLoader.markTabAsReady === 'function') {
-                    setTimeout(() => {
-                        // Only mark as ready if not already marked
-                        if (tabLoader.tabReadyCallbacks.has("${tabId}")) {
-                            console.log('Auto-marking tab as ready (fallback): ${tabId}');
-                            tabLoader.markTabAsReady("${tabId}");
-                        }
-                    }, 2000); // 2 second fallback timeout
-                }
+                // IMPORTANT: Tab scripts are now REQUIRED to call
+                // tabLoader.markTabAsReady(tabId) or window.markTabAsReady(tabId)
+                // when they are fully initialized.
             `);
 
             func();
@@ -328,6 +373,8 @@ class TabLoader {
 
         } catch (error) {
             console.error(`Error executing JavaScript for tab ${tabId}:`, error);
+            // If JS execution fails, mark it as "ready" to not block other tabs
+            this.markTabAsReady(tabId);
         }
     }
 
@@ -366,7 +413,7 @@ class TabLoader {
      * Reload a specific tab
      */
     async reloadTab(folderName) {
-        const tabId = `folder-${folderName}`;
+        const tabId = folderName;
         
         // Remove existing tab
         this.removeTab(tabId);

@@ -466,9 +466,9 @@ async function exportUnattendXML() {
         // Validate XML content before export
         validateXMLContent(xmlContent);
 
-        if (window.electronAPI && window.electronAPI.saveFileDialog) {
+        if (window.electronAPI && window.electronAPI.showSaveDialog) {
             // Show save dialog
-            const result = await window.electronAPI.saveFileDialog({
+            const result = await window.electronAPI.showSaveDialog({
                 title: 'Save Windows Unattend File',
                 defaultPath: 'unattend.xml',
                 filters: [

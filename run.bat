@@ -1,5 +1,5 @@
 @echo off
-echo WinTool Simple - Starting Application
+echo WinTool - Starting Application
 echo.
 
 REM Check if node_modules exists
@@ -9,7 +9,7 @@ if not exist "node_modules" (
     echo.
 )
 
-echo Starting WinTool Simple...
+echo Starting WinTool...
 npm start
 
 pause

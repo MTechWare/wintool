@@ -237,54 +237,184 @@ function encodePasswordForWindows(password) {
 }
 
 /**
+ * Escape special XML characters
+ */
+function escapeXml(unsafe) {
+    if (typeof unsafe !== 'string') {
+        return unsafe;
+    }
+    return unsafe.replace(/[<>&'"]/g, function (c) {
+        switch (c) {
+            case '<': return '<';
+            case '>': return '>';
+            case '&': return '&';
+            case "'": return ''';
+            case '"': return '"';
+        }
+    });
+}
+
+/**
+ * Generate FirstLogonCommands for feature and privacy settings
+ */
+function generateFirstLogonCommands(settings) {
+    let commands = '';
+    let commandIndex = 1;
+
+    const addCommand = (command) => {
+        const escapedCommand = escapeXml(command);
+        commands += `
+                    <SynchronousCommand wcm:action="add">
+                        <Order>${commandIndex++}</Order>
+                        <CommandLine>${escapedCommand}</CommandLine>
+                        <Description>WinTool Customization</Description>
+                        <RequiresUserInput>false</RequiresUserInput>
+                    </SynchronousCommand>`;
+    };
+
+    // PowerShell Execution Policy
+    if (settings.featurePowershell) {
+        addCommand('powershell -Command "Set-ExecutionPolicy RemoteSigned -Force"');
+    } else {
+        addCommand('powershell -Command "Set-ExecutionPolicy Restricted -Force"');
+    }
+
+    // UAC
+    if (settings.featureUac) {
+        addCommand('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v EnableLUA /t REG_DWORD /d 1 /f');
+    } else {
+        addCommand('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v EnableLUA /t REG_DWORD /d 0 /f');
+    }
+
+    // Windows Defender (Enable is default, so we only act on disable)
+    if (!settings.featureDefender) {
+        addCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender" /v DisableAntiSpyware /t REG_DWORD /d 1 /f');
+    }
+
+    // Windows Firewall
+    if (settings.featureFirewall) {
+        addCommand('netsh advfirewall set allprofiles state on');
+    } else {
+        addCommand('netsh advfirewall set allprofiles state off');
+    }
+
+    // SmartScreen
+    if (settings.featureSmartscreen) {
+        addCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableSmartScreen /t REG_DWORD /d 1 /f');
+    } else {
+        addCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableSmartScreen /t REG_DWORD /d 0 /f');
+    }
+
+    // Telemetry (UI says "Disable", so checked=true means disable)
+    if (settings.featureTelemetry) {
+        addCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f');
+    }
+
+    // Cortana (UI says "Disable", so checked=true means disable)
+    if (settings.featureCortana) {
+        addCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v AllowCortana /t REG_DWORD /d 0 /f');
+    }
+
+    // Location Services (UI says "Disable", so checked=true means disable)
+    if (settings.featureLocation) {
+        addCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocation /t REG_DWORD /d 1 /f');
+    }
+
+    // Advertising ID (UI says "Disable", so checked=true means disable)
+    if (settings.featureAds) {
+        addCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo" /v Enabled /t REG_DWORD /d 0 /f');
+    }
+
+    // Automatic Updates
+    if (settings.featureUpdates) {
+        addCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v NoAutoUpdate /t REG_DWORD /d 0 /f');
+        addCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v AUOptions /t REG_DWORD /d 4 /f');
+    } else {
+        addCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v NoAutoUpdate /t REG_DWORD /d 1 /f');
+    }
+
+    // Hibernation
+    if (settings.featureHibernation) {
+        addCommand('powercfg /hibernate on');
+    } else {
+        addCommand('powercfg /hibernate off');
+    }
+
+    // Remote Desktop
+    if (settings.featureRemoteDesktop) {
+        addCommand('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f');
+        addCommand('netsh advfirewall firewall set rule group="remote desktop" new enable=Yes');
+    } else {
+        addCommand('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 1 /f');
+    }
+    
+    // Hide Admin account from login
+    if (settings.hideAdmin) {
+        addCommand(`reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\\SpecialAccounts\\UserList" /v "${settings.adminUsername}" /t REG_DWORD /d 0 /f`);
+    }
+
+
+    if (commands) {
+        return `<FirstLogonCommands>${commands}
+                </FirstLogonCommands>`;
+    }
+    return '';
+}
+
+/**
  * Generate Windows unattend.xml content based on form data
  */
 function generateUnattendXML() {
-    // Get form values
-    const adminUsername = document.getElementById('admin-username')?.value || 'Administrator';
+    // Get form values and escape them
+    const adminUsernameRaw = document.getElementById('admin-username')?.value || 'Administrator';
+    const adminUsername = escapeXml(adminUsernameRaw);
     const adminPassword = document.getElementById('admin-password')?.value || '';
-    const userUsername = document.getElementById('user-username')?.value || '';
+    const userUsername = escapeXml(document.getElementById('user-username')?.value || '');
     const userPassword = document.getElementById('user-password')?.value || '';
     const autoLogon = document.getElementById('auto-logon')?.checked || false;
     const hideAdmin = document.getElementById('hide-admin')?.checked || false;
 
-    const timezone = document.getElementById('timezone')?.value || 'Eastern Standard Time';
-    const language = document.getElementById('language')?.value || 'en-US';
-    const keyboard = document.getElementById('keyboard')?.value || '0409:00000409';
-    const locale = document.getElementById('locale')?.value || 'en-US';
+    const timezone = escapeXml(document.getElementById('timezone')?.value || 'Eastern Standard Time');
+    const language = escapeXml(document.getElementById('language')?.value || 'en-US');
+    const keyboard = escapeXml(document.getElementById('keyboard')?.value || '0409:00000409');
+    const locale = escapeXml(document.getElementById('locale')?.value || 'en-US');
 
-    const computerName = document.getElementById('computer-name')?.value || 'WIN-DESKTOP';
-    const workgroup = document.getElementById('workgroup')?.value || 'WORKGROUP';
-    const organization = document.getElementById('organization')?.value || '';
-    const owner = document.getElementById('owner')?.value || 'User';
-    const description = document.getElementById('description')?.value || '';
+    const computerName = escapeXml(document.getElementById('computer-name')?.value) || '*';
+    const workgroup = escapeXml(document.getElementById('workgroup')?.value || 'WORKGROUP');
+    const organization = escapeXml(document.getElementById('organization')?.value || '');
+    const owner = escapeXml(document.getElementById('owner')?.value || 'User');
+    const description = escapeXml(document.getElementById('description')?.value || '');
 
-    const windowsEdition = document.getElementById('windows-edition')?.value || 'Windows 11 Pro';
-    const architecture = document.getElementById('architecture')?.value || 'amd64';
-    const productKey = document.getElementById('product-key')?.value || '';
+    const windowsEdition = escapeXml(document.getElementById('windows-edition')?.value || 'Windows 11 Pro');
+    const architecture = escapeXml(document.getElementById('architecture')?.value || 'amd64');
+    const productKey = escapeXml(document.getElementById('product-key')?.value || '');
     const acceptEula = document.getElementById('accept-eula')?.checked || true;
     const skipOem = document.getElementById('skip-oem')?.checked || true;
 
     const enableNetwork = document.getElementById('enable-network')?.checked || true;
     const skipNetworkSetup = document.getElementById('skip-network-setup')?.checked || true;
     const joinDomain = document.getElementById('join-domain')?.checked || false;
-    const domainName = document.getElementById('domain-name')?.value || '';
-    const domainUsername = document.getElementById('domain-username')?.value || '';
+    const domainName = escapeXml(document.getElementById('domain-name')?.value || '');
+    const domainUsername = escapeXml(document.getElementById('domain-username')?.value || '');
     const domainPassword = document.getElementById('domain-password')?.value || '';
 
-    // Get feature settings
-    const featureDefender = document.getElementById('feature-defender')?.checked || false;
-    const featureFirewall = document.getElementById('feature-firewall')?.checked || false;
-    const featureUac = document.getElementById('feature-uac')?.checked || false;
-    const featureSmartscreen = document.getElementById('feature-smartscreen')?.checked || false;
-    const featureTelemetry = document.getElementById('feature-telemetry')?.checked || false;
-    const featureCortana = document.getElementById('feature-cortana')?.checked || false;
-    const featureLocation = document.getElementById('feature-location')?.checked || false;
-    const featureAds = document.getElementById('feature-ads')?.checked || false;
-    const featureUpdates = document.getElementById('feature-updates')?.checked || false;
-    const featureHibernation = document.getElementById('feature-hibernation')?.checked || false;
-    const featureRemoteDesktop = document.getElementById('feature-remote-desktop')?.checked || false;
-    const featurePowershell = document.getElementById('feature-powershell')?.checked || false;
+    // Collect all feature settings into an object
+    const featureSettings = {
+        adminUsername: adminUsernameRaw,
+        hideAdmin,
+        featureDefender: document.getElementById('feature-defender')?.checked || false,
+        featureFirewall: document.getElementById('feature-firewall')?.checked || false,
+        featureUac: document.getElementById('feature-uac')?.checked || false,
+        featureSmartscreen: document.getElementById('feature-smartscreen')?.checked || false,
+        featureTelemetry: document.getElementById('feature-telemetry')?.checked || false,
+        featureCortana: document.getElementById('feature-cortana')?.checked || false,
+        featureLocation: document.getElementById('feature-location')?.checked || false,
+        featureAds: document.getElementById('feature-ads')?.checked || false,
+        featureUpdates: document.getElementById('feature-updates')?.checked || false,
+        featureHibernation: document.getElementById('feature-hibernation')?.checked || false,
+        featureRemoteDesktop: document.getElementById('feature-remote-desktop')?.checked || false,
+        featurePowershell: document.getElementById('feature-powershell')?.checked || false,
+    };
 
     // Get OOBE settings
     const oobeSkipMachine = document.getElementById('oobe-skip-machine-oobe')?.checked || false;
@@ -293,6 +423,9 @@ function generateUnattendXML() {
     const oobeHideWireless = document.getElementById('oobe-hide-wireless')?.checked || false;
     const oobeProtectPc = document.getElementById('oobe-protect-pc')?.checked || false;
     const oobeHideOnlineAccount = document.getElementById('oobe-hide-online-account')?.checked || false;
+
+    // Generate FirstLogonCommands
+    const firstLogonCommands = generateFirstLogonCommands(featureSettings);
 
     // Generate XML content
     let xml = `<?xml version="1.0" encoding="utf-8"?>
@@ -346,21 +479,13 @@ function generateUnattendXML() {
                     <DiskID>0</DiskID>
                     <WillWipeDisk>true</WillWipeDisk>
                 </Disk>
-            </DiskConfiguration>`;
-
-    if (productKey) {
-        xml += `
+            </DiskConfiguration>
             <UserData>
-                <ProductKey>
-                    <Key>${productKey}</Key>
-                </ProductKey>
+                ${productKey ? `<ProductKey><Key>${productKey}</Key></ProductKey>` : ''}
                 <AcceptEula>${acceptEula ? 'true' : 'false'}</AcceptEula>
                 <FullName>${owner}</FullName>
                 <Organization>${organization}</Organization>
-            </UserData>`;
-    }
-
-    xml += `
+            </UserData>
             <EnableNetwork>${enableNetwork ? 'true' : 'false'}</EnableNetwork>
             <ImageInstall>
                 <OSImage>
@@ -374,24 +499,14 @@ function generateUnattendXML() {
             </ImageInstall>
         </component>
     </settings>
-
     <!-- Specialize Pass -->
     <settings pass="specialize">
         <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="${architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <ComputerName>${computerName}</ComputerName>
-            <TimeZone>${timezone}</TimeZone>`;
-
-    if (organization) {
-        xml += `
-            <RegisteredOrganization>${organization}</RegisteredOrganization>`;
-    }
-
-    if (owner) {
-        xml += `
-            <RegisteredOwner>${owner}</RegisteredOwner>`;
-    }
-
-    xml += `
+            <TimeZone>${timezone}</TimeZone>
+            ${organization ? `<RegisteredOrganization>${organization}</RegisteredOrganization>` : ''}
+            ${owner ? `<RegisteredOwner>${owner}</RegisteredOwner>` : ''}
+            ${description ? `<Description>${description}</Description>` : ''}
         </component>`;
 
     if (!joinDomain) {
@@ -405,23 +520,19 @@ function generateUnattendXML() {
         xml += `
         <component name="Microsoft-Windows-UnattendedJoin" processorArchitecture="${architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <Identification>
-                <JoinDomain>${domainName}</JoinDomain>`;
-        if (domainUsername && domainPassword) {
-            xml += `
-                <Credentials>
+                <JoinDomain>${domainName}</JoinDomain>
+                ${(domainUsername && domainPassword) ?
+                `<Credentials>
                     <Domain>${domainName}</Domain>
                     <Username>${domainUsername}</Username>
                     <Password>${encodePasswordForWindows(domainPassword)}</Password>
-                </Credentials>`;
-        }
-        xml += `
+                </Credentials>` : ''}
             </Identification>
         </component>`;
     }
 
     xml += `
     </settings>
-
     <!-- OOBE System Pass -->
     <settings pass="oobeSystem">
         <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="${architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -474,6 +585,12 @@ function generateUnattendXML() {
             </AutoLogon>`;
     }
 
+    // Add FirstLogonCommands if any were generated
+    if (firstLogonCommands) {
+        xml += `
+            ${firstLogonCommands}`;
+    }
+
     xml += `
         </component>
     </settings>
@@ -495,9 +612,9 @@ async function exportUnattendXML() {
         // Generate XML content
         const xmlContent = generateUnattendXML();
 
-        if (window.electronAPI && window.electronAPI.saveFileDialog) {
+        if (window.electronAPI && window.electronAPI.showSaveDialog) {
             // Show save dialog
-            const result = await window.electronAPI.saveFileDialog({
+            const result = await window.electronAPI.showSaveDialog({
                 title: 'Save Windows Unattend File',
                 defaultPath: 'unattend.xml',
                 filters: [
@@ -716,7 +833,7 @@ async function copyXMLToClipboard() {
             textArea.select();
             document.execCommand('copy');
             document.body.removeChild(textArea);
-            showStatusMessage('success', 'XML content copied to clipboard');
+            showStatusMessage('success', 'XML content copied. Fallback method used.');
         }
     } catch (error) {
         console.error('Error copying to clipboard:', error);
@@ -921,6 +1038,5 @@ window.copyXMLToClipboard = copyXMLToClipboard;
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initWindowsUnattend);
 } else {
-    // Small delay to ensure DOM is fully ready
-    setTimeout(initWindowsUnattend, 50);
+    initWindowsUnattend();
 }

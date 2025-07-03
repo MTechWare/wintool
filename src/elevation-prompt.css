@@ -1,0 +1,82 @@
+body {
+    background-color: var(--background-dark);
+    color: var(--text-primary);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    -webkit-app-region: drag;
+}
+
+.container {
+    text-align: center;
+    padding: 30px;
+    border-radius: 12px;
+    background: var(--background-light);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+h1 {
+    color: var(--primary-color);
+    margin-top: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-size: 16px;
+}
+
+.buttons {
+    margin-top: 25px;
+}
+
+button {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 0 10px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    -webkit-app-region: no-drag;
+    box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.2);
+}
+
+button:hover {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-darker) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.3);
+}
+
+#no {
+    background: var(--background-card);
+    border: 1px solid var(--border-color);
+}
+
+#no:hover {
+    background: var(--hover-color);
+    border-color: var(--primary-color);
+}
+
+.remember-choice {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-app-region: no-drag;
+    color: var(--text-secondary);
+}
+
+.remember-choice input {
+    margin-right: 8px;
+    accent-color: var(--primary-color);
+}

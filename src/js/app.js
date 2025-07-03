@@ -8,8 +8,24 @@
 // Global state
 let currentTab = 'welcome';
 let tabs = new Map();
+let hiddenTabs = [];
 let tabLoader = null;
 let rainbowAnimationId = null;
+
+const DEFAULT_TAB_ORDER = [
+    'system-info',
+    'processes',
+    'services',
+    'networking',
+    'cleanup',
+    'packages',
+    'system-utilities',
+    'environment-variables',
+    'event-viewer',
+    'script-editor',
+    'windows-unattend',
+    'about'
+];
 
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', async function() {
@@ -24,16 +40,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     initModals();
     initSystemTrayListeners();
     initGlobalKeyboardShortcuts();
+    initContextMenu();
 
     // Update splash progress
     updateSplashProgress('Loading settings...', 20);
 
     // Load and apply saved settings
     await loadAndApplyStartupSettings();
-
-
-
-
 
     // Continue with normal startup
     await continueNormalStartup();
@@ -292,8 +305,7 @@ async function initDraggableTabs() {
     try {
         // Always enable draggable tabs
         enableDraggableTabsFunction();
-        // Load saved tab order
-        await loadTabOrder();
+        // Note: Loading tab order is now handled in the tab loader's onComplete callback
     } catch (error) {
         console.error('Error initializing draggable tabs:', error);
     }
@@ -483,7 +495,10 @@ async function loadTabOrder() {
         if (!window.electronAPI) return;
 
         const savedOrder = await window.electronAPI.getSetting('tabOrder', []);
-        if (!savedOrder || savedOrder.length === 0) return;
+        if (!savedOrder || savedOrder.length === 0) {
+            console.log('No saved tab order found, using default order.');
+            savedOrder = DEFAULT_TAB_ORDER;
+        }
 
         const tabList = document.getElementById('tab-list');
         if (!tabList) return;
@@ -623,6 +638,133 @@ async function switchToTab(tabName) {
 // createNewTab function removed - feature disabled
 
 /**
+ * Initialize context menus for tabs and sidebar
+ */
+function initContextMenu() {
+    const tabContextMenu = document.getElementById('tab-context-menu');
+    const sidebarContextMenu = document.getElementById('sidebar-context-menu');
+    const tabList = document.getElementById('tab-list');
+    const sidebar = document.querySelector('.sidebar');
+
+    let activeTabId = null;
+
+    // Show context menu for tabs
+    tabList.addEventListener('contextmenu', (e) => {
+        const targetTab = e.target.closest('.tab-item');
+        if (targetTab) {
+            e.preventDefault();
+            activeTabId = targetTab.getAttribute('data-tab');
+
+            // Don't show menu for "Welcome" tab
+            if (activeTabId === 'welcome') return;
+
+            tabContextMenu.style.top = `${e.clientY}px`;
+            tabContextMenu.style.left = `${e.clientX}px`;
+            tabContextMenu.style.display = 'block';
+            sidebarContextMenu.style.display = 'none';
+        }
+    });
+
+    // Show context menu for sidebar (to unhide tabs)
+    sidebar.addEventListener('contextmenu', (e) => {
+        // Only show if clicking outside a tab item
+        if (!e.target.closest('.tab-item')) {
+            e.preventDefault();
+            updateHiddenTabsMenu();
+            sidebarContextMenu.style.top = `${e.clientY}px`;
+            sidebarContextMenu.style.left = `${e.clientX}px`;
+            sidebarContextMenu.style.display = 'block';
+            tabContextMenu.style.display = 'none';
+        }
+    });
+
+    // Hide menu when clicking elsewhere
+    document.addEventListener('click', () => {
+        tabContextMenu.style.display = 'none';
+        sidebarContextMenu.style.display = 'none';
+    });
+
+    // Handle "Hide Tab" action
+    document.getElementById('context-menu-hide-tab').addEventListener('click', () => {
+        if (activeTabId) {
+            hideTab(activeTabId);
+        }
+    });
+
+    // Handle "Show Tab" action using event delegation
+    document.getElementById('hidden-tabs-list').addEventListener('click', (e) => {
+        const target = e.target.closest('.context-menu-item');
+        if (target && target.dataset.tab) {
+            showTab(target.dataset.tab);
+        }
+    });
+}
+
+/**
+ * Hide a tab and save the state
+ */
+async function hideTab(tabId) {
+    if (hiddenTabs.includes(tabId)) return;
+
+    const tabItem = document.querySelector(`.tab-item[data-tab="${tabId}"]`);
+    if (tabItem) {
+        tabItem.classList.add('is-hidden');
+        hiddenTabs.push(tabId);
+        await window.electronAPI.setSetting('hiddenTabs', hiddenTabs);
+
+        // If the hidden tab was active, switch to the welcome tab
+        if (currentTab === tabId) {
+            switchToTab('welcome');
+        }
+        showNotification(`Tab "${tabItem.textContent.trim()}" hidden.`, 'info');
+    }
+}
+
+/**
+ * Show a tab and save the state
+ */
+async function showTab(tabId) {
+    const index = hiddenTabs.indexOf(tabId);
+    if (index === -1) return;
+
+    const tabItem = document.querySelector(`.tab-item[data-tab="${tabId}"]`);
+    if (tabItem) {
+        tabItem.classList.remove('is-hidden');
+        hiddenTabs.splice(index, 1);
+        await window.electronAPI.setSetting('hiddenTabs', hiddenTabs);
+        showNotification(`Tab "${tabItem.textContent.trim()}" restored.`, 'success');
+    }
+}
+
+/**
+ * Update the list of hidden tabs in the context menu
+ */
+function updateHiddenTabsMenu() {
+    const hiddenTabsList = document.getElementById('hidden-tabs-list');
+    const showTabsSubmenu = document.getElementById('context-menu-show-tabs');
+    hiddenTabsList.innerHTML = ''; // Clear existing items
+
+    if (hiddenTabs.length === 0) {
+        showTabsSubmenu.style.display = 'none';
+    } else {
+        showTabsSubmenu.style.display = 'flex';
+        hiddenTabs.forEach(tabId => {
+            const originalTab = document.querySelector(`.tab-item[data-tab="${tabId}"]`);
+            if (originalTab) {
+                const tabName = originalTab.querySelector('span').textContent;
+                const tabIcon = originalTab.querySelector('i').className;
+
+                const li = document.createElement('li');
+                li.className = 'context-menu-item';
+                li.dataset.tab = tabId;
+                li.innerHTML = `<i class="${tabIcon}"></i> ${tabName}`;
+                hiddenTabsList.appendChild(li);
+            }
+        });
+    }
+}
+
+/**
  * Close a modal
  */
 function closeModal(modalId) {
@@ -745,12 +887,16 @@ async function continueNormalStartup() {
             });
 
             tabLoader.setCompleteCallback(async () => {
+                // Load saved tab order now that all tabs are in the DOM
+                await loadTabOrder();
+                // Apply hidden tabs state
+                await applyHiddenTabs();
                 // Restore last active tab after all tabs are loaded
                 await restoreLastActiveTab();
                 hideSplashScreen();
             });
 
-            await tabLoader.init();
+            await tabLoader.init(DEFAULT_TAB_ORDER);
         } else {
             // If no tab loader, restore last active tab and hide splash screen after a delay
             await restoreLastActiveTab();
@@ -779,7 +925,7 @@ async function loadCurrentSettings() {
             }
 
             // Load primary color
-            const primaryColor = await window.electronAPI.getSetting('primaryColor', '#3498db');
+            const primaryColor = await window.electronAPI.getSetting('primaryColor', '#ff9800');
             const colorPicker = document.getElementById('primary-color-picker');
             const colorPreview = document.getElementById('primary-color-preview');
             if (colorPicker && colorPreview) {
@@ -827,6 +973,12 @@ async function loadCurrentSettings() {
                 autoRefreshCheckbox.checked = autoRefreshData;
             }
 
+            const elevationPreference = await window.electronAPI.getSetting('elevationChoice', 'ask');
+            const elevationSelector = document.getElementById('elevation-preference');
+            if (elevationSelector) {
+                elevationSelector.value = elevationPreference;
+            }
+
 
             // Load advanced settings
             const enableDevTools = await window.electronAPI.getSetting('enableDevTools', true);
@@ -870,9 +1022,9 @@ function initSettingsNavigation() {
     // Initialize theme selector
     const themeSelector = document.getElementById('theme-selector');
     if (themeSelector) {
-        themeSelector.addEventListener('change', (e) => {
+        themeSelector.addEventListener('change', async (e) => {
             const selectedTheme = e.target.value;
-            applyTheme(selectedTheme);
+            await applyTheme(selectedTheme);
             const customThemeCreator = document.getElementById('custom-theme-creator');
             if (customThemeCreator) {
                 customThemeCreator.style.display = selectedTheme === 'custom' ? 'block' : 'none';
@@ -954,7 +1106,7 @@ async function saveSettings() {
             await window.electronAPI.setSetting('theme', theme);
 
             // Save primary color
-            const primaryColor = document.getElementById('primary-color-picker')?.value || '#3498db';
+            const primaryColor = document.getElementById('primary-color-picker')?.value || '#ff9800';
             await window.electronAPI.setSetting('primaryColor', primaryColor);
 
             // Save rainbow mode settings
@@ -978,6 +1130,9 @@ async function saveSettings() {
 
             const autoRefreshData = document.getElementById('auto-refresh-data')?.checked || true;
             await window.electronAPI.setSetting('autoRefreshData', autoRefreshData);
+
+            const elevationPreference = document.getElementById('elevation-preference')?.value || 'ask';
+            await window.electronAPI.setSetting('elevationChoice', elevationPreference);
 
 
             // Save advanced settings
@@ -1016,63 +1171,30 @@ function cancelSettings() {
 /**
  * Reset settings to default values
  */
-function resetSettings() {
-    if (!confirm('Are you sure you want to reset all settings to their default values?')) {
+async function resetSettings() {
+    if (!confirm('Are you sure you want to reset all application settings? This will restart the application and cannot be undone.')) {
         return;
     }
 
-    // Appearance
-    const themeSelector = document.getElementById('theme-selector');
-    if (themeSelector) {
-        themeSelector.value = 'classic-dark';
-    }
-    applyTheme('classic-dark');
+    try {
+        if (window.electronAPI) {
+            // Call the main process to clear all settings
+            const success = await window.electronAPI.clearAllSettings();
 
-    const defaultColor = '#ff9800';
-    const colorPicker = document.getElementById('primary-color-picker');
-    const colorPreview = document.getElementById('primary-color-preview');
-    if (colorPicker && colorPreview) {
-        colorPicker.value = defaultColor;
-        colorPreview.textContent = defaultColor;
-        updatePrimaryColorVariables(defaultColor);
+            if (success) {
+                showNotification('Settings have been reset. The application will now restart.', 'success');
+                // Give the notification time to show before restarting
+                setTimeout(async () => {
+                    await window.electronAPI.restartApplication();
+                }, 3000);
+            } else {
+                showNotification('Failed to reset settings. Please try again.', 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Error resetting settings:', error);
+        showNotification(`An error occurred: ${error.message}`, 'error');
     }
-    const rainbowModeCheckbox = document.getElementById('rainbow-mode-checkbox');
-    if (rainbowModeCheckbox) {
-        rainbowModeCheckbox.checked = false;
-        toggleRainbowSpeedContainer(false);
-    }
-    const rainbowSpeedSlider = document.getElementById('rainbow-speed-slider');
-    const rainbowSpeedValue = document.getElementById('rainbow-speed-value');
-    if (rainbowSpeedSlider && rainbowSpeedValue) {
-        rainbowSpeedSlider.value = 5;
-        rainbowSpeedValue.textContent = '5s';
-    }
-    removeRainbowEffect();
-    // Remove window size reset
-
-    // Behavior
-    const rememberLastTabCheckbox = document.getElementById('remember-last-tab');
-    if (rememberLastTabCheckbox) {
-        rememberLastTabCheckbox.checked = false;
-    }
-    const autoRefreshCheckbox = document.getElementById('auto-refresh-data');
-    if (autoRefreshCheckbox) {
-        autoRefreshCheckbox.checked = true;
-    }
-
-
-    // Advanced
-    const enableDevToolsCheckbox = document.getElementById('enable-dev-tools');
-    if (enableDevToolsCheckbox) {
-        enableDevToolsCheckbox.checked = true;
-    }
-
-    // Keyboard Shortcuts
-    Object.keys(DEFAULT_SHORTCUTS).forEach(key => {
-        resetShortcut(key);
-    });
-
-    showNotification('Settings reset to defaults. Click Save Settings to apply.', 'success');
 }
 
 /**
@@ -1085,7 +1207,7 @@ async function loadAndApplyStartupSettings() {
             if (theme === 'custom') {
                 await loadCustomTheme();
             }
-            applyTheme(theme);
+            await applyTheme(theme);
 
             const rainbowMode = await window.electronAPI.getSetting('rainbowMode', false);
             if (rainbowMode) {
@@ -1093,7 +1215,7 @@ async function loadAndApplyStartupSettings() {
                 applyRainbowEffect(rainbowSpeed);
             } else {
                 // Load and apply primary color with all related variables
-                const primaryColor = await window.electronAPI.getSetting('primaryColor', '#3498db');
+                const primaryColor = await window.electronAPI.getSetting('primaryColor', '#ff9800');
                 updatePrimaryColorVariables(primaryColor);
             }
 
@@ -1109,11 +1231,29 @@ async function loadAndApplyStartupSettings() {
             // Load tab order after tabs are loaded
             await loadTabOrder();
 
+            // Load hidden tabs setting
+            hiddenTabs = await window.electronAPI.getSetting('hiddenTabs', []);
+
             console.log('Startup settings loaded and applied');
         }
     } catch (error) {
         console.error('Error loading startup settings:', error);
     }
+}
+
+/**
+* Apply the hidden status to tabs on startup
+*/
+function applyHiddenTabs() {
+   if (!hiddenTabs || hiddenTabs.length === 0) return;
+
+   hiddenTabs.forEach(tabId => {
+       const tabItem = document.querySelector(`.tab-item[data-tab="${tabId}"]`);
+       if (tabItem) {
+           tabItem.classList.add('is-hidden');
+       }
+   });
+   console.log('Hidden tabs applied:', hiddenTabs);
 }
 
 /**
@@ -1178,7 +1318,7 @@ function applySettings() {
     } else {
         removeRainbowEffect();
         // Apply primary color and related variables
-        const primaryColor = document.getElementById('primary-color-picker')?.value || '#3498db';
+        const primaryColor = document.getElementById('primary-color-picker')?.value || '#ff9800';
         updatePrimaryColorVariables(primaryColor);
     }
 
@@ -1222,12 +1362,12 @@ const THEMES = {
     'custom': {}
 };
 
-function applyTheme(themeName) {
+async function applyTheme(themeName) {
     const theme = THEMES[themeName];
     if (!theme) return;
 
     if (themeName === 'custom') {
-        loadCustomTheme();
+        await loadCustomTheme();
     } else {
         for (const [key, value] of Object.entries(theme)) {
             document.documentElement.style.setProperty(key, value);
@@ -1875,7 +2015,7 @@ function openThemeCreator() {
         // Load current custom theme settings into the creator
         const customTheme = THEMES['custom'];
         document.getElementById('theme-name-input').value = customTheme.name || 'My Custom Theme';
-        document.getElementById('theme-primary-color').value = customTheme['--primary-color'] || '#3498db';
+        document.getElementById('theme-primary-color').value = customTheme['--primary-color'] || '#ff9800';
         document.getElementById('theme-background-dark').value = customTheme['--background-dark'] || '#1c1c1e';
         document.getElementById('theme-background-light').value = customTheme['--background-light'] || '#2c2c2e';
         document.getElementById('theme-background-card').value = customTheme['--background-card'] || '#3a3a3c';
@@ -1901,9 +2041,16 @@ async function saveCustomTheme() {
 
     THEMES['custom'] = theme;
     await window.electronAPI.setSetting('customTheme', theme);
-    applyTheme('custom');
+    await applyTheme('custom');
     closeModal('theme-creator-modal');
     showNotification('Custom theme saved!', 'success');
+    // Manually update the primary color in the settings UI
+    const primaryColorPicker = document.getElementById('primary-color-picker');
+    const primaryColorPreview = document.getElementById('primary-color-preview');
+    if (primaryColorPicker && primaryColorPreview) {
+        primaryColorPicker.value = theme['--primary-color'];
+        primaryColorPreview.textContent = theme['--primary-color'];
+    }
 }
 
 async function loadCustomTheme() {
@@ -1931,7 +2078,7 @@ function importTheme() {
                     const theme = JSON.parse(e.target.result);
                     THEMES['custom'] = theme;
                     await window.electronAPI.setSetting('customTheme', theme);
-                    applyTheme('custom');
+                    await applyTheme('custom');
                     document.getElementById('theme-selector').value = 'custom';
                     showNotification('Theme imported successfully!', 'success');
                 } catch (error) {
@@ -1960,7 +2107,7 @@ function exportTheme() {
 
 function resetCustomTheme() {
     document.getElementById('theme-name-input').value = 'My Custom Theme';
-    document.getElementById('theme-primary-color').value = '#3498db';
+    document.getElementById('theme-primary-color').value = '#ff9800';
     document.getElementById('theme-background-dark').value = '#1c1c1e';
     document.getElementById('theme-background-light').value = '#2c2c2e';
     document.getElementById('theme-background-card').value = '#3a3a3c';

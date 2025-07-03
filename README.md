@@ -23,7 +23,7 @@ WinTool Portable is a comprehensive Windows system management application design
 
 ### ✨ Why WinTool Portable?
 
-- **🎯 Unified Interface**: Access 8 management tools and 24+ Windows utilities from a single, intuitive dashboard
+- **🎯 Unified Interface**: Access 12 management tools and 24+ Windows utilities from a single, intuitive dashboard
 - **📊 Real-time Monitoring**: Live system data with automatic refresh capabilities
 - **🔧 Professional Tools**: Production-ready interfaces for system administration
 - **🎨 Customizable**: Personalize appearance, behavior, and workspace layout
@@ -37,13 +37,17 @@ WinTool Portable is a comprehensive Windows system management application design
 
 | Tool | Description | Key Capabilities |
 |------|-------------|------------------|
+| **About** | Application information | View details about WinTool, including version and license |
+| **Editor** | File editor | A simple text editor for viewing and editing files |
+| **Environment Variables** | Environment variable management | Manage system and user environment variables |
+| **Event Viewer** | Windows Event Log viewer | Browse and search system event logs |
+| **Network Tools** | Network monitoring & analysis | Interface status, connectivity information |
+| **Package Manager** | Software package management | Install/uninstall packages via winget integration |
+| **Processes** | Process management | View and manage running system processes |
+| **Services Manager** | Windows service management | Start/stop/restart services, customizable quick access |
+| **System Cleanup** | Performance optimization | Clean temporary files, optimize system performance |
 | **System Information** | Real-time system monitoring | Hardware details, performance metrics, system overview |
 | **System Utilities** | Windows administrative tools | 24+ utilities across 6 categories |
-| **Services Manager** | Windows service management | Start/stop/restart services, customizable quick access |
-| **Package Manager** | Software package management | Install/uninstall packages via winget integration |
-| **Network Tools** | Network monitoring & analysis | Interface status, connectivity information |
-| **System Cleanup** | Performance optimization | Clean temporary files, optimize system performance |
-| **Environment Variables** | Environment variable management | Manage system and user environment variables |
 | **Windows Unattend** | Automated installation files | Create and export Windows unattend.xml files |
 
 ### Advanced Features
@@ -55,6 +59,7 @@ WinTool Portable is a comprehensive Windows system management application design
 - **📱 Responsive Design**: Optimized for different screen sizes
 - **🎨 Theme Support**: Professional dark theme with customizable colors
 - **💾 Settings Persistence**: Automatic saving of user preferences
+- **🎨 Multiple Themes**: Choose from built-in themes or create your own
 
 ### Keyboard Shortcuts
 
@@ -67,6 +72,17 @@ WinTool Portable is a comprehensive Windows system management application design
 | **Escape** | Close Modals | Close any open modal dialog or popup |
 
 *All keyboard shortcuts are customizable through the Settings panel*
+
+### Themes
+
+WinTool Portable comes with multiple themes and the ability to create your own.
+
+| Theme | Description |
+|---|---|
+| **Classic Dark** | A high-contrast dark theme with orange accents. |
+| **Modern Gray** | A sleek, modern dark theme with gray tones and blue accents. |
+| **Custom** | Create and save your own theme using the in-app theme editor. |
+| **Rainbow Mode** | An animated theme that cycles through the color spectrum. |
 
 ---
 
@@ -143,13 +159,17 @@ WinTool Portable uses a modular tab system where each tool is a self-contained m
 
 ```
 src/tabs/
-├── system-info/          # Real-time system monitoring
-├── system-utilities/     # Windows administrative tools
-├── services/            # Windows service management
-├── packages/            # Package management via winget
-├── networking/          # Network interface monitoring
+├── about/               # Application information
 ├── cleanup/             # System cleanup and optimization
+├── editor/              # File editor
 ├── environment-variables/ # Environment variable management
+├── event-viewer/        # Windows Event Log viewer
+├── networking/          # Network interface monitoring
+├── packages/            # Package management via winget
+├── processes/           # Process management
+├── services/            # Windows service management
+├── system-info/         # Real-time system monitoring
+├── system-utilities/    # Windows administrative tools
 └── windows-unattend/    # Windows unattend file creation
 ```
 
@@ -172,10 +192,12 @@ WinTool Portable stores settings in the user's application data directory:
 
 ### Key Settings
 - **Theme Colors**: Customize primary and accent colors
+- **Window Transparency**: Adjust the opacity of the application window
 - **Auto-refresh**: System data refresh intervals
 - **Tab Layout**: Saved tab order and preferences
 - **Keyboard Shortcuts**: Customizable hotkey configurations
-- **Behavior**: Remember last tab, auto-refresh settings
+- **Behavior**: Remember last tab, auto-refresh settings, and default elevation preference
+- **Developer**: Toggle developer tools
 
 ---
 

@@ -269,6 +269,3 @@ if (document.readyState === 'loading') {
 } else {
     initSystemUtilities();
 }
-
-// Also initialize when the tab becomes active (for dynamic loading)
-setTimeout(initSystemUtilities, 100);

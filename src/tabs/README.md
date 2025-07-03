@@ -149,6 +149,7 @@ If running in Electron, you have access to:
 Check out the included example tabs:
 - `example-tab/` - Demonstrates basic tab structure and features
 - `system-info/` - Shows how to use Electron APIs and real-time updates
+- `script-editor/` - A full-featured script editor with syntax highlighting, theme selection, and script execution
 
 ## Troubleshooting
 

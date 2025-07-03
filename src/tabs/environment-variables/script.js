@@ -928,9 +928,8 @@ function showNotification(message, type = 'info', duration = 5000) {
 }
 
 // Initialize the tab when the script loads
-if (typeof tabId !== 'undefined') {
-    // Wait a bit for DOM to be ready
-    setTimeout(initEnvironmentVariablesTab, 100);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initEnvironmentVariablesTab);
 } else {
-    console.warn('tabId not defined, environment variables tab may not initialize properly');
+    initEnvironmentVariablesTab();
 }

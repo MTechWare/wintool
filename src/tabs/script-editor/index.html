@@ -1,0 +1,34 @@
+<div class="tab-header">
+    <h1><i class="fas fa-terminal"></i> Script Editor</h1>
+    <p>Edit and run scripts</p>
+</div>
+
+<div class="editor-content">
+    <div class="editor-toolbar">
+        <button class="btn btn-primary" onclick="window.runScript()"><i class="fas fa-play"></i> Run</button>
+        <button class="btn btn-secondary" onclick="window.clearEditor()"><i class="fas fa-eraser"></i> Clear</button>
+        <button class="btn btn-secondary" onclick="window.openScriptFile()"><i class="fas fa-folder-open"></i> Open File</button>
+        <button class="btn btn-secondary" onclick="window.saveScriptFile()"><i class="fas fa-save"></i> Save File</button>
+        <button class="btn btn-secondary" onclick="window.zoomIn()"><i class="fas fa-search-plus"></i></button>
+        <button class="btn btn-secondary" onclick="window.zoomOut()"><i class="fas fa-search-minus"></i></button>
+        <select id="shell-select">
+            <option value="powershell">PowerShell</option>
+            <option value="cmd">CMD</option>
+            <option value="bash">Bash</option>
+        </select>
+        <select id="theme-select">
+            <option value="dracula">Dracula</option>
+            <option value="material">Material</option>
+            <option value="monokai">Monokai</option>
+            <option value="eclipse">Eclipse</option>
+            <option value="solarized dark">Solarized Dark</option>
+            <option value="solarized light">Solarized Light</option>
+        </select>
+    </div>
+    <textarea id="editor-container" style="width: 100%; border: 1px solid #ccc; background-color: #1e1e1e; color: #d4d4d4; font-family: 'Courier New', Courier, monospace;"></textarea>
+    <div class="resize-handle" id="resize-handle"></div>
+    <div class="output-container">
+        <h3><i class="fas fa-terminal"></i> Output</h3>
+        <pre id="output"></pre>
+    </div>
+</div>
