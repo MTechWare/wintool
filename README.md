@@ -3,7 +3,7 @@
 <div align="center">
 
 ![WinTool Portable](https://img.shields.io/badge/WinTool-Portable-orange?style=for-the-badge&logo=windows&logoColor=white)
-![Version](https://img.shields.io/badge/Version-0.0.6w-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-0.0.7w-blue?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey?style=for-the-badge&logo=windows)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
