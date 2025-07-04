@@ -3,7 +3,7 @@
 <div align="center">
 
 ![WinTool Portable](https://img.shields.io/badge/WinTool-Portable-orange?style=for-the-badge&logo=windows&logoColor=white)
-![Version](https://img.shields.io/badge/Version-0.0.7w-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-0.0.6w-blue?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey?style=for-the-badge&logo=windows)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
@@ -38,7 +38,7 @@ WinTool Portable is a comprehensive Windows system management application design
 | Tool | Description | Key Capabilities |
 |------|-------------|------------------|
 | **About** | Application information | View details about WinTool, including version and license |
-| **Editor** | File editor | A simple text editor for viewing and editing files |
+| **Scripting and Automation Engine** | Automate tasks with PowerShell | Create, manage, and schedule scripts to automate system administration |
 | **Environment Variables** | Environment variable management | Manage system and user environment variables |
 | **Event Viewer** | Windows Event Log viewer | Browse and search system event logs |
 | **Network Tools** | Network monitoring & analysis | Interface status, connectivity information |
@@ -60,6 +60,7 @@ WinTool Portable is a comprehensive Windows system management application design
 - **🎨 Theme Support**: Professional dark theme with customizable colors
 - **💾 Settings Persistence**: Automatic saving of user preferences
 - **🎨 Multiple Themes**: Choose from built-in themes or create your own
+- **🔌 Extensible Plugin System**: Add new functionality with a simple and secure plugin architecture.
 
 ### Keyboard Shortcuts
 
@@ -128,6 +129,28 @@ npm start
 
 ---
 
+## 🔌 Plugin System
+
+WinTool's functionality can be extended with a powerful, yet simple, plugin system. Plugins can add new tabs to the sidebar, access system information securely, and introduce custom logic to create new tools.
+
+### Key Features
+
+- **Simple Development**: Create plugins using standard HTML, CSS, and JavaScript.
+- **Secure by Design**: Plugins run in a sandboxed environment and use a dedicated `wintoolAPI` to interact with the system, preventing direct access to sensitive Node.js or Electron APIs.
+- **Backend Scripts**: For advanced use cases, plugins can include a `backend.js` file that runs in the main process, allowing for more complex operations and use of Node.js modules in a secure manner.
+- **Easy Installation**: Users can install plugins by simply selecting a `.zip` file from the Settings panel.
+
+### Installing Plugins
+
+1.  Open the **Settings** panel (Ctrl+S).
+2.  Navigate to the **Plugins** tab.
+3.  Click **"Install Plugin from File"** and select your plugin's `.zip` package.
+4.  The application will prompt for a restart to complete the installation.
+
+For developers interested in creating their own plugins, see the [Plugin Development Guide](src/plugins/README.md).
+
+---
+
 ## 🎯 Quick Start
 
 1. **Launch WinTool Portable**
@@ -153,33 +176,33 @@ npm start
 
 ---
 
-## 🧩 Tab System Architecture
+## 🧩 Modular Architecture
 
-WinTool Portable uses a modular tab system where each tool is a self-contained module:
+WinTool Portable is built with a modular design, separating core tools (tabs) from community-driven extensions (plugins).
 
+### Tab System
+
+Core tools are self-contained modules located in the `src/tabs/` directory:
 ```
 src/tabs/
-├── about/               # Application information
-├── cleanup/             # System cleanup and optimization
-├── editor/              # File editor
-├── environment-variables/ # Environment variable management
-├── event-viewer/        # Windows Event Log viewer
-├── networking/          # Network interface monitoring
-├── packages/            # Package management via winget
-├── processes/           # Process management
-├── services/            # Windows service management
-├── system-info/         # Real-time system monitoring
-├── system-utilities/    # Windows administrative tools
-└── windows-unattend/    # Windows unattend file creation
+├── about/
+├── cleanup/
+├── environment-variables/
+├── event-viewer/
+├── networking/
+plugins/
+├── dev-template/
 ```
+Each tab contains `index.html`, `styles.css`, `script.js`, and a `config.json` file for its metadata. This structure allows for easy maintenance and updates.
 
-Each tab contains:
-- **config.json** - Tab metadata and configuration
-- **index.html** - Tab content and interface
-- **styles.css** - Tab-specific styling
-- **script.js** - Tab functionality and logic
+### Plugin Architecture
 
-This modular approach allows for easy maintenance, updates, and potential future expansion.
+Plugins follow a similar structure and are located in the `src/plugins/` directory. This allows anyone to extend WinTool's functionality. Each plugin is a self-contained folder that includes:
+
+- **plugin.json**: (Required) The manifest file containing metadata like name, version, and icon.
+- **index.html**: The UI for the plugin's tab.
+- **script.js**: Frontend logic for the plugin.
+- **backend.js**: (Optional) A Node.js script that runs in the main process for advanced functionality.
 
 ---
 

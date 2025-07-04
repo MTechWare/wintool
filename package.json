@@ -1,6 +1,6 @@
 {
   "name": "wintool",
-  "version": "0.0.7w",
+  "version": "0.0.8w",
   "main": "src/main.js",
   "description": "WinTool - Windows System Management Tool",
   "author": "MTech",
@@ -13,7 +13,7 @@
   },
   "build": {
     "appId": "com.mtechware.wintool",
-    "productName": "WinTool Portable",
+    "productName": "WinTool",
     "icon": "src/assets/images/icon.ico",
     "win": {
       "target": [
@@ -21,7 +21,7 @@
       ],
       "icon": "src/assets/images/icon.ico",
       "signAndEditExecutable": false,
-      "artifactName": "${productName}-${version}.${ext}",
+      "artifactName": "${productName}.${ext}",
       "requestedExecutionLevel": "asInvoker"
     },
     "directories": {
@@ -40,7 +40,7 @@
       "!src/**/*.md",
       "!src/**/test/**/*"
     ],
-    "asar": false,
+    "asar": true,
     "compression": "maximum",
     "nsis": {
       "oneClick": false,
@@ -54,7 +54,9 @@
     "electron-builder": "^24.13.3"
   },
   "dependencies": {
+    "axios": "^1.10.0",
     "electron-store": "^10.0.1",
+    "extract-zip": "^2.0.1",
     "is-elevated": "^4.0.0",
     "systeminformation": "^5.27.1"
   }

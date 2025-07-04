@@ -11,6 +11,7 @@ let tabs = new Map();
 let hiddenTabs = [];
 let tabLoader = null;
 let rainbowAnimationId = null;
+window.tabEventManager = new EventTarget(); // For plugin communication
 
 const DEFAULT_TAB_ORDER = [
     'system-info',
@@ -41,6 +42,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     initSystemTrayListeners();
     initGlobalKeyboardShortcuts();
     initContextMenu();
+    initPluginInstallButton();
+    initOpenPluginsDirButton();
 
     // Update splash progress
     updateSplashProgress('Loading settings...', 20);
@@ -495,11 +498,14 @@ async function loadTabOrder() {
         if (!window.electronAPI) return;
 
         const savedOrder = await window.electronAPI.getSetting('tabOrder', []);
+        
+        // If no custom order is saved, exit. The default order from tab-loader will be used.
         if (!savedOrder || savedOrder.length === 0) {
-            console.log('No saved tab order found, using default order.');
-            savedOrder = DEFAULT_TAB_ORDER;
+            console.log('No saved drag-and-drop tab order found. Using default.');
+            return;
         }
 
+        console.log('Applying saved drag-and-drop tab order.');
         const tabList = document.getElementById('tab-list');
         if (!tabList) return;
 
@@ -583,6 +589,9 @@ function initModals() {
  * Switch to a specific tab
  */
 async function switchToTab(tabName) {
+    const previousTabId = currentTab;
+    if (previousTabId === tabName) return; // Don't do anything if clicking the same tab
+
     console.log(`Attempting to switch to tab: ${tabName}`);
 
     // Validate that the tab exists
@@ -629,6 +638,14 @@ async function switchToTab(tabName) {
     } catch (error) {
         console.error('Error saving last active tab:', error);
     }
+
+    // Dispatch the event for plugins
+    window.tabEventManager.dispatchEvent(new CustomEvent('tab-switched', {
+        detail: {
+            newTabId: currentTab,
+            previousTabId: previousTabId
+        }
+    }));
 
     console.log(`Successfully switched to tab: ${tabName}`);
 }
@@ -891,6 +908,8 @@ async function continueNormalStartup() {
                 await loadTabOrder();
                 // Apply hidden tabs state
                 await applyHiddenTabs();
+                // Render plugin management cards
+                renderPluginCards();
                 // Restore last active tab after all tabs are loaded
                 await restoreLastActiveTab();
                 hideSplashScreen();
@@ -985,6 +1004,12 @@ async function loadCurrentSettings() {
             const enableDevToolsCheckbox = document.getElementById('enable-dev-tools');
             if (enableDevToolsCheckbox) {
                 enableDevToolsCheckbox.checked = enableDevTools;
+            }
+
+            const clearPluginCache = await window.electronAPI.getSetting('clearPluginCache', false);
+            const clearPluginCacheCheckbox = document.getElementById('clear-plugin-cache');
+            if (clearPluginCacheCheckbox) {
+                clearPluginCacheCheckbox.checked = clearPluginCache;
             }
 
             // Load keyboard shortcuts
@@ -1138,6 +1163,9 @@ async function saveSettings() {
             // Save advanced settings
             const enableDevTools = document.getElementById('enable-dev-tools')?.checked || true;
             await window.electronAPI.setSetting('enableDevTools', enableDevTools);
+
+            const clearPluginCache = document.getElementById('clear-plugin-cache')?.checked || false;
+            await window.electronAPI.setSetting('clearPluginCache', clearPluginCache);
 
             // Save keyboard shortcuts
             await saveKeyboardShortcuts();
@@ -1472,6 +1500,13 @@ function initSystemTrayListeners() {
             if (message === 'show-settings') {
                 showSettings();
             }
+        });
+    }
+
+    // Listen for notification requests from the main process (forwarded from plugins)
+    if (window.electronAPI && window.electronAPI.onDisplayNotification) {
+        window.electronAPI.onDisplayNotification(({ title, body, type }) => {
+            showNotification(body, type); // The title is often unused in our simple notification UI
         });
     }
 }
@@ -2116,6 +2151,168 @@ function resetCustomTheme() {
     document.getElementById('theme-background-content').value = '#1c1c1e';
     showNotification('Custom theme colors reset. Click "Save Theme" to apply.', 'success');
 }
+
+/**
+ * Initialize the install plugin button
+ */
+function initPluginInstallButton() {
+    const installBtn = document.getElementById('install-plugin-btn');
+    if (installBtn) {
+        installBtn.addEventListener('click', async () => {
+            if (window.electronAPI) {
+                const result = await window.electronAPI.installPlugin();
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    // Refresh the plugin list
+                    await renderPluginCards();
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            }
+        });
+    }
+}
+
+/**
+ * Initialize the open plugins directory button
+ */
+function initOpenPluginsDirButton() {
+    const openDirBtn = document.getElementById('open-plugins-dir-btn');
+    if (openDirBtn) {
+        openDirBtn.addEventListener('click', () => {
+            if (window.electronAPI) {
+                window.electronAPI.openPluginsDirectory();
+            }
+        });
+    }
+}
+
+/**
+ * Renders cards for each plugin in the "Plugins" tab.
+ */
+async function renderPluginCards() {
+    const activeContainer = document.getElementById('active-plugins-grid');
+    const disabledContainer = document.getElementById('disabled-plugins-grid');
+
+    if (!activeContainer || !disabledContainer) return;
+
+    activeContainer.innerHTML = ''; // Clear existing cards
+    disabledContainer.innerHTML = ''; // Clear existing cards
+
+    if (!window.electronAPI) return;
+
+    try {
+        const plugins = await window.electronAPI.getAllPlugins();
+        const activePlugins = plugins.filter(p => p.enabled);
+        const disabledPlugins = plugins.filter(p => !p.enabled);
+
+        if (activePlugins.length === 0) {
+            activeContainer.innerHTML = '<p class="empty-plugin-message">No active plugins installed.</p>';
+        } else {
+            activePlugins.forEach(plugin => {
+                const card = document.createElement('div');
+                card.className = 'feature-card plugin-card';
+                card.innerHTML = `
+                    <div class="plugin-card-header">
+                        <i class="${plugin.icon}"></i>
+                        <h4>${plugin.name}</h4>
+                    </div>
+                    <p>${plugin.description}</p>
+                    <div class="plugin-card-actions">
+                        <button class="plugin-action-btn" data-plugin-id="${plugin.id}" data-action="disable" title="Disable Plugin">
+                            <i class="fas fa-toggle-off"></i>
+                        </button>
+                        <button class="plugin-action-btn delete" data-plugin-id="${plugin.id}" data-action="delete" title="Delete Plugin">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                    <div class="plugin-card-footer">
+                        <span class="plugin-version">v${plugin.version}</span>
+                        <span class="plugin-author">by ${plugin.author}</span>
+                    </div>
+                `;
+                activeContainer.appendChild(card);
+            });
+        }
+
+        if (disabledPlugins.length === 0) {
+            disabledContainer.innerHTML = '<p class="empty-plugin-message">No disabled plugins.</p>';
+        } else {
+            disabledPlugins.forEach(plugin => {
+                const card = document.createElement('div');
+                card.className = 'feature-card plugin-card disabled';
+                card.innerHTML = `
+                     <div class="plugin-card-header">
+                        <i class="${plugin.icon}"></i>
+                        <h4>${plugin.name} (Disabled)</h4>
+                    </div>
+                    <p>${plugin.description}</p>
+                    <div class="plugin-card-actions">
+                        <button class="plugin-action-btn" data-plugin-id="${plugin.id}" data-action="enable" title="Enable Plugin">
+                            <i class="fas fa-toggle-on"></i>
+                        </button>
+                        <button class="plugin-action-btn delete" data-plugin-id="${plugin.id}" data-action="delete" title="Delete Plugin">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                    <div class="plugin-card-footer">
+                        <span class="plugin-version">v${plugin.version}</span>
+                        <span class="plugin-author">by ${plugin.author}</span>
+                    </div>
+                `;
+                disabledContainer.appendChild(card);
+            });
+        }
+
+        // Add event listeners for the new buttons
+        document.querySelectorAll('.plugin-action-btn').forEach(button => {
+            button.addEventListener('click', handlePluginAction);
+        });
+
+    } catch (error) {
+        console.error('Error rendering plugin cards:', error);
+        activeContainer.innerHTML = '<p>Error loading plugin information.</p>';
+    }
+}
+
+async function handlePluginAction(event) {
+    const button = event.currentTarget;
+    const pluginId = button.dataset.pluginId;
+    const action = button.dataset.action;
+
+    if (!pluginId || !action) return;
+
+    // Prevent double clicks
+    button.disabled = true;
+    const originalIcon = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    try {
+        let result;
+        if (action === 'delete') {
+            result = await window.electronAPI.deletePlugin(pluginId);
+        } else {
+            result = await window.electronAPI.togglePluginState(pluginId);
+        }
+
+        if (result.success) {
+            // Let the main process handle notifications/restarts.
+            // We just need to refresh the UI if the app doesn't restart.
+            if (!result.restarted) {
+                await renderPluginCards();
+            }
+        } else {
+            showNotification(`Error: ${result.message}`, 'error');
+            button.disabled = false; // Re-enable button on failure
+            button.innerHTML = originalIcon;
+        }
+    } catch (error) {
+        showNotification(`An unexpected error occurred: ${error.message}`, 'error');
+        button.disabled = false; // Re-enable button on error
+        button.innerHTML = originalIcon;
+    }
+}
+
 
 console.log('WinTool app.js loaded');
 

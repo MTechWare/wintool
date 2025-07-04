@@ -612,35 +612,17 @@ async function exportUnattendXML() {
         // Generate XML content
         const xmlContent = generateUnattendXML();
 
-        if (window.electronAPI && window.electronAPI.showSaveDialog) {
-            // Show save dialog
-            const result = await window.electronAPI.showSaveDialog({
-                title: 'Save Windows Unattend File',
-                defaultPath: 'unattend.xml',
-                filters: [
-                    { name: 'XML Files', extensions: ['xml'] },
-                    { name: 'All Files', extensions: ['*'] }
-                ]
-            });
-
-            if (!result.canceled && result.filePath) {
-                // Write file
-                await window.electronAPI.writeFile(result.filePath, xmlContent);
-                showStatusMessage('success', `Unattend.xml file saved successfully to: ${result.filePath}`);
-            }
-        } else {
-            // Fallback for browser testing - download file
-            const blob = new Blob([xmlContent], { type: 'application/xml' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'unattend.xml';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showStatusMessage('success', 'Unattend.xml file downloaded successfully');
-        }
+        // Fallback for browser testing - download file
+        const blob = new Blob([xmlContent], { type: 'application/xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'unattend.xml';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showStatusMessage('success', 'Unattend.xml file downloaded successfully');
 
     } catch (error) {
         console.error('Error exporting unattend XML:', error);

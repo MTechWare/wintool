@@ -74,29 +74,37 @@ class TabLoader {
         console.log('Initializing tab loader...');
 
         try {
-            const tabFolders = await window.electronAPI.getTabFolders();
-            console.log('Found tab folders:', tabFolders);
+            // 1. Get the combined, unsorted list of tabs and plugins
+            const allItems = await window.electronAPI.getTabFolders();
+            console.log('Found tabs and plugins:', allItems);
 
-            // Sort tab folders based on default order to ensure consistent loading
-            tabFolders.sort((a, b) => {
-                const indexA = defaultOrder.indexOf(a);
-                const indexB = defaultOrder.indexOf(b);
+            // 2. Sort the items: built-in tabs first, then plugins, with 'about' always last.
+            allItems.sort((a, b) => {
+                // Rule 1: 'about' tab is always last.
+                if (a.name === 'about') return 1;
+                if (b.name === 'about') return -1;
 
-                if (indexA !== -1 && indexB !== -1) {
-                    return indexA - indexB; // Both in default order, sort by it
+                const aIsTab = a.type === 'tab';
+                const bIsTab = b.type === 'tab';
+                const aIndex = defaultOrder.indexOf(a.name);
+                const bIndex = defaultOrder.indexOf(b.name);
+
+                if (aIsTab && bIsTab) {
+                    // Rule 2: Both are built-in tabs, sort by the default order.
+                    return (aIndex > -1 ? aIndex : Infinity) - (bIndex > -1 ? bIndex : Infinity);
                 }
-                if (indexA !== -1) {
-                    return -1; // A is in order, B is not
-                }
-                if (indexB !== -1) {
-                    return 1; // B is in order, A is not
-                }
-                return a.localeCompare(b); // Neither in order, sort alphabetically
+                
+                if (aIsTab) return -1; // Rule 3: Tabs always come before plugins.
+                if (bIsTab) return 1;
+
+                // Rule 4: Both are plugins, sort alphabetically.
+                return a.name.localeCompare(b.name);
             });
 
-            console.log('Sorted tab folders:', tabFolders);
+            const sortedFolderNames = allItems.map(item => item.name);
+            console.log('Sorted tab folders:', sortedFolderNames);
 
-            this.totalTabs = tabFolders.length;
+            this.totalTabs = sortedFolderNames.length;
             this.loadedTabsCount = 0;
             this.initializedTabsCount = 0;
 
@@ -110,7 +118,7 @@ class TabLoader {
 
             this.updateProgress('Loading tabs...', 0);
 
-            for (const folder of tabFolders) {
+            for (const folder of sortedFolderNames) {
                 await this.loadTab(folder);
                 this.loadedTabsCount++;
                 const loadProgress = (this.loadedTabsCount / this.totalTabs) * 50;
@@ -118,7 +126,7 @@ class TabLoader {
             }
 
             this.updateProgress('Waiting for tabs to initialize...', 50);
-            console.log(`Loaded ${tabFolders.length} folder-based tabs, waiting for initialization...`);
+            console.log(`Loaded ${sortedFolderNames.length} folder-based tabs, waiting for initialization...`);
 
             // Set a timeout for all tabs to initialize
             this.waitForInitialization();

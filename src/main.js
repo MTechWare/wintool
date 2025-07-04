@@ -8,12 +8,14 @@
  * - Clear structure
  */
 
-const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, dialog, session } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, dialog, session, shell } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs').promises;
 const os = require('os');
 const si = require('systeminformation');
+const extract = require('extract-zip');
+const axios = require('axios');
 
 // Initialize store for settings
 let store;
@@ -23,6 +25,107 @@ let mainWindow = null;
 
 // System tray reference
 let tray = null;
+
+// --- Helper Functions ---
+
+/**
+ * Gets the correct, user-writable path for storing plugins.
+ * This is crucial for when the app is installed in a read-only location.
+ */
+function getPluginsPath() {
+    let basePath;
+
+    // The user specifically requested %LOCALAPPDATA% on Windows.
+    // The most direct and reliable way to get this is via the environment variable.
+    if (process.platform === 'win32' && process.env.LOCALAPPDATA) {
+        basePath = process.env.LOCALAPPDATA;
+    } else {
+        // For other platforms (macOS, Linux) or if the environment variable is somehow
+        // missing on Windows, fall back to Electron's standard 'userData' directory.
+        // This is a robust, cross-platform default.
+        basePath = app.getPath('userData');
+        console.log(`Using standard userData path as fallback: ${basePath}`);
+    }
+    
+    // The user specified creating an "MTechTool" folder for plugins.
+    const pluginsPath = path.join(basePath, 'MTechTool');
+    
+    return pluginsPath;
+}
+
+/**
+ * Ensures the user-writable plugins directory exists on startup.
+ */
+async function ensurePluginsPathExists() {
+    const pluginsPath = getPluginsPath();
+    try {
+        // recursive: true prevents errors if the directory already exists.
+        await fs.mkdir(pluginsPath, { recursive: true });
+        console.log(`User plugin path ensured at: ${pluginsPath}`);
+    } catch (error) {
+        console.error('Fatal: Failed to create user plugin directory:', error);
+        // Optionally, show an error dialog to the user
+        dialog.showErrorBox('Initialization Error', `Failed to create required plugin directory at ${pluginsPath}. Please check permissions.`);
+    }
+}
+
+/**
+ * Scans both development and user plugin directories and returns a map
+ * of unique plugin IDs to their full paths. User plugins override dev plugins.
+ * This provides a robust way to handle plugins in both dev and prod environments.
+ */
+async function getPluginMap() {
+    // For local development, we check the built-in plugins folder.
+    const devPluginsPath = path.join(__dirname, 'plugins');
+    // This is the primary, user-writable location for installed plugins.
+    const userPluginsPath = getPluginsPath();
+    const pluginMap = new Map();
+
+    const readFoldersFromDir = async (dirPath) => {
+        try {
+            const items = await fs.readdir(dirPath);
+            const directories = [];
+            for (const item of items) {
+                const itemPath = path.join(dirPath, item);
+                try {
+                    if ((await fs.stat(itemPath)).isDirectory()) {
+                        directories.push({ name: item, path: itemPath });
+                    }
+                } catch (e) { /* ignore files and other non-directory items */ }
+            }
+            return directories;
+        } catch (error) {
+            // It's normal for a directory to not exist (e.g., dev path in prod), so we don't log an error.
+            return [];
+        }
+    };
+
+    // Load development plugins first.
+    const devPlugins = await readFoldersFromDir(devPluginsPath);
+    for (const plugin of devPlugins) {
+        const manifestPath = path.join(plugin.path, 'plugin.json');
+        try {
+            const manifestData = await fs.readFile(manifestPath, 'utf8');
+            const manifest = JSON.parse(manifestData);
+            if (manifest.id) {
+                pluginMap.set(manifest.id, plugin.path);
+            } else {
+                pluginMap.set(plugin.name, plugin.path);
+            }
+        } catch (e) {
+            pluginMap.set(plugin.name, plugin.path);
+        }
+    }
+
+    // Load user-installed plugins. If a name conflicts, this will overwrite
+    // the development version, allowing users to override built-in plugins.
+    const userPlugins = await readFoldersFromDir(userPluginsPath);
+    for (const plugin of userPlugins) {
+        pluginMap.set(plugin.name, plugin.path);
+    }
+
+    return pluginMap;
+}
 
 // Rate limiting for security
 const rateLimiter = new Map();
@@ -265,27 +368,126 @@ function hideWindow() {
 function quitApplication() {
     console.log('Quitting application...');
     app.isQuiting = true;
-
-    // Destroy tray
-    if (tray) {
-        tray.destroy();
-        tray = null;
-    }
-
-    // Close main window
-    if (mainWindow) {
-        mainWindow.close();
-    }
-
-    // Quit app
     app.quit();
 }
 
+function restartApp() {
+    console.log('Restarting application...');
+    if (mainWindow) {
+        mainWindow.reload();
+    }
+}
+
+
+
+// --- Plugin Backend Loader ---
+// A map to hold the loaded plugin backend modules
+const loadedPluginBackends = new Map();
+
+async function loadPluginBackends() {
+    console.log('Loading plugin backends...');
+    const pluginMap = await getPluginMap();
+
+    for (const [pluginId, pluginPath] of pluginMap.entries()) {
+        const backendScriptPath = path.join(pluginPath, 'backend.js');
+        try {
+            // Check for and install plugin-specific dependencies
+            const packageJsonPath = path.join(pluginPath, 'package.json');
+            try {
+                await fs.access(packageJsonPath);
+                console.log(`Found package.json for plugin: ${pluginId}. Checking dependencies...`);
+                
+                // Check if node_modules exists. If not, run npm install.
+                const nodeModulesPath = path.join(pluginPath, 'node_modules');
+                try {
+                    await fs.access(nodeModulesPath);
+                } catch (e) {
+                    console.log(`node_modules not found for ${pluginId}. Running npm install...`);
+                    await new Promise((resolve, reject) => {
+                        const npmInstall = spawn('npm', ['install'], { cwd: pluginPath, shell: true });
+                        npmInstall.on('close', (code) => {
+                            if (code === 0) {
+                                console.log(`npm install completed for ${pluginId}`);
+                                resolve();
+                            } else {
+                                reject(new Error(`npm install failed for ${pluginId} with code ${code}`));
+                            }
+                        });
+                        npmInstall.on('error', (err) => reject(err));
+                    });
+                }
+            } catch (e) {
+                // No package.json, so no dependencies to install.
+            }
+
+            // Check if backend.js exists before trying to require it.
+            await fs.stat(backendScriptPath);
+            console.log(`Found backend.js for plugin: ${pluginId}`);
+
+            // Conditionally clear the module from the cache based on the setting
+            const settingsStore = await getStore();
+            if (settingsStore && settingsStore.get('clearPluginCache', false)) {
+                console.log(`Clearing cache for ${pluginId} as per setting.`);
+                delete require.cache[require.resolve(backendScriptPath)];
+            }
+            
+            const pluginModule = require(backendScriptPath);
+            if (pluginModule && typeof pluginModule.initialize === 'function') {
+                // Create a secure API for this specific plugin's backend
+                const backendApi = {
+                    handlers: {},
+                    registerHandler(name, func) {
+                        // All handlers must be async functions for consistent promise-based results
+                        this.handlers[name] = async (...args) => func(...args);
+                    },
+                    getStore: () => getStore(),
+                    dialog: dialog,
+                    axios: axios,
+                    // Add a way for plugins to require their own dependencies
+                    require: (moduleName) => {
+                        try {
+                            return require(path.join(pluginPath, 'node_modules', moduleName));
+                        } catch (e) {
+                            console.error(`Failed to load module '${moduleName}' for plugin '${pluginId}'. Make sure it is listed in the plugin's package.json.`);
+                            throw e;
+                        }
+                    }
+                };
+
+                // Initialize the plugin with its dedicated, secure API
+                pluginModule.initialize(backendApi);
+                loadedPluginBackends.set(pluginId, backendApi);
+                console.log(`Successfully loaded and initialized backend for: ${pluginId}`);
+            }
+        } catch (e) {
+            // This is a normal flow; most plugins won't have a backend.
+            if (e.code !== 'ENOENT') {
+                console.error(`Error loading backend for plugin ${pluginId}:`, e);
+            }
+        }
+    }
+}
+
+// Generic handler for all plugin frontend-to-backend communication
+ipcMain.handle('plugin-invoke', async (event, pluginId, handlerName, ...args) => {
+    const pluginBackend = loadedPluginBackends.get(pluginId);
+    if (pluginBackend && pluginBackend.handlers && typeof pluginBackend.handlers[handlerName] === 'function') {
+        // The handler function itself will be an async function
+        return await pluginBackend.handlers[handlerName](...args);
+    } else {
+        throw new Error(`Handler '${handlerName}' not found for plugin '${pluginId}'`);
+    }
+});
 
 
 // App event handlers
 app.whenReady().then(async () => {
     console.log('Electron app is ready');
+
+    // Ensure the user-writable directory for plugins exists before doing anything else.
+    await ensurePluginsPathExists();
+
+    await loadPluginBackends();
 
     const { default: isElevated } = await import('is-elevated');
     const elevated = await isElevated();
@@ -378,6 +580,9 @@ app.on('activate', () => {
 // Handle app before quit event
 app.on('before-quit', () => {
     app.isQuiting = true;
+    if (tray) {
+        tray.destroy();
+    }
 });
 
 // Window control IPC handlers
@@ -440,6 +645,7 @@ ipcMain.handle('get-setting', async (event, key, defaultValue) => {
 });
 
 ipcMain.handle('set-setting', async (event, key, value) => {
+    console.log(`[Main Process] Saving setting. Key: '${key}', Value:`, value);
     const settingsStore = await getStore();
     if (!settingsStore) return false;
     settingsStore.set(key, value);
@@ -473,16 +679,8 @@ ipcMain.handle('clear-all-settings', async () => {
 // Restart application handler
 ipcMain.handle('restart-application', () => {
     console.log('restart-application handler called');
-
-    try {
-        // Restart the application
-        app.relaunch();
-        app.quit();
-        return true;
-    } catch (error) {
-        console.error('Error restarting application:', error);
-        return false;
-    }
+    restartApp();
+    return true;
 });
 
 // Environment Variables Management IPC handlers
@@ -694,11 +892,26 @@ ipcMain.handle('delete-environment-variable', async (event, name, target) => {
 
 
 // Comprehensive system info handler using systeminformation
-ipcMain.handle('get-system-info', async () => {
-    console.log('get-system-info handler called');
+ipcMain.handle('get-system-info', async (event, type) => {
+    console.log(`get-system-info handler called for type: ${type || 'all'}`);
 
     try {
-        // Get comprehensive system information
+        if (type) {
+            // Handle specific requests for individual data points (for plugins)
+            switch (type) {
+                case 'time':
+                    return await si.time();
+                // Add other specific cases here as needed by plugins
+                default:
+                    // If a specific, unhandled type is requested, return that part of si
+                    if (si[type] && typeof si[type] === 'function') {
+                        return await si[type]();
+                    }
+                    throw new Error(`Invalid system information type: ${type}`);
+            }
+        }
+
+        // The original full system information logic
         const [
             system,
             bios,
@@ -1044,53 +1257,398 @@ ipcMain.handle('terminate-process', async (event, pid) => {
     });
 });
 
-// Tab folder management handlers
+// Tab and plugin folder management handlers
 ipcMain.handle('get-tab-folders', async () => {
     console.log('get-tab-folders handler called');
+    const settingsStore = await getStore();
+    const disabledPlugins = settingsStore ? settingsStore.get('disabledPlugins', []) : [];
+    const allItems = [];
+
+    // 1. Read built-in tabs from the installation directory
     const tabsPath = path.join(__dirname, 'tabs');
+    try {
+        const items = await fs.readdir(tabsPath);
+        for (const item of items) {
+            const itemPath = path.join(tabsPath, item);
+            try {
+                if ((await fs.stat(itemPath)).isDirectory()) {
+                    allItems.push({ name: item, type: 'tab' });
+                }
+            } catch (e) { /* ignore files and other non-directory items */ }
+        }
+    } catch (error) {
+        console.error(`Could not read built-in tabs directory: ${tabsPath}`, error);
+    }
+    
+    // 2. Read enabled plugins from both dev and user locations
+    const pluginMap = await getPluginMap();
+    for (const pluginId of pluginMap.keys()) {
+        if (!disabledPlugins.includes(pluginId)) {
+            allItems.push({ name: pluginId, type: 'plugin' });
+        }
+    }
+
+    console.log('Found tab/plugin items:', allItems);
+    return allItems;
+});
+
+// Handler to get all plugins, including disabled ones, for the management UI
+ipcMain.handle('get-all-plugins', async () => {
+    console.log('get-all-plugins handler called');
+    const pluginMap = await getPluginMap();
+    const settingsStore = await getStore();
+    const disabledPlugins = settingsStore ? settingsStore.get('disabledPlugins', []) : [];
+
+    const allPlugins = await Promise.all(Array.from(pluginMap.entries()).map(async ([pluginId, pluginPath]) => {
+        const configPath = path.join(pluginPath, 'plugin.json');
+        let config = {};
+        try {
+            const configData = await fs.readFile(configPath, 'utf8');
+            config = JSON.parse(configData);
+        } catch (e) {
+            console.error(`Could not read plugin.json for ${pluginId}:`, e);
+            // Return a default object so the plugin still appears, albeit with default info
+            config = { name: pluginId, description: 'Could not load plugin manifest.', icon: 'fas fa-exclamation-triangle' };
+        }
+        return {
+            id: pluginId,
+            name: config.name || pluginId,
+            description: config.description || 'No description available.',
+            version: config.version || 'N/A',
+            author: config.author || 'Unknown',
+            icon: config.icon || 'fas fa-cog',
+            enabled: !disabledPlugins.includes(pluginId)
+        };
+    }));
+    
+    return allPlugins;
+});
+
+ipcMain.handle('delete-plugin', async (event, pluginId) => {
+    console.log(`Attempting to delete plugin: ${pluginId}`);
+    
+    // For security, we only allow deleting from the user-writable plugins path.
+    const userPluginsPath = getPluginsPath();
+    const pluginPath = path.join(userPluginsPath, pluginId);
 
     try {
-        // Check if tabs directory exists
-        await fs.access(tabsPath);
+        // Verify the plugin actually exists in the user directory before proceeding.
+        await fs.access(pluginPath);
+    } catch (error) {
+        return { success: false, message: 'Plugin not found or it is a core plugin that cannot be deleted.' };
+    }
+    
+    // Confirm with the user
+    const choice = await dialog.showMessageBox(mainWindow, {
+        type: 'warning',
+        title: 'Delete Plugin',
+        message: `Are you sure you want to permanently delete the plugin "${pluginId}"?`,
+        detail: 'This action cannot be undone. The plugin files will be removed from your computer.',
+        buttons: ['Delete', 'Cancel'],
+        defaultId: 1,
+        cancelId: 1
+    });
 
-        // Read all directories in tabs folder
-        const items = await fs.readdir(tabsPath, { withFileTypes: true });
-        const folders = items
-            .filter(item => item.isDirectory())
-            .map(item => item.name);
+    if (choice.response === 1) { // User canceled
+        return { success: true, restarted: false }; // Return success to stop loading icon
+    }
 
-        // Sort folders to ensure "about" is always last
-        const sortedFolders = folders.sort((a, b) => {
-            if (a === 'about') return 1;
-            if (b === 'about') return -1;
-            return a.localeCompare(b);
+    try {
+        // Delete the plugin folder
+        await fs.rm(pluginPath, { recursive: true, force: true });
+        
+        // Also remove it from the disabled list if it's there
+        const settingsStore = await getStore();
+        if (settingsStore) {
+            const disabledPlugins = settingsStore.get('disabledPlugins', []);
+            const newDisabled = disabledPlugins.filter(id => id !== pluginId);
+            settingsStore.set('disabledPlugins', newDisabled);
+        }
+
+        // Notify and restart
+        await dialog.showMessageBox(mainWindow, {
+            type: 'info',
+            title: 'Plugin Deleted',
+            message: `The plugin "${pluginId}" has been deleted.`,
+            detail: 'The application must be restarted for the changes to take effect.',
+            buttons: ['Restart Now']
         });
 
-        console.log('Found and sorted tab folders:', sortedFolders);
-        return sortedFolders;
+        restartApp();
+        return { success: true, restarted: true };
+
     } catch (error) {
-        console.log('No tabs folder found or error reading tabs:', error.message);
-        return [];
+        console.error(`Failed to delete plugin ${pluginId}:`, error);
+        return { success: false, message: `Error deleting plugin: ${error.message}` };
     }
 });
 
-ipcMain.handle('get-tab-content', async (event, tabFolder) => {
-    console.log('get-tab-content handler called for:', tabFolder);
-    const tabPath = path.join(__dirname, 'tabs', tabFolder);
+ipcMain.handle('toggle-plugin-state', async (event, pluginId) => {
+    console.log(`Toggling state for plugin: ${pluginId}`);
+    const settingsStore = await getStore();
+    if (!settingsStore) {
+        return { success: false, message: 'Settings store not available.' };
+    }
 
     try {
-        // Read tab configuration
-        const configPath = path.join(tabPath, 'config.json');
+        let disabledPlugins = settingsStore.get('disabledPlugins', []);
+        const isCurrentlyEnabled = !disabledPlugins.includes(pluginId);
+
+        if (isCurrentlyEnabled) {
+            // Disable it
+            disabledPlugins.push(pluginId);
+        } else {
+            // Enable it
+            disabledPlugins = disabledPlugins.filter(id => id !== pluginId);
+        }
+
+        settingsStore.set('disabledPlugins', disabledPlugins);
+
+        // Notify the user and ask for a restart
+        const actionText = isCurrentlyEnabled ? 'disabled' : 'enabled';
+        const restartChoice = await dialog.showMessageBox(mainWindow, {
+            type: 'info',
+            title: `Plugin ${actionText}`,
+            message: `The plugin "${pluginId}" has been ${actionText}.`,
+            detail: 'A restart is required for this change to take effect.',
+            buttons: ['Restart Now', 'Restart Later'],
+            defaultId: 0,
+            cancelId: 1
+        });
+
+        if (restartChoice.response === 0) { // "Restart Now"
+            restartApp();
+        }
+
+        return { success: true };
+    } catch (error) {
+        console.error(`Failed to toggle plugin state for ${pluginId}:`, error);
+        return { success: false, message: error.message };
+    }
+});
+
+ipcMain.handle('install-plugin', async () => {
+    // Plugins must ALWAYS be installed to the user-writable directory.
+    const userPluginsPath = getPluginsPath();
+
+    // 1. Show open file dialog to select the plugin zip
+    const result = await dialog.showOpenDialog(mainWindow, {
+        title: 'Select Plugin ZIP File',
+        properties: ['openFile'],
+        filters: [
+            { name: 'Plugin Packages', extensions: ['zip'] },
+            { name: 'All Files', extensions: ['*'] }
+        ]
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+        return { success: false, message: 'Installation canceled.' };
+    }
+
+    const zipPath = result.filePaths[0];
+
+    // 2. Extract the zip file to a temporary directory first to inspect it
+    const tempDir = path.join(os.tmpdir(), `wintool-plugin-${Date.now()}`);
+    await fs.mkdir(tempDir, { recursive: true });
+
+    try {
+        await extract(zipPath, { dir: tempDir });
+
+        // 3. Validate the plugin structure (check for plugin.json)
+        const items = await fs.readdir(tempDir);
+        // The unzipped folder might contain a single root folder.
+        const rootDir = items.length === 1 ? path.join(tempDir, items[0]) : tempDir;
+
+        const manifestPath = path.join(rootDir, 'plugin.json');
+        await fs.access(manifestPath); // Throws if not found
+
+        // 4. Determine the final plugin folder name and path
+        const pluginName = path.basename(rootDir);
+        const finalPath = path.join(userPluginsPath, pluginName);
+
+        // Check if plugin already exists
+        try {
+            await fs.access(finalPath);
+            return { success: false, message: `Plugin "${pluginName}" already exists.` };
+        } catch (e) {
+            // Doesn't exist, which is good
+        }
+
+        // 5. Move the validated plugin from temp to the final plugins directory
+        await fs.rename(rootDir, finalPath);
+
+        // Notify the user and ask to restart
+        const restartChoice = await dialog.showMessageBox(mainWindow, {
+            type: 'info',
+            title: 'Plugin Installed',
+            message: `Plugin "${pluginName}" has been installed successfully.`,
+            detail: 'The application needs to be restarted for the changes to take effect.',
+            buttons: ['Restart Now', 'Later'],
+            defaultId: 0,
+            cancelId: 1
+        });
+
+        if (restartChoice.response === 0) { // "Restart Now"
+            restartApp();
+        }
+
+        return { success: true, message: `Plugin "${pluginName}" installed successfully.` };
+
+    } catch (error) {
+        console.error('Plugin installation error:', error);
+        return { success: false, message: `Installation failed: ${error.message}` };
+    } finally {
+        // Clean up the temporary directory
+        await fs.rm(tempDir, { recursive: true, force: true });
+    }
+});
+
+ipcMain.handle('open-plugins-directory', async () => {
+    // Always open the user-writable plugins directory, as this is where users should manage plugins.
+    const userPluginsPath = getPluginsPath();
+    console.log(`Opening user plugins directory: ${userPluginsPath}`);
+    await shell.openPath(userPluginsPath);
+    return true;
+});
+
+ipcMain.handle('run-plugin-script', async (event, pluginId, scriptPath) => {
+    // Security Validation
+    if (!pluginId || !scriptPath || typeof pluginId !== 'string' || typeof scriptPath !== 'string') {
+        throw new Error('Invalid pluginId or scriptPath.');
+    }
+    
+    // Find the correct path for the given pluginId from our map
+    const pluginMap = await getPluginMap();
+    const pluginDir = pluginMap.get(pluginId);
+
+    if (!pluginDir) {
+        throw new Error(`Plugin with ID '${pluginId}' not found.`);
+    }
+
+    // Prevent path traversal attacks
+    const safeScriptPath = path.normalize(scriptPath).replace(/^(\.\.(\/|\\|$))+/, '');
+    const fullScriptPath = path.join(pluginDir, safeScriptPath);
+
+    // Verify the resolved script path is securely within the plugin's directory
+    if (!fullScriptPath.startsWith(pluginDir)) {
+        throw new Error('Script path is outside of the allowed plugin directory.');
+    }
+
+    // Check that the script exists
+    await fs.stat(fullScriptPath);
+
+    return new Promise((resolve, reject) => {
+        const psProcess = spawn('powershell.exe', [
+            '-NoProfile',
+            '-ExecutionPolicy', 'Bypass',
+            '-File', fullScriptPath
+        ]);
+
+        let output = '';
+        let errorOutput = '';
+
+        psProcess.stdout.on('data', (data) => { output += data.toString(); });
+        psProcess.stderr.on('data', (data) => { errorOutput += data.toString(); });
+
+        psProcess.on('close', (code) => {
+            if (code === 0) {
+                resolve(output);
+            } else {
+                reject(new Error(errorOutput || `Script exited with code ${code}`));
+            }
+        });
+    });
+});
+
+// --- New Plugin API Handlers ---
+
+// 1. Handle requests from plugins to show a notification
+ipcMain.on('plugin-show-notification', (event, { title, body, type }) => {
+    // Forward the request to the main window's renderer process, which owns the UI
+    if (mainWindow) {
+        mainWindow.webContents.send('display-notification', { title, body, type });
+    }
+});
+
+// 2. Handle plugin-specific storage
+ipcMain.handle('plugin-storage-get', async (event, pluginId, key) => {
+    const settingsStore = await getStore();
+    if (!settingsStore) return null;
+    // Namespace the key to prevent collisions
+    const namespacedKey = `plugin_${pluginId}_${key}`;
+    return settingsStore.get(namespacedKey);
+});
+
+ipcMain.handle('plugin-storage-set', async (event, pluginId, key, value) => {
+    const settingsStore = await getStore();
+    if (!settingsStore) return false;
+    const namespacedKey = `plugin_${pluginId}_${key}`;
+    settingsStore.set(namespacedKey, value);
+    return true;
+});
+
+// 3. Handle secure file dialogs for plugins
+ipcMain.handle('plugin-show-open-dialog', async (event, options) => {
+    const result = await dialog.showOpenDialog(mainWindow, options);
+    if (result.canceled || result.filePaths.length === 0) {
+        return { canceled: true, file: null };
+    }
+    const filePath = result.filePaths[0];
+    const content = await fs.readFile(filePath, 'utf8');
+    return { canceled: false, file: { path: filePath, content: content } };
+});
+
+ipcMain.handle('plugin-show-save-dialog', async (event, options, content) => {
+    const result = await dialog.showSaveDialog(mainWindow, options);
+    if (result.canceled || !result.filePath) {
+        return { canceled: true, path: null };
+    }
+    await fs.writeFile(result.filePath, content, 'utf8');
+    return { canceled: false, path: result.filePath };
+});
+
+
+ipcMain.handle('get-tab-content', async (event, tabFolder) => {
+    console.log('get-tab-content handler called for:', tabFolder);
+
+    // Determine the base path (could be a built-in 'tab' or a 'plugin')
+    let tabPath;
+    let isPlugin = false;
+    
+    // First, check if it's a built-in tab.
+    const builtInTabPath = path.join(__dirname, 'tabs', tabFolder);
+    try {
+        // Check if config.json exists. This is more reliable than checking the directory inside asar.
+        const configPathForCheck = path.join(builtInTabPath, 'config.json');
+        await fs.stat(configPathForCheck);
+        tabPath = builtInTabPath;
+    } catch (e) {
+        // If not a built-in tab, check if it's a plugin.
+        const pluginMap = await getPluginMap();
+        const pluginPath = pluginMap.get(tabFolder);
+        if (pluginPath) {
+            tabPath = pluginPath;
+            isPlugin = true;
+        } else {
+            console.error(`Folder for '${tabFolder}' not found in built-in tabs or any plugin directories.`);
+            throw new Error(`Content for '${tabFolder}' not found.`);
+        }
+    }
+
+    try {
+        // For plugins, the config is named plugin.json
+        const configFileName = isPlugin ? 'plugin.json' : 'config.json';
+        const configPath = path.join(tabPath, configFileName);
         let config = {};
         try {
             const configData = await fs.readFile(configPath, 'utf8');
             config = JSON.parse(configData);
         } catch (configError) {
-            console.log(`No config.json found for tab ${tabFolder}, using defaults`);
+            console.log(`No ${configFileName} found for ${tabFolder}, using defaults`);
             config = {
                 name: tabFolder,
                 icon: 'fas fa-cog',
-                description: 'Custom tab'
+                description: 'Custom tab/plugin'
             };
         }
 
@@ -2155,36 +2713,54 @@ ipcMain.handle('execute-powershell', async (event, command) => {
         });
     });
 });
-// File save dialog and export functionality for Windows unattend
-ipcMain.handle('save-file-dialog', async (event, options) => {
-    console.log('save-file-dialog handler called with options:', options);
 
+
+ipcMain.handle('show-open-dialog', async (event, options) => {
+    console.log('show-open-dialog handler called with options:', options);
     try {
-        const result = await dialog.showSaveDialog(mainWindow, {
-            title: options.title || 'Save File',
-            defaultPath: options.defaultPath || 'unattend.xml',
-            filters: options.filters || [
-                { name: 'XML Files', extensions: ['xml'] },
-                { name: 'All Files', extensions: ['*'] }
-            ]
-        });
-
+        const result = await dialog.showOpenDialog(mainWindow, options);
         return result;
     } catch (error) {
-        console.error('Error showing save dialog:', error);
-        throw new Error(`Failed to show save dialog: ${error.message}`);
+        console.error('Error showing open dialog:', error);
+        throw new Error(`Failed to show open dialog: ${error.message}`);
     }
 });
 
 ipcMain.handle('write-file', async (event, filePath, content) => {
     console.log('write-file handler called for:', filePath);
-
     try {
         await fs.writeFile(filePath, content, 'utf8');
-        return { success: true, message: 'File saved successfully' };
+        return { success: true };
     } catch (error) {
         console.error('Error writing file:', error);
         throw new Error(`Failed to write file: ${error.message}`);
+    }
+});
+
+ipcMain.handle('read-file', async (event, filePath) => {
+    console.log('read-file handler called for:', filePath);
+    try {
+        const content = await fs.readFile(filePath, 'utf8');
+        return content;
+    } catch (error) {
+        console.error('Error reading file:', error);
+        throw new Error(`Failed to read file: ${error.message}`);
+    }
+});
+
+
+
+
+
+// File operation handlers
+ipcMain.handle('show-save-dialog', async (event, options) => {
+    console.log('show-save-dialog handler called with options:', options);
+    try {
+        const result = await dialog.showSaveDialog(mainWindow, options);
+        return result;
+    } catch (error) {
+        console.error('Error showing save dialog:', error);
+        throw new Error(`Failed to show save dialog: ${error.message}`);
     }
 });
 
@@ -2232,31 +2808,9 @@ ipcMain.handle('execute-script', async (event, { script, shell }) => {
     });
 });
 
-// File open dialog handler
-ipcMain.handle('open-file-dialog', async () => {
-    console.log('open-file-dialog handler called');
-    try {
-        const result = await dialog.showOpenDialog(mainWindow, {
-            properties: ['openFile'],
-            filters: [
-                { name: 'Scripts', extensions: ['ps1', 'bat', 'cmd', 'sh', 'js', 'txt'] },
-                { name: 'All Files', extensions: ['*'] }
-            ]
-        });
 
-        if (result.canceled || result.filePaths.length === 0) {
-            return null;
-        }
 
-        const filePath = result.filePaths[0];
-        const content = await fs.readFile(filePath, 'utf8');
-        return { filePath, content };
 
-    } catch (error) {
-        console.error('Error opening file dialog:', error);
-        throw new Error(`Failed to open file: ${error.message}`);
-    }
-});
 
 // Event Viewer IPC handler
 ipcMain.handle('get-event-logs', async (event, logName) => {
@@ -2341,4 +2895,6 @@ ipcMain.handle('save-file-dialog-and-write', async (event, content, options) => 
         return { success: false, error: error.message };
     }
 });
+
+
 

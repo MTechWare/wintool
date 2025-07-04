@@ -198,6 +198,22 @@
     background: #c82333;
 }
 
+.import-btn {
+    background-color: #17a2b8; /* Teal */
+}
+
+.import-btn:hover:not(:disabled) {
+    background-color: #138496;
+}
+
+.export-btn {
+    background-color: #007bff; /* Blue */
+}
+
+.export-btn:hover:not(:disabled) {
+    background-color: #0069d9;
+}
+
 /* Package List */
 .packages-list-container {
     background: #2a2a2a;

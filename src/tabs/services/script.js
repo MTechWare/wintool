@@ -369,7 +369,7 @@ function renderQuickAccessServices(container) {
             const stopBtn = createSecureButton(
                 '<i class="fas fa-stop"></i> Stop',
                 () => controlServiceSecure(service.Name, 'stop'),
-                'btn btn-warning btn-sm',
+                'btn btn-primary btn-sm',
                 'Stop Service'
             );
             actions.appendChild(stopBtn);
@@ -377,7 +377,7 @@ function renderQuickAccessServices(container) {
             const startBtn = createSecureButton(
                 '<i class="fas fa-play"></i> Start',
                 () => controlServiceSecure(service.Name, 'start'),
-                'btn btn-success btn-sm',
+                'btn btn-primary btn-sm',
                 'Start Service'
             );
             actions.appendChild(startBtn);
@@ -386,7 +386,7 @@ function renderQuickAccessServices(container) {
         const restartBtn = createSecureButton(
             '<i class="fas fa-redo"></i> Restart',
             () => controlServiceSecure(service.Name, 'restart'),
-            'btn btn-info btn-sm',
+            'btn btn-primary btn-sm',
             'Restart Service'
         );
         actions.appendChild(restartBtn);
@@ -394,7 +394,7 @@ function renderQuickAccessServices(container) {
         const detailsBtn = createSecureButton(
             '<i class="fas fa-info-circle"></i> Details',
             () => showServiceDetailsSecure(service.Name),
-            'btn btn-info btn-sm',
+            'btn btn-primary btn-sm',
             'Service Details'
         );
         actions.appendChild(detailsBtn);
@@ -467,7 +467,7 @@ function renderServicesTable(container) {
             const stopBtn = createSecureButton(
                 '<i class="fas fa-stop"></i>',
                 () => controlServiceSecure(service.Name, 'stop'),
-                'btn btn-warning btn-sm',
+                'btn btn-primary btn-sm',
                 'Stop Service'
             );
             actionsDiv.appendChild(stopBtn);
@@ -475,7 +475,7 @@ function renderServicesTable(container) {
             const startBtn = createSecureButton(
                 '<i class="fas fa-play"></i>',
                 () => controlServiceSecure(service.Name, 'start'),
-                'btn btn-success btn-sm',
+                'btn btn-primary btn-sm',
                 'Start Service'
             );
             actionsDiv.appendChild(startBtn);
@@ -484,7 +484,7 @@ function renderServicesTable(container) {
         const restartBtn = createSecureButton(
             '<i class="fas fa-redo"></i>',
             () => controlServiceSecure(service.Name, 'restart'),
-            'btn btn-info btn-sm',
+            'btn btn-primary btn-sm',
             'Restart Service'
         );
         actionsDiv.appendChild(restartBtn);
@@ -492,7 +492,7 @@ function renderServicesTable(container) {
         const detailsBtn = createSecureButton(
             '<i class="fas fa-info-circle"></i>',
             () => showServiceDetailsSecure(service.Name),
-            'btn btn-info btn-sm',
+            'btn btn-primary btn-sm',
             'Service Details'
         );
         actionsDiv.appendChild(detailsBtn);

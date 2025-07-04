@@ -33,7 +33,7 @@ src/tabs/
     ├── config.json
     ├── index.html
     ├── styles.css (optional)
-    └── script.js (optional)
+    └── script.js
 ```
 
 ## File Descriptions

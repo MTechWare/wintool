@@ -240,13 +240,23 @@ class PackageManager {
         // Action buttons
         const installBtn = document.getElementById('install-selected');
         const uninstallBtn = document.getElementById('uninstall-selected');
-        
+        const importBtn = document.getElementById('import-packages');
+        const exportBtn = document.getElementById('export-packages');
+
         if (installBtn) {
             installBtn.addEventListener('click', () => this.installSelected());
         }
         
         if (uninstallBtn) {
             uninstallBtn.addEventListener('click', () => this.uninstallSelected());
+        }
+
+        if (importBtn) {
+            importBtn.addEventListener('click', () => this.importPackages());
+        }
+
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => this.exportPackages());
         }
     }
 
@@ -330,7 +340,9 @@ class PackageManager {
         packageKeys.forEach(key => {
             const pkg = this.filteredPackages[key];
             const packageItem = this.createPackageItem(key, pkg);
-            packagesList.appendChild(packageItem);
+            if (packageItem) { // Ensure item is valid before appending
+                packagesList.appendChild(packageItem);
+            }
         });
         
         this.updateSelectionInfo();
@@ -350,9 +362,14 @@ class PackageManager {
             console.warn('Invalid package ID detected:', packageId);
             return null;
         }
+        
+        const isSelected = this.selectedPackages.has(key);
 
         const item = document.createElement('div');
         item.className = 'package-item';
+        if (isSelected) {
+            item.classList.add('selected');
+        }
         item.dataset.packageKey = key;
 
         // Create checkbox container
@@ -361,6 +378,7 @@ class PackageManager {
 
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
+        checkbox.checked = isSelected;
         checkbox.dataset.package = key;
         checkboxContainer.appendChild(checkbox);
 
@@ -477,14 +495,16 @@ class PackageManager {
         const countElement = document.getElementById('selection-count');
         const installBtn = document.getElementById('install-selected');
         const uninstallBtn = document.getElementById('uninstall-selected');
-        
+        const exportBtn = document.getElementById('export-packages');
+
         if (countElement) {
             countElement.textContent = `${count} package${count !== 1 ? 's' : ''} selected`;
         }
         
         if (installBtn) installBtn.disabled = count === 0;
         if (uninstallBtn) uninstallBtn.disabled = count === 0;
-        
+        if (exportBtn) exportBtn.disabled = count === 0;
+
         // Update select all checkbox state
         const selectAllCheckbox = document.getElementById('select-all');
         const totalVisible = Object.keys(this.filteredPackages).length;
@@ -1082,6 +1102,92 @@ class PackageManager {
         const container = document.getElementById('progress-container');
         if (container && (container.classList.contains('completed') || container.classList.contains('error') || container.classList.contains('cancelled'))) {
             this.hideProgress();
+        }
+    }
+
+    async exportPackages() {
+        if (this.selectedPackages.size === 0) {
+            this.showStatus('No packages selected for export.', 'warning');
+            return;
+        }
+
+        const packagesToExport = {};
+        for (const packageKey of this.selectedPackages) {
+            if (this.packages[packageKey]) {
+                packagesToExport[packageKey] = this.packages[packageKey];
+            }
+        }
+
+        if (Object.keys(packagesToExport).length === 0) {
+            this.showStatus('Could not find data for selected packages.', 'error');
+            return;
+        }
+
+        try {
+            if (window.electronAPI && window.electronAPI.showSaveDialog) {
+                const result = await window.electronAPI.showSaveDialog({
+                    title: 'Export Selected Packages',
+                    defaultPath: 'wintool-packages.json',
+                    filters: [
+                        { name: 'JSON Files', extensions: ['json'] },
+                        { name: 'All Files', extensions: ['*'] }
+                    ]
+                });
+
+                if (!result.canceled && result.filePath) {
+                    await window.electronAPI.writeFile(result.filePath, JSON.stringify(packagesToExport, null, 2));
+                    this.showStatus(`Successfully exported ${Object.keys(packagesToExport).length} packages to ${result.filePath}`, 'success');
+                }
+            } else {
+                this.showStatus('Export functionality is not available in this environment.', 'error');
+            }
+        } catch (error) {
+            this.showStatus(`Error exporting packages: ${error.message}`, 'error');
+            console.error('Export error:', error);
+        }
+    }
+
+    async importPackages() {
+        try {
+            if (window.electronAPI && window.electronAPI.showOpenDialog) {
+                const result = await window.electronAPI.showOpenDialog({
+                    title: 'Import Packages',
+                    properties: ['openFile'],
+                    filters: [
+                        { name: 'JSON Files', extensions: ['json'] },
+                        { name: 'All Files', extensions: ['*'] }
+                    ]
+                });
+
+                if (!result.canceled && result.filePaths.length > 0) {
+                    const filePath = result.filePaths[0];
+                    const fileContent = await window.electronAPI.readFile(filePath);
+                    const importedPackages = JSON.parse(fileContent);
+
+                    if (typeof importedPackages !== 'object' || importedPackages === null) {
+                        throw new Error('Invalid file format. Expected a JSON object.');
+                    }
+
+                    let importedCount = 0;
+                    for (const packageKey in importedPackages) {
+                        if (this.packages[packageKey]) {
+                            this.selectedPackages.add(packageKey);
+                            importedCount++;
+                        } else {
+                            console.warn(`Imported package key "${packageKey}" not found in the current package list. Skipping.`);
+                        }
+                    }
+
+                    this.renderPackages(); // Re-render to update selection visuals
+                    this.updateSelectionInfo();
+                    this.showStatus(`Successfully imported and selected ${importedCount} packages.`, 'success');
+                }
+            } else {
+                this.showStatus('Import functionality is not available in this environment.', 'error');
+            }
+        } catch (error) {
+            this.showStatus(`Error importing packages: ${error.message}`, 'error');
+            console.error('Import error:', error);
         }
     }
 }
