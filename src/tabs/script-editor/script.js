@@ -99,7 +99,7 @@ async function openScriptFile() {
     const outputEl = document.getElementById('output');
     try {
         const result = await window.electronAPI.openFileDialog();
-        if (result) {
+        if (result && result.filePath) {
             editorInstance.setValue(result.content);
             const extension = result.filePath.split('.').pop();
             let language = 'powershell';

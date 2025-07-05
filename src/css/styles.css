@@ -1896,3 +1896,175 @@ html, body {
 .plugin-author {
     font-style: italic;
 }
+
+/* Help Modal Styles */
+.help-search-container {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.help-command-list {
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.help-category {
+    margin-bottom: 20px;
+}
+
+.help-category h4 {
+    color: var(--primary-color);
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.help-command-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.help-command-item:hover {
+    background: var(--hover-color);
+}
+
+.help-command-item i {
+    width: 20px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.help-command-title {
+    flex: 1;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Command Palette Styles */
+.command-palette-modal {
+    background: rgba(10, 10, 12, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.command-palette-content {
+    background: none;
+    border: none;
+    box-shadow: none;
+    width: 600px;
+    max-width: 90%;
+    margin-top: -20vh; /* Position it higher on the screen */
+    overflow: visible;
+}
+
+.command-palette-search-container {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.command-palette-search-icon {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    font-size: 18px;
+}
+
+.command-palette-input {
+    width: 100%;
+    height: 60px;
+    padding: 0 20px 0 60px;
+    background: var(--background-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.command-palette-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.3), 0 12px 35px rgba(0, 0, 0, 0.4);
+}
+
+.command-palette-results-container {
+    background: var(--background-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.command-palette-results-list {
+    list-style: none;
+    padding: 8px;
+    margin: 0;
+}
+
+.command-palette-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-secondary);
+}
+
+.command-palette-item:hover {
+    background: var(--hover-color);
+    color: var(--text-primary);
+}
+
+.command-palette-item.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.command-palette-item-icon {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+    color: var(--text-primary);
+    transition: color 0.2s ease;
+}
+
+.command-palette-item.active .command-palette-item-icon {
+    color: white;
+}
+
+.command-palette-item-text {
+    flex: 1;
+}
+
+.command-palette-item-title {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text-primary);
+}
+
+.command-palette-item.active .command-palette-item-title {
+    color: white;
+}
+
+.command-palette-item-category {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.command-palette-item.active .command-palette-item-category {
+    color: rgba(255, 255, 255, 0.8);
+}

@@ -209,6 +209,11 @@
                                 <h4>Process Manager</h4>
                                 <p>View, search, and terminate running processes with real-time CPU and memory usage.</p>
                             </div>
+                            <div class="feature-card">
+                                <i class="fas fa-magic"></i>
+                                <h4>Windows Tweaks</h4>
+                                <p>Apply various tweaks to customize the Windows 10/11 experience.</p>
+                            </div>
                         </div>
                     </div>
 
@@ -216,6 +221,11 @@
                     <div class="features-section">
                         <h3>Key Features</h3>
                         <div class="features-grid">
+                            <div class="feature-card">
+                                <i class="fas fa-terminal"></i>
+                                <h4>Command Palette</h4>
+                                <p>Press Ctrl+K to open a powerful command launcher</p>
+                            </div>
                             <div class="feature-card">
                                 <i class="fas fa-search"></i>
                                 <h4>Tab Search</h4>
@@ -240,6 +250,11 @@
                                 <i class="fas fa-tachometer-alt"></i>
                                 <h4>Real-time Data</h4>
                                 <p>Live system monitoring with automatic data refresh</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-eye-slash"></i>
+                                <h4>Hide/Show Tabs</h4>
+                                <p>Customize your sidebar by hiding or showing tabs to declutter your workspace.</p>
                             </div>
                         </div>
                     </div>
@@ -347,6 +362,9 @@
     </div>
 
 
+
+    <!-- Help Modal -->
+    <div id="help-modal-container"></div>
 
     <!-- System Info Modal -->
     <div id="system-info-modal" class="modal" style="display: none;">
@@ -496,6 +514,14 @@
                         <div class="shortcuts-section">
                             <h5>Navigation & Search</h5>
                             <div class="shortcut-item">
+                                <label class="shortcut-label">Open Command Palette</label>
+                                <input type="text" id="shortcut-command-palette" class="shortcut-input" readonly placeholder="Ctrl+K">
+                                <button class="btn btn-small btn-secondary" onclick="resetShortcut('command-palette')">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <p class="shortcut-description">Open the command palette for quick actions</p>
+                            </div>
+                            <div class="shortcut-item">
                                 <label class="shortcut-label">Focus Tab Search</label>
                                 <input type="text" id="shortcut-focus-search" class="shortcut-input" readonly placeholder="Ctrl+F">
                                 <button class="btn btn-small btn-secondary" onclick="resetShortcut('focus-search')">
@@ -528,6 +554,14 @@
                         <div class="shortcuts-section">
                             <h5>Settings & Dialogs</h5>
                             <div class="shortcut-item">
+                                <label class="shortcut-label">Show Help</label>
+                                <input type="text" id="shortcut-show-help" class="shortcut-input" readonly placeholder="F1">
+                                <button class="btn btn-small btn-secondary" onclick="resetShortcut('show-help')">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <p class="shortcut-description">Open the command palette help window</p>
+                            </div>
+                            <div class="shortcut-item">
                                 <label class="shortcut-label">Open Settings</label>
                                 <input type="text" id="shortcut-open-settings" class="shortcut-input" readonly placeholder="Ctrl+S">
                                 <button class="btn btn-small btn-secondary" onclick="resetShortcut('open-settings')">
@@ -542,6 +576,14 @@
                                     <i class="fas fa-undo"></i>
                                 </button>
                                 <p class="shortcut-description">Close any open modal dialog or popup</p>
+                            </div>
+                            <div class="shortcut-item">
+                                <label class="shortcut-label">Quit App</label>
+                                <input type="text" id="shortcut-quit-app" class="shortcut-input" readonly placeholder="Ctrl+Q">
+                                <button class="btn btn-small btn-secondary" onclick="resetShortcut('quit-app')">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <p class="shortcut-description">Quit the application</p>
                             </div>
                         </div>
 
@@ -600,6 +642,21 @@
                     <i class="fas fa-save"></i>
                     Save Settings
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Command Palette Modal -->
+    <div id="command-palette-modal" class="modal command-palette-modal" style="display: none;">
+        <div class="modal-content command-palette-content">
+            <div class="command-palette-search-container">
+                <i class="fas fa-search command-palette-search-icon"></i>
+                <input type="text" id="command-palette-input" placeholder="Type a command or search..." class="command-palette-input">
+            </div>
+            <div class="command-palette-results-container">
+                <ul id="command-palette-results" class="command-palette-results-list">
+                    <!-- Command results will be dynamically inserted here -->
+                </ul>
             </div>
         </div>
     </div>

@@ -26,8 +26,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setWindowOpacity: (opacity) => ipcRenderer.invoke('set-window-opacity', opacity),
     setStartupBehavior: (shouldStartOnBoot) => ipcRenderer.invoke('set-startup-behavior', shouldStartOnBoot),
 
-
-
+    // Generic command execution
+    runCommand: (command, asAdmin = false) => ipcRenderer.invoke('run-command', command, asAdmin),
+    runAdminCommand: (command) => ipcRenderer.invoke('run-admin-command', command),
 
     // Settings management
     clearAllSettings: () => ipcRenderer.invoke('clear-all-settings'),
@@ -118,7 +119,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     writeFile: (filePath, content) => ipcRenderer.invoke('write-file', filePath, content),
     readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),
     saveFile: (content, options) => ipcRenderer.invoke('save-file-dialog-and-write', content, options),
-    saveFile: (content, options) => ipcRenderer.invoke('save-file-dialog-and-write', content, options),
+    openFileDialog: () => ipcRenderer.invoke('open-file-dialog'),
 
     // Event listeners (for future use)
     onMessage: (callback) => ipcRenderer.on('message', callback),
@@ -128,7 +129,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Editor functions
     executeScript: (script, shell) => ipcRenderer.invoke('execute-script', { script, shell }),
     showSaveDialog: (options) => ipcRenderer.invoke('show-save-dialog', options),
-    showSaveDialog: (options) => ipcRenderer.invoke('show-save-dialog', options),
 
     // Event Viewer functions
     getEventLogs: (logName) => ipcRenderer.invoke('get-event-logs', logName),
@@ -137,8 +137,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getAllPlugins: () => ipcRenderer.invoke('get-all-plugins'),
     installPlugin: () => ipcRenderer.invoke('install-plugin'),
     openPluginsDirectory: () => ipcRenderer.invoke('open-plugins-directory'),
+    openAppDirectory: () => ipcRenderer.invoke('open-app-directory'),
     togglePluginState: (pluginId) => ipcRenderer.invoke('toggle-plugin-state', pluginId),
     deletePlugin: (pluginId) => ipcRenderer.invoke('delete-plugin', pluginId),
+    toggleDevTools: () => ipcRenderer.invoke('toggle-dev-tools'),
+    openSpecialFolder: (folderKey) => ipcRenderer.invoke('open-special-folder', folderKey),
 });
 
 // Expose a dedicated API for plugins

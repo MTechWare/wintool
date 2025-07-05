@@ -8,7 +8,7 @@
  * - Clear structure
  */
 
-const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, dialog, session, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, dialog, session, shell, globalShortcut } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs').promises;
@@ -48,7 +48,7 @@ function getPluginsPath() {
     }
     
     // The user specified creating an "MTechTool" folder for plugins.
-    const pluginsPath = path.join(basePath, 'MTechTool');
+    const pluginsPath = path.join(basePath, 'MTechTool', 'Plugins');
     
     return pluginsPath;
 }
@@ -404,16 +404,28 @@ async function loadPluginBackends() {
                 } catch (e) {
                     console.log(`node_modules not found for ${pluginId}. Running npm install...`);
                     await new Promise((resolve, reject) => {
-                        const npmInstall = spawn('npm', ['install'], { cwd: pluginPath, shell: true });
+                        // Use 'npm.cmd' on Windows for better reliability with spawn.
+                        const npmInstall = spawn('npm.cmd', ['install'], { cwd: pluginPath, shell: true });
+                        let stderr = '';
+                        
+                        npmInstall.stderr.on('data', (data) => {
+                            stderr += data.toString();
+                        });
+
                         npmInstall.on('close', (code) => {
                             if (code === 0) {
                                 console.log(`npm install completed for ${pluginId}`);
                                 resolve();
                             } else {
-                                reject(new Error(`npm install failed for ${pluginId} with code ${code}`));
+                                console.error(`npm install failed for ${pluginId}. Stderr: ${stderr}`);
+                                reject(new Error(`npm install failed for ${pluginId} with code ${code}. See logs for details.`));
                             }
                         });
-                        npmInstall.on('error', (err) => reject(err));
+
+                        npmInstall.on('error', (err) => {
+                            console.error(`Failed to start npm for ${pluginId}. Is npm in your system's PATH? Error: ${err.message}`);
+                            reject(err);
+                        });
                     });
                 }
             } catch (e) {
@@ -483,6 +495,12 @@ ipcMain.handle('plugin-invoke', async (event, pluginId, handlerName, ...args) =>
 // App event handlers
 app.whenReady().then(async () => {
     console.log('Electron app is ready');
+
+    // Register a global shortcut to quit the application
+    globalShortcut.register('Control+Q', () => {
+        console.log('Control+Q shortcut detected, quitting application.');
+        quitApplication();
+    });
 
     // Ensure the user-writable directory for plugins exists before doing anything else.
     await ensurePluginsPathExists();
@@ -577,6 +595,11 @@ app.on('activate', () => {
     }
 });
 
+app.on('will-quit', () => {
+    // Unregister all shortcuts before quitting
+    globalShortcut.unregisterAll();
+});
+
 // Handle app before quit event
 app.on('before-quit', () => {
     app.isQuiting = true;
@@ -635,6 +658,138 @@ ipcMain.handle('show-from-tray', () => {
 ipcMain.handle('quit-app', () => {
     quitApplication();
     return true;
+});
+
+// Generic command execution handler
+ipcMain.handle('run-admin-command', async (event, command) => {
+    console.log('run-admin-command handler called with:', command);
+
+    if (!command || typeof command !== 'string') {
+        throw new Error('Invalid command parameter');
+    }
+
+    // Escape double quotes in the command for PowerShell
+    const escapedCommand = command.replace(/"/g, '`"');
+    
+    // Construct the PowerShell command to run the original command elevated
+    const psScript = `Start-Process -Verb RunAs -Wait -FilePath "cmd.exe" -ArgumentList "/c ${escapedCommand}"`;
+
+    return new Promise((resolve, reject) => {
+        const childProcess = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', psScript]);
+
+        childProcess.on('close', (code) => {
+            if (code === 0) {
+                // The elevated process was launched successfully. We can't get its direct output,
+                // but we can assume it worked if the user approved the UAC prompt.
+                resolve({ success: true });
+            } else {
+                reject(new Error(`Elevated process failed to start with exit code: ${code}. The user may have denied the UAC prompt.`));
+            }
+        });
+
+        childProcess.on('error', (error) => {
+            reject(error);
+        });
+    });
+});
+
+ipcMain.handle('run-command', async (event, command, asAdmin = false) => {
+    logSecurityEvent('RUN_COMMAND', { command, asAdmin });
+
+    if (!command || typeof command !== 'string') {
+        throw new Error('Invalid command provided.');
+    }
+
+    // For commands that need to run as admin
+    if (asAdmin) {
+        return new Promise((resolve, reject) => {
+            const commandParts = command.split(' ');
+            const executable = commandParts.shift();
+            const args = commandParts.join(' ');
+            
+            // Use PowerShell to start the process with elevated privileges
+            const psScript = `Start-Process -FilePath "${executable}" -ArgumentList "${args}" -Verb RunAs -Wait`;
+            
+            const psProcess = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', psScript]);
+
+            psProcess.on('close', (code) => {
+                if (code === 0) {
+                    resolve({ success: true, message: `Command '${command}' executed successfully as admin.` });
+                } else {
+                    reject(new Error(`Elevated process exited with code ${code}. The user may have cancelled the UAC prompt.`));
+                }
+            });
+
+            psProcess.on('error', (err) => {
+                reject(new Error(`Failed to start elevated process: ${err.message}`));
+            });
+        });
+    }
+
+    // For non-admin commands, we capture output and don't fail on non-zero exit codes.
+    return new Promise((resolve, reject) => {
+        const child = spawn(command, { shell: true, stdio: 'pipe' });
+
+        let stdout = '';
+        let stderr = '';
+
+        child.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
+
+        child.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+
+        child.on('close', (code) => {
+            // Always resolve, let the caller decide if a non-zero code is an error.
+            resolve({
+                success: code === 0,
+                code: code,
+                stdout: stdout,
+                stderr: stderr,
+                message: `Command finished with exit code ${code}.`
+            });
+        });
+
+        child.on('error', (err) => {
+            // Reject only if the process itself fails to start.
+            reject(new Error(`Failed to execute command: ${err.message}`));
+        });
+    });
+});
+
+ipcMain.handle('open-app-directory', () => {
+    const appPath = app.getAppPath();
+    const appDir = path.dirname(appPath);
+    shell.openPath(appDir);
+});
+
+ipcMain.handle('toggle-dev-tools', () => {
+    if (mainWindow && mainWindow.webContents.isDevToolsOpened()) {
+        mainWindow.webContents.closeDevTools();
+    } else if (mainWindow) {
+        mainWindow.webContents.openDevTools();
+    }
+});
+
+ipcMain.handle('open-special-folder', (event, folderKey) => {
+    let folderPath = '';
+    switch (folderKey) {
+        case 'temp':
+            folderPath = os.tmpdir();
+            break;
+        case 'startup':
+            folderPath = app.getPath('startup');
+            break;
+        case 'hosts':
+            folderPath = path.join(process.env.SystemRoot, 'System32', 'drivers', 'etc');
+            break;
+        default:
+            console.error(`Unknown special folder key: ${folderKey}`);
+            return;
+    }
+    shell.openPath(folderPath);
 });
 
 // Settings IPC handlers
@@ -2753,6 +2908,30 @@ ipcMain.handle('read-file', async (event, filePath) => {
 
 
 // File operation handlers
+ipcMain.handle('open-file-dialog', async (event) => {
+    console.log('open-file-dialog handler called');
+    const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openFile'],
+        filters: [
+            { name: 'Scripts', extensions: ['ps1', 'bat', 'cmd', 'sh', 'js'] },
+            { name: 'All Files', extensions: ['*'] }
+        ]
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+        return null;
+    }
+
+    const filePath = result.filePaths[0];
+    try {
+        const content = await fs.readFile(filePath, 'utf8');
+        return { filePath, content };
+    } catch (error) {
+        console.error('Error reading file:', error);
+        throw new Error(`Failed to read file: ${error.message}`);
+    }
+});
+
 ipcMain.handle('show-save-dialog', async (event, options) => {
     console.log('show-save-dialog handler called with options:', options);
     try {

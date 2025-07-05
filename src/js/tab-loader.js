@@ -61,7 +61,7 @@ class TabLoader {
             if (this.initializedTabsCount >= this.totalTabs) {
                 this.updateProgress('All tabs ready!', 100);
                 if (this.onCompleteCallback) {
-                    setTimeout(() => this.onCompleteCallback(), 500);
+                    setTimeout(() => this.onCompleteCallback(this.loadedTabs), 500);
                 }
             }
         }
@@ -111,7 +111,7 @@ class TabLoader {
             if (this.totalTabs === 0) {
                 this.updateProgress('No tabs to load', 100);
                 if (this.onCompleteCallback) {
-                    setTimeout(() => this.onCompleteCallback(), 500);
+                    setTimeout(() => this.onCompleteCallback(this.loadedTabs), 500);
                 }
                 return;
             }
@@ -325,9 +325,12 @@ class TabLoader {
             // Add scope to each selector
             const selectors = selector.split(',').map(s => {
                 const trimmed = s.trim();
-                if (trimmed.startsWith(':root') || trimmed.startsWith('html') || trimmed.startsWith('body')) {
-                    return `${scope} ${trimmed}`;
+                // If a selector targets html, body, or :root, it should NOT be scoped,
+                // as these are global styles. Scoping them would break the rule.
+                if (trimmed.startsWith('html') || trimmed.startsWith('body') || trimmed.startsWith(':root')) {
+                    return trimmed; // Return the original selector without the scope
                 }
+                // For all other selectors, apply the scope.
                 return `${scope} ${trimmed}`;
             });
             
