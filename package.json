@@ -37,6 +37,9 @@
       "src/js/**/*",
       "src/tabs/**/*",
       "src/*.ps1",
+      "src/elevation-prompt.html",
+      "src/elevation-prompt.css",
+      "src/help-modal.html",
       "!src/**/*.md",
       "!src/**/test/**/*"
     ],
