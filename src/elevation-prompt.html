@@ -18,17 +18,16 @@
         </div>
     </div>
     <script>
-        const { ipcRenderer } = require('electron');
         document.getElementById('yes').addEventListener('click', () => {
             const remember = document.getElementById('remember').checked;
-            ipcRenderer.send('elevation-choice', { choice: true, remember });
+            window.electronAPI.send('elevation-choice', { choice: true, remember });
         });
         document.getElementById('no').addEventListener('click', () => {
             const remember = document.getElementById('remember').checked;
-            ipcRenderer.send('elevation-choice', { choice: false, remember });
+            window.electronAPI.send('elevation-choice', { choice: false, remember });
         });
 
-        ipcRenderer.on('theme-data', (event, settings) => {
+        window.electronAPI.on('theme-data', (settings) => {
             const THEMES = {
                 'classic-dark': {
                     '--primary-color': '#ff9800', '--primary-dark': '#f57c00', '--primary-darker': '#e65100', '--primary-rgb': '255, 152, 0',

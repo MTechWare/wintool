@@ -1204,4 +1204,17 @@ if (document.readyState === 'loading') {
     packageManager = new PackageManager();
 }
 
+// Expose package manager methods to the command palette
+window.installPackage = (packageName) => {
+    if (packageManager) {
+        packageManager.installPackage(packageName);
+    }
+};
+
+window.uninstallPackage = (packageName) => {
+    if (packageManager) {
+        packageManager.uninstallPackage(packageName);
+    }
+};
+
 console.log('Packages tab script loaded');

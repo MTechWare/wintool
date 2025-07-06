@@ -125,6 +125,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onMessage: (callback) => ipcRenderer.on('message', callback),
     onDisplayNotification: (callback) => ipcRenderer.on('display-notification', (event, ...args) => callback(...args)),
     removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel),
+    send: (channel, data) => {
+        ipcRenderer.send(channel, data);
+    },
+    on: (channel, func) => {
+        ipcRenderer.on(channel, (event, ...args) => func(...args));
+    },
 
     // Editor functions
     executeScript: (script, shell) => ipcRenderer.invoke('execute-script', { script, shell }),

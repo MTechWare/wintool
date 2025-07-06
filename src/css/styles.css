@@ -1058,6 +1058,8 @@ html, body {
     max-height: 80vh;
     overflow: hidden;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
 }
 
 .modal-header {
@@ -1098,7 +1100,7 @@ html, body {
 .modal-body {
     padding: 20px;
     overflow-y: auto;
-    max-height: 60vh;
+    flex-grow: 1; /* Allow body to take up available space */
 }
 
 .modal-footer {
@@ -1111,16 +1113,16 @@ html, body {
 
 /* Settings Modal Specific Styles */
 .settings-modal-content {
-    max-width: 900px;
-    width: 95%;
-    max-height: 85vh;
+    max-width: 1000px; /* A more reasonable max-width */
+    width: 90%;
+    height: 80vh; /* Use height instead of max-height for consistency */
 }
 
 .settings-modal-body {
     padding: 0;
     display: flex;
-    max-height: 70vh;
-    overflow: hidden; /* This will be overridden by the child */
+    flex-grow: 1; /* Allow this to grow and fill space */
+    overflow: hidden;
 }
 
 .settings-sidebar {
@@ -1165,7 +1167,7 @@ html, body {
 }
 
 .settings-content {
-    flex: 1;
+    flex-grow: 1; /* Allow content to grow */
     padding: 24px;
     overflow-y: auto;
     overflow-x: hidden; /* Prevent horizontal scrolling */

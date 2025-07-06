@@ -90,21 +90,21 @@ class TabLoader {
                 const bIndex = defaultOrder.indexOf(b.name);
 
                 if (aIsTab && bIsTab) {
-                    // Rule 2: Both are built-in tabs, sort by the default order.
+                    // Both are built-in tabs, sort by the default order.
                     return (aIndex > -1 ? aIndex : Infinity) - (bIndex > -1 ? bIndex : Infinity);
                 }
                 
-                if (aIsTab) return -1; // Rule 3: Tabs always come before plugins.
-                if (bIsTab) return 1;
+                // If one is a tab and the other isn't, the default order from get-tab-folders is maintained.
+                if (aIsTab && !bIsTab) return -1;
+                if (!aIsTab && bIsTab) return 1;
 
-                // Rule 4: Both are plugins, sort alphabetically.
+                // If both are plugins, sort alphabetically.
                 return a.name.localeCompare(b.name);
             });
 
-            const sortedFolderNames = allItems.map(item => item.name);
-            console.log('Sorted tab folders:', sortedFolderNames);
+            console.log('Sorted tab folders:', allItems.map(item => item.name));
 
-            this.totalTabs = sortedFolderNames.length;
+            this.totalTabs = allItems.length;
             this.loadedTabsCount = 0;
             this.initializedTabsCount = 0;
 
@@ -118,15 +118,22 @@ class TabLoader {
 
             this.updateProgress('Loading tabs...', 0);
 
-            for (const folder of sortedFolderNames) {
-                await this.loadTab(folder);
+            let pluginsHeaderShown = false;
+            for (const item of allItems) {
+                if (item.type === 'plugin' && !pluginsHeaderShown) {
+                    pluginsHeaderShown = true;
+                    const pluginLoadProgress = (this.loadedTabsCount / this.totalTabs) * 50;
+                    this.updateProgress('Loading plugins...', pluginLoadProgress);
+                }
+                
+                await this.loadTab(item.name);
                 this.loadedTabsCount++;
                 const loadProgress = (this.loadedTabsCount / this.totalTabs) * 50;
-                this.updateProgress(`Loaded ${folder}`, loadProgress);
+                this.updateProgress(`Loaded ${item.name}`, loadProgress);
             }
 
             this.updateProgress('Waiting for tabs to initialize...', 50);
-            console.log(`Loaded ${sortedFolderNames.length} folder-based tabs, waiting for initialization...`);
+            console.log(`Loaded ${allItems.length} folder-based tabs, waiting for initialization...`);
 
             // Set a timeout for all tabs to initialize
             this.waitForInitialization();

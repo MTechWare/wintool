@@ -532,8 +532,9 @@ app.whenReady().then(async () => {
                 frame: false,
                 resizable: false,
                 webPreferences: {
-                    nodeIntegration: true,
-                    contextIsolation: false
+                    preload: path.join(__dirname, 'preload.js'),
+                    nodeIntegration: false,
+                    contextIsolation: true
                 }
             });
 
@@ -1417,7 +1418,8 @@ ipcMain.handle('get-tab-folders', async () => {
     console.log('get-tab-folders handler called');
     const settingsStore = await getStore();
     const disabledPlugins = settingsStore ? settingsStore.get('disabledPlugins', []) : [];
-    const allItems = [];
+    const tabs = [];
+    const plugins = [];
 
     // 1. Read built-in tabs from the installation directory
     const tabsPath = path.join(__dirname, 'tabs');
@@ -1427,7 +1429,7 @@ ipcMain.handle('get-tab-folders', async () => {
             const itemPath = path.join(tabsPath, item);
             try {
                 if ((await fs.stat(itemPath)).isDirectory()) {
-                    allItems.push({ name: item, type: 'tab' });
+                    tabs.push({ name: item, type: 'tab' });
                 }
             } catch (e) { /* ignore files and other non-directory items */ }
         }
@@ -1439,9 +1441,12 @@ ipcMain.handle('get-tab-folders', async () => {
     const pluginMap = await getPluginMap();
     for (const pluginId of pluginMap.keys()) {
         if (!disabledPlugins.includes(pluginId)) {
-            allItems.push({ name: pluginId, type: 'plugin' });
+            plugins.push({ name: pluginId, type: 'plugin' });
         }
     }
+
+    // Combine tabs and plugins, ensuring plugins are last
+    const allItems = [...tabs, ...plugins];
 
     console.log('Found tab/plugin items:', allItems);
     return allItems;
@@ -2260,7 +2265,7 @@ ipcMain.handle('get-disk-space', async () => {
     return new Promise((resolve, reject) => {
         // Use PowerShell script file for better reliability
         const path = require('path');
-        const scriptPath = path.join(__dirname, 'get-disk-space.ps1');
+        const scriptPath = path.join(__dirname, 'scripts', 'get-disk-space.ps1');
 
         const psProcess = spawn('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath], {
             shell: false, // Changed from true to false for security
@@ -2345,15 +2350,15 @@ ipcMain.handle('scan-cleanup-category', async (event, category) => {
 
         switch (category) {
             case 'temp':
-                scriptPath = path.join(__dirname, 'scan-temp.ps1');
+                scriptPath = path.join(__dirname, 'scripts', 'scan-temp.ps1');
                 break;
 
             case 'system':
-                scriptPath = path.join(__dirname, 'scan-system.ps1');
+                scriptPath = path.join(__dirname, 'scripts', 'scan-system.ps1');
                 break;
 
             case 'cache':
-                scriptPath = path.join(__dirname, 'scan-cache.ps1');
+                scriptPath = path.join(__dirname, 'scripts', 'scan-cache.ps1');
                 break;
 
             case 'registry':
@@ -2414,15 +2419,15 @@ ipcMain.handle('execute-cleanup', async (event, category) => {
 
         switch (category) {
             case 'temp':
-                scriptPath = path.join(__dirname, 'clean-temp.ps1');
+                scriptPath = path.join(__dirname, 'scripts', 'clean-temp.ps1');
                 break;
 
             case 'system':
-                scriptPath = path.join(__dirname, 'clean-system.ps1');
+                scriptPath = path.join(__dirname, 'scripts', 'clean-system.ps1');
                 break;
 
             case 'cache':
-                scriptPath = path.join(__dirname, 'clean-cache.ps1');
+                scriptPath = path.join(__dirname, 'scripts', 'clean-cache.ps1');
                 break;
 
             case 'registry':
