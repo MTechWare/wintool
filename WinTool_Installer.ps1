@@ -59,10 +59,25 @@ function Show-Spinner {
     Write-Host "`r"
 }
 
+function Show-Spinner {
+    param (
+        [scriptblock]$scriptBlock
+    )
+    $spinner = @('|', '/', '-', '\')
+    $job = Start-Job -ScriptBlock $scriptBlock
+    $i = 0
+    while ($job.State -eq 'Running') {
+        Write-Host "`r  $($spinner[$i++ % $spinner.Length]) Processing..." -NoNewline
+        Start-Sleep -Milliseconds 100
+    }
+    Write-Host "`r"
+    Receive-Job $job
+}
+
 # ======================================================================
 # WinTool Installer Script
 # Created by MTechWare
-# Version: 1.0.0
+# Version: 1.0.1
 # ======================================================================
 # This script will:
 #  - Check for required dependencies
@@ -75,7 +90,7 @@ function Show-Spinner {
 # Configuration
 $appName = "WinTool"
 $companyName = "MTechWare"
-$version = "0.1.0w"
+$version = "0.1.1w"
 $installDir = "$env:LOCALAPPDATA\MTechTool"
 $exeUrl = "https://github.com/MTechWare/wintool/releases/download/release/WinTool.exe"
 $desktop = [Environment]::GetFolderPath("Desktop")
@@ -93,7 +108,7 @@ $userName = $env:USERNAME
 Clear-Host
 $host.UI.RawUI.WindowTitle = "$appName Installer - $companyName"
 
-# Display welcome banner
+# Display welcome
 Write-ThemeLine "$appName Installer" -Color "DarkYellow"
 Write-ThemeMsg "_      ___    ______          __" -Color "Yellow"
 Write-ThemeMsg "| | /| / (_)__/_  __/__  ___  / /" -Color "Yellow"
@@ -129,8 +144,9 @@ if (-not $wingetInstalled) {
     $appInstallerPath = Join-Path $env:TEMP "AppInstaller.msixbundle"
 
     try {
-        Show-Spinner
+        $ProgressPreference = 'SilentlyContinue'
         Invoke-WebRequest -Uri $appInstallerUrl -OutFile $appInstallerPath -UseBasicParsing -ErrorAction Stop
+        $ProgressPreference = 'Continue'
         Add-AppxPackage -Path $appInstallerPath
         Remove-Item $appInstallerPath -Force
 
@@ -159,7 +175,6 @@ Write-Host ""
 # Create install directory if it doesn't exist
 Write-StatusMsg "Installation directory" "CHECKING" "Yellow"
 if (!(Test-Path $installDir)) {
-    Show-Spinner -Milliseconds 800
     New-Item -ItemType Directory -Path $installDir -Force | Out-Null
     Write-StatusMsg "Creating directory" "SUCCESS" "Green"
 } else {
@@ -167,23 +182,11 @@ if (!(Test-Path $installDir)) {
 }
 
 # Download the exe file
-Write-StatusMsg "Downloading $appName" "PENDING" "Yellow"
+Write-StatusMsg "Downloading $appName" "DOWNLOADING..." "Yellow"
 try {
-    # Show a simple spinner while downloading
-    $job = Start-Job -ScriptBlock {
-        param($url, $path)
-        Invoke-WebRequest -Uri $url -OutFile $path -UseBasicParsing
-    } -ArgumentList $exeUrl, $exePath
-
-    # Wait for download with a spinner
-    while ($job.State -eq "Running") {
-        Show-Spinner -Milliseconds 500
-    }
-
-    # Check job status
-    Receive-Job -Job $job -ErrorAction Stop
-    Remove-Job -Job $job
-
+    $ProgressPreference = 'SilentlyContinue'
+    Invoke-WebRequest -Uri $exeUrl -OutFile $exePath -UseBasicParsing -ErrorAction Stop
+    $ProgressPreference = 'Continue'
     if (Test-Path $exePath) {
         Write-StatusMsg "Download" "COMPLETE" "Green"
     } else {
@@ -215,7 +218,6 @@ if (!(Test-Path $exePath)) {
 # Create desktop shortcut
 Write-StatusMsg "Creating shortcut" "PENDING" "Yellow"
 try {
-    Show-Spinner -Milliseconds 1000
     $WScriptShell = New-Object -ComObject WScript.Shell
     $Shortcut = $WScriptShell.CreateShortcut($shortcutPath)
     $Shortcut.TargetPath = $exePath
@@ -258,7 +260,7 @@ Write-Host ""
 Write-ThemeMsg "You can close this window after the application launches." -Color "White"
 
 # Countdown before starting the app
-for ($i = 3; $i -gt 0; $i--) {
+for ($i = 1; $i -gt 0; $i--) {
     Write-Host "`rLaunching in $i..." -NoNewline -ForegroundColor "Yellow"
     Start-Sleep -Seconds 1
 }

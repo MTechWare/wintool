@@ -67,8 +67,9 @@ Every plugin is a directory inside `AppData\Local\MTechTool\Plugins\` and must c
 └── my-cool-plugin/
     ├── config.json     // (Required) Manifest file with metadata.
     ├── index.html      // (Required) The UI of the plugin.
-    ├── script.js       // (Required) The logic and API calls.
-    └── styles.css      // (Required) The styling for the UI.
+    ├── script.js       // (Required) The logic for the UI.
+    ├── styles.css      // (Optional) The styling for the UI.
+    └── backend.js      // (Optional) The Node.js backend logic.
 ```
 
 ### The Manifest: `config.json`
@@ -79,6 +80,7 @@ This file tells WinTool how to load your plugin.
 {
   "name": "My Cool Plugin",
   "icon": "fas fa-star",
+  "backend": "backend.js",
   "description": "A brief description of what this plugin does.",
   "version": "1.0.0",
   "author": "Your Name"
@@ -89,6 +91,7 @@ This file tells WinTool how to load your plugin.
 
 *   `name` (string, required): The human-readable name of your plugin, which will appear in the sidebar.
 *   `icon` (string, required): The [Font Awesome](https://fontawesome.com/v5/search?m=free) icon class (e.g., `"fas fa-cogs"`).
+*   `backend` (string, optional): The path to the plugin's backend script. If provided, WinTool will load this script in the main process.
 *   `description` (string, optional): A brief summary of your plugin's functionality.
 *   `version` (string, optional): The version of your plugin.
 *   `author` (string, optional): Your name or username.
