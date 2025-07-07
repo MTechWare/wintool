@@ -147,12 +147,73 @@ if (tweaksGrid) {
                 // For simplicity, we'll just log a message. A more robust solution would be to export the key before deleting.
                 console.log('Reverting "Remove 3D Objects" requires manually adding the registry key back.');
             }
+        },
+        {
+            id: 'disable-lock-screen',
+            title: 'Disable Lock Screen',
+            description: 'Disables the lock screen, showing the login screen directly.',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Personalization" /v "NoLockScreen"');
+                return result.stdout.includes('NoLockScreen    REG_DWORD    0x1');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Personalization" /v "NoLockScreen" /t REG_DWORD /d 1 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Personalization" /v "NoLockScreen" /f');
+            }
+        },
+        {
+            id: 'enable-verbose-status',
+            title: 'Enable Verbose Status Messages',
+            description: 'Displays detailed information during startup, shutdown, logon, and logoff.',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v "VerboseStatus"');
+                return result.stdout.includes('VerboseStatus    REG_DWORD    0x1');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v "VerboseStatus" /t REG_DWORD /d 1 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v "VerboseStatus" /f');
+            }
+        },
+        {
+            id: 'disable-auto-reboot-on-failure',
+            title: 'Disable Automatic Restart on System Failure',
+            description: 'Prevents Windows from automatically restarting after a Blue Screen of Death (BSOD).',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\CrashControl" /v "AutoReboot"');
+                return result.stdout.includes('AutoReboot    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\CrashControl" /v "AutoReboot" /t REG_DWORD /d 0 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\CrashControl" /v "AutoReboot" /t REG_DWORD /d 1 /f');
+            }
+        },
+        {
+            id: 'disable-people-bar',
+            title: 'Disable People Bar',
+            description: 'Disables the "People" icon and feature on the taskbar.',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\People" /v "PeopleBand"');
+                return result.stdout.includes('PeopleBand    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\People" /v "PeopleBand" /t REG_DWORD /d 0 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\People" /v "PeopleBand" /t REG_DWORD /d 1 /f');
+            }
         }
     ];
 
-    const renderTweaks = () => {
+    const renderTweaks = (filteredTweaks) => {
+        const tweaksToRender = filteredTweaks || tweaks;
         tweaksGrid.innerHTML = '';
-        tweaks.forEach(tweak => {
+        tweaksToRender.forEach(tweak => {
             const card = document.createElement('div');
             card.className = 'plugin-card';
             card.dataset.tweakId = tweak.id;
@@ -225,6 +286,16 @@ if (tweaksGrid) {
                 checkbox.disabled = false;
             }
         }
+    });
+
+    const searchInput = document.getElementById('tweak-search');
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filteredTweaks = tweaks.filter(tweak =>
+            tweak.title.toLowerCase().includes(searchTerm) ||
+            tweak.description.toLowerCase().includes(searchTerm)
+        );
+        renderTweaks(filteredTweaks);
     });
 
     renderTweaks();

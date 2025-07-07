@@ -171,26 +171,12 @@ export function registerDefaultCommands(loadedTabs) {
     });
 
     
-    registerCommand({
-        id: 'open-cmd',
-        title: 'Open Command Prompt',
-        category: 'System',
-        icon: 'fas fa-terminal',
-        action: () => window.electronAPI.runCommand('start cmd')
-    });
 
-    registerCommand({
-        id: 'open-powershell',
-        title: 'Open PowerShell',
-        category: 'System',
-        icon: 'fab fa-windows',
-        action: () => window.electronAPI.runCommand('start powershell')
-    });
 
     registerCommand({
         id: 'sfc-scannow',
         title: 'Run SFC Scan',
-        category: 'System Repair',
+        category: 'System Utilities',
         icon: 'fas fa-first-aid',
         action: () => window.electronAPI.runCommand('sfc /scannow', true)
     });
@@ -198,7 +184,7 @@ export function registerDefaultCommands(loadedTabs) {
     registerCommand({
         id: 'dism-cleanup',
         title: 'Run DISM Cleanup',
-        category: 'System Repair',
+        category: 'System Utilities',
         icon: 'fas fa-medkit',
         action: () => window.electronAPI.runCommand('Dism /Online /Cleanup-Image /RestoreHealth', true)
     });
@@ -236,30 +222,179 @@ export function registerDefaultCommands(loadedTabs) {
         action: () => window.electronAPI.quitApp()
     });
 
-    
     registerCommand({
-        id: 'launch-resmon',
-        title: 'Launch Resource Monitor',
+        id: 'launch-device-manager',
+        title: 'Launch Device Manager',
         category: 'System Utilities',
-        icon: 'fas fa-chart-line',
-        action: () => window.electronAPI.launchSystemUtility('resmon')
-    });
-    registerCommand({
-        id: 'launch-msinfo32',
-        title: 'Launch System Information',
-        category: 'System Utilities',
-        icon: 'fas fa-info-circle',
-        action: () => window.electronAPI.launchSystemUtility('msinfo32')
-    });
-    registerCommand({
-        id: 'launch-control-panel',
-        title: 'Launch Control Panel',
-        category: 'System Utilities',
-        icon: 'fas fa-sliders-h',
-        action: () => window.electronAPI.launchSystemUtility('control')
+        icon: 'fas fa-microchip',
+        action: () => window.electronAPI.launchSystemUtility('devmgmt.msc')
     });
 
+    registerCommand({
+        id: 'launch-disk-management',
+        title: 'Launch Disk Management',
+        category: 'System Utilities',
+        icon: 'fas fa-hdd',
+        action: () => window.electronAPI.launchSystemUtility('diskmgmt.msc')
+    });
+
+    registerCommand({
+        id: 'launch-computer-management',
+        title: 'Launch Computer Management',
+        category: 'System Utilities',
+        icon: 'fas fa-desktop',
+        action: () => window.electronAPI.launchSystemUtility('compmgmt.msc')
+    });
+
+    registerCommand({
+        id: 'launch-system-configuration',
+        title: 'Launch System Configuration',
+        category: 'System Utilities',
+        icon: 'fas fa-sliders-h',
+        action: () => window.electronAPI.launchSystemUtility('msconfig')
+    });
+    registerCommand({
+        id: 'launch-registry-editor',
+        title: 'Launch Registry Editor',
+        category: 'System Utilities',
+        icon: 'fas fa-edit',
+        action: () => window.electronAPI.launchSystemUtility('regedit')
+    });
+
+    registerCommand({
+        id: 'launch-services',
+        title: 'Launch Services',
+        category: 'System Utilities',
+        icon: 'fas fa-server',
+        action: () => window.electronAPI.launchSystemUtility('services.msc')
+    });
+
+    registerCommand({
+        id: 'launch-task-manager',
+        title: 'Launch Task Manager',
+        category: 'System Utilities',
+        icon: 'fas fa-tasks',
+        action: () => window.electronAPI.launchSystemUtility('taskmgr')
+    });
+
+    registerCommand({
+        id: 'launch-group-policy-editor',
+        title: 'Launch Group Policy Editor',
+        category: 'System Utilities',
+        icon: 'fas fa-shield-alt',
+        action: () => window.electronAPI.launchSystemUtility('gpedit.msc')
+    });
+    registerCommand({
+        id: 'launch-network-connections',
+        title: 'Launch Network Connections',
+        category: 'System Utilities',
+        icon: 'fas fa-wifi',
+        action: () => window.electronAPI.launchSystemUtility('ncpa.cpl')
+    });
+
+    registerCommand({
+        id: 'launch-network-center',
+        title: 'Launch Network and Sharing Center',
+        category: 'System Utilities',
+        icon: 'fas fa-share-alt',
+        action: () => window.electronAPI.launchSystemUtility('control /name Microsoft.NetworkAndSharingCenter')
+    });
+
+    registerCommand({
+        id: 'launch-command-prompt',
+        title: 'Launch Command Prompt',
+        category: 'System Utilities',
+        icon: 'fas fa-terminal',
+        action: () => window.electronAPI.launchSystemUtility('cmd')
+    });
+
+    registerCommand({
+        id: 'launch-powershell',
+        title: 'Launch PowerShell',
+        category: 'System Utilities',
+        icon: 'fas fa-code',
+        action: () => window.electronAPI.launchSystemUtility('powershell')
+    });
+
+    registerCommand({
+        id: 'launch-event-viewer',
+        title: 'Launch Event Viewer',
+        category: 'System Utilities',
+        icon: 'fas fa-list-alt',
+        action: () => window.electronAPI.launchSystemUtility('eventvwr.msc')
+    });
+
+    registerCommand({
+        id: 'launch-performance-monitor',
+        title: 'Launch Performance Monitor',
+        category: 'System Utilities',
+        icon: 'fas fa-chart-line',
+        action: () => window.electronAPI.launchSystemUtility('perfmon.msc')
+    });
+
+    registerCommand({
+        id: 'launch-user-accounts',
+        title: 'Launch User Accounts',
+        category: 'System Utilities',
+        icon: 'fas fa-user-cog',
+        action: () => window.electronAPI.launchSystemUtility('netplwiz')
+    });
+
+    registerCommand({
+        id: 'launch-local-users-and-groups',
+        title: 'Launch Local Users and Groups',
+        category: 'System Utilities',
+        icon: 'fas fa-users-cog',
+        action: () => window.electronAPI.launchSystemUtility('lusrmgr.msc')
+    });
+
+    registerCommand({
+        id: 'launch-user-control-panel',
+        title: 'Launch User Control Panel',
+        category: 'System Utilities',
+        icon: 'fas fa-id-card',
+        action: () => window.electronAPI.launchSystemUtility('control userpasswords')
+    });
+
+    registerCommand({
+        id: 'launch-security-policy',
+        title: 'Launch Security Policy',
+        category: 'System Utilities',
+        icon: 'fas fa-lock',
+        action: () => window.electronAPI.launchSystemUtility('secpol.msc')
+    });
     
+    registerCommand({
+        id: 'launch-disk-cleanup',
+        title: 'Launch Disk Cleanup',
+        category: 'System Utilities',
+        icon: 'fas fa-broom',
+        action: () => window.electronAPI.launchSystemUtility('cleanmgr')
+    });
+
+    registerCommand({
+        id: 'launch-disk-defragmenter',
+        title: 'Launch Disk Defragmenter',
+        category: 'System Utilities',
+        icon: 'fas fa-puzzle-piece',
+        action: () => window.electronAPI.launchSystemUtility('dfrgui')
+    });
+
+    registerCommand({
+        id: 'launch-check-disk',
+        title: 'Launch Check Disk',
+        category: 'System Utilities',
+        icon: 'fas fa-search',
+        action: () => window.electronAPI.launchSystemUtility('chkdsk /f')
+    });
+
+    registerCommand({
+        id: 'launch-diskpart',
+        title: 'Launch DiskPart',
+        category: 'System Utilities',
+        icon: 'fas fa-cut',
+        action: () => window.electronAPI.launchSystemUtility('diskpart')
+    });
      registerCommand({
         id: 'install-plugin',
         title: 'Install Plugin from File...',
@@ -282,21 +417,21 @@ export function registerDefaultCommands(loadedTabs) {
     registerCommand({
         id: 'open-temp-folder',
         title: 'Open Temp Folder',
-        category: 'Folders',
+        category: 'System Utilities',
         icon: 'fas fa-folder',
         action: () => window.electronAPI.openSpecialFolder('temp')
     });
     registerCommand({
         id: 'open-startup-folder',
         title: 'Open Startup Folder',
-        category: 'Folders',
+        category: 'System Utilities',
         icon: 'fas fa-folder',
         action: () => window.electronAPI.openSpecialFolder('startup')
     });
     registerCommand({
         id: 'open-hosts-folder',
         title: 'Open Hosts File Folder',
-        category: 'Folders',
+        category: 'System Utilities',
         icon: 'fas fa-folder',
         action: () => window.electronAPI.openSpecialFolder('hosts')
     });
@@ -305,7 +440,7 @@ export function registerDefaultCommands(loadedTabs) {
     registerCommand({
         id: 'cleanup-temp',
         title: 'Clean Temporary Files',
-        category: 'System Cleanup',
+        category: 'System Utilities',
         icon: 'fas fa-broom',
         action: () => {
             window.electronAPI.executeCleanup('temp').then(result => {
@@ -375,6 +510,7 @@ export function showHelpModal() {
     const commandsPerLoad = 15;
     let serviceCommandsRendered = 0;
     let packageCommandsRendered = 0;
+    let systemUtilitiesCommandsRendered = 0;
 
     
     commandList.onclick = function(e) {
@@ -400,6 +536,7 @@ export function showHelpModal() {
             commandList.innerHTML = '';
             serviceCommandsRendered = 0;
             packageCommandsRendered = 0;
+            systemUtilitiesCommandsRendered = 0;
         }
 
         const groupedCommands = commandRegistry.reduce((acc, cmd) => {
@@ -435,6 +572,10 @@ export function showHelpModal() {
                 'Package Management': {
                     rendered: packageCommandsRendered,
                     updateRendered: (count) => packageCommandsRendered = count
+                },
+                'System Utilities': {
+                    rendered: systemUtilitiesCommandsRendered,
+                    updateRendered: (count) => systemUtilitiesCommandsRendered = count
                 }
             };
 

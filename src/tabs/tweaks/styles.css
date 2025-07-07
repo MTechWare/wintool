@@ -104,3 +104,37 @@ input:checked + .slider:before {
     padding-top: 12px;
     margin-top: auto;
 }
+/* Tweaks search bar styles */
+.search-container {
+    position: relative;
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 400px; /* Or adjust as needed */
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px 15px 10px 40px; /* Add padding for the icon */
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    background-color: var(--background-card);
+    color: var(--text-color);
+    font-size: 1em;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2);
+}
+
+.search-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    font-size: 1.1em;
+}

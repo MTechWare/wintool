@@ -141,6 +141,9 @@
                                 <button class="btn btn-secondary hero-btn" onclick="switchToTab('folder-system-utilities')">
                                     <i class="fas fa-tools"></i> System Utilities
                                 </button>
+                                <button class="btn btn-secondary hero-btn" onclick="window.open('https://discord.gg/GSTEfkxhmD', '_blank')">
+                                    <i class="fab fa-discord"></i> Join the Discord
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -331,7 +334,7 @@
             <!-- Plugins Tab Content -->
             <div id="tab-plugins" class="tab-content">
                 <div class="tab-header">
-                    <h1><i class="fas fa-puzzle-piece"></i> Plugin Management</h1>
+                    <h1><i class="fas fa-puzzle-piece"></i> Plugin Management | BETA</h1>
                     <p>Install, manage, and discover new plugins for WinTool.</p>
                 </div>
                 <div class="plugin-actions">
@@ -503,6 +506,13 @@
                                 <option value="no">Never elevate</option>
                             </select>
                             <p class="settings-description">Choose how the application should handle administrator privileges on startup.</p>
+                        </div>
+                        <div class="settings-group">
+                            <label class="settings-label">
+                                <input type="checkbox" id="enable-discord-rpc" class="settings-checkbox">
+                                Enable Discord Rich Presence
+                            </label>
+                            <p class="settings-description">Show your current WinTool activity in Discord.</p>
                         </div>
                     </div>
 

@@ -17,8 +17,18 @@ if (!container) {
 
 if (container) {
     loadSystemInfo(container);
+    setupRefreshButton(container);
 } else {
     console.error('No container found for system info tab, cannot load data.');
+}
+
+function setupRefreshButton(container) {
+    const refreshBtn = container.querySelector('#refresh-system-info-btn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            loadSystemInfo(container);
+        });
+    }
 }
 
 async function loadSystemInfo(container) {

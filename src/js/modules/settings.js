@@ -87,6 +87,12 @@ async function loadCurrentSettings() {
                 elevationSelector.value = elevationPreference;
             }
 
+            const enableDiscordRpc = await window.electronAPI.getSetting('enableDiscordRpc', true);
+            const enableDiscordRpcCheckbox = document.getElementById('enable-discord-rpc');
+            if (enableDiscordRpcCheckbox) {
+                enableDiscordRpcCheckbox.checked = enableDiscordRpc;
+            }
+
 
             
             const enableDevTools = await window.electronAPI.getSetting('enableDevTools', true);
@@ -243,6 +249,9 @@ export async function saveSettings() {
 
             const elevationPreference = document.getElementById('elevation-preference')?.value || 'ask';
             await window.electronAPI.setSetting('elevationChoice', elevationPreference);
+
+            const enableDiscordRpc = document.getElementById('enable-discord-rpc')?.checked || false;
+            await window.electronAPI.setSetting('enableDiscordRpc', enableDiscordRpc);
 
 
             

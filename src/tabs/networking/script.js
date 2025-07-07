@@ -38,10 +38,71 @@ if (document.readyState === 'loading') {
     initNetworkingTab();
 }
 
+function setupRefreshButton(container) {
+    const refreshBtn = container.querySelector('#refresh-networking-btn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            loadNetworkingInfo(container);
+        });
+    }
+}
+
+function setupNetworkActionButtons(container) {
+    const flushDnsBtn = container.querySelector('#flush-dns-btn');
+    const resetTcpIpBtn = container.querySelector('#reset-tcp-ip-btn');
+    const renewDhcpBtn = container.querySelector('#renew-dhcp-btn');
+
+    if (flushDnsBtn) {
+        flushDnsBtn.addEventListener('click', async () => {
+            try {
+                const result = await window.electronAPI.runCommand('ipconfig /flushdns');
+                console.log('Flush DNS result:', result);
+                if (result.success) {
+                    loadNetworkingInfo(container);
+                }
+            } catch (error) {
+                console.error('Error flushing DNS:', error);
+            }
+        });
+    }
+
+    if (resetTcpIpBtn) {
+        resetTcpIpBtn.addEventListener('click', async () => {
+            try {
+                const result = await window.electronAPI.runCommand('netsh int ip reset');
+                console.log('Reset TCP/IP result:', result);
+                if (result.success) {
+                    loadNetworkingInfo(container);
+                }
+            } catch (error) {
+                console.error('Error resetting TCP/IP:', error);
+            }
+        });
+    }
+
+    if (renewDhcpBtn) {
+        renewDhcpBtn.addEventListener('click', async () => {
+            try {
+                const result = await window.electronAPI.runCommand('ipconfig /renew');
+                console.log('Renew DHCP result:', result);
+                if (result.success) {
+                    loadNetworkingInfo(container);
+                }
+            } catch (error) {
+                console.error('Error renewing DHCP lease:', error);
+            }
+        });
+    }
+}
+
 async function loadNetworkingInfo(container) {
     try {
         console.log('loadNetworkingInfo called with container:', container);
         
+        // Setup action buttons
+        setupNetworkActionButtons(container);
+        setupRefreshButton(container);
+
         // Get system info from Electron API
         if (window && window.electronAPI) {
             console.log('electronAPI available, calling getSystemInfo...');

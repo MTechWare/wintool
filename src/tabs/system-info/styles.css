@@ -1,5 +1,32 @@
 /* System Info Tab Styles - Clean Version */
 
+.tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#refresh-system-info-btn {
+    padding: 10px 12px;
+    font-size: 1rem;
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#refresh-system-info-btn:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+#refresh-system-info-btn i {
+    color: var(--primary-color);
+}
+
+
 /* System Overview */
 .system-overview {
     margin-bottom: 40px;

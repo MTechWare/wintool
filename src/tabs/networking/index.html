@@ -1,9 +1,22 @@
 <div class="tab-header">
-    <h1><i class="fas fa-network-wired"></i> Network Information</h1>
-    <p>Network interfaces and connectivity details</p>
+    <div>
+        <h1><i class="fas fa-network-wired"></i> Network Information</h1>
+        <p>Network interfaces and connectivity details</p>
+    </div>
+    <button id="refresh-networking-btn" class="action-btn" title="Refresh Network Information"><i class="fas fa-sync-alt"></i></button>
 </div>
 
 <div class="networking-content">
+    <!-- Network Actions -->
+    <div class="network-actions-section">
+        <h3>Network Actions</h3>
+        <div class="actions-grid">
+            <button id="flush-dns-btn" class="action-btn"><i class="fas fa-redo"></i> Flush DNS Cache</button>
+            <button id="reset-tcp-ip-btn" class="action-btn"><i class="fas fa-undo"></i> Reset TCP/IP Stack</button>
+            <button id="renew-dhcp-btn" class="action-btn"><i class="fas fa-sync-alt"></i> Renew DHCP Lease</button>
+        </div>
+    </div>
+
     <!-- Network Overview -->
     <div class="network-overview">
         <h3>Network Overview</h3>
@@ -39,7 +52,6 @@
         </div>
     </div>
 
-    <!-- Network Statistics -->
     <div class="network-stats-section">
         <h3>Network Statistics</h3>
         <div class="stats-grid">

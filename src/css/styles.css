@@ -365,6 +365,7 @@ html, body {
 }
 
 .tab-item {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -372,19 +373,26 @@ html, body {
     margin: 4px 16px;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     color: var(--text-secondary);
     font-weight: 500;
+    border-left: 4px solid transparent;
 }
 
 .tab-item:hover {
     background: var(--hover-color);
     color: var(--text-primary);
+    transform: translateX(5px);
+    border-left-color: var(--border-color);
 }
 
 .tab-item.active {
     background: var(--primary-color);
     color: white;
+    font-weight: 600;
+    border-left-color: var(--primary-dark);
+    transform: translateX(10px);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.2);
 }
 
 .tab-item i {

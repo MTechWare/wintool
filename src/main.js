@@ -17,6 +17,8 @@ const si = require('systeminformation');
 const extract = require('extract-zip');
 const axios = require('axios');
 
+const discordPresence = require('./js/modules/discord-presence');
+
 // Initialize store for settings
 let store;
 
@@ -496,6 +498,14 @@ ipcMain.handle('plugin-invoke', async (event, pluginId, handlerName, ...args) =>
 app.whenReady().then(async () => {
     console.log('Electron app is ready');
 
+    const settingsStore = await getStore();
+    if (settingsStore) {
+        const enableDiscordRpc = settingsStore.get('enableDiscordRpc', true);
+        if (enableDiscordRpc) {
+            discordPresence.start();
+        }
+    }
+
     // Register a global shortcut to quit the application
     globalShortcut.register('Control+Q', () => {
         console.log('Control+Q shortcut detected, quitting application.');
@@ -509,7 +519,6 @@ app.whenReady().then(async () => {
 
     const { default: isElevated } = await import('is-elevated');
     const elevated = await isElevated();
-    const settingsStore = await getStore();
 
     if (!elevated) {
         const elevationChoice = settingsStore ? settingsStore.get('elevationChoice', 'ask') : 'ask';
@@ -805,6 +814,13 @@ ipcMain.handle('set-setting', async (event, key, value) => {
     const settingsStore = await getStore();
     if (!settingsStore) return false;
     settingsStore.set(key, value);
+    if (key === 'enableDiscordRpc') {
+        if (value) {
+            discordPresence.start();
+        } else {
+            discordPresence.stop();
+        }
+    }
     return true;
 });
 
