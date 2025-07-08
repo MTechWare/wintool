@@ -1,6 +1,6 @@
 {
   "name": "wintool",
-  "version": "0.1.1w",
+  "version": "0.1.2w",
   "main": "src/main.js",
   "description": "WinTool - Windows System Management Tool",
   "author": "MTech",
@@ -29,22 +29,12 @@
       "buildResources": "src/assets"
     },
     "files": [
-      "src/main.js",
-      "src/preload.js",
-      "src/index.html",
-      "src/assets/**/*",
-      "src/css/**/*",
-      "src/js/**/*",
-      "src/tabs/**/*",
-      "src/*.ps1",
-      "src/elevation-prompt.html",
-      "src/elevation-prompt.css",
-      "src/help-modal.html",
+      "src/**/*",
       "!src/**/*.md",
       "!src/**/test/**/*"
     ],
     "asar": true,
-    "compression": "maximum",
+    "compression": "normal",
     "portable": {
       "artifactName": "${productName}.${ext}"
     }
@@ -57,12 +47,14 @@
   },
   "dependencies": {
     "axios": "^1.10.0",
+    "bindings": "^1.5.0",
     "cors": "^2.8.5",
     "discord-rpc": "^4.0.1",
     "electron-store": "^10.1.0",
     "express": "^5.1.0",
     "extract-zip": "^2.0.1",
     "is-elevated": "^4.0.0",
+    "register-scheme": "^0.0.2",
     "systeminformation": "^5.27.7"
   }
 }
