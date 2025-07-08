@@ -16,8 +16,9 @@ const os = require('os');
 const si = require('systeminformation');
 const extract = require('extract-zip');
 const axios = require('axios');
-
+const crypto = require('crypto');
 const discordPresence = require('./js/modules/discord-presence');
+const verifiedHashes = require('./config/verified-plugins.json').verified_hashes;
 
 // Initialize store for settings
 let store;
@@ -393,47 +394,6 @@ async function loadPluginBackends() {
     for (const [pluginId, pluginPath] of pluginMap.entries()) {
         const backendScriptPath = path.join(pluginPath, 'backend.js');
         try {
-            // Check for and install plugin-specific dependencies
-            const packageJsonPath = path.join(pluginPath, 'package.json');
-            try {
-                await fs.access(packageJsonPath);
-                console.log(`Found package.json for plugin: ${pluginId}. Checking dependencies...`);
-                
-                // Check if node_modules exists. If not, run npm install.
-                const nodeModulesPath = path.join(pluginPath, 'node_modules');
-                try {
-                    await fs.access(nodeModulesPath);
-                } catch (e) {
-                    console.log(`node_modules not found for ${pluginId}. Running npm install...`);
-                    await new Promise((resolve, reject) => {
-                        // Use 'npm.cmd' on Windows for better reliability with spawn.
-                        const npmInstall = spawn('npm.cmd', ['install'], { cwd: pluginPath, shell: true });
-                        let stderr = '';
-                        
-                        npmInstall.stderr.on('data', (data) => {
-                            stderr += data.toString();
-                        });
-
-                        npmInstall.on('close', (code) => {
-                            if (code === 0) {
-                                console.log(`npm install completed for ${pluginId}`);
-                                resolve();
-                            } else {
-                                console.error(`npm install failed for ${pluginId}. Stderr: ${stderr}`);
-                                reject(new Error(`npm install failed for ${pluginId} with code ${code}. See logs for details.`));
-                            }
-                        });
-
-                        npmInstall.on('error', (err) => {
-                            console.error(`Failed to start npm for ${pluginId}. Is npm in your system's PATH? Error: ${err.message}`);
-                            reject(err);
-                        });
-                    });
-                }
-            } catch (e) {
-                // No package.json, so no dependencies to install.
-            }
-
             // Check if backend.js exists before trying to require it.
             await fs.stat(backendScriptPath);
             console.log(`Found backend.js for plugin: ${pluginId}`);
@@ -495,30 +455,43 @@ ipcMain.handle('plugin-invoke', async (event, pluginId, handlerName, ...args) =>
 
 
 // App event handlers
-app.whenReady().then(async () => {
+async function initializeApplication() {
     console.log('Electron app is ready');
 
-    const settingsStore = await getStore();
-    if (settingsStore) {
-        const enableDiscordRpc = settingsStore.get('enableDiscordRpc', true);
-        if (enableDiscordRpc) {
-            discordPresence.start();
-        }
-    }
-
-    // Register a global shortcut to quit the application
     globalShortcut.register('Control+Q', () => {
         console.log('Control+Q shortcut detected, quitting application.');
         quitApplication();
     });
 
-    // Ensure the user-writable directory for plugins exists before doing anything else.
-    await ensurePluginsPathExists();
-
-    await loadPluginBackends();
-
+    const settingsStore = await getStore();
     const { default: isElevated } = await import('is-elevated');
     const elevated = await isElevated();
+
+    const showWindowAndFinishSetup = () => {
+        if (mainWindow) {
+            return; // Window already exists
+        }
+        createWindow();
+        createTray();
+        
+        // Run slow tasks after the window is visible.
+        (async () => {
+            try {
+                console.log('Starting background initialization...');
+                if (settingsStore) {
+                    const enableDiscordRpc = settingsStore.get('enableDiscordRpc', true);
+                    if (enableDiscordRpc) {
+                        discordPresence.start();
+                    }
+                }
+                await ensurePluginsPathExists();
+                await loadPluginBackends();
+                console.log('Background initialization finished.');
+            } catch (error) {
+                console.error('Error during background startup tasks:', error);
+            }
+        })();
+    };
 
     if (!elevated) {
         const elevationChoice = settingsStore ? settingsStore.get('elevationChoice', 'ask') : 'ask';
@@ -533,7 +506,7 @@ app.whenReady().then(async () => {
             });
             return;
         } else if (elevationChoice === 'no') {
-            // Continue without elevation
+            showWindowAndFinishSetup();
         } else { // 'ask'
             const promptWindow = new BrowserWindow({
                 width: 500,
@@ -561,7 +534,7 @@ app.whenReady().then(async () => {
                 }
             });
 
-            ipcMain.on('elevation-choice', (event, { choice, remember }) => {
+            ipcMain.once('elevation-choice', (event, { choice, remember }) => {
                 promptWindow.close();
 
                 if (remember && settingsStore) {
@@ -577,19 +550,17 @@ app.whenReady().then(async () => {
                         app.quit();
                     });
                 } else {
-                    createWindow();
-                    createTray();
+                    showWindowAndFinishSetup();
                 }
             });
-            return;
         }
+    } else {
+        // Already elevated
+        showWindowAndFinishSetup();
     }
+}
 
-    // Create window and tray directly
-    console.log('Creating window and tray...');
-    createWindow();
-    createTray();
-});
+app.whenReady().then(initializeApplication);
 
 app.on('window-all-closed', () => {
     // Don't quit the app when all windows are closed - keep running in tray
@@ -1469,6 +1440,29 @@ ipcMain.handle('get-tab-folders', async () => {
 });
 
 // Handler to get all plugins, including disabled ones, for the management UI
+// Function to calculate the hash of a directory's contents
+async function calculateDirectoryHash(directory) {
+    const hash = crypto.createHash('sha256');
+    const files = await fs.readdir(directory);
+
+    for (const file of files.sort()) { // Sort for consistent hash results
+        const filePath = path.join(directory, file);
+        const stat = await fs.stat(filePath);
+
+        if (stat.isDirectory()) {
+            // Recursively hash subdirectories
+            const subDirHash = await calculateDirectoryHash(filePath);
+            hash.update(subDirHash);
+        } else {
+            // Hash file contents
+            const fileContents = await fs.readFile(filePath);
+            hash.update(fileContents);
+        }
+    }
+
+    return hash.digest('hex');
+}
+
 ipcMain.handle('get-all-plugins', async () => {
     console.log('get-all-plugins handler called');
     const pluginMap = await getPluginMap();
@@ -1486,6 +1480,12 @@ ipcMain.handle('get-all-plugins', async () => {
             // Return a default object so the plugin still appears, albeit with default info
             config = { name: pluginId, description: 'Could not load plugin manifest.', icon: 'fas fa-exclamation-triangle' };
         }
+
+        // --- Verification Logic ---
+        const directoryHash = await calculateDirectoryHash(pluginPath);
+        const isVerified = verifiedHashes[pluginId] === directoryHash;
+        // --- End Verification Logic ---
+
         return {
             id: pluginId,
             name: config.name || pluginId,
@@ -1493,7 +1493,9 @@ ipcMain.handle('get-all-plugins', async () => {
             version: config.version || 'N/A',
             author: config.author || 'Unknown',
             icon: config.icon || 'fas fa-cog',
-            enabled: !disabledPlugins.includes(pluginId)
+            enabled: !disabledPlugins.includes(pluginId),
+            verified: isVerified, // Add the verified status to the plugin object
+            hash: directoryHash // Add the hash to the plugin object
         };
     }));
     
@@ -3074,11 +3076,11 @@ ipcMain.handle('get-event-logs', async (event, logName) => {
 });
 
 ipcMain.handle('save-file-dialog-and-write', async (event, content, options) => {
-    const { title, defaultPath, filters } = options;
+    const { title, defaultPath, filters } = options || {};
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
-        title,
+        title: title || 'Save File',
         defaultPath,
-        filters,
+        filters: filters || [{ name: 'All Files', extensions: ['*'] }],
     });
 
     if (canceled || !filePath) {
@@ -3086,9 +3088,8 @@ ipcMain.handle('save-file-dialog-and-write', async (event, content, options) => 
     }
 
     try {
-        // The content is a data URL, so we need to convert it to a Buffer.
-        const data = Buffer.from(content.split(',')[1], 'base64');
-        await fs.writeFile(filePath, data);
+        // Content is expected to be a string.
+        await fs.writeFile(filePath, content, 'utf8');
         return { success: true, filePath };
     } catch (error) {
         console.error('Failed to save file:', error);

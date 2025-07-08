@@ -81,6 +81,12 @@ input:checked + .slider:before {
     border-color: var(--primary-color);
 }
 
+#tweaks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
 .plugin-title {
     font-size: 1.1em;
     font-weight: 600;
@@ -137,4 +143,26 @@ input:checked + .slider:before {
     transform: translateY(-50%);
     color: var(--text-secondary);
     font-size: 1.1em;
+}
+
+.tweaks-header-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.search-container {
+    flex-grow: 1;
+    margin-right: 10px;
+    margin-bottom: 0;
+}
+
+.tweak-actions {
+    display: flex;
+    gap: 10px;
+}
+
+#tweaks-grid .plugin-section-header {
+    grid-column: 1 / -1;
 }

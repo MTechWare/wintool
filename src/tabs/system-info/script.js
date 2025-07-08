@@ -18,6 +18,7 @@ if (!container) {
 if (container) {
     loadSystemInfo(container);
     setupRefreshButton(container);
+    setupExportButton(container);
 } else {
     console.error('No container found for system info tab, cannot load data.');
 }
@@ -27,6 +28,29 @@ function setupRefreshButton(container) {
     if (refreshBtn) {
         refreshBtn.addEventListener('click', () => {
             loadSystemInfo(container);
+        });
+    }
+}
+
+function setupExportButton(container) {
+    const exportBtn = container.querySelector('#export-system-info-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', async () => {
+            if (window && window.electronAPI) {
+                const sysInfo = await window.electronAPI.getSystemInfo();
+                const data = JSON.stringify(sysInfo, null, 2);
+                const blob = new Blob([data], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'system-info.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else {
+                console.error('electronAPI is not available to export data.');
+            }
         });
     }
 }

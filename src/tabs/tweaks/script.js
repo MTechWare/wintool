@@ -9,6 +9,7 @@ if (tweaksGrid) {
         {
             id: 'disable-cortana',
             title: 'Disable Cortana',
+            category: 'System Tweaks',
             description: 'Disables the Cortana voice assistant.',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v "AllowCortana"');
@@ -24,6 +25,7 @@ if (tweaksGrid) {
         {
             id: 'show-file-extensions',
             title: 'Show File Extensions',
+            category: 'System Tweaks',
             description: 'Shows file extensions in File Explorer.',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "HideFileExt"');
@@ -39,6 +41,7 @@ if (tweaksGrid) {
         {
             id: 'disable-telemetry',
             title: 'Disable Telemetry',
+            category: 'System Tweaks',
             description: 'Disables Windows telemetry services, tasks, and data collection.',
             check: async () => {
                 const regResult = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v "AllowTelemetry"');
@@ -73,6 +76,7 @@ if (tweaksGrid) {
         {
             id: 'dark-theme-apps',
             title: 'Use Dark Theme for Apps',
+            category: 'System Tweaks',
             description: 'Switches the application theme to dark mode.',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v "AppsUseLightTheme"');
@@ -86,23 +90,9 @@ if (tweaksGrid) {
             }
         },
         {
-            id: 'disable-startup-delay',
-            title: 'Disable Startup Delay',
-            description: 'Removes the delay for startup applications.',
-            check: async () => {
-                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Serialize" /v "StartupDelayInMSec"');
-                return result.stdout.includes('StartupDelayInMSec    REG_DWORD    0x0');
-            },
-            apply: async () => {
-                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Serialize" /v "StartupDelayInMSec" /t REG_DWORD /d 0 /f');
-            },
-            revert: async () => {
-                await window.electronAPI.runAdminCommand('reg delete "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Serialize" /v "StartupDelayInMSec" /f');
-            }
-        },
-        {
             id: 'show-hidden-files',
             title: 'Show Hidden Files and Folders',
+            category: 'System Tweaks',
             description: 'Makes hidden files and folders visible in File Explorer.',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "Hidden"');
@@ -118,6 +108,7 @@ if (tweaksGrid) {
         {
             id: 'disable-action-center',
             title: 'Disable Action Center',
+            category: 'System Tweaks',
             description: 'Disables the Action Center.',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v "DisableNotificationCenter"');
@@ -133,6 +124,7 @@ if (tweaksGrid) {
         {
             id: 'remove-3d-objects',
             title: 'Remove 3D Objects from File Explorer',
+            category: 'System Tweaks',
             description: 'Removes the "3D Objects" folder from This PC.',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}"');
@@ -151,6 +143,7 @@ if (tweaksGrid) {
         {
             id: 'disable-lock-screen',
             title: 'Disable Lock Screen',
+            category: 'System Tweaks',
             description: 'Disables the lock screen, showing the login screen directly.',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Personalization" /v "NoLockScreen"');
@@ -166,6 +159,7 @@ if (tweaksGrid) {
         {
             id: 'enable-verbose-status',
             title: 'Enable Verbose Status Messages',
+            category: 'System Tweaks',
             description: 'Displays detailed information during startup, shutdown, logon, and logoff.',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v "VerboseStatus"');
@@ -181,6 +175,7 @@ if (tweaksGrid) {
         {
             id: 'disable-auto-reboot-on-failure',
             title: 'Disable Automatic Restart on System Failure',
+            category: 'System Tweaks',
             description: 'Prevents Windows from automatically restarting after a Blue Screen of Death (BSOD).',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\CrashControl" /v "AutoReboot"');
@@ -194,18 +189,174 @@ if (tweaksGrid) {
             }
         },
         {
-            id: 'disable-people-bar',
-            title: 'Disable People Bar',
-            description: 'Disables the "People" icon and feature on the taskbar.',
+            id: 'disable-sysmain',
+            title: 'Disable SysMain (Superfetch)',
+            category: 'Useless Services',
+            description: 'Disables the SysMain service, which preloads frequently used apps. Disabling may improve performance on SSDs.',
             check: async () => {
-                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\People" /v "PeopleBand"');
-                return result.stdout.includes('PeopleBand    REG_DWORD    0x0');
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"SysMain\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled';
             },
             apply: async () => {
-                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\People" /v "PeopleBand" /t REG_DWORD /d 0 /f');
+                await window.electronAPI.runAdminCommand('sc.exe stop "SysMain" && sc.exe config "SysMain" start=disabled');
             },
             revert: async () => {
-                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\People" /v "PeopleBand" /t REG_DWORD /d 1 /f');
+                await window.electronAPI.runAdminCommand('sc.exe config "SysMain" start=auto && sc.exe start "SysMain"');
+            }
+        },
+        {
+            id: 'disable-print-spooler',
+            title: 'Disable Print Spooler',
+            category: 'Useless Services',
+            description: 'Disables the Print Spooler service. If you don\'t use a printer, this can free up resources.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"Spooler\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "Spooler" && sc.exe config "Spooler" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "Spooler" start=auto && sc.exe start "Spooler"');
+            }
+        },
+        {
+            id: 'disable-fax-service',
+            title: 'Disable Fax Service',
+            category: 'Useless Services',
+            description: 'Disables the Fax service. Most users do not need this service.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"Fax\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                // If service doesn't exist, stdout is empty. We consider this 'disabled'.
+                return result.stdout.trim() === 'Disabled' || result.stdout.trim() === '';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "Fax" && sc.exe config "Fax" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "Fax" start=auto && sc.exe start "Fax"');
+            }
+        },
+        {
+            id: 'disable-windows-search',
+            title: 'Disable Windows Search',
+            category: 'Useless Services',
+            description: 'Disables the Windows Search service, which indexes files for faster searching. Disabling it can improve system performance.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"WSearch\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "WSearch" && sc.exe config "WSearch" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "WSearch" start=auto && sc.exe start "WSearch"');
+            }
+        },
+        {
+            id: 'disable-windows-insider-service',
+            title: 'Disable Windows Insider Service',
+            category: 'Useless Services',
+            description: 'Disables the Windows Insider Service. If you are not part of the Windows Insider Program, this service is not needed.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"wisvc\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled' || result.stdout.trim() === '';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "wisvc" && sc.exe config "wisvc" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "wisvc" start=auto && sc.exe start "wisvc"');
+            }
+        },
+        {
+            id: 'disable-remote-registry',
+            title: 'Disable Remote Registry',
+            category: 'Useless Services',
+            description: 'Disables the ability for remote users to modify registry settings. Recommended to keep disabled for security.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"RemoteRegistry\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "RemoteRegistry" && sc.exe config "RemoteRegistry" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "RemoteRegistry" start=auto && sc.exe start "RemoteRegistry"');
+            }
+        },
+        {
+            id: 'disable-alljoyn-router',
+            title: 'Disable AllJoyn Router Service',
+            category: 'Useless Services',
+            description: 'Disables the service for communicating with nearby Internet of Things (IoT) devices. Most users do not need this.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"AJRouter\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled' || result.stdout.trim() === '';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "AJRouter" && sc.exe config "AJRouter" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "AJRouter" start=demand && sc.exe start "AJRouter"');
+            }
+        },
+        {
+            id: 'disable-program-compatibility-assistant',
+            title: 'Disable Program Compatibility Assistant',
+            category: 'Useless Services',
+            description: 'Disables the service that monitors for program compatibility issues. Can be turned off if not needed.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"PcaSvc\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "PcaSvc" && sc.exe config "PcaSvc" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "PcaSvc" start=auto && sc.exe start "PcaSvc"');
+            }
+        },
+        {
+            id: 'disable-ip-helper',
+            title: 'Disable IP Helper',
+            category: 'Useless Services',
+            description: 'Disables IPv6 connectivity over an IPv4 network. Disable if you only use IPv4. Note: May impact some network features.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"iphlpsvc\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "iphlpsvc" && sc.exe config "iphlpsvc" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "iphlpsvc" start=auto && sc.exe start "iphlpsvc"');
+            }
+        },
+        {
+            id: 'disable-security-center',
+            title: 'Disable Security Center',
+            category: 'Useless Services',
+            description: 'Disables Windows Security Center notifications. This will NOT disable your antivirus or firewall.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"wscsvc\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "wscsvc" && sc.exe config "wscsvc" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "wscsvc" start=auto && sc.exe start "wscsvc"');
             }
         }
     ];
@@ -213,30 +364,41 @@ if (tweaksGrid) {
     const renderTweaks = (filteredTweaks) => {
         const tweaksToRender = filteredTweaks || tweaks;
         tweaksGrid.innerHTML = '';
-        tweaksToRender.forEach(tweak => {
-            const card = document.createElement('div');
-            card.className = 'plugin-card';
-            card.dataset.tweakId = tweak.id;
-
-            card.innerHTML = `
-                <div class="plugin-card-header">
-                    <h4 class="plugin-title">${tweak.title}</h4>
-                    <div class="plugin-status">
-                        <span class="status-indicator"></span>
-                        <span class="status-text">Loading...</span>
+    
+        const categories = [...new Set(tweaksToRender.map(t => t.category || 'System Tweaks'))];
+    
+        categories.forEach(category => {
+            const categoryHeader = document.createElement('h3');
+            categoryHeader.className = 'plugin-section-header';
+            categoryHeader.textContent = category;
+            tweaksGrid.appendChild(categoryHeader);
+    
+            const categoryTweaks = tweaksToRender.filter(t => (t.category || 'System Tweaks') === category);
+    
+            categoryTweaks.forEach(tweak => {
+                const card = document.createElement('div');
+                card.className = 'plugin-card';
+                card.dataset.tweakId = tweak.id;
+    
+                card.innerHTML = `
+                    <div class="plugin-card-header">
+                        <h4 class="plugin-title">${tweak.title}</h4>
+                        <div class="plugin-status">
+                            <span class="status-indicator"></span>
+                            <span class="status-text">Loading...</span>
+                        </div>
                     </div>
-                </div>
-                <p class="plugin-description">${tweak.description}</p>
-                <div class="plugin-card-footer">
-                    <label class="toggle-switch">
-                        <input type="checkbox" class="tweak-checkbox" disabled>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-            `;
-            tweaksGrid.appendChild(card);
-
-            tweak.check().then(status => {
+                    <p class="plugin-description">${tweak.description}</p>
+                    <div class="plugin-card-footer">
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="tweak-checkbox" disabled>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                `;
+                tweaksGrid.appendChild(card);
+    
+                tweak.check().then(status => {
                 const statusIndicator = card.querySelector('.status-indicator');
                 const statusText = card.querySelector('.status-text');
                 const checkbox = card.querySelector('.tweak-checkbox');
@@ -251,7 +413,8 @@ if (tweaksGrid) {
                 statusText.textContent = 'Error';
             });
         });
-    };
+    });
+};
 
     tweaksGrid.addEventListener('change', async (event) => {
         if (event.target.classList.contains('tweak-checkbox')) {
@@ -296,6 +459,92 @@ if (tweaksGrid) {
             tweak.description.toLowerCase().includes(searchTerm)
         );
         renderTweaks(filteredTweaks);
+    });
+
+    const exportTweaksBtn = document.getElementById('export-tweaks-btn');
+    exportTweaksBtn.addEventListener('click', async () => {
+        const appliedTweaks = [];
+        // Query all tweak cards directly from the grid to ensure everything displayed is considered.
+        const allTweakCards = tweaksGrid.querySelectorAll('.plugin-card');
+        
+        allTweakCards.forEach(card => {
+            const checkbox = card.querySelector('.tweak-checkbox');
+            if (checkbox && checkbox.checked) {
+                const tweakId = card.dataset.tweakId;
+                // Ensure the tweak exists in our master list before exporting
+                if (tweaks.some(t => t.id === tweakId)) {
+                    appliedTweaks.push(tweakId);
+                }
+            }
+        });
+
+        const exportData = {
+            description: "WinTool Applied Tweaks Configuration",
+            exportDate: new Date().toISOString(),
+            tweakCount: appliedTweaks.length,
+            appliedTweakIds: appliedTweaks
+        };
+
+        const content = JSON.stringify(exportData, null, 2);
+        const result = await window.electronAPI.saveFile(content, {
+            title: 'Export Applied Tweaks',
+            defaultPath: 'wintool-tweaks.json',
+            filters: [{ name: 'JSON Files', extensions: ['json'] }]
+        });
+
+        if (result && result.filePath) {
+            // This is a placeholder for a notification. Assuming electronAPI has such a function.
+            console.log(`${appliedTweaks.length} tweaks exported successfully to ${result.filePath}`);
+        }
+    });
+
+    const importTweaksBtn = document.getElementById('import-tweaks-btn');
+    importTweaksBtn.addEventListener('click', async () => {
+        const result = await window.electronAPI.showOpenDialog({
+            title: 'Import Applied Tweaks',
+            properties: ['openFile'],
+            filters: [{ name: 'JSON Files', extensions: ['json'] }]
+        });
+
+        if (result && !result.canceled && result.filePaths.length > 0) {
+            const filePath = result.filePaths[0];
+            try {
+                const content = await window.electronAPI.readFile(filePath);
+                const importedData = JSON.parse(content);
+                
+                // Support both the new format and the old simple array format
+                const importedTweakIds = Array.isArray(importedData) 
+                    ? importedData 
+                    : importedData.appliedTweakIds;
+
+                if (!Array.isArray(importedTweakIds)) {
+                    console.error('Imported tweaks file does not contain a valid array of tweak IDs.');
+                    return;
+                }
+
+                let appliedCount = 0;
+                for (const tweakId of importedTweakIds) {
+                    const tweak = tweaks.find(t => t.id === tweakId);
+                    if (tweak) {
+                        const card = tweaksGrid.querySelector(`[data-tweak-id="${tweak.id}"]`);
+                        if (card) {
+                            const checkbox = card.querySelector('.tweak-checkbox');
+                            // Apply if it's not already checked
+                            if (!checkbox.checked) {
+                                checkbox.checked = true;
+                                // Dispatch change event to trigger the apply logic
+                                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                                appliedCount++;
+                            }
+                        }
+                    }
+                }
+                console.log(`${appliedCount} tweaks were newly applied from the import file.`);
+
+            } catch (error) {
+                console.error('Failed to read or parse imported tweaks file:', error);
+            }
+        }
     });
 
     renderTweaks();

@@ -107,6 +107,12 @@ async function loadCurrentSettings() {
                 clearPluginCacheCheckbox.checked = clearPluginCache;
             }
 
+            const disableAnimations = await window.electronAPI.getSetting('disableAnimations', false);
+            const disableAnimationsCheckbox = document.getElementById('disable-animations-checkbox');
+            if (disableAnimationsCheckbox) {
+                disableAnimationsCheckbox.checked = disableAnimations;
+            }
+
             
             await loadKeyboardShortcutsSettings();
         }
@@ -261,6 +267,9 @@ export async function saveSettings() {
             const clearPluginCache = document.getElementById('clear-plugin-cache')?.checked || false;
             await window.electronAPI.setSetting('clearPluginCache', clearPluginCache);
 
+            const disableAnimations = document.getElementById('disable-animations-checkbox')?.checked || false;
+            await window.electronAPI.setSetting('disableAnimations', disableAnimations);
+
             
             await saveKeyboardShortcuts();
 
@@ -321,6 +330,7 @@ export async function resetSettings() {
 export async function loadAndApplyStartupSettings() {
     try {
         if (window.electronAPI) {
+            
             const theme = await window.electronAPI.getSetting('theme', 'classic-dark');
             if (theme === 'custom') {
                 await loadCustomTheme();
@@ -351,7 +361,7 @@ export async function loadAndApplyStartupSettings() {
             
             const loadedHiddenTabs = await window.electronAPI.getSetting('hiddenTabs', []);
             setHiddenTabs(loadedHiddenTabs);
-
+            await applyAnimationSetting();
             console.log('Startup settings loaded and applied');
         }
     } catch (error) {
@@ -422,6 +432,7 @@ export async function restoreLastActiveTab() {
 
 
 function applySettings() {
+    applyAnimationSetting();
     const rainbowMode = document.getElementById('rainbow-mode-checkbox')?.checked || false;
     if (rainbowMode) {
         const rainbowSpeed = document.getElementById('rainbow-speed-slider')?.value || 5;
@@ -442,4 +453,13 @@ function applySettings() {
     
 
     
+}
+
+export async function applyAnimationSetting() {
+    const disableAnimations = await window.electronAPI.getSetting('disableAnimations', false);
+    if (disableAnimations) {
+        document.body.classList.add('no-animations');
+    } else {
+        document.body.classList.remove('no-animations');
+    }
 }

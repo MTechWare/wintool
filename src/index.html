@@ -349,6 +349,10 @@
                     <i class="fas fa-exclamation-triangle"></i>
                     <span><strong>Security Notice:</strong> For your protection, only install plugins from developers you trust. Plugins from unverified sources could pose a security risk.</span>
                 </div>
+                <div class="tab-search-container">
+                    <input type="text" id="plugin-search" placeholder="Search plugins..." class="tab-search-input">
+                    <i class="fas fa-search tab-search-icon"></i>
+                </div>
                 <div id="plugins-content-area">
                     <h3 class="plugin-section-header">Active Plugins</h3>
                     <div id="active-plugins-grid" class="plugins-grid">
@@ -466,6 +470,13 @@
                                 <span class="slider-value" id="transparency-value">100%</span>
                             </div>
                             <p class="settings-description">Adjust the transparency of the application window</p>
+                        </div>
+                        <div class="settings-group">
+                            <label class="settings-label">
+                                <input type="checkbox" id="disable-animations-checkbox" class="settings-checkbox">
+                                Disable Animations
+                            </label>
+                            <p class="settings-description">Disable all animations for a more responsive experience on low-end systems.</p>
                         </div>
                         <div class="settings-group">
                             <label class="settings-label">Theme Actions</label>

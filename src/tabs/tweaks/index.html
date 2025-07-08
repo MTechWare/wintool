@@ -6,13 +6,18 @@
 
 <div class="plugin-warning">
     <i class="fas fa-exclamation-triangle"></i>
-    <span><strong>Disclaimer:</strong> Applying tweaks can change system settings. Some changes may require a reboot to take effect. It's recommended to create a system restore point before proceeding.</span>
+    <span><strong>Disclaimer:</strong> Applying tweaks or disabling services can have unintended consequences. For changes to take full effect, a system <strong>restart is highly recommended</strong>. Always create a system restore point before making significant changes.</span>
 </div>
 <div id="tweaks-content-area">
-    <h3 class="plugin-section-header">Available Tweaks</h3>
-    <div class="search-container">
-        <input type="text" id="tweak-search" placeholder="Search for a tweak..." class="search-input">
-        <i class="fas fa-search search-icon"></i>
+    <div class="tweaks-header-controls">
+        <div class="search-container">
+            <input type="text" id="tweak-search" placeholder="Search tweaks and services..." class="search-input">
+            <i class="fas fa-search search-icon"></i>
+        </div>
+        <div class="tweak-actions">
+            <button id="import-tweaks-btn" class="btn btn-secondary"><i class="fas fa-file-import"></i> Import</button>
+            <button id="export-tweaks-btn" class="btn btn-secondary"><i class="fas fa-file-export"></i> Export</button>
+        </div>
     </div>
     <div id="tweaks-grid" class="plugins-grid">
         <!-- Tweak cards will be dynamically inserted here -->

@@ -493,6 +493,11 @@ function generateUnattendXML() {
                         <DiskID>0</DiskID>
                         <PartitionID>3</PartitionID>
                     </InstallTo>
+                    ${windowsEdition ? `
+                    <MetaData wcm:action="add">
+                        <Key>/IMAGE/NAME</Key>
+                        <Value>${windowsEdition}</Value>
+                    </MetaData>` : ''}
                     <WillShowUI>OnError</WillShowUI>
                     <InstallToAvailablePartition>false</InstallToAvailablePartition>
                 </OSImage>
@@ -603,34 +608,53 @@ function generateUnattendXML() {
  * Export unattend.xml file
  */
 async function exportUnattendXML() {
+    const exportBtn = document.getElementById('export-unattend');
     try {
-        const exportBtn = document.getElementById('export-unattend');
         if (exportBtn) {
             exportBtn.classList.add('loading');
+            exportBtn.disabled = true;
         }
 
-        // Generate XML content
         const xmlContent = generateUnattendXML();
 
-        // Fallback for browser testing - download file
-        const blob = new Blob([xmlContent], { type: 'application/xml' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'unattend.xml';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showStatusMessage('success', 'Unattend.xml file downloaded successfully');
+        // Use Electron's save dialog if available
+        if (window.electronAPI && typeof window.electronAPI.saveFile === 'function') {
+            const result = await window.electronAPI.saveFile(xmlContent, {
+                title: 'Save Unattend.xml',
+                defaultPath: 'unattend.xml',
+                filters: [
+                    { name: 'XML Files', extensions: ['xml'] },
+                    { name: 'All Files', extensions: ['*'] }
+                ]
+            });
+
+            if (result.success) {
+                showStatusMessage('success', `File saved to ${result.filePath}`);
+            } else if (!result.canceled) {
+                showStatusMessage('error', `Failed to save file: ${result.error}`);
+            }
+        } else {
+            // Fallback for browser environment or if API is unavailable
+            console.warn('electronAPI.saveFile not found, using fallback download method.');
+            const blob = new Blob([xmlContent], { type: 'application/xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'unattend.xml';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showStatusMessage('success', 'Unattend.xml file downloaded successfully');
+        }
 
     } catch (error) {
         console.error('Error exporting unattend XML:', error);
         showStatusMessage('error', `Failed to export unattend.xml: ${error.message}`);
     } finally {
-        const exportBtn = document.getElementById('export-unattend');
         if (exportBtn) {
             exportBtn.classList.remove('loading');
+            exportBtn.disabled = false;
         }
     }
 }

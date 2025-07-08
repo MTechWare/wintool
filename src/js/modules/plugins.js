@@ -29,6 +29,22 @@ export function initOpenPluginsDirButton() {
             }
         });
     }
+
+    const searchInput = document.getElementById('plugin-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const pluginCards = document.querySelectorAll('.plugin-card');
+            pluginCards.forEach(card => {
+                const pluginName = card.querySelector('h4').textContent.toLowerCase();
+                if (pluginName.includes(searchTerm)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    }
 }
 
 
@@ -53,7 +69,7 @@ export async function renderPluginCards() {
         } else {
             activePlugins.forEach(plugin => {
                 const card = document.createElement('div');
-                card.className = 'feature-card plugin-card';
+                card.className = `feature-card plugin-card ${plugin.verified ? 'verified-plugin' : ''}`;
                 card.innerHTML = `
                     <div class="plugin-card-header">
                         <i class="${plugin.icon}"></i>
@@ -61,6 +77,9 @@ export async function renderPluginCards() {
                     </div>
                     <p>${plugin.description}</p>
                     <div class="plugin-card-actions">
+                        <button class="plugin-action-btn" data-plugin-id="${plugin.id}" data-action="info" title="Plugin Info">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
                         <button class="plugin-action-btn" data-plugin-id="${plugin.id}" data-action="disable" title="Disable Plugin">
                             <i class="fas fa-toggle-off"></i>
                         </button>
@@ -82,7 +101,7 @@ export async function renderPluginCards() {
         } else {
             disabledPlugins.forEach(plugin => {
                 const card = document.createElement('div');
-                card.className = 'feature-card plugin-card disabled';
+                card.className = `feature-card plugin-card disabled ${plugin.verified ? 'verified-plugin' : ''}`;
                 card.innerHTML = `
                      <div class="plugin-card-header">
                         <i class="${plugin.icon}"></i>
@@ -90,6 +109,9 @@ export async function renderPluginCards() {
                     </div>
                     <p>${plugin.description}</p>
                     <div class="plugin-card-actions">
+                        <button class="plugin-action-btn" data-plugin-id="${plugin.id}" data-action="info" title="Plugin Info">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
                         <button class="plugin-action-btn" data-plugin-id="${plugin.id}" data-action="enable" title="Enable Plugin">
                             <i class="fas fa-toggle-on"></i>
                         </button>
@@ -124,7 +146,15 @@ async function handlePluginAction(event) {
 
     if (!pluginId || !action) return;
 
-    
+    if (action === 'info') {
+        const plugins = await window.electronAPI.getAllPlugins();
+        const plugin = plugins.find(p => p.id === pluginId);
+        if (plugin) {
+            showNotification(`Plugin Hash: ${plugin.hash}`, 'info');
+        }
+        return;
+    }
+
     button.disabled = true;
     const originalIcon = button.innerHTML;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -138,19 +168,17 @@ async function handlePluginAction(event) {
         }
 
         if (result.success) {
-            
-            
             if (!result.restarted) {
                 await renderPluginCards();
             }
         } else {
             showNotification(`Error: ${result.message}`, 'error');
-            button.disabled = false; 
+            button.disabled = false;
             button.innerHTML = originalIcon;
         }
     } catch (error) {
         showNotification(`An unexpected error occurred: ${error.message}`, 'error');
-        button.disabled = false; 
+        button.disabled = false;
         button.innerHTML = originalIcon;
     }
 }

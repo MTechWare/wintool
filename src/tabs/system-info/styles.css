@@ -7,7 +7,13 @@
     margin-bottom: 20px;
 }
 
-#refresh-system-info-btn {
+.tab-header div:last-child {
+    display: flex;
+    gap: 10px;
+}
+
+#refresh-system-info-btn,
+#export-system-info-btn {
     padding: 10px 12px;
     font-size: 1rem;
     background-color: transparent;
@@ -17,12 +23,14 @@
     transition: all 0.3s ease;
 }
 
-#refresh-system-info-btn:hover {
+#refresh-system-info-btn:hover,
+#export-system-info-btn:hover {
     color: var(--primary-color);
     border-color: var(--primary-color);
 }
 
-#refresh-system-info-btn i {
+#refresh-system-info-btn i,
+#export-system-info-btn i {
     color: var(--primary-color);
 }
 

@@ -8,42 +8,47 @@ import { initContextMenu } from './modules/context-menu.js';
 import { showNotification } from './modules/notifications.js';
 import { initCommandPalette, showCommandPalette, registerDefaultCommands, registerServiceControlCommands, showHelpModal } from './modules/command-palette.js';
 import { initPluginInstallButton, initOpenPluginsDirButton, renderPluginCards } from './modules/plugins.js';
-import { loadAndApplyStartupSettings, saveSettings, resetSettings, cancelSettings, applyHiddenTabs, restoreLastActiveTab, showSettings } from './modules/settings.js';
+import { loadAndApplyStartupSettings, saveSettings, resetSettings, cancelSettings, applyHiddenTabs, restoreLastActiveTab, showSettings, applyAnimationSetting } from './modules/settings.js';
 import { openThemeCreator, saveCustomTheme, importTheme, exportTheme, resetCustomTheme } from './modules/theme.js';
 import { DEFAULT_TAB_ORDER, setTabLoader } from './modules/state.js';
 
 
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('WinTool starting...');
-
-    
+async function initialBoot() {
+    console.log('WinTool starting critical boot...');
     showSplashScreen();
-
-    
     initWindowControls();
-    initTabSystem();
     initModals();
     initSystemTrayListeners();
-    initGlobalKeyboardShortcuts();
     initContextMenu();
-    initPluginInstallButton();
-    initOpenPluginsDirButton();
 
-    
-    updateSplashProgress('Loading settings...', 20);
-
-    
-    await loadAndApplyStartupSettings();
-
-    
-    await continueNormalStartup();
-    
-    
+    // Fetch help modal content, but don't wait for it.
     fetch('help-modal.html')
         .then(response => response.text())
         .then(data => {
             document.getElementById('help-modal-container').innerHTML = data;
         });
+}
+
+async function deferredBoot() {
+    console.log('WinTool starting deferred boot...');
+
+    // Initialize systems that can be loaded in the background.
+    initTabSystem();
+    initGlobalKeyboardShortcuts();
+    initPluginInstallButton();
+    initOpenPluginsDirButton();
+
+    updateSplashProgress('Loading settings...', 20);
+    await loadAndApplyStartupSettings();
+
+    await continueNormalStartup(); // This function already handles the rest of the loading process.
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+    await initialBoot();
+    // Use a short timeout to ensure the UI has a chance to render before we
+    // start the heavy lifting.
+    setTimeout(deferredBoot, 100);
 });
 
 
@@ -137,6 +142,7 @@ window.saveCustomTheme = saveCustomTheme;
 window.importTheme = importTheme;
 window.exportTheme = exportTheme;
 window.resetCustomTheme = resetCustomTheme;
+window.applyAnimationSetting = applyAnimationSetting;
 
 console.log('WinTool app.js loaded');
 
