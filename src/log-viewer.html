@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Viewer</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+        body {
+            background-color: var(--background-dark);
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        #log-container {
+            height: 100%;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .log-message {
+            border-bottom: 1px solid var(--border-color);
+            padding: 5px 0;
+            word-break: break-all;
+        }
+        .log-error { color: var(--error-color); }
+        .log-warn { color: #ffc107; }
+        .log-info { color: var(--text-primary); }
+    </style>
+</head>
+<body>
+    <div id="log-container"></div>
+    <script>
+        const logContainer = document.getElementById('log-container');
+        window.electronAPI.onLogMessage((level, message) => {
+            const logEntry = document.createElement('div');
+            logEntry.classList.add('log-message', `log-${level}`);
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] [${level.toUpperCase()}]: ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        });
+
+        window.electronAPI.onThemeData((themeData) => {
+            applyTheme(themeData);
+        });
+
+        function applyTheme(themeData) {
+            const { theme, primaryColor, customTheme } = themeData;
+            const root = document.documentElement;
+
+            // This is a simplified version of the main app's theme logic
+            if (theme === 'custom' && customTheme) {
+                for (const [key, value] of Object.entries(customTheme)) {
+                    if (key !== 'name') {
+                        root.style.setProperty(key, value);
+                    }
+                }
+            } else {
+                // You might need to define the base themes here or load them from a shared file
+                const classicDark = {
+                    '--primary-color': primaryColor,
+                    '--background-dark': '#1c1c1e',
+                    '--background-light': '#2c2c2e',
+                    '--background-card': '#3a3a3c',
+                    '--border-color': '#444444',
+                    '--text-primary': '#ffffff',
+                    '--error-color': '#f44336'
+                };
+                const classicLight = {
+                     '--primary-color': primaryColor,
+                    '--background-dark': '#F0F2F5',
+                    '--background-light': '#FFFFFF',
+                    '--background-card': '#FFFFFF',
+                    '--border-color': '#E0E0E0',
+                    '--text-primary': '#212529',
+                    '--error-color': '#dc3545'
+                };
+                const themeColors = theme === 'classic-light' ? classicLight : classicDark;
+                 for (const [key, value] of Object.entries(themeColors)) {
+                    root.style.setProperty(key, value);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

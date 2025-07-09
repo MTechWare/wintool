@@ -26,6 +26,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setWindowOpacity: (opacity) => ipcRenderer.invoke('set-window-opacity', opacity),
     setStartupBehavior: (shouldStartOnBoot) => ipcRenderer.invoke('set-startup-behavior', shouldStartOnBoot),
 
+    // Log Viewer
+    openLogViewer: () => ipcRenderer.invoke('open-log-viewer'),
+    onLogMessage: (callback) => ipcRenderer.on('log-message', (event, level, message) => callback(level, message)),
+    onThemeData: (callback) => ipcRenderer.on('theme-data', (event, themeData) => callback(themeData)),
+
+    // Performance Monitoring
+    startPerformanceUpdates: () => ipcRenderer.invoke('start-performance-updates'),
+    stopPerformanceUpdates: () => ipcRenderer.invoke('stop-performance-updates'),
+    onPerformanceUpdate: (callback) => ipcRenderer.on('performance-update', (event, metrics) => callback(metrics)),
+
     // Generic command execution
     runCommand: (command, asAdmin = false) => ipcRenderer.invoke('run-command', command, asAdmin),
     runAdminCommand: (command) => ipcRenderer.invoke('run-admin-command', command),

@@ -18,13 +18,27 @@ const extract = require('extract-zip');
 const axios = require('axios');
 const crypto = require('crypto');
 const discordPresence = require('./js/modules/discord-presence');
-const verifiedHashes = require('./config/verified-plugins.json').verified_hashes;
+
+const verifiedHashes = {};
+
+axios.get('https://raw.githubusercontent.com/MTechWare/wintool/refs/heads/main/src/config/verified-plugins.json')
+    .then(response => {
+        Object.assign(verifiedHashes, response.data.verified_hashes);
+        console.log('Successfully fetched and updated verified plugins list.');
+    })
+    .catch(error => {
+        console.error('Failed to fetch verified plugins list from GitHub. Using local fallback.', error);
+        // Fallback to local file if GitHub is unreachable
+        const localVerifiedHashes = require('./config/verified-plugins.json').verified_hashes;
+        Object.assign(verifiedHashes, localVerifiedHashes);
+    });
 
 // Initialize store for settings
 let store;
 
 // Main window reference
 let mainWindow = null;
+let logViewerWindow = null;
 
 // System tray reference
 let tray = null;
@@ -169,6 +183,31 @@ function logSecurityEvent(event, details) {
     console.log(`[SECURITY] ${timestamp}: ${event} - ${JSON.stringify(details)}`);
 }
 
+// Redirect console.log to the log viewer
+const originalLog = console.log;
+console.log = function(...args) {
+    originalLog.apply(console, args);
+    if (logViewerWindow) {
+        logViewerWindow.webContents.send('log-message', 'info', args.join(' '));
+    }
+};
+
+const originalWarn = console.warn;
+console.warn = function(...args) {
+    originalWarn.apply(console, args);
+    if (logViewerWindow) {
+        logViewerWindow.webContents.send('log-message', 'warn', args.join(' '));
+    }
+};
+
+const originalError = console.error;
+console.error = function(...args) {
+    originalError.apply(console, args);
+    if (logViewerWindow) {
+        logViewerWindow.webContents.send('log-message', 'error', args.join(' '));
+    }
+};
+
 // Timeout wrapper for operations
 function withTimeout(promise, timeoutMs = 30000, operation = 'Operation') {
     return Promise.race([
@@ -197,6 +236,43 @@ async function getStore() {
 /**
  * Create the main application window
  */
+function createLogViewerWindow() {
+    if (logViewerWindow) {
+        logViewerWindow.focus();
+        return;
+    }
+
+    logViewerWindow = new BrowserWindow({
+        width: 800,
+        height: 600,
+        title: 'Log Viewer',
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            nodeIntegration: false,
+            contextIsolation: true,
+        },
+    });
+
+    logViewerWindow.loadFile(path.join(__dirname, 'log-viewer.html'));
+
+    logViewerWindow.webContents.on('did-finish-load', async () => {
+        const settingsStore = await getStore();
+        if (settingsStore) {
+            const themeSettings = {
+                theme: settingsStore.get('theme', 'classic-dark'),
+                primaryColor: settingsStore.get('primaryColor', '#ff9800'),
+                customTheme: settingsStore.get('customTheme', {}),
+                rainbowMode: settingsStore.get('rainbowMode', false)
+            };
+            logViewerWindow.webContents.send('theme-data', themeSettings);
+        }
+    });
+
+    logViewerWindow.on('closed', () => {
+        logViewerWindow = null;
+    });
+}
+
 function createWindow() {
     console.log('Creating main window...');
 
@@ -798,6 +874,42 @@ ipcMain.handle('set-setting', async (event, key, value) => {
 ipcMain.handle('set-window-opacity', (event, opacity) => {
     if (mainWindow) {
         mainWindow.setOpacity(opacity);
+    }
+});
+
+ipcMain.handle('open-log-viewer', () => {
+    createLogViewerWindow();
+});
+
+// Performance metrics handler
+let performanceInterval;
+ipcMain.handle('start-performance-updates', () => {
+    if (performanceInterval) {
+        clearInterval(performanceInterval);
+    }
+    performanceInterval = setInterval(async () => {
+        try {
+            const [cpuUsage, memInfo] = await Promise.all([
+                si.currentLoad(),
+                si.mem()
+            ]);
+            const metrics = {
+                cpu: cpuUsage.currentLoad.toFixed(2),
+                mem: ((memInfo.active / memInfo.total) * 100).toFixed(2)
+            };
+            if (mainWindow) {
+                mainWindow.webContents.send('performance-update', metrics);
+            }
+        } catch (error) {
+            console.error('Failed to get performance metrics:', error);
+        }
+    }, 1000); // Update every second
+});
+
+ipcMain.handle('stop-performance-updates', () => {
+    if (performanceInterval) {
+        clearInterval(performanceInterval);
+        performanceInterval = null;
     }
 });
 

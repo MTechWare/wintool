@@ -1,6 +1,7 @@
 import { showNotification } from './notifications.js';
 import { loadTabOrder, switchToTab } from './tabs.js';
 import { applyTheme, updatePrimaryColorVariables, applyRainbowEffect, removeRainbowEffect, loadCustomTheme } from './theme.js';
+import { showFpsCounter, hideFpsCounter } from './fps-counter.js';
 import { THEMES, hiddenTabs, rainbowAnimationId, setHiddenTabs } from './state.js';
 import { loadKeyboardShortcutsSettings, saveKeyboardShortcuts } from './keyboard-shortcuts.js';
 
@@ -95,10 +96,17 @@ async function loadCurrentSettings() {
 
 
             
-            const enableDevTools = await window.electronAPI.getSetting('enableDevTools', true);
+            const enableDevTools = await window.electronAPI.getSetting('enableDevTools', false);
             const enableDevToolsCheckbox = document.getElementById('enable-dev-tools');
             if (enableDevToolsCheckbox) {
                 enableDevToolsCheckbox.checked = enableDevTools;
+                enableDevToolsCheckbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        showFpsCounter();
+                    } else {
+                        hideFpsCounter();
+                    }
+                });
             }
 
             const clearPluginCache = await window.electronAPI.getSetting('clearPluginCache', false);
@@ -261,7 +269,7 @@ export async function saveSettings() {
 
 
             
-            const enableDevTools = document.getElementById('enable-dev-tools')?.checked || true;
+            const enableDevTools = document.getElementById('enable-dev-tools')?.checked || false;
             await window.electronAPI.setSetting('enableDevTools', enableDevTools);
 
             const clearPluginCache = document.getElementById('clear-plugin-cache')?.checked || false;
@@ -351,6 +359,11 @@ export async function loadAndApplyStartupSettings() {
             const transparency = await window.electronAPI.getSetting('transparency', 1);
             if (window.electronAPI && window.electronAPI.setWindowOpacity) {
                 window.electronAPI.setWindowOpacity(transparency);
+            }
+
+            const enableDevTools = await window.electronAPI.getSetting('enableDevTools', false);
+            if (enableDevTools) {
+                window.electronAPI.openLogViewer();
             }
 
             

@@ -2088,4 +2088,21 @@ html, body {
     color: rgba(255, 255, 255, 0.8);
 }
 
+#fps-counter {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    color: var(--text-primary);
+    background: var(--background-card);
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    z-index: 9999;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    display: flex;
+    gap: 15px;
+}
+
 

@@ -207,6 +207,19 @@ export function registerDefaultCommands(loadedTabs) {
         icon: 'fas fa-code',
         action: () => window.electronAPI.toggleDevTools()
     });
+
+    // Conditionally register dev-only commands
+    window.electronAPI.getSetting('enableDevTools', false).then(devToolsEnabled => {
+        if (devToolsEnabled) {
+            registerCommand({
+                id: 'open-log-viewer',
+                title: 'Open Log Viewer',
+                category: 'Developer',
+                icon: 'fas fa-bug',
+                action: () => window.electronAPI.openLogViewer()
+            });
+        }
+    });
     registerCommand({
         id: 'restart-app',
         title: 'Restart Application',

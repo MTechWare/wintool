@@ -10,6 +10,7 @@ import { initCommandPalette, showCommandPalette, registerDefaultCommands, regist
 import { initPluginInstallButton, initOpenPluginsDirButton, renderPluginCards } from './modules/plugins.js';
 import { loadAndApplyStartupSettings, saveSettings, resetSettings, cancelSettings, applyHiddenTabs, restoreLastActiveTab, showSettings, applyAnimationSetting } from './modules/settings.js';
 import { openThemeCreator, saveCustomTheme, importTheme, exportTheme, resetCustomTheme } from './modules/theme.js';
+import { initFpsCounter, showFpsCounter, hideFpsCounter } from './modules/fps-counter.js';
 import { DEFAULT_TAB_ORDER, setTabLoader } from './modules/state.js';
 
 
@@ -20,6 +21,7 @@ async function initialBoot() {
     initModals();
     initSystemTrayListeners();
     initContextMenu();
+    initFpsCounter();
 
     // Fetch help modal content, but don't wait for it.
     fetch('help-modal.html')
@@ -143,6 +145,8 @@ window.importTheme = importTheme;
 window.exportTheme = exportTheme;
 window.resetCustomTheme = resetCustomTheme;
 window.applyAnimationSetting = applyAnimationSetting;
+window.showFpsCounter = showFpsCounter;
+window.hideFpsCounter = hideFpsCounter;
 
 console.log('WinTool app.js loaded');
 
