@@ -90,7 +90,7 @@ function Show-Spinner {
 # Configuration
 $appName = "WinTool"
 $companyName = "MTechWare"
-$version = "0.1.2w"
+$version = "Latest"
 $installDir = "$env:LOCALAPPDATA\MTechTool"
 $exeUrl = "https://github.com/MTechWare/wintool/releases/download/release/WinTool.exe"
 $desktop = [Environment]::GetFolderPath("Desktop")
@@ -231,7 +231,7 @@ try {
     Write-Host "  Error: $_" -ForegroundColor "Red"
 }
 
-# Installation complete
+# Installation D
 Write-Host ""
 Write-ThemeLine "Installation Complete" -Color "DarkYellow"
 Write-Host ""
