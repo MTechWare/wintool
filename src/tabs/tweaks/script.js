@@ -189,6 +189,70 @@ if (tweaksGrid) {
             }
         },
         {
+            id: 'disable-widgets',
+            title: 'Disable Widgets',
+            category: 'System Tweaks',
+            description: 'Disables the Widgets feature.',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v "AllowNewsAndInterests"');
+                return result.stdout.includes('AllowNewsAndInterests    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v "AllowNewsAndInterests" /t REG_DWORD /d 0 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v "AllowNewsAndInterests" /f');
+            }
+        },
+        {
+            id: 'disable-game-dvr',
+            title: 'Disable Game DVR',
+            category: 'System Tweaks',
+            description: 'Disables Game DVR and the Game Bar.',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v "AllowGameDVR"');
+                return result.stdout.includes('AllowGameDVR    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v "AllowGameDVR" /t REG_DWORD /d 0 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v "AllowGameDVR" /f');
+            }
+        },
+        {
+            id: 'disable-storage-sense',
+            title: 'Disable Storage Sense',
+            category: 'System Tweaks',
+            description: 'Disables Storage Sense, which automatically frees up disk space.',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\StorageSense" /v "AllowStorageSense"');
+                return result.stdout.includes('AllowStorageSense    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\StorageSense" /v "AllowStorageSense" /t REG_DWORD /d 0 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\StorageSense" /v "AllowStorageSense" /f');
+            }
+        },
+        {
+            id: 'disable-consumer-experience',
+            title: 'Disable Consumer Experience',
+            category: 'System Tweaks',
+            description: 'Disables the Microsoft Consumer Experience, which installs suggested apps.',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v "DisableWindowsConsumerFeatures"');
+                return result.stdout.includes('DisableWindowsConsumerFeatures    REG_DWORD    0x1');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v "DisableWindowsConsumerFeatures" /t REG_DWORD /d 1 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v "DisableWindowsConsumerFeatures" /f');
+            }
+        },
+        {
             id: 'disable-sysmain',
             title: 'Disable SysMain (Superfetch)',
             category: 'Useless Services',
@@ -357,6 +421,211 @@ if (tweaksGrid) {
             },
             revert: async () => {
                 await window.electronAPI.runAdminCommand('sc.exe config "wscsvc" start=auto && sc.exe start "wscsvc"');
+            }
+        },
+        {
+            id: 'disable-remote-desktop',
+            title: 'Disable Remote Desktop Service',
+            category: 'Useless Services',
+            description: 'Disables the TermService for Remote Desktop. If you do not use Remote Desktop, this can be disabled.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"TermService\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "TermService" && sc.exe config "TermService" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "TermService" start=demand && sc.exe start "TermService"');
+            }
+        },
+        {
+            id: 'disable-remote-access',
+            title: 'Disable Routing and Remote Access',
+            category: 'Useless Services',
+            description: 'Disables the Remote Access service. Only needed for VPN/dial-up connections.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"RemoteAccess\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled' || result.stdout.trim() === '';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "RemoteAccess" && sc.exe config "RemoteAccess" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "RemoteAccess" start=demand && sc.exe start "RemoteAccess"');
+            }
+        },
+        {
+            id: 'disable-winrm',
+            title: 'Disable Windows Remote Management',
+            category: 'Useless Services',
+            description: 'Disables the WinRM service for remote management. If not managing this PC remotely, it can be disabled.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"WinRM\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "WinRM" && sc.exe config "WinRM" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "WinRM" start=auto && sc.exe start "WinRM"');
+            }
+        },
+        {
+            id: 'disable-link-tracking',
+            title: 'Disable Distributed Link Tracking',
+            category: 'Useless Services',
+            description: 'Disables tracking of linked files across NTFS volumes. Rarely needed on a single-user PC.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"TrkWks\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "TrkWks" && sc.exe config "TrkWks" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "TrkWks" start=auto && sc.exe start "TrkWks"');
+            }
+        },
+        {
+            id: 'disable-netlogon',
+            title: 'Disable Netlogon Service',
+            category: 'Useless Services',
+            description: 'Disables Netlogon service. Not needed if the computer is not part of a domain.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"Netlogon\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled' || result.stdout.trim() === '';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "Netlogon" && sc.exe config "Netlogon" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "Netlogon" start=demand && sc.exe start "Netlogon"');
+            }
+        },
+        {
+            id: 'disable-secondary-logon',
+            title: 'Disable Secondary Logon',
+            category: 'Useless Services',
+            description: 'Disables the Secondary Logon service (Run As). If you do not use this feature, it can be disabled for security.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"seclogon\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "seclogon" && sc.exe config "seclogon" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "seclogon" start=auto && sc.exe start "seclogon"');
+            }
+        },
+        {
+            id: 'disable-tablet-input',
+            title: 'Disable Touch Keyboard and Handwriting',
+            category: 'Useless Services',
+            description: 'Disables the service for touch keyboard and handwriting panel. Unnecessary for most desktop users.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"TabletInputService\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "TabletInputService" && sc.exe config "TabletInputService" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "TabletInputService" start=auto && sc.exe start "TabletInputService"');
+            }
+        },
+        {
+            id: 'disable-waas-medic',
+            title: 'Disable Windows Update Medic Service',
+            category: 'Useless Services',
+            description: 'Disables WaaSMedicSvc, which attempts to repair Windows Update components. Can be disabled if not needed.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"WaaSMedicSvc\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled' || result.stdout.trim() === '';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "WaaSMedicSvc" && sc.exe config "WaaSMedicSvc" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "WaaSMedicSvc" start=demand && sc.exe start "WaaSMedicSvc"');
+            }
+        },
+        {
+            id: 'disable-gaming-services',
+            title: 'Disable Xbox Gaming Services',
+            category: 'Useless Services',
+            description: 'Disables all Xbox-related services. Recommended if you do not use the Xbox app or Game Bar.',
+            check: async () => {
+                const services = ['XblAuthManager', 'XblGameSave', 'XboxNetApiSvc', 'XboxGipSvc'];
+                for (const service of services) {
+                    const command = `powershell -NoProfile -Command "(Get-Service -Name \\"${service}\\" -ErrorAction SilentlyContinue).StartType"`;
+                    const result = await window.electronAPI.runCommand(command);
+                    if (result.stdout.trim() !== 'Disabled' && result.stdout.trim() !== '') {
+                        return false;
+                    }
+                }
+                return true;
+            },
+            apply: async () => {
+                const commands = [
+                    'sc.exe stop "XblAuthManager" && sc.exe config "XblAuthManager" start=disabled',
+                    'sc.exe stop "XblGameSave" && sc.exe config "XblGameSave" start=disabled',
+                    'sc.exe stop "XboxNetApiSvc" && sc.exe config "XboxNetApiSvc" start=disabled',
+                    'sc.exe stop "XboxGipSvc" && sc.exe config "XboxGipSvc" start=disabled'
+                ].join(' && ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                const commands = [
+                    'sc.exe config "XblAuthManager" start=demand && sc.exe start "XblAuthManager"',
+                    'sc.exe config "XblGameSave" start=demand && sc.exe start "XblGameSave"',
+                    'sc.exe config "XboxNetApiSvc" start=demand && sc.exe start "XboxNetApiSvc"',
+                    'sc.exe config "XboxGipSvc" start=demand && sc.exe start "XboxGipSvc"'
+                ].join(' && ');
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
+        {
+            id: 'disable-biometric-service',
+            title: 'Disable Windows Biometric Service',
+            category: 'Useless Services',
+            description: 'Disables biometric services (fingerprint, facial recognition). Disable if you do not use these features.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"WbioSrvc\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled' || result.stdout.trim() === '';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "WbioSrvc" && sc.exe config "WbioSrvc" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "WbioSrvc" start=demand && sc.exe start "WbioSrvc"');
+            }
+        },
+        {
+            id: 'disable-geolocation-service',
+            title: 'Disable Geolocation Service',
+            category: 'Useless Services',
+            description: 'Disables the lfsvc for location tracking. Disable for privacy if not needed by any applications.',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"lfsvc\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled' || result.stdout.trim() === '';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe stop "lfsvc" && sc.exe config "lfsvc" start=disabled');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('sc.exe config "lfsvc" start=demand && sc.exe start "lfsvc"');
             }
         }
     ];

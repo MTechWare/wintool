@@ -240,16 +240,15 @@ function encodePasswordForWindows(password) {
  * Escape special XML characters
  */
 function escapeXml(unsafe) {
-    if (typeof unsafe !== 'string') {
-        return unsafe;
-    }
-    return unsafe.replace(/[<>&'"]/g, function (c) {
+    if (!unsafe) return '';
+    return unsafe.toString().replace(/[<>&'"]/g, function(c) {
         switch (c) {
             case '<': return '&lt;';
             case '>': return '&gt;';
             case '&': return '&amp;';
             case "'": return '&apos;';
             case '"': return '&quot;';
+            default: return c;
         }
     });
 }
@@ -259,100 +258,113 @@ function escapeXml(unsafe) {
  */
 function generateFirstLogonCommands(settings) {
     let commands = '';
-    let commandIndex = 1;
+    let commandCount = 1;
 
-    const addCommand = (command) => {
-        const escapedCommand = escapeXml(command);
+    // Helper to add a command with proper escaping
+    const addCommand = (cmd, description = 'WinTool Customization') => {
+        if (!cmd) return;
+        const safeCmd = escapeXml(cmd);
+        const safeDesc = escapeXml(description);
+        
         commands += `
                     <SynchronousCommand wcm:action="add">
-                        <Order>${commandIndex++}</Order>
-                        <CommandLine>${escapedCommand}</CommandLine>
-                        <Description>WinTool Customization</Description>
+                        <Order>${commandCount++}</Order>
+                        <CommandLine>${safeCmd}</CommandLine>
+                        <Description>${safeDesc}</Description>
                         <RequiresUserInput>false</RequiresUserInput>
                     </SynchronousCommand>`;
     };
 
-    // PowerShell Execution Policy
+    // Standardize command execution with error handling
+    const addSafeCommand = (command, args = [], description = '') => {
+        const safeArgs = args.map(arg => `"${arg.replace(/"/g, '\\"')}"`).join(' ');
+        const safeCommand = `cmd.exe /c "${command} ${safeArgs} || echo Error executing: ${command}"`;
+        addCommand(safeCommand, description || `Executing: ${command}`);
+    };
+
+    // PowerShell Execution Policy with error handling
     if (settings.featurePowershell) {
-        addCommand('powershell -Command "Set-ExecutionPolicy RemoteSigned -Force"');
+        addCommand('cmd.exe /c "powershell -NoProfile -ExecutionPolicy Bypass -Command ""try { Set-ExecutionPolicy RemoteSigned -Force -ErrorAction Stop; Write-Output \"Execution policy set to RemoteSigned\" } catch { Write-Error $_.Exception.Message; exit 1 }"""');
     } else {
-        addCommand('powershell -Command "Set-ExecutionPolicy Restricted -Force"');
+        addCommand('cmd.exe /c "powershell -NoProfile -ExecutionPolicy Bypass -Command ""try { Set-ExecutionPolicy Restricted -Force -ErrorAction Stop; Write-Output \"Execution policy set to Restricted\" } catch { Write-Error $_.Exception.Message; exit 1 }"""');
     }
 
-    // UAC
+    // UAC with error handling
     if (settings.featureUac) {
-        addCommand('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v EnableLUA /t REG_DWORD /d 1 /f');
+        addSafeCommand('reg', ['add', 'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System', '/v', 'EnableLUA', '/t', 'REG_DWORD', '/d', '1', '/f'], 'Enable UAC');
     } else {
-        addCommand('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v EnableLUA /t REG_DWORD /d 0 /f');
+        addSafeCommand('reg', ['add', 'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System', '/v', 'EnableLUA', '/t', 'REG_DWORD', '/d', '0', '/f'], 'Disable UAC');
     }
 
     // Windows Defender (Enable is default, so we only act on disable)
     if (!settings.featureDefender) {
-        addCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender" /v DisableAntiSpyware /t REG_DWORD /d 1 /f');
+        addSafeCommand('reg', ['add', 'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender', '/v', 'DisableAntiSpyware', '/t', 'REG_DWORD', '/d', '1', '/f'], 'Disable Windows Defender');
     }
 
     // Windows Firewall
     if (settings.featureFirewall) {
-        addCommand('netsh advfirewall set allprofiles state on');
+        addSafeCommand('netsh', ['advfirewall', 'set', 'allprofiles', 'state', 'on'], 'Enable Windows Firewall');
     } else {
-        addCommand('netsh advfirewall set allprofiles state off');
+        addSafeCommand('netsh', ['advfirewall', 'set', 'allprofiles', 'state', 'off'], 'Disable Windows Firewall');
     }
 
     // SmartScreen
     if (settings.featureSmartscreen) {
-        addCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableSmartScreen /t REG_DWORD /d 1 /f');
+        addSafeCommand('reg', ['add', 'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System', '/v', 'EnableSmartScreen', '/t', 'REG_DWORD', '/d', '1', '/f'], 'Enable SmartScreen');
     } else {
-        addCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableSmartScreen /t REG_DWORD /d 0 /f');
+        addSafeCommand('reg', ['add', 'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System', '/v', 'EnableSmartScreen', '/t', 'REG_DWORD', '/d', '0', '/f'], 'Disable SmartScreen');
     }
 
     // Telemetry (UI says "Disable", so checked=true means disable)
     if (settings.featureTelemetry) {
-        addCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f');
+        addSafeCommand('reg', ['add', 'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection', '/v', 'AllowTelemetry', '/t', 'REG_DWORD', '/d', '0', '/f'], 'Disable Telemetry');
     }
 
     // Cortana (UI says "Disable", so checked=true means disable)
     if (settings.featureCortana) {
-        addCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v AllowCortana /t REG_DWORD /d 0 /f');
+        addSafeCommand('reg', ['add', 'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search', '/v', 'AllowCortana', '/t', 'REG_DWORD', '/d', '0', '/f'], 'Disable Cortana');
     }
 
     // Location Services (UI says "Disable", so checked=true means disable)
     if (settings.featureLocation) {
-        addCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocation /t REG_DWORD /d 1 /f');
+        addSafeCommand('reg', ['add', 'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors', '/v', 'DisableLocation', '/t', 'REG_DWORD', '/d', '1', '/f'], 'Disable Location Services');
     }
 
     // Advertising ID (UI says "Disable", so checked=true means disable)
     if (settings.featureAds) {
-        addCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo" /v Enabled /t REG_DWORD /d 0 /f');
+        addSafeCommand('reg', ['add', 'HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo', '/v', 'Enabled', '/t', 'REG_DWORD', '/d', '0', '/f'], 'Disable Advertising ID');
     }
 
     // Automatic Updates
     if (settings.featureUpdates) {
-        addCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v NoAutoUpdate /t REG_DWORD /d 0 /f');
-        addCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v AUOptions /t REG_DWORD /d 4 /f');
+        addSafeCommand('reg', ['add', 'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU', '/v', 'NoAutoUpdate', '/t', 'REG_DWORD', '/d', '0', '/f'], 'Enable Automatic Updates');
+        addSafeCommand('reg', ['add', 'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU', '/v', 'AUOptions', '/t', 'REG_DWORD', '/d', '4', '/f'], 'Set Automatic Updates to Notify before download');
     } else {
-        addCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v NoAutoUpdate /t REG_DWORD /d 1 /f');
+        addSafeCommand('reg', ['add', 'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU', '/v', 'NoAutoUpdate', '/t', 'REG_DWORD', '/d', '1', '/f'], 'Disable Automatic Updates');
     }
 
     // Hibernation
     if (settings.featureHibernation) {
-        addCommand('powercfg /hibernate on');
+        addSafeCommand('powercfg', ['/hibernate', 'on'], 'Enable Hibernation');
     } else {
-        addCommand('powercfg /hibernate off');
+        addSafeCommand('powercfg', ['/hibernate', 'off'], 'Disable Hibernation');
     }
 
     // Remote Desktop
     if (settings.featureRemoteDesktop) {
-        addCommand('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f');
-        addCommand('netsh advfirewall firewall set rule group="remote desktop" new enable=Yes');
+        addSafeCommand('reg', ['add', 'HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server', '/v', 'fDenyTSConnections', '/t', 'REG_DWORD', '/d', '0', '/f'], 'Enable Remote Desktop');
+        addSafeCommand('netsh', ['advfirewall', 'firewall', 'set', 'rule', 'group="remote desktop"', 'new', 'enable=Yes'], 'Enable Remote Desktop Firewall Rule');
     } else {
-        addCommand('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 1 /f');
-    }
-    
-    // Hide Admin account from login
-    if (settings.hideAdmin) {
-        addCommand(`reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\\SpecialAccounts\\UserList" /v "${settings.adminUsername}" /t REG_DWORD /d 0 /f`);
+        addSafeCommand('reg', ['add', 'HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server', '/v', 'fDenyTSConnections', '/t', 'REG_DWORD', '/d', '1', '/f'], 'Disable Remote Desktop');
     }
 
+    // Hide Admin account from login with error handling
+    if (settings.hideAdmin) {
+        addSafeCommand('reg', ['add', 'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\\SpecialAccounts\\UserList', '/v', `"${settings.adminUsername}"`, '/t', 'REG_DWORD', '/d', '0', '/f'], 'Hide Admin account from login');
+    }
+
+    // Add a final command to restart the system if needed
+    addSafeCommand('cmd.exe', ['/c', 'echo Installation complete. The system will restart in 1 minute... && shutdown /r /t 60 /c "System will restart to complete configuration"'], 'Restart system after installation');
 
     if (commands) {
         return `<FirstLogonCommands>${commands}
@@ -365,6 +377,104 @@ function generateFirstLogonCommands(settings) {
  * Generate Windows unattend.xml content based on form data
  */
 function generateUnattendXML() {
+    try {
+        // Get form values
+        const settings = getFormValues();
+        
+        // Encode passwords
+        const adminPasswordEncoded = encodePasswordForWindows(settings.adminPassword);
+        const userPasswordEncoded = encodePasswordForWindows(settings.userPassword);
+        
+        // Generate XML sections
+        const windowsPE = generateWindowsPESection(settings);
+        const specialize = generateSpecializeSection(settings);
+        const oobeSystem = generateOOBESystemSection(settings, adminPasswordEncoded, userPasswordEncoded);
+        
+        // Combine all sections
+        return `<?xml version="1.0" encoding="utf-8"?>
+<unattend xmlns="urn:schemas-microsoft-com:unattend" 
+          xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" 
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    ${windowsPE}
+    ${specialize}
+    ${oobeSystem}
+</unattend>`;
+    } catch (error) {
+        console.error('Error generating unattend.xml:', error);
+        showStatusMessage('error', `Failed to generate unattend.xml: ${error.message}`);
+        throw error;
+    }
+}
+
+/**
+ * Generate OOBE System section for unattend.xml
+ */
+function generateOOBESystemSection(settings, adminPasswordEncoded, userPasswordEncoded) {
+    const commands = generateFirstLogonCommands(settings);
+    
+    return `
+    <settings pass="oobeSystem">
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="${settings.architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+            <OOBE>
+                <HideEULAPage>${settings.oobeHideEula}</HideEULAPage>
+                <HideWirelessSetupInOOBE>${settings.oobeHideWireless}</HideWirelessSetupInOOBE>
+                <NetworkLocation>Work</NetworkLocation>
+                <ProtectYourPC>${settings.oobeProtectPc ? 1 : 3}</ProtectYourPC>
+                <SkipMachineOOBE>${settings.oobeSkipMachine}</SkipMachineOOBE>
+                <SkipUserOOBE>${settings.oobeSkipUser}</SkipUserOOBE>
+                <HideOnlineAccountScreens>${settings.oobeHideOnlineAccount}</HideOnlineAccountScreens>
+            </OOBE>
+            ${commands}
+            <UserAccounts>
+                <LocalAccounts>
+                    <LocalAccount wcm:action="add">
+                        <Name>${settings.adminUsername}</Name>
+                        <Group>Administrators</Group>
+                        <DisplayName>${settings.adminUsername}</DisplayName>
+                        <Description>Local Administrator Account</Description>
+                        <Password>
+                            <Value>${adminPasswordEncoded}</Value>
+                            <PlainText>false</PlainText>
+                        </Password>
+                    </LocalAccount>
+                </LocalAccounts>
+            </UserAccounts>
+        </component>
+    </settings>`;
+}
+
+/**
+ * Generate Specialize section for unattend.xml
+ */
+function generateSpecializeSection(settings) {
+    return `
+    <settings pass="specialize">
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="${settings.architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+            <OEMInformation>
+                <HelpCustomized>false</HelpCustomized>
+            </OEMInformation>
+            <ComputerName>${settings.computerName}</ComputerName>
+            <RegisteredOwner>${settings.owner}</RegisteredOwner>
+            <RegisteredOrganization>${settings.organization}</RegisteredOrganization>
+            <TimeZone>${settings.timezone}</TimeZone>
+            <Description>${settings.description}</Description>
+            <ProductKey>${settings.productKey}</ProductKey>
+        </component>
+        <component name="Microsoft-Windows-Deployment" processorArchitecture="${settings.architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+            <RunSynchronous>
+                <RunSynchronousCommand wcm:action="add">
+                    <Order>1</Order>
+                    <Path>cmd /c "echo Windows is being prepared for first use..."</Path>
+                </RunSynchronousCommand>
+            </RunSynchronous>
+        </component>
+    </settings>`;
+}
+
+
+
+// Helper function to get form values
+function getFormValues() {
     // Get form values and escape them
     const adminUsernameRaw = document.getElementById('admin-username')?.value || 'Administrator';
     const adminUsername = escapeXml(adminUsernameRaw);
@@ -424,26 +534,85 @@ function generateUnattendXML() {
     const oobeProtectPc = document.getElementById('oobe-protect-pc')?.checked || false;
     const oobeHideOnlineAccount = document.getElementById('oobe-hide-online-account')?.checked || false;
 
-    // Generate FirstLogonCommands
-    const firstLogonCommands = generateFirstLogonCommands(featureSettings);
+    return {
+        adminUsername,
+        adminPassword,
+        userUsername,
+        userPassword,
+        autoLogon,
+        hideAdmin,
+        timezone,
+        language,
+        keyboard,
+        locale,
+        computerName,
+        workgroup,
+        organization,
+        owner,
+        description,
+        windowsEdition,
+        architecture,
+        productKey,
+        acceptEula,
+        skipOem,
+        enableNetwork,
+        skipNetworkSetup,
+        joinDomain,
+        domainName,
+        domainUsername,
+        domainPassword,
+        featureSettings,
+        // Flatten feature flags for easier downstream access
+        featureDefender: featureSettings.featureDefender,
+        featureFirewall: featureSettings.featureFirewall,
+        featureUac: featureSettings.featureUac,
+        featureSmartscreen: featureSettings.featureSmartscreen,
+        featureTelemetry: featureSettings.featureTelemetry,
+        featureCortana: featureSettings.featureCortana,
+        featureLocation: featureSettings.featureLocation,
+        featureAds: featureSettings.featureAds,
+        featureUpdates: featureSettings.featureUpdates,
+        featureHibernation: featureSettings.featureHibernation,
+        featureRemoteDesktop: featureSettings.featureRemoteDesktop,
+        featurePowershell: featureSettings.featurePowershell,
+        oobeSkipMachine,
+        oobeSkipUser,
+        oobeHideEula,
+        oobeHideWireless,
+        oobeProtectPc,
+        oobeHideOnlineAccount,
+    };
+}
 
-    // Generate XML content
-    let xml = `<?xml version="1.0" encoding="utf-8"?>
-<unattend xmlns="urn:schemas-microsoft-com:unattend">
+// Helper function to generate Windows PE section
+function generateWindowsPESection(settings) {
+    return `
     <!-- Windows PE Pass -->
     <settings pass="windowsPE">
-        <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="${architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="${settings.architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <SetupUILanguage>
-                <UILanguage>${language}</UILanguage>
+                <UILanguage>${settings.language}</UILanguage>
             </SetupUILanguage>
-            <InputLocale>${keyboard}</InputLocale>
-            <SystemLocale>${language}</SystemLocale>
-            <UILanguage>${language}</UILanguage>
-            <UserLocale>${locale}</UserLocale>
+            <InputLocale>${settings.keyboard}</InputLocale>
+            <SystemLocale>${settings.language}</SystemLocale>
+            <UILanguage>${settings.language}</UILanguage>
+            <UserLocale>${settings.locale}</UserLocale>
         </component>
-        <component name="Microsoft-Windows-Setup" processorArchitecture="${architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <component name="Microsoft-Windows-Deployment" processorArchitecture="${settings.architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <UseConfigurationSet>true</UseConfigurationSet>
+            <RunSynchronous>
+                <RunSynchronousCommand wcm:action="add">
+                    <Order>1</Order>
+                    <Path>wpeutil DisableFirewall</Path>
+                    <Description>Disable Windows PE Firewall</Description>
+                </RunSynchronousCommand>
+            </RunSynchronous>
+        </component>
+        <component name="Microsoft-Windows-Setup" processorArchitecture="${settings.architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
             <DiskConfiguration>
                 <Disk wcm:action="add">
+                    <DiskID>0</DiskID>
+                    <WillWipeDisk>true</WillWipeDisk>
                     <CreatePartitions>
                         <CreatePartition wcm:action="add">
                             <Order>1</Order>
@@ -453,7 +622,7 @@ function generateUnattendXML() {
                         <CreatePartition wcm:action="add">
                             <Order>2</Order>
                             <Type>MSR</Type>
-                            <Size>16</Size>
+                            <Size>128</Size>
                         </CreatePartition>
                         <CreatePartition wcm:action="add">
                             <Order>3</Order>
@@ -467,6 +636,7 @@ function generateUnattendXML() {
                             <PartitionID>1</PartitionID>
                             <Label>System</Label>
                             <Format>FAT32</Format>
+                            <TypeID>0xEF</TypeID>
                         </ModifyPartition>
                         <ModifyPartition wcm:action="add">
                             <Order>2</Order>
@@ -474,29 +644,29 @@ function generateUnattendXML() {
                             <Label>Windows</Label>
                             <Letter>C</Letter>
                             <Format>NTFS</Format>
+                            <TypeID>0x07</TypeID>
                         </ModifyPartition>
                     </ModifyPartitions>
-                    <DiskID>0</DiskID>
-                    <WillWipeDisk>true</WillWipeDisk>
                 </Disk>
+                <WillShowUI>OnError</WillShowUI>
             </DiskConfiguration>
             <UserData>
-                ${productKey ? `<ProductKey><Key>${productKey}</Key></ProductKey>` : ''}
-                <AcceptEula>${acceptEula ? 'true' : 'false'}</AcceptEula>
-                <FullName>${owner}</FullName>
-                <Organization>${organization}</Organization>
+                ${settings.productKey ? `<ProductKey><Key>${settings.productKey}</Key></ProductKey>` : ''}
+                <AcceptEula>${settings.acceptEula ? 'true' : 'false'}</AcceptEula>
+                <FullName>${settings.owner}</FullName>
+                <Organization>${settings.organization}</Organization>
             </UserData>
-            <EnableNetwork>${enableNetwork ? 'true' : 'false'}</EnableNetwork>
+            <EnableNetwork>${settings.enableNetwork ? 'true' : 'false'}</EnableNetwork>
             <ImageInstall>
                 <OSImage>
                     <InstallTo>
                         <DiskID>0</DiskID>
                         <PartitionID>3</PartitionID>
                     </InstallTo>
-                    ${windowsEdition ? `
+                    ${settings.windowsEdition ? `
                     <MetaData wcm:action="add">
                         <Key>/IMAGE/NAME</Key>
-                        <Value>${windowsEdition}</Value>
+                        <Value>${settings.windowsEdition}</Value>
                     </MetaData>` : ''}
                     <WillShowUI>OnError</WillShowUI>
                     <InstallToAvailablePartition>false</InstallToAvailablePartition>
@@ -506,31 +676,31 @@ function generateUnattendXML() {
     </settings>
     <!-- Specialize Pass -->
     <settings pass="specialize">
-        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="${architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-            <ComputerName>${computerName}</ComputerName>
-            <TimeZone>${timezone}</TimeZone>
-            ${organization ? `<RegisteredOrganization>${organization}</RegisteredOrganization>` : ''}
-            ${owner ? `<RegisteredOwner>${owner}</RegisteredOwner>` : ''}
-            ${description ? `<Description>${description}</Description>` : ''}
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="${settings.architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <ComputerName>${settings.computerName}</ComputerName>
+            <TimeZone>${settings.timezone}</TimeZone>
+            ${settings.organization ? `<RegisteredOrganization>${settings.organization}</RegisteredOrganization>` : ''}
+            ${settings.owner ? `<RegisteredOwner>${settings.owner}</RegisteredOwner>` : ''}
+            ${settings.description ? `<Description>${settings.description}</Description>` : ''}
         </component>`;
 
-    if (!joinDomain) {
+    if (!settings.joinDomain) {
         xml += `
-        <component name="Microsoft-Windows-UnattendedJoin" processorArchitecture="${architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <component name="Microsoft-Windows-UnattendedJoin" processorArchitecture="${settings.architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <Identification>
-                <JoinWorkgroup>${workgroup}</JoinWorkgroup>
+                <JoinWorkgroup>${settings.workgroup}</JoinWorkgroup>
             </Identification>
         </component>`;
-    } else if (domainName) {
+    } else if (settings.domainName) {
         xml += `
-        <component name="Microsoft-Windows-UnattendedJoin" processorArchitecture="${architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <component name="Microsoft-Windows-UnattendedJoin" processorArchitecture="${settings.architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <Identification>
-                <JoinDomain>${domainName}</JoinDomain>
-                ${(domainUsername && domainPassword) ?
+                <JoinDomain>${settings.domainName}</JoinDomain>
+                ${(settings.domainUsername && settings.domainPassword) ?
                 `<Credentials>
-                    <Domain>${domainName}</Domain>
-                    <Username>${domainUsername}</Username>
-                    <Password>${encodePasswordForWindows(domainPassword)}</Password>
+                    <Domain>${settings.domainName}</Domain>
+                    <Username>${settings.domainUsername}</Username>
+                    <Password>${encodePasswordForWindows(settings.domainPassword)}</Password>
                 </Credentials>` : ''}
             </Identification>
         </component>`;
@@ -540,36 +710,40 @@ function generateUnattendXML() {
     </settings>
     <!-- OOBE System Pass -->
     <settings pass="oobeSystem">
-        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="${architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="${settings.architecture}" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <OEMInformation>
+                <Manufacturer>WinTool</Manufacturer>
+                <Model>Custom Installation</Model>
+            </OEMInformation>
             <OOBE>
-                <HideEULAPage>${oobeHideEula ? 'true' : 'false'}</HideEULAPage>
+                <HideEULAPage>${settings.oobeHideEula ? 'true' : 'false'}</HideEULAPage>
                 <HideLocalAccountScreen>true</HideLocalAccountScreen>
-                <HideOEMRegistrationScreen>${skipOem ? 'true' : 'false'}</HideOEMRegistrationScreen>
-                <HideOnlineAccountScreens>${oobeHideOnlineAccount ? 'true' : 'false'}</HideOnlineAccountScreens>
-                <HideWirelessSetupInOOBE>${oobeHideWireless ? 'true' : 'false'}</HideWirelessSetupInOOBE>
+                <HideOEMRegistrationScreen>${settings.skipOem ? 'true' : 'false'}</HideOEMRegistrationScreen>
+                <HideOnlineAccountScreens>${settings.oobeHideOnlineAccount ? 'true' : 'false'}</HideOnlineAccountScreens>
+                <HideWirelessSetupInOOBE>${settings.oobeHideWireless ? 'true' : 'false'}</HideWirelessSetupInOOBE>
                 <NetworkLocation>Work</NetworkLocation>
-                <ProtectYourPC>${oobeProtectPc ? '1' : '3'}</ProtectYourPC>
-                <SkipUserOOBE>${oobeSkipUser ? 'true' : 'false'}</SkipUserOOBE>
-                <SkipMachineOOBE>${oobeSkipMachine ? 'true' : 'false'}</SkipMachineOOBE>
+                <ProtectYourPC>${settings.oobeProtectPc ? '1' : '3'}</ProtectYourPC>
+                <SkipUserOOBE>${settings.oobeSkipUser ? 'true' : 'false'}</SkipUserOOBE>
+                <SkipMachineOOBE>${settings.oobeSkipMachine ? 'true' : 'false'}</SkipMachineOOBE>
             </OOBE>
             <UserAccounts>
                 <AdministratorPassword>
-                    <Value>${encodePasswordForWindows(adminPassword)}</Value>
+                    <Value>${encodePasswordForWindows(settings.adminPassword)}</Value>
                     <PlainText>false</PlainText>
                 </AdministratorPassword>`;
 
-    if (userUsername) {
+    if (settings.userUsername) {
         xml += `
                 <LocalAccounts>
                     <LocalAccount wcm:action="add">
                         <Password>
-                            <Value>${encodePasswordForWindows(userPassword)}</Value>
+                            <Value>${encodePasswordForWindows(settings.userPassword)}</Value>
                             <PlainText>false</PlainText>
                         </Password>
                         <Description>User Account</Description>
-                        <DisplayName>${userUsername}</DisplayName>
+                        <DisplayName>${settings.userUsername}</DisplayName>
                         <Group>Users</Group>
-                        <Name>${userUsername}</Name>
+                        <Name>${settings.userUsername}</Name>
                     </LocalAccount>
                 </LocalAccounts>`;
     }

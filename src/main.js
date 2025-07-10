@@ -273,17 +273,25 @@ function createLogViewerWindow() {
     });
 }
 
-function createWindow() {
+async function createWindow() {
     console.log('Creating main window...');
 
     // Get screen dimensions for responsive sizing
     const primaryDisplay = screen.getPrimaryDisplay();
-    const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
+    const {
+        width: screenWidth,
+        height: screenHeight
+    } = primaryDisplay.workAreaSize;
 
     // Always use % of screen for window size
     const windowSizePercent = 0.8;
     const windowWidth = Math.round(screenWidth * windowSizePercent);
     const windowHeight = Math.round(screenHeight * windowSizePercent);
+
+    // Get transparency setting before creating the window
+    const settingsStore = await getStore();
+    const opacity = settingsStore ? settingsStore.get('transparency', 1) : 1;
+    console.log(`Creating window with opacity: ${opacity}`);
 
     // Create the browser window
     mainWindow = new BrowserWindow({
@@ -299,10 +307,11 @@ function createWindow() {
             devTools: true
         },
         frame: false, // Custom title bar
-        backgroundColor: '#0a0a0c',
+        transparent: true,
         show: false, // Show when ready
-        center: true
-    }); // Add missing closing bracket
+        center: true,
+        opacity: opacity
+    });
 
     // Load the main HTML file
     mainWindow.loadFile(path.join(__dirname, 'index.html'));
@@ -361,30 +370,28 @@ function createTray() {
         tray.setToolTip('WinTool');
 
         // Create context menu
-        const contextMenu = Menu.buildFromTemplate([
-            {
-                label: 'Show WinTool',
-                click: () => {
-                    showWindow();
+        const contextMenu = Menu.buildFromTemplate([{
+            label: 'Show WinTool',
+            click: async () => {
+                await showWindow();
+            }
+        }, {
+            label: 'Hide WinTool',
+            click: () => {
+                hideWindow();
+            }
+        }, {
+            type: 'separator'
+        }, {
+            label: 'Settings',
+            click: async () => {
+                await showWindow();
+                // Send message to renderer to show settings
+                if (mainWindow) {
+                    mainWindow.webContents.send('show-settings');
                 }
-            },
-            {
-                label: 'Hide WinTool',
-                click: () => {
-                    hideWindow();
-                }
-            },
-            { type: 'separator' },
-            {
-                label: 'Settings',
-                click: () => {
-                    showWindow();
-                    // Send message to renderer to show settings
-                    if (mainWindow) {
-                        mainWindow.webContents.send('show-settings');
-                    }
-                }
-            },
+            }
+        },
             { type: 'separator' },
             {
                 label: 'Quit WinTool',
@@ -398,15 +405,11 @@ function createTray() {
         tray.setContextMenu(contextMenu);
 
         // Handle tray icon click (show/hide window)
-        tray.on('click', () => {
-            if (mainWindow) {
-                if (mainWindow.isVisible()) {
-                    hideWindow();
-                } else {
-                    showWindow();
-                }
+        tray.on('click', async () => {
+            if (mainWindow && mainWindow.isVisible()) {
+                hideWindow();
             } else {
-                createWindow();
+                await showWindow();
             }
         });
 
@@ -420,7 +423,7 @@ function createTray() {
 /**
  * Show main window
  */
-function showWindow() {
+async function showWindow() {
     if (mainWindow) {
         if (mainWindow.isMinimized()) {
             mainWindow.restore();
@@ -428,7 +431,7 @@ function showWindow() {
         mainWindow.show();
         mainWindow.focus();
     } else {
-        createWindow();
+        await createWindow();
     }
 }
 
@@ -543,11 +546,11 @@ async function initializeApplication() {
     const { default: isElevated } = await import('is-elevated');
     const elevated = await isElevated();
 
-    const showWindowAndFinishSetup = () => {
+    const showWindowAndFinishSetup = async () => {
         if (mainWindow) {
             return; // Window already exists
         }
-        createWindow();
+        await createWindow();
         createTray();
         
         // Run slow tasks after the window is visible.
@@ -646,9 +649,9 @@ app.on('window-all-closed', () => {
     }
 });
 
-app.on('activate', () => {
+app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
+        await createWindow();
     }
 });
 
@@ -707,8 +710,8 @@ ipcMain.handle('hide-to-tray', () => {
     return true;
 });
 
-ipcMain.handle('show-from-tray', () => {
-    showWindow();
+ipcMain.handle('show-from-tray', async () => {
+    await showWindow();
     return true;
 });
 

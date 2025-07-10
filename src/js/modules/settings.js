@@ -355,11 +355,7 @@ export async function loadAndApplyStartupSettings() {
                 updatePrimaryColorVariables(primaryColor);
             }
 
-            
             const transparency = await window.electronAPI.getSetting('transparency', 1);
-            if (window.electronAPI && window.electronAPI.setWindowOpacity) {
-                window.electronAPI.setWindowOpacity(transparency);
-            }
 
             const enableDevTools = await window.electronAPI.getSetting('enableDevTools', false);
             if (enableDevTools) {
