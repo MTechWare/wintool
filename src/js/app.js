@@ -23,12 +23,24 @@ async function initialBoot() {
     initContextMenu();
     initFpsCounter();
 
-    // Fetch help modal content, but don't wait for it.
-    fetch('help-modal.html')
-        .then(response => response.text())
-        .then(data => {
-            document.getElementById('help-modal-container').innerHTML = data;
-        });
+    // Try to fetch help modal content, fallback to cached version if offline
+    const helpModalContainer = document.getElementById('help-modal-container');
+    if (helpModalContainer) {
+        fetch('help-modal.html')
+            .then(response => response.text())
+            .then(data => {
+                helpModalContainer.innerHTML = data;
+                // Cache the content in localStorage
+                localStorage.setItem('cachedHelpModal', data);
+            })
+            .catch(() => {
+                const cached = localStorage.getItem('cachedHelpModal');
+                if (cached) {
+                    helpModalContainer.innerHTML = cached;
+                    showNotification('Using cached help content (offline mode)', 'warning');
+                }
+            });
+    }
 }
 
 async function deferredBoot() {
@@ -88,8 +100,16 @@ async function continueNormalStartup() {
                 try {
                     const services = await window.electronAPI.getServices();
                     registerServiceControlCommands(services);
+                    // Cache services for offline use
+                    localStorage.setItem('cachedServices', JSON.stringify(services));
                 } catch (error) {
-                    console.error("Failed to fetch and register service commands:", error);
+                    console.error("Failed to fetch services:", error);
+                    // Try to use cached services if available
+                    const cached = localStorage.getItem('cachedServices');
+                    if (cached) {
+                        showNotification('Using cached service commands (offline mode)', 'warning');
+                        registerServiceControlCommands(JSON.parse(cached));
+                    }
                 }
 
                 initCommandPalette();
@@ -147,6 +167,10 @@ window.resetCustomTheme = resetCustomTheme;
 window.applyAnimationSetting = applyAnimationSetting;
 window.showFpsCounter = showFpsCounter;
 window.hideFpsCounter = hideFpsCounter;
+
+import('./modules/offline-status.js').then(module => {
+    module.initOfflineStatusIndicator();
+});
 
 console.log('WinTool app.js loaded');
 

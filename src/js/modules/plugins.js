@@ -60,7 +60,17 @@ export async function renderPluginCards() {
     if (!window.electronAPI) return;
 
     try {
-        const plugins = await window.electronAPI.getAllPlugins();
+        let plugins;
+        try {
+            plugins = await window.electronAPI.getAllPlugins();
+        } catch (error) {
+            if (error.message.includes('network')) {
+                showNotification('Running in offline mode - plugins cannot be verified', 'warning');
+                plugins = await window.electronAPI.getCachedPlugins();
+            } else {
+                throw error;
+            }
+        }
         const activePlugins = plugins.filter(p => p.enabled);
         const disabledPlugins = plugins.filter(p => !p.enabled);
 
@@ -147,10 +157,20 @@ async function handlePluginAction(event) {
     if (!pluginId || !action) return;
 
     if (action === 'info') {
-        const plugins = await window.electronAPI.getAllPlugins();
+        let plugins;
+        try {
+            plugins = await window.electronAPI.getAllPlugins();
+        } catch (error) {
+            if (error.message.includes('network')) {
+                showNotification('Cannot verify plugin - offline mode', 'warning');
+                plugins = await window.electronAPI.getCachedPlugins();
+            } else {
+                throw error;
+            }
+        }
         const plugin = plugins.find(p => p.id === pluginId);
         if (plugin) {
-            showNotification(`Plugin Hash: ${plugin.hash}`, 'info');
+            showNotification(`Plugin Hash: ${plugin.hash}${navigator.onLine ? '' : ' (not verified)'}`, 'info');
         }
         return;
     }

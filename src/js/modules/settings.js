@@ -122,6 +122,13 @@ async function loadCurrentSettings() {
             }
 
             
+            const topMost = await window.electronAPI.getSetting('topMost', false);
+            const topMostCheckbox = document.getElementById('top-most-checkbox');
+            if (topMostCheckbox) {
+                topMostCheckbox.checked = topMost;
+            }
+
+            
             await loadKeyboardShortcutsSettings();
         }
     } catch (error) {
@@ -277,6 +284,10 @@ export async function saveSettings() {
 
             const disableAnimations = document.getElementById('disable-animations-checkbox')?.checked || false;
             await window.electronAPI.setSetting('disableAnimations', disableAnimations);
+
+            
+            const topMost = document.getElementById('top-most-checkbox')?.checked || false;
+            await window.electronAPI.setSetting('topMost', topMost);
 
             
             await saveKeyboardShortcuts();
