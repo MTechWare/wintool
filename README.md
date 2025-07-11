@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![WinTool Portable](https://img.shields.io/badge/WinTool-v0.1.4w-orange?style=for-the-badge&logo=windows&logoColor=white)
+![WinTool Portable](https://img.shields.io/badge/WinTool-v0.1.3w-orange?style=for-the-badge&logo=windows&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey?style=for-the-badge&logo=windows)
 ![License](https://img.shields.io/badge/License-GPL--3.0--or--later-blue?style=for-the-badge)
 
@@ -122,7 +122,7 @@ Extend WinTool's functionality with a simple and powerful plugin system. Plugins
 2.  Click **"Install Plugin"** and select your plugin's `.zip` package.
 3.  The application will prompt for a restart to complete the installation.
 
-For developers, see the [Plugin Development Guide](PLUGIN_DEVELOPMENT.md).
+For developers, see the [Plugin Development Guide](https://github.com/MTechWare/wintool-plugins).
 
 ---
 
