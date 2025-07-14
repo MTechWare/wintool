@@ -316,6 +316,13 @@ async function createWindow() {
     // Load the main HTML file
     mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
+    // Apply always on top setting
+    const topMost = settingsStore ? settingsStore.get('topMost', false) : false;
+    if (topMost) {
+        mainWindow.setAlwaysOnTop(true);
+        console.log('Window set to always on top');
+    }
+
     // Show window when ready
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
@@ -869,6 +876,12 @@ ipcMain.handle('set-setting', async (event, key, value) => {
             discordPresence.start();
         } else {
             discordPresence.stop();
+        }
+    }
+    if (key === 'topMost') {
+        if (mainWindow) {
+            mainWindow.setAlwaysOnTop(value);
+            console.log(`Window always on top set to: ${value}`);
         }
     }
     return true;

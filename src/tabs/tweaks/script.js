@@ -42,7 +42,7 @@ if (tweaksGrid) {
             id: 'disable-telemetry',
             title: 'Disable Telemetry',
             category: 'System Tweaks',
-            description: 'Disables Windows telemetry services, tasks, and data collection.',
+            description: 'Disables Windows telemetry services, tasks, and data collection. Enhanced for Windows 11 24H2.',
             check: async () => {
                 const regResult = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v "AllowTelemetry"');
                 const serviceResult = await window.electronAPI.runCommand('sc.exe query DiagTrack');
@@ -50,26 +50,39 @@ if (tweaksGrid) {
             },
             apply: async () => {
                 const commands = [
+                    // Core telemetry settings
                     'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v "AllowTelemetry" /t REG_DWORD /d 0 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v "DoNotShowFeedbackNotifications" /t REG_DWORD /d 1 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v "AllowCommercialDataPipeline" /t REG_DWORD /d 0 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v "AllowDeviceNameInTelemetry" /t REG_DWORD /d 0 /f',
+                    // Disable services
                     'sc.exe config "DiagTrack" start=disabled',
                     'sc.exe stop "DiagTrack"',
                     'sc.exe config "dmwappushservice" start=disabled',
                     'sc.exe stop "dmwappushservice"',
+                    // Disable scheduled tasks
                     'schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Program\\Consolidator" /Disable',
-                    'schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Program\\UsbCeip" /Disable'
-                ].join(' && ');
+                    'schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Program\\UsbCeip" /Disable',
+                    'schtasks /Change /TN "Microsoft\\Windows\\Application Experience\\Microsoft Compatibility Appraiser" /Disable',
+                    'schtasks /Change /TN "Microsoft\\Windows\\Application Experience\\ProgramDataUpdater" /Disable'
+                ].join(' & ');
                 await window.electronAPI.runAdminCommand(commands);
             },
             revert: async () => {
                 const commands = [
                     'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v "AllowTelemetry" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v "DoNotShowFeedbackNotifications" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v "AllowCommercialDataPipeline" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v "AllowDeviceNameInTelemetry" /f',
                     'sc.exe config "DiagTrack" start=auto',
                     'sc.exe start "DiagTrack"',
                     'sc.exe config "dmwappushservice" start=auto',
                     'sc.exe start "dmwappushservice"',
                     'schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Program\\Consolidator" /Enable',
-                    'schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Program\\UsbCeip" /Enable'
-                ].join(' && ');
+                    'schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Program\\UsbCeip" /Enable',
+                    'schtasks /Change /TN "Microsoft\\Windows\\Application Experience\\Microsoft Compatibility Appraiser" /Enable',
+                    'schtasks /Change /TN "Microsoft\\Windows\\Application Experience\\ProgramDataUpdater" /Enable'
+                ].join(' & ');
                 await window.electronAPI.runAdminCommand(commands);
             }
         },
@@ -125,19 +138,29 @@ if (tweaksGrid) {
             id: 'remove-3d-objects',
             title: 'Remove 3D Objects from File Explorer',
             category: 'System Tweaks',
-            description: 'Removes the "3D Objects" folder from This PC.',
+            description: 'Removes the "3D Objects" folder from This PC. (Note: May already be removed in Windows 11 24H2)',
             check: async () => {
-                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}"');
-                // If the command succeeds (code 0), the key exists, so the tweak is NOT applied.
-                return !result.success;
+                // Check both 64-bit and 32-bit registry locations
+                const result64 = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}"');
+                const result32 = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}"');
+                // If both commands fail, the keys don't exist, so the tweak is applied
+                return !result64.success && !result32.success;
             },
             apply: async () => {
-                await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}" /f');
+                // Remove from both locations to ensure complete removal
+                const commands = [
+                    'reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}" /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
             },
             revert: async () => {
-                // This is a bit more complex as it involves adding the key back.
-                // For simplicity, we'll just log a message. A more robust solution would be to export the key before deleting.
-                console.log('Reverting "Remove 3D Objects" requires manually adding the registry key back.');
+                // Restore the 3D Objects folder by recreating the registry keys
+                const commands = [
+                    'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}" /f',
+                    'reg add "HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}" /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
             }
         },
         {
@@ -192,16 +215,28 @@ if (tweaksGrid) {
             id: 'disable-widgets',
             title: 'Disable Widgets',
             category: 'System Tweaks',
-            description: 'Disables the Widgets feature.',
+            description: 'Disables the Widgets feature and taskbar widgets button. Enhanced for Windows 11 24H2.',
             check: async () => {
-                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v "AllowNewsAndInterests"');
-                return result.stdout.includes('AllowNewsAndInterests    REG_DWORD    0x0');
+                const result1 = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v "AllowNewsAndInterests"');
+                const result2 = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "TaskbarDa"');
+                return result1.stdout.includes('AllowNewsAndInterests    REG_DWORD    0x0') &&
+                       result2.stdout.includes('TaskbarDa    REG_DWORD    0x0');
             },
             apply: async () => {
-                await window.electronAPI.runAdminCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v "AllowNewsAndInterests" /t REG_DWORD /d 0 /f');
+                const commands = [
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v "AllowNewsAndInterests" /t REG_DWORD /d 0 /f',
+                    'reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "TaskbarDa" /t REG_DWORD /d 0 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Feeds" /v "EnableFeeds" /t REG_DWORD /d 0 /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
             },
             revert: async () => {
-                await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v "AllowNewsAndInterests" /f');
+                const commands = [
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v "AllowNewsAndInterests" /f',
+                    'reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "TaskbarDa" /t REG_DWORD /d 1 /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Feeds" /v "EnableFeeds" /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
             }
         },
         {
@@ -253,6 +288,86 @@ if (tweaksGrid) {
             }
         },
         {
+            id: 'disable-copilot',
+            title: 'Disable Windows Copilot',
+            category: 'System Tweaks',
+            description: 'Disables the Windows Copilot AI assistant feature introduced in Windows 11.',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v "TurnOffWindowsCopilot"');
+                return result.stdout.includes('TurnOffWindowsCopilot    REG_DWORD    0x1');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v "TurnOffWindowsCopilot" /t REG_DWORD /d 1 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v "TurnOffWindowsCopilot" /f');
+            }
+        },
+        {
+            id: 'disable-recall',
+            title: 'Disable Windows Recall',
+            category: 'System Tweaks',
+            description: 'Disables Windows Recall feature that takes screenshots for AI analysis.',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI" /v "DisableAIDataAnalysis"');
+                return result.stdout.includes('DisableAIDataAnalysis    REG_DWORD    0x1');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI" /v "DisableAIDataAnalysis" /t REG_DWORD /d 1 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI" /v "DisableAIDataAnalysis" /f');
+            }
+        },
+        {
+            id: 'disable-enhanced-phishing-protection',
+            title: 'Disable Enhanced Phishing Protection',
+            category: 'System Tweaks',
+            description: 'Disables Enhanced Phishing Protection that monitors password usage.',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WTDS\\Components" /v "ServiceEnabled"');
+                return result.stdout.includes('ServiceEnabled    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WTDS\\Components" /v "ServiceEnabled" /t REG_DWORD /d 0 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WTDS\\Components" /v "ServiceEnabled" /f');
+            }
+        },
+        {
+            id: 'disable-voice-activation',
+            title: 'Disable Voice Activation',
+            category: 'System Tweaks',
+            description: 'Disables voice activation for apps while the system is locked.',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" /v "LetAppsActivateWithVoiceAboveLock"');
+                return result.stdout.includes('LetAppsActivateWithVoiceAboveLock    REG_DWORD    0x2');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" /v "LetAppsActivateWithVoiceAboveLock" /t REG_DWORD /d 2 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" /v "LetAppsActivateWithVoiceAboveLock" /f');
+            }
+        },
+        {
+            id: 'disable-suggested-actions',
+            title: 'Disable Suggested Actions',
+            category: 'System Tweaks',
+            description: 'Disables suggested actions when copying phone numbers, dates, etc.',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\SmartActionPlatform\\SmartClipboard" /v "Disabled"');
+                return result.stdout.includes('Disabled    REG_DWORD    0x1');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\SmartActionPlatform\\SmartClipboard" /v "Disabled" /t REG_DWORD /d 1 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg delete "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\SmartActionPlatform\\SmartClipboard" /v "Disabled" /f');
+            }
+        },
+        {
             id: 'disable-sysmain',
             title: 'Disable SysMain (Superfetch)',
             category: 'Useless Services',
@@ -290,7 +405,7 @@ if (tweaksGrid) {
             id: 'disable-fax-service',
             title: 'Disable Fax Service',
             category: 'Useless Services',
-            description: 'Disables the Fax service. Most users do not need this service.',
+            description: 'Disables the Fax service. Most users do not need this service. (Note: Service may not exist in Windows 11 24H2)',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"Fax\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -298,10 +413,17 @@ if (tweaksGrid) {
                 return result.stdout.trim() === 'Disabled' || result.stdout.trim() === '';
             },
             apply: async () => {
-                await window.electronAPI.runAdminCommand('sc.exe stop "Fax" && sc.exe config "Fax" start=disabled');
+                // Check if service exists before trying to disable it
+                const commands = [
+                    'powershell -NoProfile -Command "if (Get-Service -Name \\"Fax\\" -ErrorAction SilentlyContinue) { Stop-Service -Name \\"Fax\\" -Force -ErrorAction SilentlyContinue; Set-Service -Name \\"Fax\\" -StartupType Disabled }"'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
             },
             revert: async () => {
-                await window.electronAPI.runAdminCommand('sc.exe config "Fax" start=auto && sc.exe start "Fax"');
+                const commands = [
+                    'powershell -NoProfile -Command "if (Get-Service -Name \\"Fax\\" -ErrorAction SilentlyContinue) { Set-Service -Name \\"Fax\\" -StartupType Automatic; Start-Service -Name \\"Fax\\" -ErrorAction SilentlyContinue }"'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
             }
         },
         {
@@ -529,17 +651,23 @@ if (tweaksGrid) {
             id: 'disable-tablet-input',
             title: 'Disable Touch Keyboard and Handwriting',
             category: 'Useless Services',
-            description: 'Disables the service for touch keyboard and handwriting panel. Unnecessary for most desktop users.',
+            description: 'Disables the service for touch keyboard and handwriting panel. Unnecessary for most desktop users. (Note: Service may not exist in Windows 11 24H2)',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"TabletInputService\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
-                return result.stdout.trim() === 'Disabled';
+                return result.stdout.trim() === 'Disabled' || result.stdout.trim() === '';
             },
             apply: async () => {
-                await window.electronAPI.runAdminCommand('sc.exe stop "TabletInputService" && sc.exe config "TabletInputService" start=disabled');
+                const commands = [
+                    'powershell -NoProfile -Command "if (Get-Service -Name \\"TabletInputService\\" -ErrorAction SilentlyContinue) { Stop-Service -Name \\"TabletInputService\\" -Force -ErrorAction SilentlyContinue; Set-Service -Name \\"TabletInputService\\" -StartupType Disabled }"'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
             },
             revert: async () => {
-                await window.electronAPI.runAdminCommand('sc.exe config "TabletInputService" start=auto && sc.exe start "TabletInputService"');
+                const commands = [
+                    'powershell -NoProfile -Command "if (Get-Service -Name \\"TabletInputService\\" -ErrorAction SilentlyContinue) { Set-Service -Name \\"TabletInputService\\" -StartupType Automatic; Start-Service -Name \\"TabletInputService\\" -ErrorAction SilentlyContinue }"'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
             }
         },
         {
@@ -627,7 +755,8 @@ if (tweaksGrid) {
             revert: async () => {
                 await window.electronAPI.runAdminCommand('sc.exe config "lfsvc" start=demand && sc.exe start "lfsvc"');
             }
-        }
+        },
+
     ];
 
     const renderTweaks = (filteredTweaks) => {

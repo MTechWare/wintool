@@ -267,8 +267,13 @@
                         <span class="label">Codename:</span>
                         <span id="os-codename">Loading...</span>
                     </div>
+                </div>
+            </div>
+            <div class="os-card">
+                <h4><i class="fas fa-code-branch"></i> Kernel</h4>
+                <div class="os-details">
                     <div class="detail-row">
-                        <span class="label">Kernel:</span>
+                        <span class="label">Version:</span>
                         <span id="os-kernel">Loading...</span>
                     </div>
                     <div class="detail-row">
@@ -285,39 +290,45 @@
     </div>
 
     <!-- Battery Information -->
-    <div class="battery-section" id="battery-section" style="display: none;">
+    <div class="battery-section" id="battery-section">
         <h3>Battery Information</h3>
-        <div class="battery-container">
+        <div class="battery-grid">
             <div class="battery-card">
-                <div class="battery-icon">
-                    <i class="fas fa-battery-half" id="battery-icon"></i>
-                </div>
-                <div class="battery-details">
-                    <div class="battery-level">
-                        <span id="battery-percent">0%</span>
-                        <span id="battery-status">Unknown</span>
+                <div class="battery-visual">
+                    <div class="battery-icon">
+                        <i class="fas fa-battery-full" id="battery-icon"></i>
                     </div>
-                    <div class="battery-info">
-                        <div class="detail-row">
-                            <span class="label">Type:</span>
-                            <span id="battery-type">Unknown</span>
+                    <div class="battery-level-container">
+                        <div class="battery-level-bar">
+                            <div class="battery-level-fill" id="battery-level-fill"></div>
                         </div>
-                        <div class="detail-row">
-                            <span class="label">Model:</span>
-                            <span id="battery-model">Unknown</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="label">Manufacturer:</span>
-                            <span id="battery-manufacturer">Unknown</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="label">Time Remaining:</span>
-                            <span id="battery-time-remaining">Unknown</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="label">AC Connected:</span>
-                            <span id="battery-ac-connected">Unknown</span>
-                        </div>
+                        <div class="battery-percent" id="battery-percent">0%</div>
+                    </div>
+                </div>
+                <div class="battery-status">
+                    <span id="battery-status">Status: Unknown</span>
+                    <span id="battery-ac-connected">AC: Unknown</span>
+                </div>
+            </div>
+
+            <div class="battery-card">
+                <h4><i class="fas fa-info-circle"></i> Battery Details</h4>
+                <div class="battery-details">
+                    <div class="detail-row">
+                        <span class="label">Type:</span>
+                        <span id="battery-type">Unknown</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Model:</span>
+                        <span id="battery-model">Unknown</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Manufacturer:</span>
+                        <span id="battery-manufacturer">Unknown</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Time Remaining:</span>
+                        <span id="battery-time-remaining">Unknown</span>
                     </div>
                 </div>
             </div>
