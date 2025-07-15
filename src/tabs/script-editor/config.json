@@ -1,6 +1,6 @@
 {
     "name": "Script Editor",
-    "icon": "fas fa-terminal",
+    "icon": "fas fa-code",
     "description": "Edit and run scripts",
     "version": "1.0.0",
     "author": "WinTool"

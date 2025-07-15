@@ -1,34 +1,102 @@
 <div class="tab-header">
-    <h1><i class="fas fa-terminal"></i> Script Editor</h1>
-    <p>Edit and run scripts</p>
+    <div>
+        <h1><i class="fas fa-code"></i> Script Editor</h1>
+        <p>Simple code editor for scripts and text files</p>
+    </div>
+    <div>
+        <button id="editor-settings-btn" class="action-btn" title="Editor Settings"><i class="fas fa-cog"></i></button>
+    </div>
 </div>
 
-<div class="editor-content">
-    <div class="editor-toolbar">
-        <button class="btn btn-primary" onclick="window.runScript()"><i class="fas fa-play"></i> Run</button>
-        <button class="btn btn-secondary" onclick="window.clearEditor()"><i class="fas fa-eraser"></i> Clear</button>
-        <button class="btn btn-secondary" onclick="window.openScriptFile()"><i class="fas fa-folder-open"></i> Open File</button>
-        <button class="btn btn-secondary" onclick="window.saveScriptFile()"><i class="fas fa-save"></i> Save File</button>
-        <button class="btn btn-secondary" onclick="window.zoomIn()"><i class="fas fa-search-plus"></i></button>
-        <button class="btn btn-secondary" onclick="window.zoomOut()"><i class="fas fa-search-minus"></i></button>
-        <select id="shell-select">
-            <option value="powershell">PowerShell</option>
-            <option value="cmd">CMD</option>
-            <option value="bash">Bash</option>
-        </select>
-        <select id="theme-select">
-            <option value="dracula">Dracula</option>
-            <option value="material">Material</option>
-            <option value="monokai">Monokai</option>
-            <option value="eclipse">Eclipse</option>
-            <option value="solarized dark">Solarized Dark</option>
-            <option value="solarized light">Solarized Light</option>
-        </select>
+<div class="script-editor-content">
+    <!-- File Controls -->
+    <div class="file-controls">
+        <div class="control-group">
+            <button class="control-btn" id="new-file-btn" title="New File">
+                <i class="fas fa-file"></i> New
+            </button>
+            <button class="control-btn" id="open-file-btn" title="Open File">
+                <i class="fas fa-folder-open"></i> Open
+            </button>
+            <button class="control-btn" id="save-file-btn" title="Save File">
+                <i class="fas fa-save"></i> Save
+            </button>
+        </div>
+
+        <div class="control-group">
+            <select id="language-select" class="control-select" title="Select Language">
+                <option value="javascript">JavaScript</option>
+                <option value="python">Python</option>
+                <option value="powershell">PowerShell</option>
+                <option value="batch">Batch</option>
+                <option value="html">HTML</option>
+                <option value="css">CSS</option>
+                <option value="json">JSON</option>
+                <option value="xml">XML</option>
+                <option value="markdown">Markdown</option>
+                <option value="text">Plain Text</option>
+            </select>
+            <button class="control-btn primary" id="run-btn" title="Run Script">
+                <i class="fas fa-play"></i> Run
+            </button>
+        </div>
     </div>
-    <textarea id="editor-container" style="width: 100%; border: 1px solid #ccc; background-color: #1e1e1e; color: #d4d4d4; font-family: 'Courier New', Courier, monospace;"></textarea>
-    <div class="resize-handle" id="resize-handle"></div>
-    <div class="output-container">
-        <h3><i class="fas fa-terminal"></i> Output</h3>
-        <pre id="output"></pre>
+
+    <!-- Current File Info -->
+    <div class="file-info">
+        <span id="current-file-name">Untitled</span>
+        <span id="file-modified" class="modified-indicator" style="display: none;">●</span>
+    </div>
+
+    <!-- Editor Area -->
+    <div class="editor-container">
+        <textarea id="code-editor" class="code-editor" placeholder="Start typing your code here..."></textarea>
+    </div>
+
+    <!-- Output Area -->
+    <div class="output-section">
+        <div class="output-header">
+            <h3><i class="fas fa-terminal"></i> Output</h3>
+            <button class="control-btn" id="clear-output-btn" title="Clear Output">
+                <i class="fas fa-trash"></i> Clear
+            </button>
+        </div>
+        <div class="output-content">
+            <pre id="script-output" class="output-text">Ready to run scripts...</pre>
+        </div>
+    </div>
+</div>
+
+<!-- Editor Settings Modal -->
+<div class="modal" id="editor-settings-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-cog"></i> Editor Settings</h2>
+            <button class="modal-close" data-modal="editor-settings-modal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="settings-content">
+                <div class="setting-group">
+                    <label for="font-size-input">Font Size:</label>
+                    <input type="number" id="font-size-input" class="setting-input" min="8" max="24" value="14">
+                </div>
+                <div class="setting-group">
+                    <label for="tab-size-input">Tab Size:</label>
+                    <input type="number" id="tab-size-input" class="setting-input" min="2" max="8" value="4">
+                </div>
+                <div class="setting-group">
+                    <label>
+                        <input type="checkbox" id="word-wrap-checkbox"> Word Wrap
+                    </label>
+                </div>
+                <div class="setting-group">
+                    <label>
+                        <input type="checkbox" id="auto-save-checkbox" checked> Auto Save
+                    </label>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
