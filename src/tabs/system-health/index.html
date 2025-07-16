@@ -1,0 +1,177 @@
+<div class="tab-header">
+    <div>
+        <h1><i class="fas fa-heartbeat"></i> System Health Dashboard</h1>
+        <p>Real-time monitoring of system performance and health</p>
+    </div>
+    <div>
+        <button id="refresh-health-btn" class="action-btn" title="Refresh Health Data"><i class="fas fa-sync-alt"></i></button>
+        <button id="export-health-btn" class="action-btn" title="Export Health Report"><i class="fas fa-file-export"></i></button>
+    </div>
+</div>
+
+<div class="health-dashboard">
+    <!-- Quick Status Overview -->
+    <div class="health-overview">
+        <div class="health-status-card" id="overall-status">
+            <div class="status-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="status-info">
+                <h3>System Status</h3>
+                <p id="overall-status-text">Excellent</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-time Metrics Grid -->
+    <div class="metrics-grid">
+        <!-- CPU Health Card -->
+        <div class="metric-card cpu-card">
+            <div class="metric-header">
+                <h4><i class="fas fa-microchip"></i> CPU</h4>
+                <span class="metric-status" id="cpu-status">Good</span>
+            </div>
+            <div class="metric-content">
+                <div class="circular-progress" id="cpu-progress">
+                    <div class="progress-circle">
+                        <div class="progress-fill"></div>
+                        <div class="progress-text">
+                            <span id="cpu-percentage">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="metric-details">
+                    <div class="detail-item">
+                        <span>Temperature:</span>
+                        <span id="cpu-temp">--°C</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Speed:</span>
+                        <span id="cpu-speed">-- GHz</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Cores:</span>
+                        <span id="cpu-cores">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Memory Health Card -->
+        <div class="metric-card memory-card">
+            <div class="metric-header">
+                <h4><i class="fas fa-memory"></i> Memory</h4>
+                <span class="metric-status" id="memory-status">Good</span>
+            </div>
+            <div class="metric-content">
+                <div class="circular-progress" id="memory-progress">
+                    <div class="progress-circle">
+                        <div class="progress-fill"></div>
+                        <div class="progress-text">
+                            <span id="memory-percentage">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="metric-details">
+                    <div class="detail-item">
+                        <span>Used:</span>
+                        <span id="memory-used">-- GB</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Available:</span>
+                        <span id="memory-available">-- GB</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Total:</span>
+                        <span id="memory-total">-- GB</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Disk Health Card -->
+        <div class="metric-card disk-card">
+            <div class="metric-header">
+                <h4><i class="fas fa-hdd"></i> Storage</h4>
+                <span class="metric-status" id="disk-status">Good</span>
+            </div>
+            <div class="metric-content">
+                <div class="circular-progress" id="disk-progress">
+                    <div class="progress-circle">
+                        <div class="progress-fill"></div>
+                        <div class="progress-text">
+                            <span id="disk-percentage">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="metric-details">
+                    <div class="detail-item">
+                        <span>Used:</span>
+                        <span id="disk-used">-- GB</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Free:</span>
+                        <span id="disk-free">-- GB</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Total:</span>
+                        <span id="disk-total">-- GB</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Network Health Card -->
+        <div class="metric-card network-card">
+            <div class="metric-header">
+                <h4><i class="fas fa-wifi"></i> Network</h4>
+                <span class="metric-status" id="network-status">Good</span>
+            </div>
+            <div class="metric-content">
+                <div class="network-activity">
+                    <div class="activity-item">
+                        <i class="fas fa-arrow-down"></i>
+                        <span id="network-download">0 KB/s</span>
+                    </div>
+                    <div class="activity-item">
+                        <i class="fas fa-arrow-up"></i>
+                        <span id="network-upload">0 KB/s</span>
+                    </div>
+                </div>
+                <div class="metric-details">
+                    <div class="detail-item">
+                        <span>Downloaded:</span>
+                        <span id="network-total-down">-- GB</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Uploaded:</span>
+                        <span id="network-total-up">-- GB</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Active:</span>
+                        <span id="network-interfaces">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Charts -->
+    <div class="charts-section">
+        <div class="chart-container">
+            <h4>CPU Usage History</h4>
+            <canvas id="cpu-chart" width="400" height="200"></canvas>
+        </div>
+        <div class="chart-container">
+            <h4>Memory Usage History</h4>
+            <canvas id="memory-chart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- System Alerts -->
+    <div class="alerts-section" id="alerts-section" style="display: none;">
+        <h4><i class="fas fa-exclamation-triangle"></i> System Alerts</h4>
+        <div id="alerts-container"></div>
+    </div>
+
+</div>

@@ -21,17 +21,39 @@ const discordPresence = require('./js/modules/discord-presence');
 
 const verifiedHashes = {};
 
-axios.get('https://raw.githubusercontent.com/MTechWare/wintool/refs/heads/main/src/config/verified-plugins.json')
-    .then(response => {
-        Object.assign(verifiedHashes, response.data.verified_hashes);
-        console.log('Successfully fetched and updated verified plugins list.');
-    })
-    .catch(error => {
-        console.error('Failed to fetch verified plugins list from GitHub. Using local fallback.', error);
-        // Fallback to local file if GitHub is unreachable
-        const localVerifiedHashes = require('./config/verified-plugins.json').verified_hashes;
-        Object.assign(verifiedHashes, localVerifiedHashes);
-    });
+// Fetch verified plugins list from GitHub only
+async function updateVerifiedPluginsList() {
+    try {
+        console.log('Fetching verified plugins list from GitHub...');
+        const response = await axios.get('https://raw.githubusercontent.com/MTechWare/wintool/refs/heads/main/src/config/verified-plugins.json', {
+            timeout: 10000, // 10 second timeout
+            headers: {
+                'Cache-Control': 'no-cache',
+                'User-Agent': 'WinTool/1.0'
+            }
+        });
+
+        if (response.data && response.data.verified_hashes) {
+            // Clear existing hashes and replace with GitHub data
+            Object.keys(verifiedHashes).forEach(key => delete verifiedHashes[key]);
+            Object.assign(verifiedHashes, response.data.verified_hashes);
+            console.log(`Successfully fetched and updated verified plugins list. Found ${Object.keys(response.data.verified_hashes).length} verified plugins.`);
+        } else {
+            throw new Error('Invalid response format from GitHub');
+        }
+    } catch (error) {
+        console.error('Failed to fetch verified plugins list from GitHub:', error.message);
+        console.warn('No verified plugins available - operating without verification');
+        // Clear any existing hashes since we can't verify them
+        Object.keys(verifiedHashes).forEach(key => delete verifiedHashes[key]);
+    }
+}
+
+// Initialize verified plugins list
+updateVerifiedPluginsList();
+
+// Refresh verified plugins list periodically (every 30 minutes)
+setInterval(updateVerifiedPluginsList, 30 * 60 * 1000);
 
 // Initialize store for settings
 let store;
@@ -2409,12 +2431,41 @@ ipcMain.handle('get-disk-space', async () => {
     console.log('get-disk-space handler called');
 
     return new Promise((resolve, reject) => {
-        // Use PowerShell script file for better reliability
-        const path = require('path');
-        const scriptPath = path.join(__dirname, 'scripts', 'get-disk-space.ps1');
+        // Use inline PowerShell command that works in both dev and packaged environments
+        const psCommand = `
+            try {
+                $ErrorActionPreference = "Stop"
+                $disk = Get-CimInstance -ClassName Win32_LogicalDisk -Filter "DeviceID='C:'" -ErrorAction Stop
+                if ($disk -and $disk.Size -gt 0) {
+                    $result = @{
+                        Total = [long]$disk.Size
+                        Free = [long]$disk.FreeSpace
+                        Used = [long]($disk.Size - $disk.FreeSpace)
+                    }
+                    $result | ConvertTo-Json -Compress
+                } else {
+                    $volume = Get-Volume -DriveLetter C -ErrorAction SilentlyContinue
+                    if ($volume) {
+                        $total = $volume.Size
+                        $free = $volume.SizeRemaining
+                        $used = $total - $free
+                        $result = @{
+                            Total = [long]$total
+                            Free = [long]$free
+                            Used = [long]$used
+                        }
+                        $result | ConvertTo-Json -Compress
+                    } else {
+                        @{Total = 0; Free = 0; Used = 0; Error = "No C: drive found"} | ConvertTo-Json -Compress
+                    }
+                }
+            } catch {
+                @{Total = 0; Free = 0; Used = 0; Error = $_.Exception.Message} | ConvertTo-Json -Compress
+            }
+        `;
 
-        const psProcess = spawn('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath], {
-            shell: false, // Changed from true to false for security
+        const psProcess = spawn('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', psCommand], {
+            shell: false,
             stdio: ['pipe', 'pipe', 'pipe']
         });
 
@@ -3225,5 +3276,24 @@ ipcMain.handle('save-file-dialog-and-write', async (event, content, options) => 
     }
 });
 
+// Refresh verified plugins list handler
+ipcMain.handle('refresh-verified-plugins', async () => {
+    console.log('refresh-verified-plugins handler called');
+    try {
+        await updateVerifiedPluginsList();
+        return { success: true, message: 'Verified plugins list refreshed successfully' };
+    } catch (error) {
+        console.error('Failed to refresh verified plugins list:', error);
+        return { success: false, message: error.message };
+    }
+});
 
-
+// Get current verified plugins list handler
+ipcMain.handle('get-verified-plugins', async () => {
+    console.log('get-verified-plugins handler called');
+    return {
+        success: true,
+        verifiedHashes: { ...verifiedHashes },
+        count: Object.keys(verifiedHashes).length
+    };
+});

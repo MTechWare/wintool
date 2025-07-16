@@ -1,0 +1,7 @@
+{
+  "name": "demo-dev-plugin",
+  "description": "A demo plugin for development",
+  "version": "1.0.0",
+  "author": "Demo User",
+  "icon": "fas fa-code"
+}

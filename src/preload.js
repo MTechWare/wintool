@@ -156,6 +156,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openAppDirectory: () => ipcRenderer.invoke('open-app-directory'),
     togglePluginState: (pluginId) => ipcRenderer.invoke('toggle-plugin-state', pluginId),
     deletePlugin: (pluginId) => ipcRenderer.invoke('delete-plugin', pluginId),
+    refreshVerifiedPlugins: () => ipcRenderer.invoke('refresh-verified-plugins'),
+    getVerifiedPlugins: () => ipcRenderer.invoke('get-verified-plugins'),
     toggleDevTools: () => ipcRenderer.invoke('toggle-dev-tools'),
     openSpecialFolder: (folderKey) => ipcRenderer.invoke('open-special-folder', folderKey),
 });

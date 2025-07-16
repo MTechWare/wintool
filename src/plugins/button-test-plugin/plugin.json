@@ -1,0 +1,7 @@
+{
+  "name": "button-test-plugin",
+  "description": "Testing button functionality",
+  "version": "1.0.0",
+  "author": "Test User",
+  "icon": "fas fa-mouse-pointer"
+}
