@@ -26,6 +26,7 @@ window.tabEventManager = new EventTarget();
 export const DEFAULT_TAB_ORDER = [
     'tweaks',
     'system-info',
+    'system-health',
     'processes',
     'services',
     'networking',

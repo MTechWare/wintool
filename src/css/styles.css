@@ -1916,6 +1916,58 @@ html, body {
     box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
 }
 
+/* Verification Badge Styles */
+.verification-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: auto;
+}
+
+.verification-badge.verified {
+    background: rgba(76, 175, 80, 0.1);
+    color: var(--success-color);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.verification-badge.unverified {
+    background: rgba(255, 193, 7, 0.1);
+    color: #ff9800;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.verification-badge i {
+    font-size: 10px;
+}
+
+/* Plugin Hash Display */
+.plugin-hash {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    cursor: help;
+}
+
+/* Enhanced Plugin Card Header */
+.plugin-card-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.plugin-card-header h4 {
+    flex: 1;
+    min-width: 0;
+}
+
 /* Help Modal Styles */
 .help-search-container {
     position: relative;

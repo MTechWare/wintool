@@ -1,0 +1,167 @@
+{
+  "default": {
+    "maxMemoryUsage": 52428800,
+    "maxExecutionTime": 30000,
+    "allowedDomains": [],
+    "restrictedAPIs": [
+      "require",
+      "process",
+      "fs",
+      "child_process",
+      "os",
+      "cluster",
+      "vm",
+      "eval",
+      "Function"
+    ],
+    "allowedAPIs": [
+      "wintoolAPI.store",
+      "wintoolAPI.tabs",
+      "wintoolAPI.invoke",
+      "wintoolAPI.notifications"
+    ],
+    "permissions": [
+      "storage.read",
+      "storage.write",
+      "notifications.show"
+    ],
+    "cspPolicy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';"
+  },
+  "trusted": {
+    "maxMemoryUsage": 104857600,
+    "maxExecutionTime": 60000,
+    "allowedDomains": ["*"],
+    "restrictedAPIs": [
+      "require",
+      "process",
+      "child_process",
+      "cluster"
+    ],
+    "allowedAPIs": [
+      "wintoolAPI.store",
+      "wintoolAPI.tabs",
+      "wintoolAPI.invoke",
+      "wintoolAPI.notifications",
+      "wintoolAPI.fs",
+      "wintoolAPI.http"
+    ],
+    "permissions": [
+      "storage.read",
+      "storage.write",
+      "notifications.show",
+      "network.request",
+      "fs.readUserFile"
+    ],
+    "cspPolicy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+  },
+  "restricted": {
+    "maxMemoryUsage": 26214400,
+    "maxExecutionTime": 15000,
+    "allowedDomains": [],
+    "restrictedAPIs": [
+      "require",
+      "process",
+      "fs",
+      "child_process",
+      "os",
+      "cluster",
+      "vm",
+      "eval",
+      "Function",
+      "setTimeout",
+      "setInterval"
+    ],
+    "allowedAPIs": [
+      "wintoolAPI.store",
+      "wintoolAPI.notifications"
+    ],
+    "permissions": [
+      "storage.read",
+      "notifications.show"
+    ],
+    "cspPolicy": "default-src 'none'; script-src 'self'; style-src 'self';"
+  },
+  "system-uptime": {
+    "maxMemoryUsage": 10485760,
+    "maxExecutionTime": 5000,
+    "allowedDomains": [],
+    "restrictedAPIs": [
+      "require",
+      "process",
+      "fs",
+      "child_process",
+      "os",
+      "cluster",
+      "vm",
+      "eval",
+      "Function"
+    ],
+    "allowedAPIs": [
+      "wintoolAPI.store",
+      "wintoolAPI.tabs",
+      "wintoolAPI.invoke"
+    ],
+    "permissions": [
+      "storage.read",
+      "storage.write"
+    ],
+    "cspPolicy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';"
+  },
+  "quick-launcher": {
+    "maxMemoryUsage": 20971520,
+    "maxExecutionTime": 10000,
+    "allowedDomains": [],
+    "restrictedAPIs": [
+      "require",
+      "process",
+      "fs",
+      "child_process",
+      "os",
+      "cluster",
+      "vm",
+      "eval",
+      "Function"
+    ],
+    "allowedAPIs": [
+      "wintoolAPI.store",
+      "wintoolAPI.tabs",
+      "wintoolAPI.invoke",
+      "wintoolAPI.notifications"
+    ],
+    "permissions": [
+      "storage.read",
+      "storage.write",
+      "notifications.show"
+    ],
+    "cspPolicy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';"
+  },
+  "developer-template": {
+    "maxMemoryUsage": 104857600,
+    "maxExecutionTime": 60000,
+    "allowedDomains": [
+      "api.github.com",
+      "raw.githubusercontent.com",
+      "httpbin.org"
+    ],
+    "restrictedAPIs": [
+      "require",
+      "process",
+      "child_process",
+      "cluster"
+    ],
+    "allowedAPIs": [
+      "wintoolAPI.store",
+      "wintoolAPI.tabs",
+      "wintoolAPI.invoke",
+      "wintoolAPI.notifications",
+      "wintoolAPI.http"
+    ],
+    "permissions": [
+      "storage.read",
+      "storage.write",
+      "notifications.show",
+      "network.request"
+    ],
+    "cspPolicy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+  }
+}
