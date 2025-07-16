@@ -12,19 +12,27 @@ This guide will walk you through creating your own plugins to extend the functio
 
 ## 📋 Table of Contents
 
+- [🛠️ Plugin CLI Tool](#️-plugin-cli-tool)
+  - [Installation](#installation)
+  - [Creating Plugins](#creating-plugins)
+  - [Validation and Testing](#validation-and-testing)
+  - [Building and Distribution](#building-and-distribution)
 - [🚀 Getting Started](#-getting-started)
+  - [Using the Plugin CLI (Recommended)](#using-the-plugin-cli-recommended)
   - [Using the Plugin Template](#using-the-plugin-template)
   - [Manual Setup](#manual-setup)
 - [🏗️ Plugin Anatomy](#️-plugin-anatomy)
   - [Plugin Structure](#plugin-structure)
-  - [The Manifest (`config.json`)](#the-manifest-configjson)
+  - [The Manifest (`plugin.json`)](#the-manifest-pluginjson)
 - [🌉 The Plugin API Reference](#-the-plugin-api-reference)
   - [Frontend API (`window.wintoolAPI`)](#frontend-api-windowwintoolapi)
   - [Backend API (`api` object)](#backend-api-api-object)
-- [🔒 Security Model](#-security-model)
-  - [Sandboxed Environment](#sandboxed-environment)
-  - [User-Mediated File Access](#user-mediated-file-access)
-- [🎨 Using Frontend Libraries](#-using-frontend-libraries)
+- [🔒 Enhanced Security Model](#-enhanced-security-model)
+  - [Plugin Sandboxing](#plugin-sandboxing)
+  - [Permission System](#permission-system)
+  - [Security Policies](#security-policies)
+  - [Resource Limits](#resource-limits)
+- [🎨 UI Component Guide](#-ui-component-guide)
 - [✅ Development Best Practices](#-development-best-practices)
 - [📦 Distributing Your Plugin](#-distributing-your-plugin)
 - [📦 Backend Dependency Management (npm)](#-backend-dependency-management-npm)
@@ -49,7 +57,128 @@ Before you begin developing or testing plugins, it is highly recommended that yo
 
 ---
 
+## 🛠️ Plugin CLI Tool
+
+WinTool now includes a powerful command-line tool for plugin development that streamlines the entire development workflow from creation to distribution.
+
+> **🔘 Important:** For detailed information about how buttons work in plugins, see [PLUGIN_BUTTON_GUIDE.md](PLUGIN_BUTTON_GUIDE.md)
+
+### Installation
+
+#### Global Installation (Recommended)
+
+```bash
+cd cli
+npm install -g .
+```
+
+Or use the PowerShell installer:
+
+```powershell
+.\cli\install.ps1
+```
+
+After installation, you can use the CLI from anywhere:
+
+```bash
+wintool-plugin-cli --help
+```
+
+### Creating Plugins
+
+> **🔘 Critical:** Buttons in WinTool plugins require specific patterns to work. See [PLUGIN_BUTTON_GUIDE.md](PLUGIN_BUTTON_GUIDE.md) for complete button implementation details.
+
+The CLI supports three plugin types:
+
+#### Basic Plugin
+```bash
+wintool-plugin-cli create my-plugin --type=basic
+```
+Creates a frontend-only plugin with HTML, CSS, and JavaScript.
+
+#### Advanced Plugin
+```bash
+wintool-plugin-cli create my-plugin --type=advanced --author="Your Name"
+```
+Creates a plugin with backend support and Node.js integration.
+
+#### Minimal Plugin
+```bash
+wintool-plugin-cli create my-plugin --type=minimal
+```
+Creates a bare minimum plugin structure.
+
+#### Additional Options
+- `--author=<name>`: Set plugin author
+- `--description=<desc>`: Set plugin description
+- `--version=<version>`: Set plugin version
+- `--icon=<icon>`: Set Font Awesome icon class
+- `--dev`: Create in development directory
+
+### Validation and Testing
+
+#### Validate Plugin Structure
+```bash
+wintool-plugin-cli validate ./my-plugin
+```
+Checks file structure, manifest format, and code quality.
+
+#### Security Scan
+```bash
+wintool-plugin-cli security ./my-plugin
+```
+Performs comprehensive security analysis including:
+- Dangerous code pattern detection
+- External resource scanning
+- Dependency analysis
+- File permission checks
+
+#### Run Tests
+```bash
+wintool-plugin-cli test ./my-plugin
+```
+Executes automated tests for validation, security, and functionality.
+
+### Building and Distribution
+
+#### Build Plugin Package
+```bash
+wintool-plugin-cli build ./my-plugin
+```
+Creates a ZIP package ready for distribution with integrity hash generation.
+
+#### List Installed Plugins
+```bash
+wintool-plugin-cli list
+```
+Shows all installed plugins with metadata and validation status.
+
+---
+
 ## 🚀 Getting Started
+
+### Using the Plugin CLI (Recommended)
+
+> **⚡ Important:** The CLI now generates plugins with working buttons out of the box! All generated code follows the correct patterns for WinTool's tab system.
+
+The fastest way to start developing is with the CLI tool:
+
+```bash
+# Create a new plugin
+wintool-plugin-cli create my-awesome-plugin --type=advanced --author="Your Name"
+
+# Navigate to plugin directory
+cd my-awesome-plugin
+
+# Validate your plugin
+wintool-plugin-cli validate
+
+# Test your plugin
+wintool-plugin-cli test
+
+# Build for distribution
+wintool-plugin-cli build
+```
 
 ### Using the Plugin Template
 
@@ -74,6 +203,8 @@ If you prefer to start from scratch:
 
 ## 🏗️ Plugin Anatomy
 
+> **🔧 Key Insight:** WinTool plugins work like tabs, not standalone web pages. They must use container-scoped element selection and follow specific initialization patterns.
+
 ### Plugin Structure
 
 Every plugin is a directory inside `AppData\Local\MTechTool\Plugins\` and must contain these core files:
@@ -81,14 +212,15 @@ Every plugin is a directory inside `AppData\Local\MTechTool\Plugins\` and must c
 ```
 /AppData\Local\MTechTool\Plugins\
 └── my-cool-plugin/
-    ├── config.json     // (Required) Manifest file with metadata.
+    ├── plugin.json     // (Required) Manifest file with metadata.
     ├── index.html      // (Required) The UI of the plugin.
     ├── script.js       // (Required) The logic for the UI.
     ├── styles.css      // (Optional) The styling for the UI.
-    └── backend.js      // (Optional) The Node.js backend logic.
+    ├── backend.js      // (Optional) The Node.js backend logic.
+    └── package.json    // (Optional) For backend dependencies.
 ```
 
-### The Manifest: `config.json`
+### The Manifest: `plugin.json`
 
 This file tells WinTool how to load your plugin.
 
@@ -109,12 +241,16 @@ This file tells WinTool how to load your plugin.
 *   `icon` (string, required): The [Font Awesome](https://fontawesome.com/v5/search?m=free) icon class (e.g., `"fas fa-cogs"`).
 *   `backend` (string, optional): The path to the plugin's backend script. If provided, WinTool will load this script in the main process.
 *   `description` (string, optional): A brief summary of your plugin's functionality.
-*   `version` (string, optional): The version of your plugin.
+*   `version` (string, optional): The version of your plugin (recommended: semantic versioning).
 *   `author` (string, optional): Your name or username.
+*   `permissions` (array, optional): List of permissions required by your plugin (see Security Model).
+*   `dependencies` (object, optional): External dependencies required by your plugin.
 
 ---
 
 ## 🌉 The Plugin API Reference
+
+> **🔘 Button Implementation:** Before diving into the API, ensure your buttons work correctly. See [PLUGIN_BUTTON_GUIDE.md](PLUGIN_BUTTON_GUIDE.md) for essential button patterns.
 
 WinTool provides a rich, secure API to plugins. The API is split into two parts: a **Frontend API** available in your `script.js`, and a **Backend API** available in your `backend.js`.
 
@@ -344,15 +480,105 @@ api.registerHandler('show-error', async (message) => {
 
 ---
 
-## 🔒 Security Model
+## 🔒 Enhanced Security Model
 
-WinTool plugins run in a secure, sandboxed environment to protect the user's system.
+WinTool features a comprehensive multi-layered security system that protects users while enabling powerful plugin functionality.
 
-### Sandboxed Environment
-Each plugin's UI is loaded in a sandboxed `<iframe>`. This isolates the plugin's code and prevents it from interfering with the main application or other plugins.
+### Plugin Sandboxing
+
+Each plugin runs in an isolated sandbox with the following protections:
+
+#### Resource Limits
+- **Memory Usage**: Configurable per plugin (default: 50MB, trusted: 100MB)
+- **Execution Time**: Maximum runtime limits (default: 30s, trusted: 60s)
+- **API Call Limits**: Rate limiting on API calls to prevent abuse
+- **Network Requests**: Controlled and monitored HTTP requests
+
+#### Code Isolation
+- **Separate Context**: Each plugin runs in its own isolated JavaScript context
+- **API Mediation**: All system access goes through secure API wrappers
+- **Module Sandboxing**: Backend modules are loaded in controlled environments
+
+### Permission System
+
+Plugins must declare required permissions in their manifest:
+
+```json
+{
+  "name": "My Plugin",
+  "permissions": [
+    "storage.read",
+    "storage.write",
+    "notifications.show",
+    "network.request",
+    "fs.readUserFile"
+  ]
+}
+```
+
+#### Available Permissions
+- `storage.read`: Read from plugin storage
+- `storage.write`: Write to plugin storage
+- `notifications.show`: Display notifications
+- `network.request`: Make HTTP requests
+- `fs.readUserFile`: Access user-selected files
+- `system.info`: Access system information
+
+### Security Policies
+
+Plugins are assigned security policies based on trust level:
+
+#### Default Policy
+- Limited memory (50MB) and execution time (30s)
+- Basic permissions only
+- No external network access
+- Strict code analysis
+
+#### Trusted Policy
+- Higher resource limits (100MB, 60s)
+- Extended permissions
+- Allowed domains for network requests
+- Relaxed restrictions for verified plugins
+
+#### Restricted Policy
+- Minimal resources (25MB, 15s)
+- Read-only permissions
+- No network access
+- Enhanced monitoring
+
+### Resource Limits
+
+The security system enforces both per-plugin and global limits:
+
+#### Per-Plugin Limits
+- Memory usage monitoring
+- CPU time tracking
+- Network request quotas
+- File access logging
+
+#### Global Limits
+- Maximum active plugins (50)
+- Total memory usage (500MB)
+- Concurrent network requests (10)
+
+### Security Validation
+
+All plugins undergo comprehensive security analysis:
+
+#### Static Analysis
+- Dangerous pattern detection (eval, Function constructor)
+- External resource scanning
+- Inline event handler detection
+- JavaScript protocol usage
+
+#### Runtime Monitoring
+- API usage pattern analysis
+- Resource consumption tracking
+- Suspicious activity detection
+- Violation response handling
 
 ### User-Mediated File Access
-Plugins cannot access the file system directly. They **must** use the `window.wintool.selectFile()` or `window.wintool.selectFolder()` functions. This ensures that the user is always in control and must explicitly grant access to files and folders.
+Plugins cannot access the file system directly. They **must** use the secure file access APIs that require user interaction, ensuring users maintain control over their data.
 
 ---
 
@@ -443,16 +669,87 @@ The application uses custom-styled tables per tab (e.g., `.services-table`). It'
 
 ## ✅ Development Best Practices
 
-1.  **Use the Template**: Always start with the `plugin-template` to ensure your UI is consistent with the rest of the application.
-2.  **Use CSS Variables**: Use the application's CSS variables (e.g., `var(--primary-color)`, `var(--background-card)`) for consistent theming.
-3.  **Handle Asynchronous Operations**: All `wintool` API calls are asynchronous. Use `async/await` in your `script.js` for clean and readable code.
-4.  **Signal Tab Readiness**: Remember to call `window.markTabAsReady(tabId)` once your tab is loaded.
+### Development Workflow
+
+1.  **Use the CLI Tool**: Start with `wintool-plugin-cli create` for consistent project structure
+2.  **Validate Early**: Run `wintool-plugin-cli validate` frequently during development
+3.  **Security First**: Use `wintool-plugin-cli security` to catch security issues early
+4.  **Test Thoroughly**: Run `wintool-plugin-cli test` before distribution
+
+### Code Quality
+
+1.  **Use CSS Variables**: Use the application's CSS variables (e.g., `var(--primary-color)`, `var(--background-card)`) for consistent theming
+2.  **Handle Asynchronous Operations**: All `wintoolAPI` calls are asynchronous. Use `async/await` for clean code
+3.  **Signal Tab Readiness**: Call `window.markTabAsReady(tabId)` once your tab is loaded
+4.  **Error Handling**: Always wrap API calls in try-catch blocks
+5.  **Input Validation**: Validate all user inputs before processing
+
+### Security Best Practices
+
+1.  **Declare Permissions**: Only request permissions your plugin actually needs
+2.  **Avoid Dangerous Patterns**: Never use `eval()`, `Function()` constructor, or `innerHTML` with user data
+3.  **Sanitize Inputs**: Always sanitize user inputs and external data
+4.  **Use Secure APIs**: Use the provided secure APIs instead of direct system access
+5.  **Minimize Dependencies**: Only include necessary dependencies to reduce attack surface
+
+### Performance Optimization
+
+1.  **Resource Management**: Monitor memory usage and clean up resources
+2.  **Lazy Loading**: Load resources only when needed
+3.  **Efficient DOM Updates**: Minimize DOM manipulations and use document fragments
+4.  **Debounce Events**: Debounce frequent events like input changes
+5.  **Cache Results**: Cache expensive computations and API results
 
 ---
 
 ## 📦 Distributing Your Plugin
 
-To share your plugin, simply zip your plugin's folder and share it. Another user can add it to their `AppData\Local\MTechTool\Plugins` directory to install it.
+### Using the CLI Tool (Recommended)
+
+The CLI tool provides the best way to package and distribute plugins:
+
+```bash
+# Build your plugin
+wintool-plugin-cli build ./my-plugin
+
+# This creates:
+# - A ZIP package ready for distribution
+# - An integrity hash for verification
+# - Validation report
+```
+
+### Manual Distribution
+
+To manually share your plugin:
+
+1. **Validate First**: Ensure your plugin passes validation
+2. **Create ZIP**: Compress your plugin folder into a ZIP file
+3. **Include Documentation**: Add a README with installation instructions
+4. **Share**: Distribute the ZIP file to users
+
+### Installation for Users
+
+Users can install plugins in several ways:
+
+#### Through WinTool UI
+1. Open WinTool Settings
+2. Go to Plugins section
+3. Click "Install Plugin"
+4. Select the ZIP file
+
+#### Manual Installation
+1. Extract ZIP to `AppData\Local\MTechTool\Plugins`
+2. Restart WinTool
+3. Plugin appears in sidebar
+
+### Plugin Verification
+
+WinTool includes a verification system:
+
+- **Hash Verification**: Plugins are verified against known good hashes
+- **Security Scanning**: Automatic security analysis on installation
+- **Trust Levels**: Plugins can be marked as trusted, default, or restricted
+- **Update Notifications**: Users are notified of plugin updates
 
 ---
 
@@ -513,8 +810,111 @@ module.exports = {
 };
 ```
 
+---
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### Buttons Not Working ⚠️ **MOST COMMON ISSUE**
+- **Root cause**: Using `document.getElementById()` instead of `container.querySelector()`
+- **Why it happens**: WinTool plugins work like tabs and need container scoping
+- **Quick fix**: Replace all `document.getElementById()` with `container.querySelector()`
+- **Complete solution**: See [PLUGIN_BUTTON_GUIDE.md](PLUGIN_BUTTON_GUIDE.md) for detailed patterns
+- **Generated code**: New CLI plugins have working buttons by default
+
+#### Plugin Not Loading
+- Check that `plugin.json` is valid JSON
+- Ensure all required files are present
+- Verify plugin directory is in correct location
+- Check console for error messages
+
+#### Security Violations
+- Review security scan results with `wintool-plugin-cli security`
+- Remove dangerous code patterns (eval, Function constructor)
+- Declare required permissions in manifest
+- Use secure APIs instead of direct system access
+
+#### Performance Issues
+- Monitor resource usage in developer tools
+- Check for memory leaks in long-running plugins
+- Optimize DOM operations and event handlers
+- Use the CLI validation to identify performance issues
+
+#### Build Failures
+- Ensure all dependencies are installed
+- Check that plugin passes validation
+- Verify security scan passes
+- Review build logs for specific errors
+
+### Debug Mode
+
+Enable debug mode for detailed logging:
+
+```bash
+DEBUG=1 wintool-plugin-cli validate ./my-plugin
+```
+
+### Getting Help
+
+- 📖 **Documentation**: This guide and CLI README
+- 🐛 **Issues**: Report bugs on GitHub
+- 💬 **Community**: Join discussions for help and tips
+- 🔍 **CLI Help**: Run `wintool-plugin-cli help` for command reference
+
+---
+
+## 🚀 Advanced Topics
+
+### Custom Security Policies
+
+For enterprise or specialized deployments, you can create custom security policies:
+
+```json
+{
+  "my-plugin": {
+    "maxMemoryUsage": 104857600,
+    "maxExecutionTime": 60000,
+    "allowedDomains": ["api.mycompany.com"],
+    "permissions": ["storage.read", "storage.write", "network.request"]
+  }
+}
+```
+
+### Plugin Development Server
+
+For advanced development workflows, use the development server:
+
+```javascript
+const PluginDevServer = require('./src/dev/plugin-dev-server');
+
+const devServer = new PluginDevServer({
+  hotReload: true,
+  autoValidate: true,
+  debugMode: true
+});
+
+await devServer.start();
+```
+
+### Integration with CI/CD
+
+Integrate plugin validation into your CI/CD pipeline:
+
+```yaml
+# GitHub Actions example
+- name: Validate Plugin
+  run: |
+    npm install -g ./cli
+    wintool-plugin-cli validate ./my-plugin
+    wintool-plugin-cli security ./my-plugin
+    wintool-plugin-cli test ./my-plugin
+```
+
 <div align="center">
 
 **Happy coding!**
+
+🔌 Build amazing plugins for WinTool! 🔌
 
 </div>

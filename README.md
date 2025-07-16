@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![WinTool Portable](https://img.shields.io/badge/WinTool-v0.1.7w-orange?style=for-the-badge&logo=windows&logoColor=white)
+![WinTool Portable](https://img.shields.io/badge/WinTool-v0.1.8w-orange?style=for-the-badge&logo=windows&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey?style=for-the-badge&logo=windows)
 ![License](https://img.shields.io/badge/License-GPL--3.0--or--later-blue?style=for-the-badge)
 
