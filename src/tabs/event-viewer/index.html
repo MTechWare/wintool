@@ -8,6 +8,23 @@
         <div class="controls-left">
             <button id="refresh-events-btn" class="btn btn-primary"><i class="fas fa-sync-alt"></i> Refresh</button>
             <button id="export-events-btn" class="btn btn-secondary"><i class="fas fa-file-export"></i> Export</button>
+            <span id="live-tail-indicator" class="live-tail-indicator" style="display: none;">
+                <i class="fas fa-circle live-indicator"></i> Live
+            </span>
+        </div>
+        <div class="controls-center">
+            <div class="toggle-group">
+                <label class="toggle-label">
+                    <input type="checkbox" id="live-tail-toggle" class="toggle-checkbox">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-text">Live Tail</span>
+                </label>
+                <label class="toggle-label">
+                    <input type="checkbox" id="notifications-toggle" class="toggle-checkbox">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-text">Notifications</span>
+                </label>
+            </div>
         </div>
         <div class="controls-right">
             <select id="log-name-select" class="filter-select">

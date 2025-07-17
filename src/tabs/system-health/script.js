@@ -1,12 +1,20 @@
 let healthUpdateInterval;
-let cpuChart, memoryChart;
-let cpuHistory = [];
+let memoryChart;
 let memoryHistory = [];
 const maxHistoryPoints = 60; // 1 minute of data at 1-second intervals
+let isHealthDashboardActive = false; // Track if dashboard is currently active
+
+// Cache for reducing redundant API calls
+let lastHealthDataFetch = 0;
+const HEALTH_DATA_CACHE_DURATION = 8000; // Cache for 8 seconds
+let cachedHealthData = null;
+
+// Debounce for refresh button
+let refreshDebounceTimer = null;
+const REFRESH_DEBOUNCE_DELAY = 2000; // 2 seconds
 
 // Health thresholds
 const HEALTH_THRESHOLDS = {
-    cpu: { warning: 70, critical: 90 },
     memory: { warning: 80, critical: 95 },
     disk: { warning: 85, critical: 95 },
     temperature: { warning: 70, critical: 85 }
@@ -46,18 +54,14 @@ async function loadSystemHealth(container) {
 }
 
 function initializeCharts() {
-    const cpuCanvas = document.getElementById('cpu-chart');
     const memoryCanvas = document.getElementById('memory-chart');
-    
-    if (cpuCanvas && memoryCanvas) {
-        const ctx1 = cpuCanvas.getContext('2d');
-        const ctx2 = memoryCanvas.getContext('2d');
-        
+
+    if (memoryCanvas) {
+        const ctx = memoryCanvas.getContext('2d');
+
         // Simple chart implementation
-        cpuChart = { canvas: cpuCanvas, ctx: ctx1 };
-        memoryChart = { canvas: memoryCanvas, ctx: ctx2 };
-        
-        drawChart(cpuChart, cpuHistory, 'CPU Usage %', '#3b82f6');
+        memoryChart = { canvas: memoryCanvas, ctx: ctx };
+
         drawChart(memoryChart, memoryHistory, 'Memory Usage %', '#10b981');
     }
 }
@@ -120,51 +124,46 @@ function drawChart(chart, data, label, color) {
 }
 
 function startHealthUpdates() {
-    if (healthUpdateInterval) {
-        clearInterval(healthUpdateInterval);
+    // Prevent multiple intervals from being created
+    if (isHealthDashboardActive || healthUpdateInterval) {
+        console.log('Health updates already running, skipping...');
+        return;
     }
-    
+
+    console.log('Starting System Health monitoring...');
+    isHealthDashboardActive = true;
+
     // Start performance monitoring
     if (window.electronAPI) {
         window.electronAPI.startPerformanceUpdates();
-        
+
         window.electronAPI.onPerformanceUpdate((metrics) => {
             updateRealTimeMetrics(metrics);
         });
     }
-    
-    // Update other metrics every 5 seconds
-    healthUpdateInterval = setInterval(updateHealthMetrics, 5000);
+
+    // Update other metrics every 10 seconds (reduced frequency to lower CPU usage)
+    healthUpdateInterval = setInterval(updateHealthMetrics, 10000);
 }
 
 function updateRealTimeMetrics(metrics) {
-    // Update CPU
-    const cpuValue = parseFloat(metrics.cpu);
-    updateCircularProgress('cpu-progress', cpuValue);
-    document.getElementById('cpu-percentage').textContent = `${cpuValue.toFixed(1)}%`;
-    document.getElementById('cpu-status').textContent = getHealthStatus(cpuValue, HEALTH_THRESHOLDS.cpu);
-    document.getElementById('cpu-status').className = `metric-status ${getHealthStatusClass(cpuValue, HEALTH_THRESHOLDS.cpu)}`;
-    
     // Update Memory
     const memValue = parseFloat(metrics.mem);
     updateCircularProgress('memory-progress', memValue);
     document.getElementById('memory-percentage').textContent = `${memValue.toFixed(1)}%`;
     document.getElementById('memory-status').textContent = getHealthStatus(memValue, HEALTH_THRESHOLDS.memory);
     document.getElementById('memory-status').className = `metric-status ${getHealthStatusClass(memValue, HEALTH_THRESHOLDS.memory)}`;
-    
+
     // Update history
-    cpuHistory.push(cpuValue);
     memoryHistory.push(memValue);
-    
-    if (cpuHistory.length > maxHistoryPoints) {
-        cpuHistory.shift();
+
+    if (memoryHistory.length > maxHistoryPoints) {
         memoryHistory.shift();
     }
-    
+
     // Redraw charts
-    drawChart(cpuChart, cpuHistory, 'CPU Usage %', '#3b82f6');
     drawChart(memoryChart, memoryHistory, 'Memory Usage %', '#10b981');
-    
+
     // Update overall status
     updateOverallStatus();
 }
@@ -176,14 +175,30 @@ async function updateHealthMetrics() {
             return;
         }
 
-        console.log('Fetching system info and network stats...');
+        const now = Date.now();
+
+        // Check if we can use cached data to reduce CPU load
+        if (cachedHealthData && (now - lastHealthDataFetch) < HEALTH_DATA_CACHE_DURATION) {
+            console.log('Using cached health data to reduce CPU usage');
+            const { systemInfo, networkStats } = cachedHealthData;
+            updateSystemDetails(systemInfo);
+            await updateDiskInfo(systemInfo);
+            updateNetworkInfo(networkStats);
+            return;
+        }
+
+        console.log('Fetching fresh lightweight system health info and network stats...');
         const [systemInfo, networkStats] = await Promise.all([
-            window.electronAPI.getSystemInfo(),
+            window.electronAPI.getSystemHealthInfo(),
             window.electronAPI.getNetworkStats()
         ]);
 
-        console.log('System info received:', systemInfo);
+        console.log('System health info received:', systemInfo);
         console.log('Network stats received:', networkStats);
+
+        // Cache the data
+        cachedHealthData = { systemInfo, networkStats };
+        lastHealthDataFetch = now;
 
         // Update system details
         updateSystemDetails(systemInfo);
@@ -201,38 +216,6 @@ async function updateHealthMetrics() {
 
 function updateSystemDetails(systemInfo) {
     console.log('Updating system details with:', systemInfo);
-
-    // CPU Temperature - try multiple sources
-    const tempElement = document.getElementById('cpu-temp');
-    if (tempElement) {
-        if (systemInfo.cpuTemperature && systemInfo.cpuTemperature !== 'N/A') {
-            tempElement.textContent = systemInfo.cpuTemperature;
-        } else {
-            tempElement.textContent = 'N/A';
-        }
-    }
-
-    // CPU Speed - try current speed first, then fall back to base speed
-    const speedElement = document.getElementById('cpu-speed');
-    if (speedElement) {
-        if (systemInfo.cpuCurrentSpeed && systemInfo.cpuCurrentSpeed !== 'N/A') {
-            speedElement.textContent = systemInfo.cpuCurrentSpeed;
-        } else if (systemInfo.cpuSpeed) {
-            speedElement.textContent = systemInfo.cpuSpeed;
-        } else {
-            speedElement.textContent = 'N/A';
-        }
-    }
-
-    // CPU Cores
-    const coresElement = document.getElementById('cpu-cores');
-    if (coresElement) {
-        if (systemInfo.cpuCores) {
-            coresElement.textContent = systemInfo.cpuCores.toString();
-        } else {
-            coresElement.textContent = 'N/A';
-        }
-    }
 
     // Memory details - use the formatted memory values
     const memUsedElement = document.getElementById('memory-used');
@@ -461,22 +444,21 @@ function convertToBytes(value, unit) {
 }
 
 function updateOverallStatus() {
-    const cpuValue = parseFloat(document.getElementById('cpu-percentage').textContent);
     const memValue = parseFloat(document.getElementById('memory-percentage').textContent);
-    
+
     let overallStatus = 'Excellent';
     let statusClass = '';
     let iconClass = 'fas fa-check-circle';
-    
-    if (cpuValue > 90 || memValue > 95) {
+
+    if (memValue > 95) {
         overallStatus = 'Critical';
         statusClass = 'error';
         iconClass = 'fas fa-exclamation-circle';
-    } else if (cpuValue > 70 || memValue > 80) {
+    } else if (memValue > 80) {
         overallStatus = 'Warning';
         statusClass = 'warning';
         iconClass = 'fas fa-exclamation-triangle';
-    } else if (cpuValue > 50 || memValue > 60) {
+    } else if (memValue > 60) {
         overallStatus = 'Good';
     }
     
@@ -496,8 +478,20 @@ function setupEventListeners(container) {
 
     if (refreshBtn) {
         refreshBtn.addEventListener('click', async () => {
+            // Debounce rapid clicks to prevent CPU spikes
+            if (refreshDebounceTimer) {
+                console.log('Refresh button clicked too quickly, ignoring...');
+                return;
+            }
+
             console.log('Refresh button clicked');
             refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            refreshBtn.disabled = true;
+
+            // Clear cache to force fresh data
+            cachedHealthData = null;
+            lastHealthDataFetch = 0;
+
             try {
                 await updateHealthMetrics();
                 console.log('Health metrics updated successfully');
@@ -505,6 +499,12 @@ function setupEventListeners(container) {
                 console.error('Error updating health metrics:', error);
             } finally {
                 refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                refreshBtn.disabled = false;
+
+                // Set debounce timer
+                refreshDebounceTimer = setTimeout(() => {
+                    refreshDebounceTimer = null;
+                }, REFRESH_DEBOUNCE_DELAY);
             }
         });
     }
@@ -524,10 +524,34 @@ function exportHealthReport() {
 
 // Cleanup function
 function cleanupHealthDashboard() {
+    if (!isHealthDashboardActive) {
+        console.log('System Health Dashboard already cleaned up, skipping...');
+        return;
+    }
+
+    console.log('Cleaning up System Health Dashboard...');
+    isHealthDashboardActive = false;
+
+    // Clear the health metrics interval
     if (healthUpdateInterval) {
         clearInterval(healthUpdateInterval);
         healthUpdateInterval = null;
     }
+
+    // Clear cache and debounce timers
+    cachedHealthData = null;
+    lastHealthDataFetch = 0;
+    if (refreshDebounceTimer) {
+        clearTimeout(refreshDebounceTimer);
+        refreshDebounceTimer = null;
+    }
+
+    // Stop performance monitoring to prevent CPU spikes
+    if (window.electronAPI && window.electronAPI.stopPerformanceUpdates) {
+        window.electronAPI.stopPerformanceUpdates();
+    }
+
+    console.log('System Health Dashboard cleanup completed');
 }
 
 // Export functions for tab system
@@ -536,6 +560,25 @@ if (typeof module !== 'undefined' && module.exports) {
 } else {
     window.loadSystemHealth = loadSystemHealth;
     window.cleanupHealthDashboard = cleanupHealthDashboard;
+}
+
+// Listen for tab changes to manage performance monitoring
+if (window.tabEventManager) {
+    window.tabEventManager.addEventListener('tabChanged', (event) => {
+        const { tabId } = event.detail;
+        if (tabId === 'system-health') {
+            // Tab became active, start monitoring if not already started
+            console.log('System Health tab activated');
+            if (!isHealthDashboardActive) {
+                console.log('Starting System Health monitoring...');
+                startHealthUpdates();
+            }
+        } else if (isHealthDashboardActive) {
+            // Tab became inactive and we're currently active, stop monitoring to prevent CPU spikes
+            console.log('System Health tab deactivated, stopping monitoring...');
+            cleanupHealthDashboard();
+        }
+    });
 }
 
 // Auto-initialize when the script loads
@@ -562,3 +605,14 @@ if (document.readyState === 'loading') {
     console.log('DOM already loaded, initializing system health...');
     setTimeout(initializeSystemHealth, 100);
 }
+
+// Clean up when page unloads to prevent memory leaks
+window.addEventListener('beforeunload', cleanupHealthDashboard);
+
+// Clean up when page becomes hidden (e.g., minimized)
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        console.log('Page hidden, stopping System Health monitoring...');
+        cleanupHealthDashboard();
+    }
+});

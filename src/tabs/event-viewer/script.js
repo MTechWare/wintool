@@ -1,10 +1,19 @@
-function initEventViewerTab() {
+// Global variables for live tail mode and notifications
+let liveTailInterval = null;
+let liveTailEnabled = false;
+let notificationsEnabled = false;
+let lastEventTime = null;
+
+async function initEventViewerTab() {
     console.log('Initializing Event Viewer tab...');
-    
+
     setupEventViewerEventListeners();
-    
+
+    // Load saved settings
+    await loadEventViewerSettings();
+
     refreshEvents();
-    
+
     if (window.markTabAsReady) {
         window.markTabAsReady(tabId);
     }
@@ -30,42 +39,89 @@ function setupEventViewerEventListeners() {
     if (exportBtn) {
         exportBtn.addEventListener('click', exportEvents);
     }
+
+    // Live tail toggle
+    const liveTailToggle = document.getElementById('live-tail-toggle');
+    if (liveTailToggle) {
+        liveTailToggle.addEventListener('change', toggleLiveTail);
+    }
+
+    // Notifications toggle
+    const notificationsToggle = document.getElementById('notifications-toggle');
+    if (notificationsToggle) {
+        notificationsToggle.addEventListener('change', toggleNotifications);
+    }
 }
 
-async function refreshEvents() {
+async function refreshEvents(isLiveTailUpdate = false) {
     const logNameSelect = document.getElementById('log-name-select');
     const logName = logNameSelect.value;
     const loadingEl = document.getElementById('event-loading');
     const tableBody = document.getElementById('event-table-body');
 
-    if (loadingEl) loadingEl.style.display = 'block';
-    tableBody.innerHTML = '';
+    // Don't show loading spinner for live tail updates
+    if (loadingEl && !isLiveTailUpdate) loadingEl.style.display = 'block';
+    if (!isLiveTailUpdate) tableBody.innerHTML = '';
 
     try {
         const events = await window.electronAPI.getEventLogs(logName);
-        populateEventTable(events);
+        populateEventTable(events, isLiveTailUpdate);
+
+        // Check for critical events and show notifications
+        if (notificationsEnabled && events && events.length > 0) {
+            checkForCriticalEvents(events);
+        }
     } catch (error) {
         console.error('Error loading event logs:', error);
-        tableBody.innerHTML = `<tr><td colspan="5">Error loading events: ${error.message}</td></tr>`;
+        if (!isLiveTailUpdate) {
+            tableBody.innerHTML = `<tr><td colspan="5">Error loading events: ${error.message}</td></tr>`;
+        }
     } finally {
-        if (loadingEl) loadingEl.style.display = 'none';
+        if (loadingEl && !isLiveTailUpdate) loadingEl.style.display = 'none';
     }
 }
 
-function populateEventTable(events) {
+function populateEventTable(events, isLiveTailUpdate = false) {
     const tableBody = document.getElementById('event-table-body');
-    tableBody.innerHTML = '';
+
+    if (!isLiveTailUpdate) {
+        tableBody.innerHTML = '';
+    }
 
     if (!events || events.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="5">No events found.</td></tr>';
+        if (!isLiveTailUpdate) {
+            tableBody.innerHTML = '<tr><td colspan="5">No events found.</td></tr>';
+        }
         return;
     }
 
-    events.forEach(event => {
+    // For live tail updates, only add new events
+    let eventsToAdd = events;
+    if (isLiveTailUpdate && lastEventTime) {
+        eventsToAdd = events.filter(event => {
+            const eventTime = new Date(event.TimeCreated);
+            return eventTime > lastEventTime;
+        });
+    }
+
+    // Update lastEventTime with the most recent event
+    if (events.length > 0) {
+        const mostRecentEvent = events.reduce((latest, current) => {
+            return new Date(current.TimeCreated) > new Date(latest.TimeCreated) ? current : latest;
+        });
+        lastEventTime = new Date(mostRecentEvent.TimeCreated);
+    }
+
+    eventsToAdd.forEach(event => {
         const row = document.createElement('tr');
         const levelDisplayName = event.LevelDisplayName || 'Information';
         row.className = `level-${levelDisplayName.toLowerCase()}`;
-        
+
+        // Add animation class for new events in live tail mode
+        if (isLiveTailUpdate) {
+            row.classList.add('new-event');
+        }
+
         row.innerHTML = `
             <td>${levelDisplayName}</td>
             <td>${new Date(event.TimeCreated).toLocaleString()}</td>
@@ -74,8 +130,23 @@ function populateEventTable(events) {
             <td>${(event.Message || '').split('\n')[0]}</td>
         `;
         row.addEventListener('click', () => showEventDetails(event));
-        tableBody.appendChild(row);
+
+        if (isLiveTailUpdate) {
+            // Insert new events at the top for live tail
+            tableBody.insertBefore(row, tableBody.firstChild);
+        } else {
+            tableBody.appendChild(row);
+        }
     });
+
+    // Remove animation class after animation completes
+    if (isLiveTailUpdate) {
+        setTimeout(() => {
+            document.querySelectorAll('.new-event').forEach(row => {
+                row.classList.remove('new-event');
+            });
+        }, 1000);
+    }
 }
 
 function showEventDetails(event) {
@@ -150,6 +221,186 @@ async function exportEvents() {
     } catch (error) {
         console.error('Failed to save file:', error);
     }
+}
+
+// Settings management functions
+async function loadEventViewerSettings() {
+    try {
+        if (window.electronAPI) {
+            // Load live tail setting
+            liveTailEnabled = await window.electronAPI.getSetting('eventViewer.liveTailEnabled', false);
+            const liveTailToggle = document.getElementById('live-tail-toggle');
+            if (liveTailToggle) {
+                liveTailToggle.checked = liveTailEnabled;
+                if (liveTailEnabled) {
+                    startLiveTail();
+                }
+            }
+
+            // Load notifications setting
+            notificationsEnabled = await window.electronAPI.getSetting('eventViewer.notificationsEnabled', false);
+            const notificationsToggle = document.getElementById('notifications-toggle');
+            if (notificationsToggle) {
+                notificationsToggle.checked = notificationsEnabled;
+            }
+
+            console.log('Event Viewer settings loaded:', { liveTailEnabled, notificationsEnabled });
+        }
+    } catch (error) {
+        console.error('Error loading Event Viewer settings:', error);
+    }
+}
+
+async function saveEventViewerSettings() {
+    try {
+        if (window.electronAPI) {
+            await window.electronAPI.setSetting('eventViewer.liveTailEnabled', liveTailEnabled);
+            await window.electronAPI.setSetting('eventViewer.notificationsEnabled', notificationsEnabled);
+            console.log('Event Viewer settings saved:', { liveTailEnabled, notificationsEnabled });
+        }
+    } catch (error) {
+        console.error('Error saving Event Viewer settings:', error);
+    }
+}
+
+// Live tail mode functions
+async function toggleLiveTail() {
+    const toggle = document.getElementById('live-tail-toggle');
+    liveTailEnabled = toggle.checked;
+
+    // Save setting
+    await saveEventViewerSettings();
+
+    if (liveTailEnabled) {
+        startLiveTail();
+        showEventViewerNotification('Live tail mode enabled', 'info');
+    } else {
+        stopLiveTail();
+        showEventViewerNotification('Live tail mode disabled', 'info');
+    }
+}
+
+function startLiveTail() {
+    if (liveTailInterval) {
+        clearInterval(liveTailInterval);
+    }
+
+    // Refresh every 5 seconds
+    liveTailInterval = setInterval(() => {
+        refreshEvents(true);
+    }, 5000);
+
+    // Update UI to show live tail is active
+    const liveTailIndicator = document.getElementById('live-tail-indicator');
+    if (liveTailIndicator) {
+        liveTailIndicator.style.display = 'inline-block';
+    }
+}
+
+function stopLiveTail() {
+    if (liveTailInterval) {
+        clearInterval(liveTailInterval);
+        liveTailInterval = null;
+    }
+
+    // Hide live tail indicator
+    const liveTailIndicator = document.getElementById('live-tail-indicator');
+    if (liveTailIndicator) {
+        liveTailIndicator.style.display = 'none';
+    }
+}
+
+// Notifications functions
+async function toggleNotifications() {
+    const toggle = document.getElementById('notifications-toggle');
+    notificationsEnabled = toggle.checked;
+
+    // Save setting
+    await saveEventViewerSettings();
+
+    if (notificationsEnabled) {
+        showEventViewerNotification('Critical event notifications enabled', 'success');
+    } else {
+        showEventViewerNotification('Critical event notifications disabled', 'info');
+    }
+}
+
+function checkForCriticalEvents(events) {
+    if (!events || events.length === 0) return;
+
+    const criticalEvents = events.filter(event => {
+        const level = (event.LevelDisplayName || '').toLowerCase();
+        return level === 'error' || level === 'critical';
+    });
+
+    criticalEvents.forEach(event => {
+        const eventTime = new Date(event.TimeCreated);
+
+        // Only show notifications for events that are newer than our last check
+        if (!lastEventTime || eventTime > lastEventTime) {
+            showDesktopNotification(event);
+        }
+    });
+}
+
+function showDesktopNotification(event) {
+    const level = event.LevelDisplayName || 'Error';
+    const source = event.ProviderName || 'Unknown';
+    const message = (event.Message || '').split('\n')[0];
+    const truncatedMessage = message.length > 100 ? message.substring(0, 100) + '...' : message;
+
+    const title = `${level} Event - ${source}`;
+    const body = `Event ID: ${event.Id || 'N/A'}\n${truncatedMessage}`;
+
+    // Use the existing notification system
+    if (window.electronAPI && window.electronAPI.showNotification) {
+        window.electronAPI.showNotification({
+            title: title,
+            body: body,
+            type: level.toLowerCase() === 'critical' ? 'error' : 'warning'
+        });
+    }
+}
+
+// Utility function for in-app notifications
+function showEventViewerNotification(message, type = 'info') {
+    // Use the global notification system if available
+    if (typeof window.showNotification === 'function') {
+        window.showNotification(message, type);
+    } else {
+        console.log(`[${type.toUpperCase()}] ${message}`);
+    }
+}
+
+// Cleanup function
+async function cleanupEventViewer() {
+    stopLiveTail();
+    // Save settings one final time before cleanup
+    await saveEventViewerSettings();
+}
+
+// Clean up when tab is hidden or page unloads
+window.addEventListener('beforeunload', cleanupEventViewer);
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && liveTailEnabled) {
+        stopLiveTail();
+    } else if (!document.hidden && liveTailEnabled) {
+        startLiveTail();
+    }
+});
+
+// Listen for tab changes to pause/resume live tail appropriately
+if (window.tabEventManager) {
+    window.tabEventManager.addEventListener('tabChanged', (event) => {
+        const { tabId } = event.detail;
+        if (tabId === 'event-viewer' && liveTailEnabled) {
+            // Tab became active, start live tail
+            startLiveTail();
+        } else if (tabId !== 'event-viewer' && liveTailEnabled) {
+            // Tab became inactive, stop live tail to save resources
+            stopLiveTail();
+        }
+    });
 }
 
 window.refreshEvents = refreshEvents;

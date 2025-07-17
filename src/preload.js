@@ -46,6 +46,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // System information
     getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
+    getSystemHealthInfo: () => ipcRenderer.invoke('get-system-health-info'),
     getNetworkStats: () => ipcRenderer.invoke('get-network-stats'),
     getProcesses: () => ipcRenderer.invoke('get-processes'),
     terminateProcess: (pid) => ipcRenderer.invoke('terminate-process', pid),
@@ -144,6 +145,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Editor functions
     executeScript: (script, shell) => ipcRenderer.invoke('execute-script', { script, shell }),
+    executePowerShell: (command) => ipcRenderer.invoke('execute-powershell', command),
     showSaveDialog: (options) => ipcRenderer.invoke('show-save-dialog', options),
 
     // Event Viewer functions

@@ -921,33 +921,44 @@ ipcMain.handle('open-log-viewer', () => {
 
 // Performance metrics handler
 let performanceInterval;
+let performanceUpdateCount = 0; // Track how many components are requesting updates
+
 ipcMain.handle('start-performance-updates', () => {
-    if (performanceInterval) {
-        clearInterval(performanceInterval);
-    }
-    performanceInterval = setInterval(async () => {
-        try {
-            const [cpuUsage, memInfo] = await Promise.all([
-                si.currentLoad(),
-                si.mem()
-            ]);
-            const metrics = {
-                cpu: cpuUsage.currentLoad.toFixed(2),
-                mem: ((memInfo.active / memInfo.total) * 100).toFixed(2)
-            };
-            if (mainWindow) {
-                mainWindow.webContents.send('performance-update', metrics);
+    performanceUpdateCount++;
+    console.log(`Performance updates requested. Active requests: ${performanceUpdateCount}`);
+
+    // Only start the interval if it's not already running
+    if (!performanceInterval) {
+        console.log('Starting performance monitoring interval...');
+        performanceInterval = setInterval(async () => {
+            try {
+                // Only monitor memory usage (CPU monitoring removed)
+                const memInfo = await si.mem();
+                const metrics = {
+                    mem: ((memInfo.active / memInfo.total) * 100).toFixed(2)
+                };
+                if (mainWindow) {
+                    mainWindow.webContents.send('performance-update', metrics);
+                }
+            } catch (error) {
+                console.error('Failed to get performance metrics:', error);
             }
-        } catch (error) {
-            console.error('Failed to get performance metrics:', error);
-        }
-    }, 1000); // Update every second
+        }, 1000); // Update every second
+    }
 });
 
 ipcMain.handle('stop-performance-updates', () => {
-    if (performanceInterval) {
+    if (performanceUpdateCount > 0) {
+        performanceUpdateCount--;
+    }
+    console.log(`Performance updates stop requested. Active requests: ${performanceUpdateCount}`);
+
+    // Only stop the interval if no components are requesting updates
+    if (performanceUpdateCount <= 0 && performanceInterval) {
+        console.log('Stopping performance monitoring interval...');
         clearInterval(performanceInterval);
         performanceInterval = null;
+        performanceUpdateCount = 0; // Reset to 0 to prevent negative values
     }
 });
 
@@ -1184,6 +1195,40 @@ ipcMain.handle('delete-environment-variable', async (event, name, target) => {
 
 
 
+// Lightweight system health info handler for dashboard
+ipcMain.handle('get-system-health-info', async () => {
+    console.log('get-system-health-info handler called (lightweight)');
+
+    try {
+        // Only gather memory data for health dashboard (CPU monitoring removed)
+        const mem = await si.mem();
+
+        // Format memory sizes
+        const formatBytes = (bytes) => {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        };
+
+        // Calculate memory usage percentage
+        const memoryUsagePercent = Math.round((mem.active / mem.total) * 100);
+
+        return {
+            // Memory information only
+            totalMemory: formatBytes(mem.total),
+            usedMemory: formatBytes(mem.active),
+            availableMemory: formatBytes(mem.available),
+            freeMemory: formatBytes(mem.free),
+            memoryUsagePercent: memoryUsagePercent
+        };
+    } catch (error) {
+        console.error('Error getting system health info:', error);
+        throw error;
+    }
+});
+
 // Comprehensive system info handler using systeminformation
 ipcMain.handle('get-system-info', async (event, type) => {
     console.log(`get-system-info handler called for type: ${type || 'all'}`);
@@ -1194,6 +1239,9 @@ ipcMain.handle('get-system-info', async (event, type) => {
             switch (type) {
                 case 'time':
                     return await si.time();
+                case 'health':
+                    // Redirect to lightweight handler for health dashboard
+                    return await ipcMain.handle('get-system-health-info')();
                 // Add other specific cases here as needed by plugins
                 default:
                     // If a specific, unhandled type is requested, return that part of si
@@ -2715,7 +2763,9 @@ ipcMain.handle('launch-system-utility', async (event, utilityCommand) => {
         'regedit', 'msconfig', 'cmd', 'powershell', 'control', 'appwiz.cpl',
         'desk.cpl', 'firewall.cpl', 'inetcpl.cpl', 'intl.cpl', 'main.cpl',
         'mmsys.cpl', 'ncpa.cpl', 'powercfg.cpl', 'sysdm.cpl', 'timedate.cpl',
-        'wscui.cpl', 'cleanmgr', 'dxdiag', 'msinfo32', 'resmon', 'winver'
+        'wscui.cpl', 'cleanmgr', 'dxdiag', 'msinfo32', 'resmon', 'winver',
+        'dfrgui', 'diskpart', 'netplwiz', 'ms-settings:', 'wt', 'windowsterminal',
+        'calc', 'notepad', 'mspaint', 'snippingtool', 'magnify', 'osk'
     ];
 
     // Check if command starts with allowed utility or control command
@@ -2739,7 +2789,7 @@ ipcMain.handle('launch-system-utility', async (event, utilityCommand) => {
             // Handle special cases for different utility types
             if (sanitizedCommand.includes('.msc') || sanitizedCommand.includes('.cpl')) {
                 // For .msc and .cpl files, use 'start' command
-                process = spawn('cmd', ['/c', 'start', sanitizedCommand], {
+                process = spawn('cmd', ['/c', 'start', '""', sanitizedCommand], {
                     shell: false,
                     detached: true,
                     stdio: 'ignore'
@@ -2758,27 +2808,93 @@ ipcMain.handle('launch-system-utility', async (event, utilityCommand) => {
                     detached: true,
                     stdio: 'ignore'
                 });
-            } else if (sanitizedCommand.startsWith('control ')) {
-                // For control panel commands
-                process = spawn('cmd', ['/c', 'start', sanitizedCommand], {
+            } else if (sanitizedCommand === 'wt' || sanitizedCommand === 'windowsterminal') {
+                // For Windows Terminal (Windows 11)
+                process = spawn('cmd', ['/c', 'start', 'wt'], {
                     shell: false,
                     detached: true,
                     stdio: 'ignore'
                 });
+            } else if (sanitizedCommand.startsWith('ms-settings:')) {
+                // For Windows 11 Settings app deep links
+                process = spawn('cmd', ['/c', 'start', '""', sanitizedCommand], {
+                    shell: false,
+                    detached: true,
+                    stdio: 'ignore'
+                });
+            } else if (sanitizedCommand.startsWith('control ')) {
+                // For control panel commands
+                process = spawn('cmd', ['/c', 'start', '""', sanitizedCommand], {
+                    shell: false,
+                    detached: true,
+                    stdio: 'ignore'
+                });
+            } else if (sanitizedCommand === 'cleanmgr') {
+                // For disk cleanup, check if it exists, fallback to Storage Sense
+                const fs = require('fs');
+                const cleanmgrPath = 'C:\\Windows\\System32\\cleanmgr.exe';
+                if (fs.existsSync(cleanmgrPath)) {
+                    process = spawn('cmd', ['/c', 'start', '""', 'cleanmgr'], {
+                        shell: false,
+                        detached: true,
+                        stdio: 'ignore'
+                    });
+                } else {
+                    // Fallback to Storage Sense in Windows 11
+                    process = spawn('cmd', ['/c', 'start', '""', 'ms-settings:storagesense'], {
+                        shell: false,
+                        detached: true,
+                        stdio: 'ignore'
+                    });
+                }
+            } else if (sanitizedCommand === 'dfrgui') {
+                // For defrag, check if it exists, fallback to Storage settings
+                const fs = require('fs');
+                const dfrgPath = 'C:\\Windows\\System32\\dfrgui.exe';
+                if (fs.existsSync(dfrgPath)) {
+                    process = spawn('cmd', ['/c', 'start', '""', 'dfrgui'], {
+                        shell: false,
+                        detached: true,
+                        stdio: 'ignore'
+                    });
+                } else {
+                    // Fallback to Storage optimization in Windows 11
+                    process = spawn('cmd', ['/c', 'start', '""', 'ms-settings:storagesense'], {
+                        shell: false,
+                        detached: true,
+                        stdio: 'ignore'
+                    });
+                }
             } else {
-                // For other utilities, try to launch directly
-                process = spawn(sanitizedCommand, [], {
+                // For other utilities, use start command to ensure proper launching
+                process = spawn('cmd', ['/c', 'start', '""', sanitizedCommand], {
                     shell: false,
                     detached: true,
                     stdio: 'ignore'
                 });
             }
 
-            process.unref();
-            resolve({
-                success: true,
-                message: `Successfully launched ${sanitizedCommand}`
+            // Add error handling for the spawned process
+            process.on('error', (error) => {
+                console.error(`Error launching ${sanitizedCommand}:`, error);
+                reject(new Error(`Failed to launch ${sanitizedCommand}: ${error.message}`));
             });
+
+            process.on('close', (code) => {
+                if (code !== 0 && code !== null) {
+                    console.warn(`Process ${sanitizedCommand} exited with code ${code}`);
+                }
+            });
+
+            process.unref();
+
+            // Give the process a moment to start before resolving
+            setTimeout(() => {
+                resolve({
+                    success: true,
+                    message: `Successfully launched ${sanitizedCommand}`
+                });
+            }, 100);
 
         } catch (error) {
             console.error('Error launching utility:', error);

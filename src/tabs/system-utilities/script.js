@@ -22,11 +22,20 @@ async function launchUtility(utilityCommand) {
             // Use real system utility launcher
             const result = await window.electronAPI.launchSystemUtility(utilityCommand);
             if (result.success) {
-                showStatusMessage('success', result.message);
+                // Special message for Windows 11 Settings app
+                if (utilityCommand.startsWith('ms-settings:')) {
+                    showStatusMessage('success', `Opened Windows Settings: ${utilityCommand.replace('ms-settings:', '')}`);
+                } else {
+                    showStatusMessage('success', result.message);
+                }
             }
         } else {
             // Fallback for browser testing
-            showStatusMessage('warning', `This would launch: ${utilityCommand}\n\nIn the full implementation, this would open the actual Windows utility.`);
+            if (utilityCommand.startsWith('ms-settings:')) {
+                showStatusMessage('warning', `This would open Windows Settings: ${utilityCommand.replace('ms-settings:', '')}\n\nIn the full implementation, this would open the actual Windows Settings page.`);
+            } else {
+                showStatusMessage('warning', `This would launch: ${utilityCommand}\n\nIn the full implementation, this would open the actual Windows utility.`);
+            }
         }
 
     } catch (error) {
@@ -60,6 +69,21 @@ async function launchDiskCheck() {
             }
         } else {
             showStatusMessage('warning', 'This would open Command Prompt for disk checking.\n\nUse "chkdsk C: /f" to check C: drive.');
+        }
+
+        // Also suggest Windows 11 alternative
+        if (window.electronAPI && window.electronAPI.getSystemInfo) {
+            const sysInfo = await window.electronAPI.getSystemInfo();
+            const isWindows11 = sysInfo.osInfo && (
+                sysInfo.osInfo.distro.includes('Windows 11') ||
+                sysInfo.osInfo.build >= 22000
+            );
+
+            if (isWindows11) {
+                setTimeout(() => {
+                    showStatusMessage('info', 'Tip: On Windows 11, you can also use Settings > System > Storage > Advanced storage settings > Disks & volumes for disk management.');
+                }, 3000);
+            }
         }
 
     } catch (error) {
@@ -236,12 +260,56 @@ function initSystemUtilities() {
         });
     });
 
+    // Check Windows version for appropriate utilities
+    checkWindowsVersion();
+
     console.log('System Utilities tab initialized successfully');
 
     // Signal that this tab is ready
     if (window.markTabAsReady && typeof tabId !== 'undefined') {
         console.log('Marking system-utilities tab as ready');
         window.markTabAsReady(tabId);
+    }
+}
+
+/**
+ * Check Windows version and show/hide appropriate utilities
+ */
+async function checkWindowsVersion() {
+    try {
+        if (window.electronAPI && window.electronAPI.getSystemInfo) {
+            const sysInfo = await window.electronAPI.getSystemInfo();
+            const isWindows11 = sysInfo.osInfo && (
+                sysInfo.osInfo.distro.includes('Windows 11') ||
+                sysInfo.osInfo.build >= 22000
+            );
+
+            // Find Windows 11 Settings section
+            const sections = document.querySelectorAll('.utilities-section');
+            let win11Section = null;
+            sections.forEach(section => {
+                const heading = section.querySelector('h3');
+                if (heading && heading.textContent.includes('Windows 11 Settings')) {
+                    win11Section = section;
+                }
+            });
+
+            // Show/hide Windows 11 specific sections
+            if (win11Section) {
+                win11Section.style.display = isWindows11 ? 'block' : 'none';
+            }
+
+            // Update utility count based on Windows version
+            const totalCount = isWindows11 ? 35 : 29;
+            const countElement = document.getElementById('total-utilities-count');
+            if (countElement) {
+                countElement.textContent = `${totalCount} utilities available`;
+            }
+
+            console.log(`Windows version detected: ${isWindows11 ? 'Windows 11' : 'Windows 10 or earlier'}`);
+        }
+    } catch (error) {
+        console.log('Could not detect Windows version, showing all utilities');
     }
 }
 
@@ -262,6 +330,7 @@ window.initSystemUtilities = initSystemUtilities;
 window.handleUtilityClick = handleUtilityClick;
 window.searchUtilities = searchUtilities;
 window.updateUtilityCount = updateUtilityCount;
+window.checkWindowsVersion = checkWindowsVersion;
 
 // Initialize when the tab is loaded
 if (document.readyState === 'loading') {

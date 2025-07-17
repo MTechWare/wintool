@@ -18,10 +18,15 @@
     border: 1px solid var(--border-color);
 }
 
-.controls-left, .controls-right {
+.controls-left, .controls-center, .controls-right {
     display: flex;
     gap: 15px;
     align-items: center;
+}
+
+.controls-center {
+    flex: 1;
+    justify-content: center;
 }
 
 .search-input, .filter-select {
@@ -132,6 +137,105 @@
     border-radius: 6px;
 }
 
+/* Toggle switches */
+.toggle-group {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.toggle-checkbox {
+    display: none;
+}
+
+.toggle-slider {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background-color: var(--background-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    background-color: var(--text-secondary);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.toggle-checkbox:checked + .toggle-slider {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.toggle-checkbox:checked + .toggle-slider::before {
+    transform: translateX(20px);
+    background-color: white;
+}
+
+.toggle-text {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Live tail indicator */
+.live-tail-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--success-color);
+    font-size: 14px;
+    font-weight: 500;
+    margin-left: 15px;
+}
+
+.live-indicator {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* New event animation */
+.new-event {
+    animation: slideInFromTop 0.5s ease-out, highlightNew 2s ease-out;
+}
+
+@keyframes slideInFromTop {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes highlightNew {
+    0% { background-color: var(--primary-color-translucent); }
+    100% { background-color: transparent; }
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .event-viewer-controls {
@@ -139,9 +243,15 @@
         align-items: stretch;
         gap: 15px;
     }
-    .controls-left, .controls-right {
+    .controls-left, .controls-center, .controls-right {
         flex-direction: column;
         width: 100%;
+    }
+    .controls-center {
+        justify-content: flex-start;
+    }
+    .toggle-group {
+        justify-content: flex-start;
     }
     .event-table-container {
         height: auto;

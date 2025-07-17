@@ -24,20 +24,21 @@ export function setRainbowAnimationId(id) {
 window.tabEventManager = new EventTarget(); 
 
 export const DEFAULT_TAB_ORDER = [
-    'tweaks',
-    'system-info',
-    'system-health',
-    'processes',
-    'services',
-    'networking',
-    'cleanup',
-    'packages',
-    'system-utilities',
-    'environment-variables',
-    'event-viewer',
-    'script-editor',
-    'windows-unattend',
-    'about'
+    'system-info',        // 1. Start with system overview
+    'system-health',      // 2. Check system health status
+    'tweaks',            // 3. Apply system optimizations
+    'cleanup',           // 4. Clean up system files
+    'processes',         // 5. Monitor running processes
+    'services',          // 6. Manage system services
+    'packages',          // 7. Install/manage software
+    'appx-packages',     // 8. Manage Windows Store apps
+    'networking',        // 9. Network configuration/monitoring
+    'environment-variables', // 10. System configuration
+    'system-utilities',  // 11. Access Windows tools
+    'event-viewer',      // 12. Troubleshooting and logs
+    'script-editor',     // 13. Advanced scripting
+    'windows-unattend',  // 14. Advanced deployment
+    'about'             // 15. Always last
 ];
 
 

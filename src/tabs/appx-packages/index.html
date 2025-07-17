@@ -1,0 +1,119 @@
+<div class="tab-header">
+    <h1><i class="fas fa-cube"></i> AppX Package Manager</h1>
+    <p id="appx-manager-description">Install and uninstall Microsoft apps and AppX packages</p>
+</div>
+
+<div class="appx-packages-container">
+
+    <!-- Search and Controls -->
+    <div class="appx-packages-controls">
+        <!-- Package Type Filter -->
+        <div class="package-type-selector">
+            <label for="package-type-select">Package Type:</label>
+            <select id="package-type-select" class="package-type-select">
+                <option value="all" selected>All Packages</option>
+                <option value="user">User Packages</option>
+                <option value="system">System Packages</option>
+                <option value="provisioned">Provisioned Packages</option>
+            </select>
+            <div class="package-type-info">
+                <small>
+                    <i class="fas fa-info-circle"></i>
+                    User packages are safer to remove.
+                </small>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="appx-package-search" placeholder="Search AppX packages..." class="search-input">
+            <i class="fas fa-search search-icon"></i>
+        </div>
+
+        <!-- Filter buttons -->
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all">
+                <i class="fas fa-list"></i> All
+            </button>
+            <button class="filter-btn" data-filter="microsoft">
+                <i class="fab fa-microsoft"></i> Microsoft
+            </button>
+            <button class="filter-btn" data-filter="removable">
+                <i class="fas fa-trash-alt"></i> Safe to Remove
+            </button>
+        </div>
+    </div>
+
+    <!-- Package Info and Actions -->
+    <div class="selection-info">
+        <div class="package-info-left">
+            <span id="total-appx-packages-count">Loading packages...</span>
+            <span id="appx-selection-count">0 packages selected</span>
+        </div>
+        <div class="action-buttons">
+
+            <button id="uninstall-selected-appx" class="action-btn uninstall-btn" disabled>
+                <i class="fas fa-trash"></i> Uninstall Selected
+            </button>
+            <button id="refresh-appx-packages" class="action-btn refresh-btn">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+            <button id="export-appx-list" class="action-btn export-btn">
+                <i class="fas fa-file-export"></i> Export List
+            </button>
+        </div>
+    </div>
+
+    <!-- Warning Message -->
+    <div class="warning-message">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>Warning:</strong> Removing system packages may cause Windows features to stop working.
+        Only remove packages you're certain about. User packages are generally safer to remove.
+        Some operations may require administrator privileges.
+    </div>
+
+    <!-- Package List -->
+    <div class="appx-packages-list-container">
+        <div class="appx-packages-list-header">
+            <div class="header-checkbox">
+                <input type="checkbox" id="select-all-appx">
+            </div>
+            <div class="header-package"><i class="fas fa-cube" style="margin-right: 8px; color: var(--primary-color);"></i>Package Name</div>
+            <div class="header-publisher">Publisher</div>
+            <div class="header-version">Status</div>
+            <div class="header-type">Type & Safety</div>
+            <div class="header-actions">Actions</div>
+        </div>
+        
+        <div id="appx-packages-list" class="appx-packages-list">
+            <!-- Packages will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="appx-loading-indicator" class="loading-indicator" style="display: none;">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>Loading AppX packages...</span>
+    </div>
+
+    <!-- Status messages -->
+    <div id="appx-status-message" class="status-message" style="display: none;"></div>
+</div>
+
+<!-- Progress Modal -->
+<div id="appx-progress-modal" class="progress-modal" style="display: none;">
+    <div class="progress-modal-content">
+        <div class="progress-header">
+            <h3 id="appx-progress-title">Processing...</h3>
+        </div>
+        <div class="progress-body">
+            <div class="progress-bar-container">
+                <div id="appx-progress-bar" class="progress-bar"></div>
+            </div>
+            <div id="appx-progress-text" class="progress-text">Initializing...</div>
+            <div id="appx-progress-output" class="progress-output"></div>
+        </div>
+        <div class="progress-actions">
+            <button id="appx-cancel-operation" class="btn btn-secondary">Cancel</button>
+        </div>
+    </div>
+</div>

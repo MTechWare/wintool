@@ -258,6 +258,8 @@ class PackageManager {
         if (exportBtn) {
             exportBtn.addEventListener('click', () => this.exportPackages());
         }
+
+        // Progress modal close button will be set up when modal is shown
     }
 
     switchPackageManager(packageManager) {
@@ -826,7 +828,7 @@ class PackageManager {
                 // Use chocolatey command execution with progress
                 const commandString = `${sanitizedCommand} ${sanitizedPackageId} ${sanitizedArgs.join(' ')}`.trim();
                 await window.electronAPI.executeChocoCommandWithProgress(commandString, (progressData) => {
-                    if (this.currentOperation.cancelled) return;
+                    if (this.currentOperation && this.currentOperation.cancelled) return;
 
                     if (progressData.type === 'progress') {
                         this.updateProgressPercentage(progressData.percentage);
@@ -846,7 +848,7 @@ class PackageManager {
                 await this.simulateProgressOperation(`choco ${sanitizedCommand} ${sanitizedPackageId}`);
             }
         } catch (error) {
-            if (!this.currentOperation.cancelled) {
+            if (this.currentOperation && !this.currentOperation.cancelled) {
                 this.updateProgressError(`Chocolatey command failed: ${error.message}`);
             }
         }
@@ -880,7 +882,7 @@ class PackageManager {
                     sanitizedPackageId,
                     sanitizedArgs,
                     (progressData) => {
-                        if (this.currentOperation.cancelled) return;
+                        if (this.currentOperation && this.currentOperation.cancelled) return;
 
                         if (progressData.type === 'progress') {
                             this.updateProgressPercentage(progressData.percentage);
@@ -900,7 +902,7 @@ class PackageManager {
                 // Fallback to legacy method with command string validation
                 const commandString = `${sanitizedCommand} ${sanitizedPackageId} ${sanitizedArgs.join(' ')}`.trim();
                 await window.electronAPI.executeWingetCommandWithProgress(commandString, (progressData) => {
-                    if (this.currentOperation.cancelled) return;
+                    if (this.currentOperation && this.currentOperation.cancelled) return;
 
                     if (progressData.type === 'progress') {
                         this.updateProgressPercentage(progressData.percentage);
@@ -920,7 +922,7 @@ class PackageManager {
                 await this.simulateProgressOperation(`${sanitizedCommand} ${sanitizedPackageId}`);
             }
         } catch (error) {
-            if (!this.currentOperation.cancelled) {
+            if (this.currentOperation && !this.currentOperation.cancelled) {
                 this.updateProgressError(`Winget command failed: ${error.message}`);
             }
         }
@@ -949,7 +951,7 @@ class PackageManager {
         ];
 
         for (const step of steps) {
-            if (this.currentOperation.cancelled) return;
+            if (this.currentOperation && this.currentOperation.cancelled) return;
 
             this.updateProgressDetails(step.message);
             this.updateProgressPercentage(step.percentage);
@@ -958,7 +960,7 @@ class PackageManager {
             await new Promise(resolve => setTimeout(resolve, 800));
         }
 
-        if (!this.currentOperation.cancelled) {
+        if (this.currentOperation && !this.currentOperation.cancelled) {
             this.appendProgressOutput(`Simulated execution of: winget ${command}\n\nThis is a demo - actual winget integration would require Electron main process communication.`);
             this.completeProgress('Operation completed successfully');
         }
@@ -985,59 +987,111 @@ class PackageManager {
         }
     }
 
-    // Progress Bar Methods
-    showProgress(title, message, type = 'installing') {
-        const container = document.getElementById('progress-container');
-        const titleElement = document.getElementById('progress-title');
-        const messageElement = document.getElementById('progress-message');
-        const detailsElement = document.getElementById('progress-details');
-        const outputElement = document.getElementById('progress-output');
-        const fillElement = document.getElementById('progress-fill');
-        const percentageElement = document.getElementById('progress-percentage');
+    // Progress Modal Methods
+    showProgress(title, message, operation) {
+        this.currentOperation = { type: operation, cancelled: false };
 
-        if (container && titleElement && messageElement) {
+        const modal = document.getElementById('packages-progress-modal');
+        const titleElement = document.getElementById('packages-progress-title');
+        const textElement = document.getElementById('packages-progress-text');
+        const outputElement = document.getElementById('packages-progress-output');
+        const progressBar = document.getElementById('packages-progress-bar');
+
+        if (modal && titleElement && textElement) {
             titleElement.textContent = title;
-            messageElement.textContent = message;
-            detailsElement.textContent = '';
-            outputElement.textContent = '';
-            fillElement.style.width = '0%';
-            percentageElement.textContent = '0%';
+            textElement.innerHTML = `⚡ ${message}`;
 
-            container.className = `progress-container ${type}`;
-            container.style.display = 'block';
+            // Reset styling
+            textElement.style.color = 'var(--text-primary)';
+            textElement.style.fontWeight = '500';
 
-            // Scroll to progress bar
-            container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            if (outputElement) outputElement.textContent = '';
+            if (progressBar) {
+                progressBar.style.width = '0%';
+                progressBar.style.background = 'linear-gradient(90deg, var(--primary-color), rgba(var(--primary-rgb), 0.8))';
+            }
+
+            // Ensure close button event listener is attached
+            this.setupCloseButton();
+
+            // Add click-outside-to-close functionality
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    console.log('Clicked outside modal, closing');
+                    this.hideProgress();
+                }
+            };
+
+            // Add escape key to close
+            const escapeHandler = (e) => {
+                if (e.key === 'Escape') {
+                    console.log('Escape key pressed, closing modal');
+                    this.hideProgress();
+                    document.removeEventListener('keydown', escapeHandler);
+                }
+            };
+            document.addEventListener('keydown', escapeHandler);
+
+            modal.style.display = 'flex';
+            modal.style.animation = 'fadeIn 0.3s ease-out';
         }
     }
 
+    setupCloseButton() {
+        const closeBtn = document.getElementById('packages-close-modal');
+        if (closeBtn && !closeBtn.hasAttribute('data-listener-attached')) {
+            console.log('Setting up close button event listener');
+            closeBtn.addEventListener('click', (e) => {
+                console.log('Close button clicked');
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Force close the modal immediately
+                const modal = document.getElementById('packages-progress-modal');
+                if (modal) {
+                    modal.style.display = 'none';
+                    console.log('Modal force-closed');
+                }
+
+                this.hideProgress();
+            });
+            closeBtn.setAttribute('data-listener-attached', 'true');
+        }
+    }
+
+    updateProgress(message, percentage) {
+        const textElement = document.getElementById('packages-progress-text');
+        const progressBar = document.getElementById('packages-progress-bar');
+
+        if (textElement) {
+            const percentText = percentage < 100 ? ` (${Math.round(percentage)}%)` : '';
+            textElement.innerHTML = `⚡ ${message}${percentText}`;
+        }
+        if (progressBar) progressBar.style.width = `${percentage}%`;
+    }
+
     updateProgressMessage(message) {
-        const messageElement = document.getElementById('progress-message');
-        if (messageElement) {
-            messageElement.textContent = message;
+        const textElement = document.getElementById('packages-progress-text');
+        if (textElement) {
+            textElement.textContent = message;
         }
     }
 
     updateProgressDetails(details) {
-        const detailsElement = document.getElementById('progress-details');
-        if (detailsElement) {
-            detailsElement.textContent = details;
-        }
+        // For compatibility - append to output
+        this.appendProgressOutput(`${details}\n`);
     }
 
     updateProgressPercentage(percentage) {
-        const fillElement = document.getElementById('progress-fill');
-        const percentageElement = document.getElementById('progress-percentage');
-
-        if (fillElement && percentageElement) {
+        const progressBar = document.getElementById('packages-progress-bar');
+        if (progressBar) {
             const clampedPercentage = Math.min(100, Math.max(0, percentage));
-            fillElement.style.width = `${clampedPercentage}%`;
-            percentageElement.textContent = `${Math.round(clampedPercentage)}%`;
+            progressBar.style.width = `${clampedPercentage}%`;
         }
     }
 
     appendProgressOutput(text) {
-        const outputElement = document.getElementById('progress-output');
+        const outputElement = document.getElementById('packages-progress-output');
         if (outputElement) {
             outputElement.textContent += text;
             outputElement.scrollTop = outputElement.scrollHeight;
@@ -1045,13 +1099,88 @@ class PackageManager {
     }
 
     updateProgressError(message) {
-        const container = document.getElementById('progress-container');
-        if (container) {
-            container.className = 'progress-container error';
+        const progressBar = document.getElementById('packages-progress-bar');
+        const textElement = document.getElementById('packages-progress-text');
+
+        // Add error styling
+        if (progressBar) {
+            progressBar.style.background = 'linear-gradient(90deg, #dc3545, #e74c3c)';
+            progressBar.style.width = '100%';
         }
-        this.updateProgressMessage('Error occurred');
-        this.updateProgressDetails(message);
-        this.appendProgressOutput(`\nERROR: ${message}\n`);
+
+        if (textElement) {
+            textElement.innerHTML = `❌ Error: ${message}`;
+            textElement.style.color = '#dc3545';
+            textElement.style.fontWeight = '600';
+        }
+
+        this.appendProgressOutput(`\n❌ ERROR: ${message}\n`);
+
+        // Auto-close after 5 seconds for errors
+        setTimeout(() => {
+            this.hideProgress();
+        }, 5000);
+    }
+
+    hideProgress() {
+        console.log('hideProgress() called');
+        const modal = document.getElementById('packages-progress-modal');
+        if (modal) {
+            console.log('Modal found, hiding immediately');
+
+            // Hide immediately without animation for now
+            modal.style.display = 'none';
+
+            // Reset styling
+            const progressBar = document.getElementById('packages-progress-bar');
+            const textElement = document.getElementById('packages-progress-text');
+
+            if (progressBar) {
+                progressBar.style.background = 'linear-gradient(90deg, var(--primary-color), rgba(var(--primary-rgb), 0.8))';
+                progressBar.style.width = '0%';
+            }
+
+            if (textElement) {
+                textElement.style.color = 'var(--text-primary)';
+                textElement.style.fontWeight = '500';
+            }
+
+            console.log('Modal hidden successfully');
+        } else {
+            console.warn('Modal not found when trying to hide');
+        }
+        this.currentOperation = null;
+    }
+
+    cancelCurrentOperation() {
+        // This method is kept for potential future use
+        if (this.currentOperation) {
+            this.currentOperation.cancelled = true;
+        }
+        this.hideProgress();
+    }
+
+    completeProgress(message = 'Operation completed') {
+        this.updateProgress(message, 100);
+
+        // Add success styling
+        const progressBar = document.getElementById('packages-progress-bar');
+        const textElement = document.getElementById('packages-progress-text');
+
+        if (progressBar) {
+            progressBar.style.background = 'linear-gradient(90deg, #28a745, #20c997)';
+        }
+
+        if (textElement) {
+            textElement.innerHTML = `✅ ${message}`;
+            textElement.style.color = '#28a745';
+            textElement.style.fontWeight = '600';
+        }
+
+        // Auto-close after 2.5 seconds
+        setTimeout(() => {
+            this.hideProgress();
+        }, 2500);
     }
 
     completeProgress(message) {
