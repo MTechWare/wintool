@@ -7,10 +7,10 @@
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=for-the-badge)
 ![Downloads](https://img.shields.io/badge/Downloads-1K+-brightgreen?style=for-the-badge)
 
-**🏆 Comprehensive. Intuitive. Professional.**
-
 [![Plugin Marketplace](https://img.shields.io/badge/🔌_Plugin-Marketplace-4CAF50?style=for-the-badge&logo=puzzle-piece)](https://mtechware.github.io/plugins.html)
 [![Discord Community](https://img.shields.io/badge/💬_Join-Discord-7289DA?style=for-the-badge&logo=discord)](https://discord.gg/GSTEfkxhmD)
+
+**🏆 Comprehensive. Intuitive. Professional.**
 
 </div>
 
