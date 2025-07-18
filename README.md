@@ -2,13 +2,16 @@
 
 <div align="center">
 
-![WinTool Portable](https://img.shields.io/badge/WinTool-v0.1.9w-orange?style=for-the-badge&logo=windows&logoColor=white)
-![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey?style=for-the-badge&logo=windows)
-![License](https://img.shields.io/badge/License-GPL--3.0--or--later-blue?style=for-the-badge)
+![WinTool Version](https://img.shields.io/badge/WinTool-v0.2.0-orange?style=for-the-badge&logo=windows&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Windows_10/11-blue?style=for-the-badge&logo=windows)
+![License](https://img.shields.io/badge/License-GPL--3.0-green?style=for-the-badge)
+![Downloads](https://img.shields.io/badge/Downloads-1K+-brightgreen?style=for-the-badge)
 
-**A Professional Suite of Tools for Windows System Management**
+**🏆 Comprehensive. Intuitive. Professional.**
 
-*Comprehensive. Intuitive. Professional.*
+[![Download Latest](https://img.shields.io/badge/📥_Download_Latest-WinTool.exe-ff6b35?style=for-the-badge&logo=download)](https://github.com/MTechWare/wintool/releases/tag/release)
+[![Plugin Marketplace](https://img.shields.io/badge/🔌_Plugin-Marketplace-4CAF50?style=for-the-badge&logo=puzzle-piece)](https://mtechware.github.io/plugins.html)
+[![Discord Community](https://img.shields.io/badge/💬_Join-Discord-7289DA?style=for-the-badge&logo=discord)](https://discord.gg/GSTEfkxhmD)
 
 </div>
 
@@ -186,6 +189,7 @@ This project is licensed under the GPL-3.0-or-later License.
 - The Electron community for their excellent documentation and support.
 - Our contributors and beta testers for their valuable feedback.
 - The open-source community for the libraries and tools that made this project possible.
+- ChrisTitusTech for the packages and some of the tweaks!
 
 ---
 

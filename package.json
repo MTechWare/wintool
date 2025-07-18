@@ -1,6 +1,6 @@
 {
   "name": "wintool",
-  "version": "0.1.9w",
+  "version": "0.2.0w",
   "main": "src/main.js",
   "description": "WinTool - Windows System Management Tool",
   "author": "MTech",
@@ -15,14 +15,23 @@
     "appId": "com.mtechware.wintool",
     "productName": "WinTool",
     "icon": "src/assets/images/icon.ico",
+    "copyright": "Copyright © 2024 MTechWare",
+    "fileAssociations": [],
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "WinTool"
+    },
     "win": {
       "target": [
         "portable"
       ],
       "icon": "src/assets/images/icon.ico",
-      "signAndEditExecutable": false,
       "artifactName": "${productName}.${ext}",
-      "requestedExecutionLevel": "asInvoker"
+      "requestedExecutionLevel": "asInvoker",
+      "legalTrademarks": "MTechWare"
     },
     "directories": {
       "output": "dist",
@@ -31,7 +40,19 @@
     "files": [
       "src/**/*",
       "!src/**/*.md",
-      "!src/**/test/**/*"
+      "!src/**/test/**/*",
+      "ANTIVIRUS_WHITELIST.md",
+      "LICENSE.txt"
+    ],
+    "extraResources": [
+      {
+        "from": "src/security/security-manifest.json",
+        "to": "security-manifest.json"
+      },
+      {
+        "from": "src/scripts",
+        "to": "scripts"
+      }
     ],
     "asar": true,
     "compression": "normal",
