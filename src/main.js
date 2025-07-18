@@ -1,11 +1,21 @@
 /**
  * WinTool - Main Electron Process
  *
+ * Copyright (c) 2024 MTechWare
+ * Licensed under GPL-3.0-or-later
+ *
  * Windows System Management Tool
  * - Clean, understandable code
  * - Easy extension and modification
  * - Minimal dependencies
  * - Clear structure
+ * - Security-focused design
+ *
+ * This application is a legitimate system management tool.
+ * It performs system cleanup, process management, and system optimization.
+ * All operations are logged and validated for security.
+ *
+ * For antivirus whitelist instructions, see ANTIVIRUS_WHITELIST.md
  */
 
 const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, dialog, session, shell, globalShortcut } = require('electron');
@@ -20,6 +30,254 @@ const crypto = require('crypto');
 const discordPresence = require('./js/modules/discord-presence');
 
 const verifiedHashes = {};
+
+// Process Pool Manager for optimizing PowerShell/CMD process usage
+class ProcessPoolManager {
+    constructor() {
+        this.powershellPool = [];
+        this.cmdPool = [];
+        this.maxPoolSize = 3; // Limit concurrent processes
+        this.activeProcesses = 0;
+        this.maxActiveProcesses = 2; // Very conservative limit during startup
+        this.pendingOperations = [];
+        this.isStartupPhase = true;
+    }
+
+    async getPooledPowerShellProcess() {
+        if (this.powershellPool.length > 0) {
+            return this.powershellPool.pop();
+        }
+
+        if (this.activeProcesses >= this.maxActiveProcesses && this.isStartupPhase) {
+            // Queue the operation during startup
+            return new Promise((resolve) => {
+                this.pendingOperations.push(() => resolve(this.createPowerShellProcess()));
+            });
+        }
+
+        return this.createPowerShellProcess();
+    }
+
+    createPowerShellProcess() {
+        this.activeProcesses++;
+        const process = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass'], {
+            stdio: ['pipe', 'pipe', 'pipe'],
+            shell: false
+        });
+
+        process.on('close', () => {
+            this.activeProcesses--;
+            this.processNextPending();
+        });
+
+        return process;
+    }
+
+    returnToPool(process, type = 'powershell') {
+        if (type === 'powershell' && this.powershellPool.length < this.maxPoolSize) {
+            this.powershellPool.push(process);
+        } else {
+            process.kill();
+        }
+    }
+
+    processNextPending() {
+        if (this.pendingOperations.length > 0 && this.activeProcesses < this.maxActiveProcesses) {
+            const nextOperation = this.pendingOperations.shift();
+            nextOperation();
+        }
+    }
+
+    finishStartupPhase() {
+        this.isStartupPhase = false;
+        this.maxActiveProcesses = 10; // Allow more processes after startup
+        // Process any remaining pending operations
+        while (this.pendingOperations.length > 0 && this.activeProcesses < this.maxActiveProcesses) {
+            this.processNextPending();
+        }
+    }
+
+    async executePowerShellCommand(command, timeout = 30000) {
+        // Use proper process limiting during startup phase
+        if (this.isStartupPhase) {
+            return this.executeWithStartupLimit(() => this._executePowerShellDirect(command, timeout));
+        }
+
+        // After startup, use direct execution for better performance
+        return this._executePowerShellDirect(command, timeout);
+    }
+
+    async executeWithStartupLimit(operation) {
+        if (this.activeProcesses >= this.maxActiveProcesses) {
+            // Queue the operation during startup
+            return new Promise((resolve, reject) => {
+                this.pendingOperations.push(async () => {
+                    try {
+                        const result = await operation();
+                        resolve(result);
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            });
+        }
+
+        return operation();
+    }
+
+    async _executePowerShellDirect(command, timeout = 30000) {
+        return new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+                reject(new Error(`PowerShell command timed out after ${timeout}ms`));
+            }, timeout);
+
+            try {
+                // Track active processes during startup
+                if (this.isStartupPhase) {
+                    this.activeProcesses++;
+                }
+
+                // Use more secure PowerShell execution parameters
+                const psProcess = spawn('powershell.exe', [
+                    '-NoProfile',
+                    '-NonInteractive',
+                    '-WindowStyle', 'Hidden',
+                    '-ExecutionPolicy', 'RemoteSigned', // Less suspicious than Bypass
+                    '-Command', command
+                ], {
+                    stdio: ['pipe', 'pipe', 'pipe'],
+                    shell: false
+                });
+
+                let output = '';
+                let errorOutput = '';
+
+                psProcess.stdout.on('data', (data) => {
+                    output += data.toString();
+                });
+
+                psProcess.stderr.on('data', (data) => {
+                    errorOutput += data.toString();
+                });
+
+                psProcess.on('close', (code) => {
+                    clearTimeout(timeoutId);
+
+                    // Decrease active process count and process next pending
+                    if (this.isStartupPhase) {
+                        this.activeProcesses--;
+                        this.processNextPending();
+                    }
+
+                    if (code === 0) {
+                        resolve(output.trim());
+                    } else {
+                        reject(new Error(errorOutput || `PowerShell exited with code ${code}`));
+                    }
+                });
+
+                psProcess.on('error', (error) => {
+                    clearTimeout(timeoutId);
+
+                    // Decrease active process count on error
+                    if (this.isStartupPhase) {
+                        this.activeProcesses--;
+                        this.processNextPending();
+                    }
+
+                    reject(error);
+                });
+
+            } catch (error) {
+                clearTimeout(timeoutId);
+
+                // Decrease active process count on exception
+                if (this.isStartupPhase) {
+                    this.activeProcesses--;
+                    this.processNextPending();
+                }
+
+                reject(error);
+            }
+        });
+    }
+
+    cleanup() {
+        // Clean up all pooled processes
+        [...this.powershellPool, ...this.cmdPool].forEach(process => {
+            try {
+                process.kill();
+            } catch (e) {
+                // Ignore errors during cleanup
+            }
+        });
+        this.powershellPool = [];
+        this.cmdPool = [];
+    }
+}
+
+// Global process pool instance
+const processPool = new ProcessPoolManager();
+
+// Startup Process Limiter
+class StartupProcessLimiter {
+    constructor() {
+        this.isStartupPhase = true;
+        this.maxConcurrentProcesses = 1; // Very conservative - only 1 concurrent process during startup
+        this.activeProcesses = 0;
+        this.pendingOperations = [];
+    }
+
+    async executeWithLimit(operation) {
+        if (!this.isStartupPhase) {
+            return operation();
+        }
+
+        if (this.activeProcesses < this.maxConcurrentProcesses) {
+            this.activeProcesses++;
+            try {
+                const result = await operation();
+                return result;
+            } finally {
+                this.activeProcesses--;
+                this.processNext();
+            }
+        } else {
+            return new Promise((resolve, reject) => {
+                this.pendingOperations.push(async () => {
+                    try {
+                        this.activeProcesses++;
+                        const result = await operation();
+                        resolve(result);
+                    } catch (error) {
+                        reject(error);
+                    } finally {
+                        this.activeProcesses--;
+                        this.processNext();
+                    }
+                });
+            });
+        }
+    }
+
+    processNext() {
+        if (this.pendingOperations.length > 0 && this.activeProcesses < this.maxConcurrentProcesses) {
+            const nextOperation = this.pendingOperations.shift();
+            nextOperation();
+        }
+    }
+
+    finishStartupPhase() {
+        this.isStartupPhase = false;
+        // Process all remaining operations
+        while (this.pendingOperations.length > 0) {
+            this.processNext();
+        }
+    }
+}
+
+// Global startup limiter instance
+const startupLimiter = new StartupProcessLimiter();
 
 // Fetch verified plugins list from GitHub only
 async function updateVerifiedPluginsList() {
@@ -64,6 +322,11 @@ let logViewerWindow = null;
 
 // System tray reference
 let tray = null;
+
+// Window visibility monitoring
+let visibilityCheckInterval = null;
+let windowCreationAttempts = 0;
+const MAX_WINDOW_CREATION_ATTEMPTS = 3;
 
 // --- Helper Functions ---
 
@@ -296,59 +559,219 @@ function createLogViewerWindow() {
 }
 
 async function createWindow() {
-    console.log('Creating main window...');
+    console.log(`Creating main window... (attempt ${windowCreationAttempts + 1}/${MAX_WINDOW_CREATION_ATTEMPTS})`);
+    windowCreationAttempts++;
 
-    // Get screen dimensions for responsive sizing
-    const primaryDisplay = screen.getPrimaryDisplay();
-    const {
-        width: screenWidth,
-        height: screenHeight
-    } = primaryDisplay.workAreaSize;
+    try {
+        // Get screen dimensions for responsive sizing
+        const primaryDisplay = screen.getPrimaryDisplay();
+        const {
+            width: screenWidth,
+            height: screenHeight
+        } = primaryDisplay.workAreaSize;
 
-    // Always use % of screen for window size
-    const windowSizePercent = 0.8;
-    const windowWidth = Math.round(screenWidth * windowSizePercent);
-    const windowHeight = Math.round(screenHeight * windowSizePercent);
+        console.log(`Screen dimensions: ${screenWidth}x${screenHeight}`);
 
-    // Get transparency setting before creating the window
-    const settingsStore = await getStore();
-    const opacity = settingsStore ? settingsStore.get('transparency', 1) : 1;
-    console.log(`Creating window with opacity: ${opacity}`);
+        // Validate screen dimensions
+        if (screenWidth < 800 || screenHeight < 600) {
+            console.warn(`Screen dimensions too small: ${screenWidth}x${screenHeight}`);
+        }
 
-    // Create the browser window
-    mainWindow = new BrowserWindow({
-        width: windowWidth,
-        height: windowHeight,
-        minWidth: 800,
-        minHeight: 600,
-        icon: path.join(__dirname, 'assets/images/icon.ico'),
-        webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
-            nodeIntegration: false,
-            contextIsolation: true,
-            devTools: true
-        },
-        frame: false, // Custom title bar
-        transparent: true,
-        show: false, // Show when ready
-        center: true,
-        opacity: opacity
-    });
+        // Always use % of screen for window size
+        const windowSizePercent = 0.8;
+        const windowWidth = Math.max(800, Math.round(screenWidth * windowSizePercent));
+        const windowHeight = Math.max(600, Math.round(screenHeight * windowSizePercent));
+
+        console.log(`Calculated window size: ${windowWidth}x${windowHeight}`);
+
+        // Get transparency setting before creating the window
+        const settingsStore = await getStore();
+        let opacity = settingsStore ? settingsStore.get('transparency', 1) : 1;
+        let useTransparent = settingsStore ? settingsStore.get('useTransparentWindow', false) : false; // Default to false for better compatibility
+
+        // If we've had multiple failed attempts, disable transparency
+        if (windowCreationAttempts > 1) {
+            console.log('Multiple creation attempts detected, disabling transparency for stability');
+            useTransparent = false;
+            if (settingsStore) {
+                settingsStore.set('useTransparentWindow', false);
+            }
+        }
+
+        // Ensure opacity is within valid range and not causing invisible window
+        if (opacity < 0.3) {
+            console.warn(`Opacity too low (${opacity}), setting to minimum safe value`);
+            opacity = 0.3;
+            // Save the corrected value
+            if (settingsStore) {
+                settingsStore.set('transparency', opacity);
+            }
+        }
+        if (opacity > 1) {
+            opacity = 1;
+        }
+
+        console.log(`Creating window with opacity: ${opacity}, transparent: ${useTransparent}`);
+
+        // Calculate window position to ensure it's on screen
+        const x = Math.max(0, Math.round((screenWidth - windowWidth) / 2));
+        const y = Math.max(0, Math.round((screenHeight - windowHeight) / 2));
+
+        console.log(`Window position: ${x}, ${y}`);
+
+        // Create the browser window with improved settings
+        const windowOptions = {
+            width: windowWidth,
+            height: windowHeight,
+            minWidth: 800,
+            minHeight: 600,
+            x: x,
+            y: y,
+            icon: path.join(__dirname, 'assets/images/icon.ico'),
+            webPreferences: {
+                preload: path.join(__dirname, 'preload.js'),
+                nodeIntegration: false,
+                contextIsolation: true,
+                devTools: true,
+                webSecurity: true
+            },
+            frame: false, // Custom title bar
+            transparent: useTransparent,
+            show: false, // Show when ready
+            center: false, // We're setting position manually
+            opacity: opacity,
+            backgroundColor: useTransparent ? undefined : '#1a1a1a', // Fallback background
+            titleBarStyle: 'hidden',
+            skipTaskbar: false,
+            alwaysOnTop: false // Will be set later based on settings
+        };
+
+        console.log('Window options:', JSON.stringify(windowOptions, null, 2));
+
+        mainWindow = new BrowserWindow(windowOptions);
+        console.log('BrowserWindow created successfully');
+
+    } catch (error) {
+        console.error('Error creating BrowserWindow:', error);
+
+        if (windowCreationAttempts < MAX_WINDOW_CREATION_ATTEMPTS) {
+            console.log('Retrying window creation with fallback settings...');
+            // Reset and try again with safer settings
+            const settingsStore = await getStore();
+            if (settingsStore) {
+                settingsStore.set('useTransparentWindow', false);
+                settingsStore.set('transparency', 1);
+            }
+            return await createWindow();
+        } else {
+            throw new Error(`Failed to create window after ${MAX_WINDOW_CREATION_ATTEMPTS} attempts: ${error.message}`);
+        }
+    }
 
     // Load the main HTML file
     mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
     // Apply always on top setting
+    const settingsStore = await getStore();
     const topMost = settingsStore ? settingsStore.get('topMost', false) : false;
     if (topMost) {
         mainWindow.setAlwaysOnTop(true);
         console.log('Window set to always on top');
     }
 
-    // Show window when ready
+    // Show window when ready with improved visibility handling
     mainWindow.once('ready-to-show', () => {
-        mainWindow.show();
-        console.log('Window ready and shown');
+        try {
+            console.log('Window ready-to-show event fired');
+
+            // Ensure window is properly positioned before showing
+            const bounds = mainWindow.getBounds();
+            console.log(`Window bounds before show: x=${bounds.x}, y=${bounds.y}, width=${bounds.width}, height=${bounds.height}`);
+
+            // Verify window is within screen bounds
+            const primaryDisplay = screen.getPrimaryDisplay();
+            const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
+
+            if (bounds.x < 0 || bounds.y < 0 || bounds.x > screenWidth || bounds.y > screenHeight) {
+                console.warn('Window appears to be off-screen, repositioning...');
+                mainWindow.center();
+            }
+
+            // Show the window
+            mainWindow.show();
+            console.log('Window.show() called');
+
+            // Focus the window
+            mainWindow.focus();
+            console.log('Window.focus() called');
+
+            // Verify visibility after a short delay
+            setTimeout(() => {
+                if (mainWindow) {
+                    const isVisible = mainWindow.isVisible();
+                    const isMinimized = mainWindow.isMinimized();
+                    const currentOpacity = mainWindow.getOpacity();
+
+                    console.log(`Window visibility check: visible=${isVisible}, minimized=${isMinimized}, opacity=${currentOpacity}`);
+
+                    if (!isVisible) {
+                        console.warn('Window not visible after show(), attempting recovery...');
+
+                        // Try multiple recovery strategies
+                        try {
+                            // Strategy 1: Increase opacity if too low
+                            if (currentOpacity < 0.3) {
+                                console.log('Increasing opacity for visibility');
+                                mainWindow.setOpacity(0.8);
+                            }
+
+                            // Strategy 2: Show inactive then active
+                            mainWindow.showInactive();
+                            setTimeout(() => {
+                                if (mainWindow) {
+                                    mainWindow.show();
+                                    mainWindow.focus();
+                                    mainWindow.moveTop();
+                                }
+                            }, 100);
+
+                        } catch (recoveryError) {
+                            console.error('Recovery attempt failed:', recoveryError);
+                        }
+                    } else {
+                        console.log('Window successfully shown and visible');
+                        // Reset creation attempts on successful show
+                        windowCreationAttempts = 0;
+                        // Start visibility monitoring
+                        startVisibilityMonitoring();
+                    }
+                }
+            }, 200);
+
+        } catch (error) {
+            console.error('Error in ready-to-show handler:', error);
+            // Fallback: try to show window without focus
+            try {
+                console.log('Attempting fallback show...');
+                mainWindow.showInactive();
+                setTimeout(() => {
+                    if (mainWindow) {
+                        mainWindow.show();
+                    }
+                }, 100);
+            } catch (fallbackError) {
+                console.error('Fallback show also failed:', fallbackError);
+                // Last resort: recreate window without transparency
+                setTimeout(() => {
+                    if (settingsStore) {
+                        settingsStore.set('useTransparentWindow', false);
+                        console.log('Disabling transparency and recreating window...');
+                        mainWindow = null;
+                        createWindow();
+                    }
+                }, 500);
+            }
+        }
     });
 
     // Handle window close event (always hide to tray instead of closing)
@@ -373,6 +796,7 @@ async function createWindow() {
     // Handle window closed
     mainWindow.on('closed', () => {
         console.log('Main window closed');
+        stopVisibilityMonitoring();
         mainWindow = null;
     });
 
@@ -389,8 +813,17 @@ function createTray() {
     const trayIconPath = path.join(__dirname, 'assets/images/icon.ico');
 
     try {
+        // Verify icon file exists
+        console.log(`Tray icon path: ${trayIconPath}`);
+
         // Create native image for tray icon
         const trayIcon = nativeImage.createFromPath(trayIconPath);
+
+        // Check if icon was loaded successfully
+        if (trayIcon.isEmpty()) {
+            console.warn('Tray icon is empty, using default icon');
+            // Fallback to a simple icon or let system use default
+        }
 
         // Create tray
         tray = new Tray(trayIcon);
@@ -450,16 +883,102 @@ function createTray() {
 }
 
 /**
- * Show main window
+ * Show main window with improved visibility handling
  */
 async function showWindow() {
+    console.log('showWindow() called');
+
     if (mainWindow) {
-        if (mainWindow.isMinimized()) {
-            mainWindow.restore();
+        try {
+            console.log('Attempting to show existing window');
+
+            // Check if window is destroyed
+            if (mainWindow.isDestroyed()) {
+                console.warn('Main window was destroyed, recreating...');
+                mainWindow = null;
+                await createWindow();
+                return;
+            }
+
+            // Restore if minimized
+            if (mainWindow.isMinimized()) {
+                console.log('Window is minimized, restoring...');
+                mainWindow.restore();
+            }
+
+            // Get current window state for debugging
+            const bounds = mainWindow.getBounds();
+            const isVisible = mainWindow.isVisible();
+            const opacity = mainWindow.getOpacity();
+
+            console.log(`Window state before show: visible=${isVisible}, opacity=${opacity}, bounds=${JSON.stringify(bounds)}`);
+
+            // Ensure window is visible
+            mainWindow.show();
+            mainWindow.focus();
+
+            console.log('Window show() and focus() called');
+
+            // Double-check visibility and force if needed
+            setTimeout(() => {
+                if (mainWindow && !mainWindow.isDestroyed()) {
+                    const stillVisible = mainWindow.isVisible();
+                    console.log(`Window visibility after show: ${stillVisible}`);
+
+                    if (!stillVisible) {
+                        console.warn('Window still not visible, attempting recovery...');
+
+                        try {
+                            // Multiple recovery strategies
+                            const currentOpacity = mainWindow.getOpacity();
+
+                            // Strategy 1: Ensure minimum opacity
+                            if (currentOpacity < 0.3) {
+                                console.log('Setting minimum opacity for visibility');
+                                mainWindow.setOpacity(0.8);
+                            }
+
+                            // Strategy 2: Move to center of screen
+                            mainWindow.center();
+
+                            // Strategy 3: Show inactive then active
+                            mainWindow.showInactive();
+                            setTimeout(() => {
+                                if (mainWindow && !mainWindow.isDestroyed()) {
+                                    mainWindow.show();
+                                    mainWindow.focus();
+                                    mainWindow.moveTop();
+
+                                    // Final check
+                                    setTimeout(() => {
+                                        if (mainWindow && !mainWindow.isDestroyed()) {
+                                            const finalVisible = mainWindow.isVisible();
+                                            console.log(`Final visibility check: ${finalVisible}`);
+
+                                            if (!finalVisible) {
+                                                console.error('All recovery attempts failed, window remains invisible');
+                                                // Consider showing an error dialog or recreating without transparency
+                                            }
+                                        }
+                                    }, 200);
+                                }
+                            }, 100);
+
+                        } catch (recoveryError) {
+                            console.error('Recovery attempt failed:', recoveryError);
+                        }
+                    }
+                }
+            }, 200);
+
+        } catch (error) {
+            console.error('Error showing existing window:', error);
+            // Try to recreate window if showing fails
+            mainWindow = null;
+            await createWindow();
         }
-        mainWindow.show();
-        mainWindow.focus();
     } else {
+        console.log('No existing window, creating new one');
         await createWindow();
     }
 }
@@ -474,10 +993,67 @@ function hideWindow() {
 }
 
 /**
+ * Start monitoring window visibility and recover if needed
+ */
+function startVisibilityMonitoring() {
+    if (visibilityCheckInterval) {
+        clearInterval(visibilityCheckInterval);
+    }
+
+    console.log('Starting window visibility monitoring...');
+
+    visibilityCheckInterval = setInterval(async () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            const isVisible = mainWindow.isVisible();
+            const isMinimized = mainWindow.isMinimized();
+            const opacity = mainWindow.getOpacity();
+
+            // Only log if there's an issue
+            if (!isVisible && !isMinimized) {
+                console.warn(`Window visibility issue detected: visible=${isVisible}, minimized=${isMinimized}, opacity=${opacity}`);
+
+                // Attempt to recover
+                try {
+                    if (opacity < 0.3) {
+                        console.log('Correcting low opacity');
+                        mainWindow.setOpacity(0.8);
+                    }
+
+                    mainWindow.show();
+                    mainWindow.focus();
+
+                    // Check if recovery worked
+                    setTimeout(() => {
+                        if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+                            console.error('Window recovery failed, may need manual intervention');
+                        }
+                    }, 1000);
+
+                } catch (error) {
+                    console.error('Error during visibility recovery:', error);
+                }
+            }
+        }
+    }, 10000); // Check every 10 seconds
+}
+
+/**
+ * Stop visibility monitoring
+ */
+function stopVisibilityMonitoring() {
+    if (visibilityCheckInterval) {
+        clearInterval(visibilityCheckInterval);
+        visibilityCheckInterval = null;
+        console.log('Window visibility monitoring stopped');
+    }
+}
+
+/**
  * Quit application properly
  */
 function quitApplication() {
     console.log('Quitting application...');
+    stopVisibilityMonitoring();
     app.isQuiting = true;
     app.quit();
 }
@@ -499,53 +1075,67 @@ async function loadPluginBackends() {
     console.log('Loading plugin backends...');
     const pluginMap = await getPluginMap();
 
-    for (const [pluginId, pluginPath] of pluginMap.entries()) {
-        const backendScriptPath = path.join(pluginPath, 'backend.js');
-        try {
-            // Check if backend.js exists before trying to require it.
-            await fs.stat(backendScriptPath);
-            console.log(`Found backend.js for plugin: ${pluginId}`);
+    // Batch plugin loading to reduce concurrent processes
+    const pluginEntries = Array.from(pluginMap.entries());
+    const batchSize = 3; // Process 3 plugins at a time
 
-            // Conditionally clear the module from the cache based on the setting
-            const settingsStore = await getStore();
-            if (settingsStore && settingsStore.get('clearPluginCache', false)) {
-                console.log(`Clearing cache for ${pluginId} as per setting.`);
-                delete require.cache[require.resolve(backendScriptPath)];
-            }
-            
-            const pluginModule = require(backendScriptPath);
-            if (pluginModule && typeof pluginModule.initialize === 'function') {
-                // Create a secure API for this specific plugin's backend
-                const backendApi = {
-                    handlers: {},
-                    registerHandler(name, func) {
-                        // All handlers must be async functions for consistent promise-based results
-                        this.handlers[name] = async (...args) => func(...args);
-                    },
-                    getStore: () => getStore(),
-                    dialog: dialog,
-                    axios: axios,
-                    // Add a way for plugins to require their own dependencies
-                    require: (moduleName) => {
-                        try {
-                            return require(path.join(pluginPath, 'node_modules', moduleName));
-                        } catch (e) {
-                            console.error(`Failed to load module '${moduleName}' for plugin '${pluginId}'. Make sure it is listed in the plugin's package.json.`);
-                            throw e;
+    for (let i = 0; i < pluginEntries.length; i += batchSize) {
+        const batch = pluginEntries.slice(i, i + batchSize);
+
+        // Process batch concurrently but with limited concurrency
+        await Promise.all(batch.map(async ([pluginId, pluginPath]) => {
+            const backendScriptPath = path.join(pluginPath, 'backend.js');
+            try {
+                // Check if backend.js exists before trying to require it.
+                await fs.stat(backendScriptPath);
+                console.log(`Found backend.js for plugin: ${pluginId}`);
+
+                // Conditionally clear the module from the cache based on the setting
+                const settingsStore = await getStore();
+                if (settingsStore && settingsStore.get('clearPluginCache', false)) {
+                    console.log(`Clearing cache for ${pluginId} as per setting.`);
+                    delete require.cache[require.resolve(backendScriptPath)];
+                }
+
+                const pluginModule = require(backendScriptPath);
+                if (pluginModule && typeof pluginModule.initialize === 'function') {
+                    // Create a secure API for this specific plugin's backend
+                    const backendApi = {
+                        handlers: {},
+                        registerHandler(name, func) {
+                            // All handlers must be async functions for consistent promise-based results
+                            this.handlers[name] = async (...args) => func(...args);
+                        },
+                        getStore: () => getStore(),
+                        dialog: dialog,
+                        axios: axios,
+                        // Add a way for plugins to require their own dependencies
+                        require: (moduleName) => {
+                            try {
+                                return require(path.join(pluginPath, 'node_modules', moduleName));
+                            } catch (e) {
+                                console.error(`Failed to load module '${moduleName}' for plugin '${pluginId}'. Make sure it is listed in the plugin's package.json.`);
+                                throw e;
+                            }
                         }
-                    }
-                };
+                    };
 
-                // Initialize the plugin with its dedicated, secure API
-                pluginModule.initialize(backendApi);
-                loadedPluginBackends.set(pluginId, backendApi);
-                console.log(`Successfully loaded and initialized backend for: ${pluginId}`);
+                    // Initialize the plugin with its dedicated, secure API
+                    pluginModule.initialize(backendApi);
+                    loadedPluginBackends.set(pluginId, backendApi);
+                    console.log(`Successfully loaded and initialized backend for: ${pluginId}`);
+                }
+            } catch (e) {
+                // This is a normal flow; most plugins won't have a backend.
+                if (e.code !== 'ENOENT') {
+                    console.error(`Error loading backend for plugin ${pluginId}:`, e);
+                }
             }
-        } catch (e) {
-            // This is a normal flow; most plugins won't have a backend.
-            if (e.code !== 'ENOENT') {
-                console.error(`Error loading backend for plugin ${pluginId}:`, e);
-            }
+        }));
+
+        // Small delay between batches to prevent overwhelming the system
+        if (i + batchSize < pluginEntries.length) {
+            await new Promise(resolve => setTimeout(resolve, 100));
         }
     }
 }
@@ -564,7 +1154,12 @@ ipcMain.handle('plugin-invoke', async (event, pluginId, handlerName, ...args) =>
 
 // App event handlers
 async function initializeApplication() {
-    console.log('Electron app is ready');
+    console.log('=== WinTool Initialization Started ===');
+    console.log(`Platform: ${process.platform}`);
+    console.log(`Electron version: ${process.versions.electron}`);
+    console.log(`Node version: ${process.versions.node}`);
+    console.log(`App path: ${app.getAppPath()}`);
+    console.log(`User data path: ${app.getPath('userData')}`);
 
     globalShortcut.register('Control+Q', () => {
         console.log('Control+Q shortcut detected, quitting application.');
@@ -572,33 +1167,93 @@ async function initializeApplication() {
     });
 
     const settingsStore = await getStore();
+    console.log('Settings store initialized:', !!settingsStore);
+
     const { default: isElevated } = await import('is-elevated');
     const elevated = await isElevated();
+    console.log(`Running elevated: ${elevated}`);
 
     const showWindowAndFinishSetup = async () => {
+        console.log('=== Starting Window and Setup Process ===');
+
         if (mainWindow) {
+            console.log('Window already exists, skipping creation');
             return; // Window already exists
         }
-        await createWindow();
-        createTray();
-        
-        // Run slow tasks after the window is visible.
-        (async () => {
-            try {
-                console.log('Starting background initialization...');
-                if (settingsStore) {
-                    const enableDiscordRpc = settingsStore.get('enableDiscordRpc', true);
-                    if (enableDiscordRpc) {
-                        discordPresence.start();
+
+        try {
+            console.log('Creating main window...');
+            await createWindow();
+            console.log('Main window created successfully');
+
+            console.log('Creating system tray...');
+            createTray();
+            console.log('System tray created successfully');
+
+            // Run slow tasks after the window is visible.
+            (async () => {
+                try {
+                    console.log('Starting background initialization...');
+
+                    if (settingsStore) {
+                        const enableDiscordRpc = settingsStore.get('enableDiscordRpc', true);
+                        console.log(`Discord RPC enabled: ${enableDiscordRpc}`);
+                        if (enableDiscordRpc) {
+                            discordPresence.start();
+                        }
                     }
+
+                    console.log('Ensuring plugins path exists...');
+                    await ensurePluginsPathExists();
+
+                    // Use startup limiter for plugin loading
+                    console.log('Loading plugin backends...');
+                    await startupLimiter.executeWithLimit(async () => {
+                        await loadPluginBackends();
+                    });
+
+                    // Finish startup phase to allow more processes
+                    processPool.finishStartupPhase();
+                    startupLimiter.finishStartupPhase();
+                    console.log('=== Background initialization finished ===');
+                } catch (error) {
+                    console.error('Error during background startup tasks:', error);
                 }
-                await ensurePluginsPathExists();
-                await loadPluginBackends();
-                console.log('Background initialization finished.');
-            } catch (error) {
-                console.error('Error during background startup tasks:', error);
+            })();
+        } catch (error) {
+            console.error('Error in showWindowAndFinishSetup:', error);
+
+            // Try to create a basic window without advanced features
+            try {
+                console.log('Attempting basic window creation as fallback...');
+                const basicWindow = new BrowserWindow({
+                    width: 800,
+                    height: 600,
+                    webPreferences: {
+                        preload: path.join(__dirname, 'preload.js'),
+                        nodeIntegration: false,
+                        contextIsolation: true
+                    },
+                    frame: true, // Use standard frame
+                    transparent: false, // No transparency
+                    show: true // Show immediately
+                });
+
+                basicWindow.loadFile(path.join(__dirname, 'index.html'));
+                mainWindow = basicWindow;
+
+                // Still create tray for basic functionality
+                createTray();
+
+                console.log('Basic window created successfully');
+            } catch (basicError) {
+                console.error('Even basic window creation failed:', basicError);
+                // Show error dialog and quit
+                dialog.showErrorBox('Startup Error',
+                    'WinTool failed to start. Please try running as administrator or contact support.');
+                app.quit();
             }
-        })();
+        }
     };
 
     if (!elevated) {
@@ -687,6 +1342,9 @@ app.on('activate', async () => {
 app.on('will-quit', () => {
     // Unregister all shortcuts before quitting
     globalShortcut.unregisterAll();
+
+    // Clean up process pool
+    processPool.cleanup();
 });
 
 // Handle app before quit event
@@ -694,6 +1352,15 @@ app.on('before-quit', () => {
     app.isQuiting = true;
     if (tray) {
         tray.destroy();
+    }
+
+    // Cleanup PowerShell process pool
+    processPool.cleanup();
+
+    // Clear performance monitoring
+    if (performanceInterval) {
+        clearInterval(performanceInterval);
+        performanceInterval = null;
     }
 });
 
@@ -919,9 +1586,102 @@ ipcMain.handle('open-log-viewer', () => {
     createLogViewerWindow();
 });
 
+// Window visibility debugging handler
+ipcMain.handle('report-visibility-issue', async (event, details) => {
+    console.log('Visibility issue reported from renderer:', details);
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        const windowState = {
+            isVisible: mainWindow.isVisible(),
+            isMinimized: mainWindow.isMinimized(),
+            opacity: mainWindow.getOpacity(),
+            bounds: mainWindow.getBounds(),
+            isDestroyed: mainWindow.isDestroyed()
+        };
+
+        console.log('Current window state:', windowState);
+
+        // Attempt to fix visibility issues
+        try {
+            if (!windowState.isVisible && !windowState.isMinimized) {
+                console.log('Attempting to fix visibility issue...');
+
+                if (windowState.opacity < 0.3) {
+                    mainWindow.setOpacity(0.8);
+                }
+
+                mainWindow.center();
+                mainWindow.show();
+                mainWindow.focus();
+
+                return { success: true, message: 'Attempted to fix visibility issue' };
+            }
+        } catch (error) {
+            console.error('Error fixing visibility issue:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    return { success: false, message: 'No action needed or window not available' };
+});
+
 // Performance metrics handler
 let performanceInterval;
 let performanceUpdateCount = 0; // Track how many components are requesting updates
+
+// Process pool for PowerShell to reduce CPU overhead
+const powershellProcessPool = {
+    processes: [],
+    maxPoolSize: 3,
+    currentIndex: 0,
+
+    async getProcess() {
+        // Clean up any dead processes
+        this.processes = this.processes.filter(proc => !proc.killed && proc.exitCode === null);
+
+        // If pool is empty or all processes are busy, create a new one (up to max)
+        if (this.processes.length < this.maxPoolSize) {
+            const proc = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass'], {
+                stdio: ['pipe', 'pipe', 'pipe'],
+                shell: false
+            });
+
+            // Set up basic error handling
+            proc.on('error', (error) => {
+                console.error('PowerShell process error:', error);
+                this.removeProcess(proc);
+            });
+
+            proc.on('exit', () => {
+                this.removeProcess(proc);
+            });
+
+            this.processes.push(proc);
+            return proc;
+        }
+
+        // Return next available process in round-robin fashion
+        const proc = this.processes[this.currentIndex % this.processes.length];
+        this.currentIndex = (this.currentIndex + 1) % this.processes.length;
+        return proc;
+    },
+
+    removeProcess(proc) {
+        const index = this.processes.indexOf(proc);
+        if (index > -1) {
+            this.processes.splice(index, 1);
+        }
+    },
+
+    cleanup() {
+        this.processes.forEach(proc => {
+            if (!proc.killed) {
+                proc.kill('SIGTERM');
+            }
+        });
+        this.processes = [];
+    }
+};
 
 ipcMain.handle('start-performance-updates', () => {
     performanceUpdateCount++;
@@ -933,17 +1693,18 @@ ipcMain.handle('start-performance-updates', () => {
         performanceInterval = setInterval(async () => {
             try {
                 // Only monitor memory usage (CPU monitoring removed)
+                // Reduced frequency to lower CPU usage
                 const memInfo = await si.mem();
                 const metrics = {
                     mem: ((memInfo.active / memInfo.total) * 100).toFixed(2)
                 };
-                if (mainWindow) {
+                if (mainWindow && mainWindow.webContents) {
                     mainWindow.webContents.send('performance-update', metrics);
                 }
             } catch (error) {
                 console.error('Failed to get performance metrics:', error);
             }
-        }, 1000); // Update every second
+        }, 2000); // Update every 2 seconds instead of 1 to reduce CPU usage
     }
 });
 
@@ -991,7 +1752,7 @@ ipcMain.handle('restart-application', () => {
 ipcMain.handle('get-environment-variables', async () => {
     console.log('get-environment-variables handler called');
 
-    return new Promise((resolve, reject) => {
+    try {
         // PowerShell script to get both user and system environment variables
         const psScript = `
         $userVars = [Environment]::GetEnvironmentVariables([EnvironmentVariableTarget]::User)
@@ -1013,45 +1774,12 @@ ipcMain.handle('get-environment-variables', async () => {
         $result | ConvertTo-Json -Depth 3
         `.trim();
 
-        const psProcess = spawn('powershell.exe', [
-            '-NoProfile',
-            '-ExecutionPolicy', 'Bypass',
-            '-Command', psScript
-        ], {
-            stdio: ['pipe', 'pipe', 'pipe']
-        });
-
-        let output = '';
-        let errorOutput = '';
-
-        psProcess.stdout.on('data', (data) => {
-            output += data.toString();
-        });
-
-        psProcess.stderr.on('data', (data) => {
-            errorOutput += data.toString();
-        });
-
-        psProcess.on('close', (code) => {
-            if (code === 0) {
-                try {
-                    const envVars = JSON.parse(output);
-                    resolve(envVars);
-                } catch (parseError) {
-                    console.error('Error parsing environment variables JSON:', parseError);
-                    reject(new Error(`Failed to parse environment variables: ${parseError.message}`));
-                }
-            } else {
-                console.error('PowerShell error:', errorOutput);
-                reject(new Error(`PowerShell exited with code ${code}: ${errorOutput}`));
-            }
-        });
-
-        psProcess.on('error', (error) => {
-            console.error('PowerShell process error:', error);
-            reject(new Error(`Failed to execute PowerShell: ${error.message}`));
-        });
-    });
+        const output = await processPool.executePowerShellCommand(psScript);
+        return JSON.parse(output);
+    } catch (error) {
+        console.error('Error getting environment variables:', error);
+        throw new Error(`Failed to get environment variables: ${error.message}`);
+    }
 });
 
 ipcMain.handle('set-environment-variable', async (event, name, value, target) => {
@@ -2478,7 +3206,7 @@ ipcMain.handle('execute-winget-command-with-progress', async (event, command) =>
 ipcMain.handle('get-disk-space', async () => {
     console.log('get-disk-space handler called');
 
-    return new Promise((resolve, reject) => {
+    try {
         // Use inline PowerShell command that works in both dev and packaged environments
         const psCommand = `
             try {
@@ -2512,78 +3240,42 @@ ipcMain.handle('get-disk-space', async () => {
             }
         `;
 
-        const psProcess = spawn('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', psCommand], {
-            shell: false,
-            stdio: ['pipe', 'pipe', 'pipe']
-        });
+        const stdout = await processPool.executePowerShellCommand(psCommand);
+        console.log(`PowerShell stdout: ${stdout}`);
 
-        let stdout = '';
-        let stderr = '';
+        if (stdout.trim() && stdout.trim() !== "ERROR") {
+            const diskData = JSON.parse(stdout.trim());
+            console.log('Parsed disk data:', diskData);
 
-        psProcess.stdout.on('data', (data) => {
-            stdout += data.toString();
-        });
-
-        psProcess.stderr.on('data', (data) => {
-            stderr += data.toString();
-        });
-
-        psProcess.on('close', (code) => {
-            console.log(`PowerShell exit code: ${code}`);
-            console.log(`PowerShell stdout: ${stdout}`);
-            console.log(`PowerShell stderr: ${stderr}`);
-
-            if (code === 0 && stdout.trim() && stdout.trim() !== "ERROR") {
-                try {
-                    const diskData = JSON.parse(stdout.trim());
-                    console.log('Parsed disk data:', diskData);
-
-                    // Validate the data
-                    if (diskData.Total && diskData.Total > 0) {
-                        resolve({
-                            total: parseInt(diskData.Total),
-                            free: parseInt(diskData.Free),
-                            used: parseInt(diskData.Used)
-                        });
-                        return;
-                    }
-                } catch (error) {
-                    console.error('JSON parse error:', error);
-                }
+            // Validate the data
+            if (diskData.Total && diskData.Total > 0) {
+                return {
+                    total: parseInt(diskData.Total),
+                    free: parseInt(diskData.Free),
+                    used: parseInt(diskData.Used)
+                };
             }
+        }
 
-            // If we get here, use Node.js os module as fallback
-            console.log('Using Node.js os module for disk space');
+        // If we get here, use fallback values
+        console.log('Using fallback disk space values');
+        return {
+            total: 0,
+            free: 0,
+            used: 0,
+            error: 'Unable to retrieve disk space information'
+        };
 
-            try {
-                const stats = fs.statSync('C:\\');
-                // This won't give us disk space, so we'll use a different approach
-                // Use a reasonable estimate based on common disk sizes
-                resolve({
-                    total: 1000 * 1024 * 1024 * 1024, // 1TB
-                    free: 200 * 1024 * 1024 * 1024,   // 200GB
-                    used: 800 * 1024 * 1024 * 1024    // 800GB
-                });
-            } catch (fsError) {
-                console.error('Filesystem access error:', fsError);
-                resolve({
-                    total: 500 * 1024 * 1024 * 1024, // 500 GB
-                    free: 150 * 1024 * 1024 * 1024,  // 150 GB
-                    used: 350 * 1024 * 1024 * 1024   // 350 GB
-                });
-            }
-        });
+    } catch (error) {
+        console.error('Error getting disk space:', error);
+        return {
+            total: 0,
+            free: 0,
+            used: 0,
+            error: error.message
+        };
+    }
 
-        psProcess.on('error', (error) => {
-            console.error('PowerShell process error:', error);
-            // Use Node.js fallback
-            resolve({
-                total: 1000 * 1024 * 1024 * 1024, // 1TB
-                free: 200 * 1024 * 1024 * 1024,   // 200GB
-                used: 800 * 1024 * 1024 * 1024    // 800GB
-            });
-        });
-    });
 });
 
 ipcMain.handle('scan-cleanup-category', async (event, category) => {
@@ -2593,17 +3285,42 @@ ipcMain.handle('scan-cleanup-category', async (event, category) => {
         const path = require('path');
         let scriptPath = '';
 
+        // Determine the correct scripts directory based on whether app is packaged
+        const scriptsDir = app.isPackaged
+            ? path.join(process.resourcesPath, 'scripts')
+            : path.join(__dirname, 'scripts');
+
         switch (category) {
             case 'temp':
-                scriptPath = path.join(__dirname, 'scripts', 'scan-temp.ps1');
+                scriptPath = path.join(scriptsDir, 'scan-temp.ps1');
                 break;
 
             case 'system':
-                scriptPath = path.join(__dirname, 'scripts', 'scan-system.ps1');
+                scriptPath = path.join(scriptsDir, 'scan-system.ps1');
                 break;
 
             case 'cache':
-                scriptPath = path.join(__dirname, 'scripts', 'scan-cache.ps1');
+                scriptPath = path.join(scriptsDir, 'scan-cache.ps1');
+                break;
+
+            case 'browser':
+                scriptPath = path.join(scriptsDir, 'scan-browser.ps1');
+                break;
+
+            case 'updates':
+                scriptPath = path.join(scriptsDir, 'scan-updates.ps1');
+                break;
+
+            case 'logs':
+                scriptPath = path.join(scriptsDir, 'scan-logs.ps1');
+                break;
+
+            case 'recycle':
+                scriptPath = path.join(scriptsDir, 'scan-recycle.ps1');
+                break;
+
+            case 'dumps':
+                scriptPath = path.join(scriptsDir, 'scan-dumps.ps1');
                 break;
 
             case 'registry':
@@ -2662,17 +3379,42 @@ ipcMain.handle('execute-cleanup', async (event, category) => {
         const path = require('path');
         let scriptPath = '';
 
+        // Determine the correct scripts directory based on whether app is packaged
+        const scriptsDir = app.isPackaged
+            ? path.join(process.resourcesPath, 'scripts')
+            : path.join(__dirname, 'scripts');
+
         switch (category) {
             case 'temp':
-                scriptPath = path.join(__dirname, 'scripts', 'clean-temp.ps1');
+                scriptPath = path.join(scriptsDir, 'clean-temp.ps1');
                 break;
 
             case 'system':
-                scriptPath = path.join(__dirname, 'scripts', 'clean-system.ps1');
+                scriptPath = path.join(scriptsDir, 'clean-system.ps1');
                 break;
 
             case 'cache':
-                scriptPath = path.join(__dirname, 'scripts', 'clean-cache.ps1');
+                scriptPath = path.join(scriptsDir, 'clean-cache.ps1');
+                break;
+
+            case 'browser':
+                scriptPath = path.join(scriptsDir, 'clean-browser.ps1');
+                break;
+
+            case 'updates':
+                scriptPath = path.join(scriptsDir, 'clean-updates.ps1');
+                break;
+
+            case 'logs':
+                scriptPath = path.join(scriptsDir, 'clean-logs.ps1');
+                break;
+
+            case 'recycle':
+                scriptPath = path.join(scriptsDir, 'clean-recycle.ps1');
+                break;
+
+            case 'dumps':
+                scriptPath = path.join(scriptsDir, 'clean-dumps.ps1');
                 break;
 
             case 'registry':
@@ -2706,23 +3448,35 @@ ipcMain.handle('execute-cleanup', async (event, category) => {
             console.log(`Cleanup PowerShell stdout: ${stdout}`);
             console.log(`Cleanup PowerShell stderr: ${stderr}`);
 
-            if (code === 0 && stdout.trim()) {
-                try {
-                    const result = JSON.parse(stdout.trim());
+            if (code === 0) {
+                const trimmedOutput = stdout.trim();
+                if (trimmedOutput) {
+                    try {
+                        const result = JSON.parse(trimmedOutput);
+                        resolve({
+                            category,
+                            filesRemoved: result.filesRemoved || 0,
+                            sizeFreed: result.sizeFreed || 0
+                        });
+                    } catch (error) {
+                        console.error('JSON parse error:', error);
+                        // Fallback to old format
+                        const filesRemoved = parseInt(trimmedOutput) || 0;
+                        resolve({ category, filesRemoved, sizeFreed: 0 });
+                    }
+                } else {
+                    // Handle case where script runs successfully but returns no output
+                    console.log(`Cleanup script for ${category} completed with no output - assuming no files to clean`);
                     resolve({
                         category,
-                        filesRemoved: result.filesRemoved || 0,
-                        sizeFreed: result.sizeFreed || 0
+                        filesRemoved: 0,
+                        sizeFreed: 0
                     });
-                } catch (error) {
-                    console.error('JSON parse error:', error);
-                    // Fallback to old format
-                    const filesRemoved = parseInt(stdout.trim()) || 0;
-                    resolve({ category, filesRemoved, sizeFreed: 0 });
                 }
             } else {
                 console.error('Cleanup PowerShell command failed');
-                reject(new Error(`Failed to clean ${category} files`));
+                const errorMessage = stderr.trim() || `PowerShell exited with code ${code}`;
+                reject(new Error(`Failed to clean ${category} files: ${errorMessage}`));
             }
         });
 
@@ -2907,62 +3661,49 @@ ipcMain.handle('launch-system-utility', async (event, utilityCommand) => {
 ipcMain.handle('get-services', async () => {
     console.log('get-services handler called');
 
-    return new Promise((resolve, reject) => {
+    try {
         const psScript = `
             Get-Service | ForEach-Object {
                 [PSCustomObject]@{
-                    Name = $_.Name
-                    DisplayName = $_.DisplayName
-                    Status = $_.Status.ToString()
-                    StartType = $_.StartType.ToString()
+                    Name = \$_.Name
+                    DisplayName = \$_.DisplayName
+                    Status = \$_.Status.ToString()
+                    StartType = \$_.StartType.ToString()
                 }
             } | ConvertTo-Json -Compress
         `;
 
-        const psProcess = spawn('powershell.exe', [
-            '-NoProfile',
-            '-ExecutionPolicy', 'Bypass',
-            '-Command', psScript
-        ]);
+        console.log('Executing PowerShell script for services...');
+        const output = await processPool.executePowerShellCommand(psScript);
+        console.log('PowerShell output received, length:', output.length);
 
-        let output = '';
-        let errorOutput = '';
+        if (!output || output.trim().length === 0) {
+            throw new Error('No output received from PowerShell command');
+        }
 
-        psProcess.stdout.on('data', (data) => {
-            output += data.toString();
-        });
+        // Log first 200 characters of output for debugging
+        console.log('Output preview:', output.substring(0, 200));
 
-        psProcess.stderr.on('data', (data) => {
-            errorOutput += data.toString();
-        });
+        const services = JSON.parse(output);
 
-        psProcess.on('close', (code) => {
-            if (code === 0) {
-                try {
-                    const services = JSON.parse(output);
-                    const enhancedServices = services.map(service => ({
-                        Name: service.Name,
-                        DisplayName: service.DisplayName || service.Name, // Fallback to Name if DisplayName is empty
-                        Status: service.Status,
-                        StartType: service.StartType,
-                        isCommonService: isCommonService(service.Name)
-                    }));
-                    resolve(enhancedServices);
-                } catch (parseError) {
-                    console.error('Error parsing services JSON:', parseError);
-                    reject(new Error(`Failed to parse services: ${parseError.message}`));
-                }
-            } else {
-                console.error('PowerShell error:', errorOutput);
-                reject(new Error(`PowerShell exited with code ${code}: ${errorOutput}`));
-            }
-        });
+        // Ensure services is an array
+        const servicesArray = Array.isArray(services) ? services : [services];
 
-        psProcess.on('error', (error) => {
-            console.error('PowerShell process error:', error);
-            reject(new Error(`Failed to execute PowerShell: ${error.message}`));
-        });
-    });
+        const enhancedServices = servicesArray.map(service => ({
+            Name: service.Name,
+            DisplayName: service.DisplayName || service.Name, // Fallback to Name if DisplayName is empty
+            Status: service.Status,
+            StartType: service.StartType,
+            isCommonService: isCommonService(service.Name)
+        }));
+
+        console.log(`Successfully processed ${enhancedServices.length} services`);
+        return enhancedServices;
+    } catch (error) {
+        console.error('Error getting services:', error);
+        console.error('Error stack:', error.stack);
+        throw new Error(`Failed to get services: ${error.message}`);
+    }
 });
 
 // Helper function to identify common services
@@ -3020,62 +3761,34 @@ ipcMain.handle('control-service', async (event, serviceName, action) => {
         throw new Error('Service name length is invalid');
     }
 
-    return new Promise((resolve, reject) => {
-        let output = '';
-        let errorOutput = '';
+    // Map actions to PowerShell commands
+    let psCommand;
+    switch (action) {
+        case 'start':
+            psCommand = `Start-Service -Name "${sanitizedServiceName}" -ErrorAction Stop; Write-Output "Service started successfully"`;
+            break;
+        case 'stop':
+            psCommand = `Stop-Service -Name "${sanitizedServiceName}" -Force -ErrorAction Stop; Write-Output "Service stopped successfully"`;
+            break;
+        case 'restart':
+            psCommand = `Restart-Service -Name "${sanitizedServiceName}" -Force -ErrorAction Stop; Write-Output "Service restarted successfully"`;
+            break;
+        default:
+            throw new Error(`Invalid action: ${action}`);
+    }
 
-        // Map actions to PowerShell commands
-        let psCommand;
-        switch (action) {
-            case 'start':
-                psCommand = `Start-Service -Name "${sanitizedServiceName}" -ErrorAction Stop; Write-Output "Service started successfully"`;
-                break;
-            case 'stop':
-                psCommand = `Stop-Service -Name "${sanitizedServiceName}" -Force -ErrorAction Stop; Write-Output "Service stopped successfully"`;
-                break;
-            case 'restart':
-                psCommand = `Restart-Service -Name "${sanitizedServiceName}" -Force -ErrorAction Stop; Write-Output "Service restarted successfully"`;
-                break;
-            default:
-                reject(new Error(`Invalid action: ${action}`));
-                return;
-        }
-
-        const psProcess = spawn('powershell', [
-            '-NoProfile',
-            '-ExecutionPolicy', 'Bypass',
-            '-Command', psCommand
-        ], {
-            shell: false
-        });
-
-        psProcess.stdout.on('data', (data) => {
-            output += data.toString();
-        });
-
-        psProcess.stderr.on('data', (data) => {
-            errorOutput += data.toString();
-        });
-
-        psProcess.on('close', (code) => {
-            if (code === 0) {
-                resolve({
-                    success: true,
-                    message: output.trim() || `Service ${action} completed successfully`,
-                    serviceName: serviceName,
-                    action: action
-                });
-            } else {
-                console.error(`PowerShell error for ${action} ${serviceName}:`, errorOutput);
-                reject(new Error(`Failed to ${action} service: ${errorOutput.trim() || 'Unknown error'}`));
-            }
-        });
-
-        psProcess.on('error', (error) => {
-            console.error(`PowerShell process error for ${action} ${serviceName}:`, error);
-            reject(new Error(`Failed to execute PowerShell: ${error.message}`));
-        });
-    });
+    try {
+        const output = await executeOptimizedPowerShell(psCommand);
+        return {
+            success: true,
+            message: output.trim() || `Service ${action} completed successfully`,
+            serviceName: serviceName,
+            action: action
+        };
+    } catch (error) {
+        console.error(`PowerShell error for ${action} ${serviceName}:`, error.message);
+        throw new Error(`Failed to ${action} service: ${error.message}`);
+    }
 });
 
 ipcMain.handle('get-service-details', async (event, serviceName) => {
@@ -3096,10 +3809,7 @@ ipcMain.handle('get-service-details', async (event, serviceName) => {
         throw new Error('Service name length is invalid');
     }
 
-    return new Promise((resolve, reject) => {
-        let output = '';
-        let errorOutput = '';
-
+    try {
         // Get detailed service information
         const psScript = `
 $service = Get-Service -Name "${sanitizedServiceName}" -ErrorAction Stop
@@ -3126,65 +3836,110 @@ if ($wmiService) {
 $result | ConvertTo-Json -Depth 2
         `.trim();
 
-        const psProcess = spawn('powershell.exe', [
-            '-NoProfile',
-            '-ExecutionPolicy', 'Bypass',
-            '-Command', psScript
-        ], {
-            stdio: ['pipe', 'pipe', 'pipe']
-        });
+        // Use process pool instead of direct spawn
+        const psOutput = await processPool.executePowerShellCommand(psScript);
 
-        psProcess.stdout.on('data', (data) => {
-            output += data.toString();
-        });
+        if (!psOutput || psOutput.trim().length === 0) {
+            throw new Error('No output received from PowerShell command');
+        }
 
-        psProcess.stderr.on('data', (data) => {
-            errorOutput += data.toString();
-        });
+        const serviceDetails = JSON.parse(psOutput);
+        return serviceDetails;
 
-        psProcess.on('close', (code) => {
-            if (code === 0) {
-                try {
-                    const serviceDetails = JSON.parse(output);
-                    resolve(serviceDetails);
-                } catch (parseError) {
-                    console.error('Error parsing service details JSON:', parseError);
-                    reject(new Error(`Failed to parse service details: ${parseError.message}`));
-                }
-            } else {
-                console.error('PowerShell error:', errorOutput);
-                reject(new Error(`PowerShell exited with code ${code}: ${errorOutput}`));
-            }
-        });
-
-        psProcess.on('error', (error) => {
-            console.error('PowerShell process error:', error);
-            reject(new Error(`Failed to execute PowerShell: ${error.message}`));
-        });
-    });
+    } catch (error) {
+        console.error('Error getting service details:', error);
+        throw new Error(`Failed to get service details: ${error.message}`);
+    }
 });
+
+// Optimized PowerShell execution function using process pool
+async function executeOptimizedPowerShell(command, timeout = 30000) {
+    return processPool.executePowerShellCommand(command, timeout);
+}
 
 // PowerShell execution handler for debugging
 ipcMain.handle('execute-powershell', async (event, command) => {
     console.log('execute-powershell handler called with command:', command);
-    return new Promise((resolve, reject) => {
-        const psProcess = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', command]);
-        let output = '';
-        let errorOutput = '';
-        psProcess.stdout.on('data', (data) => {
-            output += data.toString();
+    try {
+        return await executeOptimizedPowerShell(command);
+    } catch (error) {
+        throw error;
+    }
+});
+
+// Batch PowerShell operations handler
+ipcMain.handle('execute-batch-powershell', async (event, operation, data) => {
+    console.log('execute-batch-powershell handler called with operation:', operation);
+    console.log('Data being passed:', JSON.stringify(data));
+
+    try {
+        const path = require('path');
+        // Determine the correct scripts directory based on whether app is packaged
+        const scriptsDir = app.isPackaged
+            ? path.join(process.resourcesPath, 'scripts')
+            : path.join(__dirname, 'scripts');
+        const scriptPath = path.join(scriptsDir, 'batch-operations.ps1');
+
+        // Use spawn instead of command string to avoid JSON escaping issues
+        const { spawn } = require('child_process');
+
+        return new Promise((resolve, reject) => {
+            const psProcess = spawn('powershell.exe', [
+                '-NoProfile',
+                '-ExecutionPolicy', 'Bypass',
+                '-File', scriptPath,
+                '-Operation', operation,
+                '-Data', JSON.stringify(data)
+            ], {
+                stdio: ['pipe', 'pipe', 'pipe'],
+                shell: false
+            });
+
+            let output = '';
+            let errorOutput = '';
+
+            psProcess.stdout.on('data', (data) => {
+                output += data.toString();
+            });
+
+            psProcess.stderr.on('data', (data) => {
+                errorOutput += data.toString();
+            });
+
+            psProcess.on('close', (code) => {
+                console.log(`Batch PowerShell exit code: ${code}`);
+                console.log(`Batch PowerShell stdout: ${output.substring(0, 200)}...`);
+                console.log(`Batch PowerShell stderr: ${errorOutput}`);
+
+                if (code === 0) {
+                    try {
+                        const result = JSON.parse(output.trim());
+                        resolve(result);
+                    } catch (parseError) {
+                        console.warn('Failed to parse batch PowerShell result as JSON:', parseError);
+                        resolve({ output: output.trim(), error: null });
+                    }
+                } else {
+                    reject(new Error(errorOutput || `PowerShell exited with code ${code}`));
+                }
+            });
+
+            psProcess.on('error', (error) => {
+                reject(new Error(`Failed to execute batch PowerShell: ${error.message}`));
+            });
         });
-        psProcess.stderr.on('data', (data) => {
-            errorOutput += data.toString();
-        });
-        psProcess.on('close', (code) => {
-            if (code === 0) {
-                resolve(output);
-            } else {
-                reject(new Error(errorOutput));
-            }
-        });
-    });
+    } catch (error) {
+        console.error('Batch PowerShell execution failed:', error);
+        throw error;
+    }
+});
+
+// Handler to finish startup phase early
+ipcMain.handle('finish-startup-phase', async () => {
+    console.log('Finishing startup phase early from frontend request...');
+    processPool.finishStartupPhase();
+    startupLimiter.finishStartupPhase();
+    return { success: true };
 });
 
 
@@ -3413,3 +4168,5 @@ ipcMain.handle('get-verified-plugins', async () => {
         count: Object.keys(verifiedHashes).length
     };
 });
+
+// End of file

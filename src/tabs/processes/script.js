@@ -28,7 +28,12 @@ function initializeProcessesTab(container) {
 
     autoRefreshCheckbox.addEventListener('change', () => {
         if (autoRefreshCheckbox.checked) {
-            const interval = parseInt(refreshIntervalInput.value, 10) * 1000;
+            let interval = parseInt(refreshIntervalInput.value, 10) * 1000;
+            // Minimum interval of 5 seconds to reduce CPU usage
+            if (interval < 5000) {
+                interval = 5000;
+                refreshIntervalInput.value = 5;
+            }
             if (!isNaN(interval) && interval > 0) {
                 refreshIntervalId = setInterval(() => loadProcesses(container), interval);
             }
@@ -40,7 +45,12 @@ function initializeProcessesTab(container) {
     refreshIntervalInput.addEventListener('change', () => {
         if (autoRefreshCheckbox.checked) {
             clearInterval(refreshIntervalId);
-            const interval = parseInt(refreshIntervalInput.value, 10) * 1000;
+            let interval = parseInt(refreshIntervalInput.value, 10) * 1000;
+            // Minimum interval of 5 seconds to reduce CPU usage
+            if (interval < 5000) {
+                interval = 5000;
+                refreshIntervalInput.value = 5;
+            }
             if (!isNaN(interval) && interval > 0) {
                 refreshIntervalId = setInterval(() => loadProcesses(container), interval);
             }

@@ -31,6 +31,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onLogMessage: (callback) => ipcRenderer.on('log-message', (event, level, message) => callback(level, message)),
     onThemeData: (callback) => ipcRenderer.on('theme-data', (event, themeData) => callback(themeData)),
 
+    // Window visibility debugging
+    reportVisibilityIssue: (details) => ipcRenderer.invoke('report-visibility-issue', details),
+
     // Performance Monitoring
     startPerformanceUpdates: () => ipcRenderer.invoke('start-performance-updates'),
     stopPerformanceUpdates: () => ipcRenderer.invoke('stop-performance-updates'),
@@ -146,6 +149,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Editor functions
     executeScript: (script, shell) => ipcRenderer.invoke('execute-script', { script, shell }),
     executePowerShell: (command) => ipcRenderer.invoke('execute-powershell', command),
+    executeBatchPowerShell: (operation, data) => ipcRenderer.invoke('execute-batch-powershell', operation, data),
+    finishStartupPhase: () => ipcRenderer.invoke('finish-startup-phase'),
     showSaveDialog: (options) => ipcRenderer.invoke('show-save-dialog', options),
 
     // Event Viewer functions

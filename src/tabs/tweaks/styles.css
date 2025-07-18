@@ -165,4 +165,62 @@ input:checked + .slider:before {
 
 #tweaks-grid .plugin-section-header {
     grid-column: 1 / -1;
+    padding: 15px 0 10px 0;
+    margin: 20px 0 10px 0;
+    border-bottom: 2px solid var(--border-color);
+    font-size: 1.3em;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Safety level color coding */
+.plugin-card[data-safety="safe"] {
+    border-left: 4px solid #28a745;
+}
+
+.plugin-card[data-safety="caution"] {
+    border-left: 4px solid #ffc107;
+}
+
+.plugin-card[data-safety="danger"] {
+    border-left: 4px solid #dc3545;
+}
+
+/* Category-specific border colors */
+.plugin-card[data-category="🔧 Useless Services"] {
+    border-left: 4px solid #6c757d;
+}
+
+/* Category-specific styling */
+.plugin-section-header:has-text("🟢 Essential Tweaks") {
+    color: #28a745;
+}
+
+.plugin-section-header:has-text("🟡 Advanced Tweaks") {
+    color: #ffc107;
+}
+
+.plugin-section-header:has-text("🔴 Extreme Tweaks") {
+    color: #dc3545;
+}
+
+.plugin-section-header:has-text("🔵 UI Customization") {
+    color: #007bff;
+}
+
+.plugin-section-header:has-text("🔧 Useless Services") {
+    color: #6c757d;
+}
+
+/* Warning indicators for dangerous tweaks */
+.plugin-card[data-safety="caution"] .plugin-title::before {
+    content: "⚠️ ";
+    color: #ffc107;
+}
+
+.plugin-card[data-safety="danger"] .plugin-title::before {
+    content: "🚨 ";
+    color: #dc3545;
 }

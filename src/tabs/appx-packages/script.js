@@ -160,11 +160,54 @@ class AppXPackageManager {
             });
         }
 
+        const backupBtn = document.getElementById('backup-appx-list');
+        if (backupBtn) {
+            backupBtn.addEventListener('click', () => {
+                this.backupInstalledPackages();
+            });
+        }
+
         // Cancel operation button
         const cancelBtn = document.getElementById('appx-cancel-operation');
         if (cancelBtn) {
             cancelBtn.addEventListener('click', () => {
                 this.cancelCurrentOperation();
+            });
+        }
+
+        // Details modal event listeners
+        const closeDetailsBtn = document.getElementById('appx-close-details');
+        if (closeDetailsBtn) {
+            closeDetailsBtn.addEventListener('click', () => {
+                this.hideDetailsModal();
+            });
+        }
+
+        const detailsCloseBtn = document.getElementById('appx-details-close');
+        if (detailsCloseBtn) {
+            detailsCloseBtn.addEventListener('click', () => {
+                this.hideDetailsModal();
+            });
+        }
+
+        const detailsUninstallBtn = document.getElementById('appx-details-uninstall');
+        if (detailsUninstallBtn) {
+            detailsUninstallBtn.addEventListener('click', () => {
+                const packageKey = detailsUninstallBtn.getAttribute('data-package');
+                if (packageKey) {
+                    this.hideDetailsModal();
+                    this.uninstallPackage(packageKey);
+                }
+            });
+        }
+
+        // Close modal when clicking outside
+        const detailsModal = document.getElementById('appx-details-modal');
+        if (detailsModal) {
+            detailsModal.addEventListener('click', (e) => {
+                if (e.target === detailsModal) {
+                    this.hideDetailsModal();
+                }
             });
         }
     }
@@ -210,7 +253,7 @@ class AppXPackageManager {
                         safeToRemove: pkgDef.safeToRemove,
                         consequences: pkgDef.consequences,
                         isInstalled: isInstalled,
-                        version: 'Unknown' // Will be updated if detected
+                        version: null // Will be updated if detected
                     };
                 }
             });
@@ -228,11 +271,15 @@ class AppXPackageManager {
     }
 
     /**
-     * Get installed packages from PowerShell
+     * Get installed packages from PowerShell with enhanced information
      */
     async getInstalledPackages() {
         try {
-            const command = 'Get-AppxPackage | Select-Object Name, PackageFullName, Version | ConvertTo-Json -Depth 3';
+            // Enhanced command to get more package details including size, install date, and architecture
+            const command = `Get-AppxPackage | Select-Object Name, PackageFullName, Version, Publisher, InstallLocation, SignatureKind, Status, Architecture, IsFramework, IsBundle,
+            @{Name='SizeGB';Expression={if($_.InstallLocation -and (Test-Path $_.InstallLocation)){[math]::Round((Get-ChildItem $_.InstallLocation -Recurse -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum / 1GB, 2)} else {0}}},
+            @{Name='InstallDate';Expression={if($_.InstallLocation -and (Test-Path $_.InstallLocation)){(Get-ItemProperty $_.InstallLocation -ErrorAction SilentlyContinue).CreationTime} else {$null}}} | ConvertTo-Json -Depth 3`;
+
             const result = await window.electronAPI.executePowerShell(command);
 
             if (result && result.trim()) {
@@ -243,11 +290,26 @@ class AppXPackageManager {
                     packagesData = packagesData ? [packagesData] : [];
                 }
 
-                console.log('Found installed packages:', packagesData.length);
+                console.log('Found installed packages with enhanced info:', packagesData.length);
                 return packagesData;
             }
         } catch (error) {
             console.warn('Could not get installed packages from PowerShell:', error);
+            // Fallback to basic command if enhanced fails
+            try {
+                const basicCommand = 'Get-AppxPackage | Select-Object Name, PackageFullName, Version | ConvertTo-Json -Depth 3';
+                const basicResult = await window.electronAPI.executePowerShell(basicCommand);
+
+                if (basicResult && basicResult.trim()) {
+                    let packagesData = JSON.parse(basicResult.trim());
+                    if (!Array.isArray(packagesData)) {
+                        packagesData = packagesData ? [packagesData] : [];
+                    }
+                    return packagesData;
+                }
+            } catch (fallbackError) {
+                console.error('Fallback command also failed:', fallbackError);
+            }
         }
 
         return [];
@@ -420,10 +482,25 @@ class AppXPackageManager {
         publisher.className = 'appx-package-publisher';
         publisher.textContent = this.escapeHtml(pkg.publisher);
 
-        // Version
-        const version = document.createElement('div');
-        version.className = 'appx-package-version';
-        version.textContent = pkg.isInstalled ? (pkg.version || 'Installed') : 'Not Installed';
+        // Status with enhanced information
+        const status = document.createElement('div');
+        status.className = 'appx-package-status';
+
+        if (pkg.isInstalled) {
+            status.innerHTML = `
+                <div class="status-main">
+                    <span class="status-badge installed">Installed</span>
+                    ${pkg.version && pkg.version !== 'Unknown' ? `<span class="version-text">v${pkg.version}</span>` : ''}
+                </div>
+                ${pkg.sizeGB ? `<div class="size-info">${pkg.sizeGB < 0.01 ? '< 10 MB' : pkg.sizeGB.toFixed(2) + ' GB'}</div>` : ''}
+            `;
+        } else {
+            status.innerHTML = `
+                <div class="status-main">
+                    <span class="status-badge not-installed">Not Installed</span>
+                </div>
+            `;
+        }
 
         // Type with safety indicator
         const type = document.createElement('div');
@@ -442,7 +519,13 @@ class AppXPackageManager {
         const actions = document.createElement('div');
         actions.className = 'appx-package-actions';
 
-
+        // Details button (always show)
+        const detailsBtn = document.createElement('button');
+        detailsBtn.className = 'appx-package-action-btn appx-details-btn';
+        detailsBtn.title = 'View Package Details';
+        detailsBtn.innerHTML = '<i class="fas fa-info-circle"></i>';
+        detailsBtn.onclick = () => this.showPackageDetails(key);
+        actions.appendChild(detailsBtn);
 
         // Uninstall button (only show if installed)
         if (pkg.isInstalled) {
@@ -458,7 +541,7 @@ class AppXPackageManager {
         item.appendChild(checkbox);
         item.appendChild(name);
         item.appendChild(publisher);
-        item.appendChild(version);
+        item.appendChild(status);
         item.appendChild(type);
         item.appendChild(actions);
 
@@ -743,6 +826,209 @@ class AppXPackageManager {
             this.showStatus('Package list exported successfully', 'success');
         } catch (error) {
             this.showStatus('Error exporting package list: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Show package details modal
+     */
+    showPackageDetails(packageKey) {
+        const pkg = this.packages[packageKey];
+        if (!pkg) return;
+
+        const modal = document.getElementById('appx-details-modal');
+        const title = document.getElementById('appx-details-title');
+        const content = document.getElementById('appx-details-content');
+        const uninstallBtn = document.getElementById('appx-details-uninstall');
+
+        title.textContent = `${pkg.name} - Details`;
+
+        // Format size
+        const formatSize = (sizeGB) => {
+            if (!sizeGB || sizeGB === 0) return 'Not Available';
+            if (sizeGB < 0.01) return '< 10 MB';
+            return `${sizeGB.toFixed(2)} GB`;
+        };
+
+        // Format date
+        const formatDate = (dateStr) => {
+            if (!dateStr) return 'Not Available';
+            try {
+                return new Date(dateStr).toLocaleDateString();
+            } catch {
+                return 'Not Available';
+            }
+        };
+
+        // Build details content
+        content.innerHTML = `
+            <div class="detail-section">
+                <h4>Basic Information</h4>
+                <div class="detail-grid">
+                    <div class="detail-label">Package Name:</div>
+                    <div class="detail-value">${this.escapeHtml(pkg.name)}</div>
+
+                    <div class="detail-label">Full Name:</div>
+                    <div class="detail-value code">${this.escapeHtml(pkg.fullName || pkg.packageName || 'N/A')}</div>
+
+                    <div class="detail-label">Publisher:</div>
+                    <div class="detail-value">${this.escapeHtml(pkg.publisher || 'Not Available')}</div>
+
+                    <div class="detail-label">Version:</div>
+                    <div class="detail-value">${pkg.version && pkg.version !== 'Unknown' ? this.escapeHtml(pkg.version) : 'Not Available'}</div>
+
+                    <div class="detail-label">Architecture:</div>
+                    <div class="detail-value">${this.escapeHtml(pkg.architecture || 'Not Available')}</div>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h4>Installation Details</h4>
+                <div class="detail-grid">
+                    <div class="detail-label">Status:</div>
+                    <div class="detail-value">
+                        <span class="detail-badge ${pkg.installed ? 'safe' : 'warning'}">
+                            ${pkg.installed ? 'Installed' : 'Not Installed'}
+                        </span>
+                    </div>
+
+                    <div class="detail-label">Size:</div>
+                    <div class="detail-value">${formatSize(pkg.sizeGB)}</div>
+
+                    <div class="detail-label">Install Date:</div>
+                    <div class="detail-value">${formatDate(pkg.installDate)}</div>
+
+                    <div class="detail-label">Install Location:</div>
+                    <div class="detail-value code">${this.escapeHtml(pkg.installLocation || 'N/A')}</div>
+
+                    <div class="detail-label">Signature:</div>
+                    <div class="detail-value">${this.escapeHtml(pkg.signatureKind || 'Not Available')}</div>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h4>Package Properties</h4>
+                <div class="detail-grid">
+                    <div class="detail-label">Type:</div>
+                    <div class="detail-value">
+                        <span class="detail-badge ${pkg.type === 'system' ? 'warning' : 'safe'}">
+                            ${pkg.type || 'Not Available'}
+                        </span>
+                    </div>
+
+                    <div class="detail-label">Framework:</div>
+                    <div class="detail-value">${pkg.isFramework ? 'Yes' : 'No'}</div>
+
+                    <div class="detail-label">Bundle:</div>
+                    <div class="detail-value">${pkg.isBundle ? 'Yes' : 'No'}</div>
+
+                    <div class="detail-label">Safe to Remove:</div>
+                    <div class="detail-value">
+                        <span class="detail-badge ${pkg.safeToRemove ? 'safe' : 'danger'}">
+                            ${pkg.safeToRemove ? 'Yes' : 'No'}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            ${pkg.description ? `
+            <div class="detail-section">
+                <h4>Description</h4>
+                <div class="detail-value">${this.escapeHtml(pkg.description)}</div>
+            </div>
+            ` : ''}
+
+            ${pkg.consequences ? `
+            <div class="detail-section">
+                <h4>Removal Consequences</h4>
+                <div class="detail-value" style="color: var(--warning-color);">
+                    <i class="fas fa-exclamation-triangle" style="margin-right: 5px;"></i>
+                    ${this.escapeHtml(pkg.consequences)}
+                </div>
+            </div>
+            ` : ''}
+        `;
+
+        // Show/hide uninstall button based on installation status
+        if (pkg.installed && uninstallBtn) {
+            uninstallBtn.style.display = 'block';
+            uninstallBtn.setAttribute('data-package', packageKey);
+        } else if (uninstallBtn) {
+            uninstallBtn.style.display = 'none';
+        }
+
+        modal.style.display = 'flex';
+    }
+
+    /**
+     * Hide package details modal
+     */
+    hideDetailsModal() {
+        const modal = document.getElementById('appx-details-modal');
+        modal.style.display = 'none';
+    }
+
+    /**
+     * Backup installed packages list with PowerShell commands for restoration
+     */
+    async backupInstalledPackages() {
+        try {
+            this.showStatus('Creating backup of installed packages...', 'info');
+
+            // Get all installed packages with detailed information
+            const installedPackages = Object.keys(this.packages)
+                .filter(key => this.packages[key].installed)
+                .map(key => {
+                    const pkg = this.packages[key];
+                    return {
+                        name: pkg.name,
+                        packageName: pkg.packageName,
+                        fullName: pkg.fullName,
+                        version: pkg.version,
+                        publisher: pkg.publisher,
+                        architecture: pkg.architecture,
+                        installLocation: pkg.installLocation,
+                        backupDate: new Date().toISOString(),
+                        restoreCommand: `Get-AppxPackage -Name "${pkg.packageName}" | Remove-AppxPackage`
+                    };
+                });
+
+            // Create backup data with metadata
+            const backupData = {
+                metadata: {
+                    backupDate: new Date().toISOString(),
+                    totalPackages: installedPackages.length,
+                    systemInfo: {
+                        userAgent: navigator.userAgent,
+                        platform: navigator.platform
+                    }
+                },
+                packages: installedPackages,
+                restoreInstructions: [
+                    "This backup contains a list of AppX packages that were installed at the time of backup.",
+                    "To restore packages, you would need to reinstall them from the Microsoft Store or other sources.",
+                    "The restoreCommand field shows the PowerShell command that was used to uninstall each package.",
+                    "Note: This backup does not contain the actual package files, only the list and metadata."
+                ]
+            };
+
+            // Create and download backup file
+            const backupJson = JSON.stringify(backupData, null, 2);
+            const blob = new Blob([backupJson], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `appx-packages-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            this.showStatus(`Backup created successfully! ${installedPackages.length} packages backed up.`, 'success');
+        } catch (error) {
+            console.error('Error creating backup:', error);
+            this.showStatus('Error creating backup: ' + error.message, 'error');
         }
     }
 

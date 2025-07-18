@@ -60,6 +60,9 @@
             <button id="export-appx-list" class="action-btn export-btn">
                 <i class="fas fa-file-export"></i> Export List
             </button>
+            <button id="backup-appx-list" class="action-btn backup-btn">
+                <i class="fas fa-save"></i> Backup List
+            </button>
         </div>
     </div>
 
@@ -97,6 +100,29 @@
 
     <!-- Status messages -->
     <div id="appx-status-message" class="status-message" style="display: none;"></div>
+</div>
+
+<!-- Package Details Modal -->
+<div id="appx-details-modal" class="details-modal" style="display: none;">
+    <div class="details-modal-content">
+        <div class="details-header">
+            <h3 id="appx-details-title">Package Details</h3>
+            <button id="appx-close-details" class="close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="details-body">
+            <div id="appx-details-content" class="details-content">
+                <!-- Package details will be loaded here -->
+            </div>
+        </div>
+        <div class="details-actions">
+            <button id="appx-details-uninstall" class="btn btn-danger" style="display: none;">
+                <i class="fas fa-trash"></i> Uninstall Package
+            </button>
+            <button id="appx-details-close" class="btn btn-secondary">Close</button>
+        </div>
+    </div>
 </div>
 
 <!-- Progress Modal -->

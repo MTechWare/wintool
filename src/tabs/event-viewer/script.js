@@ -285,10 +285,10 @@ function startLiveTail() {
         clearInterval(liveTailInterval);
     }
 
-    // Refresh every 5 seconds
+    // Refresh every 10 seconds instead of 5 to reduce CPU usage
     liveTailInterval = setInterval(() => {
         refreshEvents(true);
-    }, 5000);
+    }, 10000);
 
     // Update UI to show live tail is active
     const liveTailIndicator = document.getElementById('live-tail-indicator');

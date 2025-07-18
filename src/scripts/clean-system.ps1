@@ -1,5 +1,24 @@
-# Clean System Files
-# Improved version with comprehensive system cleanup and better error handling
+# WinTool System Cleanup Script
+# Copyright (c) 2024 MTechWare
+# This script is part of WinTool - Windows System Management Tool
+# Licensed under GPL-3.0-or-later
+#
+# Purpose: Clean system files and temporary data to free up disk space
+# This script only removes temporary files and does not modify system settings
+# All operations are performed with proper error handling and validation
+
+#Requires -Version 5.1
+[CmdletBinding()]
+param()
+
+# Script metadata for security validation
+$ScriptInfo = @{
+    Name = "WinTool System Cleanup"
+    Version = "1.0.0"
+    Author = "MTechWare"
+    Purpose = "System file cleanup"
+    SafetyLevel = "Safe - Only removes temporary files"
+}
 
 try {
     # Initialize counters

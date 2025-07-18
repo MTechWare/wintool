@@ -2,31 +2,289 @@
 
 // c:\Users\userv\OneDrive - Southeast Community College\wintool-MAIN\src\tabs\tweaks\script.js
 
+// Load the batch checker utility
+const batchCheckerScript = document.createElement('script');
+batchCheckerScript.src = '../../js/utils/batch-checker.js';
+batchCheckerScript.onload = () => {
+    console.log('BatchChecker utility loaded successfully');
+};
+batchCheckerScript.onerror = (error) => {
+    console.error('Failed to load BatchChecker utility:', error);
+};
+document.head.appendChild(batchCheckerScript);
+
 const tweaksGrid = document.getElementById('tweaks-grid');
+
+// Global batch checker instance
+let globalBatchChecker = null;
+let batchCheckResults = new Map();
 
 if (tweaksGrid) {
     const tweaks = [
+        // ===== ESSENTIAL TWEAKS (SAFE) =====
+        {
+            id: 'disable-activity-history',
+            title: 'Disable Activity History',
+            category: '🟢 Essential Tweaks',
+            description: 'Disables Windows Activity History that tracks recent documents, clipboard, and run history.',
+            safety: 'safe',
+            batchCheck: {
+                type: 'registry',
+                path: 'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System',
+                name: 'EnableActivityFeed',
+                expectedValue: 'EnableActivityFeed    REG_DWORD    0x0'
+            },
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v "EnableActivityFeed"');
+                return result.stdout.includes('EnableActivityFeed    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                const commands = [
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v "EnableActivityFeed" /t REG_DWORD /d 0 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v "PublishUserActivities" /t REG_DWORD /d 0 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v "UploadUserActivities" /t REG_DWORD /d 0 /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                const commands = [
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v "EnableActivityFeed" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v "PublishUserActivities" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v "UploadUserActivities" /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
         {
             id: 'disable-cortana',
             title: 'Disable Cortana',
-            category: 'System Tweaks',
-            description: 'Disables the Cortana voice assistant.',
+            category: '🟢 Essential Tweaks',
+            description: 'Disables the Cortana voice assistant and related services.',
+            safety: 'safe',
+            batchCheck: {
+                type: 'registry',
+                path: 'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search',
+                name: 'AllowCortana',
+                expectedValue: 'AllowCortana    REG_DWORD    0x0'
+            },
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v "AllowCortana"');
                 return result.stdout.includes('AllowCortana    REG_DWORD    0x0');
             },
             apply: async () => {
-                await window.electronAPI.runAdminCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v "AllowCortana" /t REG_DWORD /d 0 /f');
+                const commands = [
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v "AllowCortana" /t REG_DWORD /d 0 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v "DisableWebSearch" /t REG_DWORD /d 1 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v "ConnectedSearchUseWeb" /t REG_DWORD /d 0 /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
             },
             revert: async () => {
-                await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v "AllowCortana" /f');
+                const commands = [
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v "AllowCortana" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v "DisableWebSearch" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v "ConnectedSearchUseWeb" /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
+        {
+            id: 'disable-consumer-features',
+            title: 'Disable Consumer Features',
+            category: '🟢 Essential Tweaks',
+            description: 'Prevents Windows from automatically installing games, third-party apps, or application links from the Windows Store.',
+            safety: 'safe',
+            batchCheck: {
+                type: 'registry',
+                path: 'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent',
+                name: 'DisableWindowsConsumerFeatures',
+                expectedValue: 'DisableWindowsConsumerFeatures    REG_DWORD    0x1'
+            },
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v "DisableWindowsConsumerFeatures"');
+                return result.stdout.includes('DisableWindowsConsumerFeatures    REG_DWORD    0x1');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v "DisableWindowsConsumerFeatures" /t REG_DWORD /d 1 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v "DisableWindowsConsumerFeatures" /f');
+            }
+        },
+        {
+            id: 'disable-location-tracking',
+            title: 'Disable Location Tracking',
+            category: '🟢 Essential Tweaks',
+            description: 'Disables Windows location tracking and related services for enhanced privacy.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location" /v "Value"');
+                return result.stdout.includes('Value    REG_SZ    Deny');
+            },
+            apply: async () => {
+                const commands = [
+                    'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location" /v "Value" /t REG_SZ /d "Deny" /f',
+                    'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Sensor\\Overrides\\{BFA794E4-F964-4FDB-90F6-51056BFE4B44}" /v "SensorPermissionState" /t REG_DWORD /d 0 /f',
+                    'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\lfsvc\\Service\\Configuration" /v "Status" /t REG_DWORD /d 0 /f',
+                    'reg add "HKLM\\SYSTEM\\Maps" /v "AutoUpdateEnabled" /t REG_DWORD /d 0 /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                const commands = [
+                    'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location" /v "Value" /t REG_SZ /d "Allow" /f',
+                    'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Sensor\\Overrides\\{BFA794E4-F964-4FDB-90F6-51056BFE4B44}" /v "SensorPermissionState" /t REG_DWORD /d 1 /f',
+                    'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\lfsvc\\Service\\Configuration" /v "Status" /t REG_DWORD /d 1 /f',
+                    'reg add "HKLM\\SYSTEM\\Maps" /v "AutoUpdateEnabled" /t REG_DWORD /d 1 /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
+        {
+            id: 'disable-hibernation',
+            title: 'Disable Hibernation',
+            category: '🟢 Essential Tweaks',
+            description: 'Disables hibernation to free up disk space. Hibernation is mainly useful for laptops.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('powercfg /query | findstr "Hibernate"');
+                return !result.stdout.includes('Hibernate After');
+            },
+            apply: async () => {
+                const commands = [
+                    'powercfg.exe /hibernate off',
+                    'reg add "HKLM\\System\\CurrentControlSet\\Control\\Session Manager\\Power" /v "HibernateEnabled" /t REG_DWORD /d 0 /f',
+                    'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FlyoutMenuSettings" /v "ShowHibernateOption" /t REG_DWORD /d 0 /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                const commands = [
+                    'powercfg.exe /hibernate on',
+                    'reg add "HKLM\\System\\CurrentControlSet\\Control\\Session Manager\\Power" /v "HibernateEnabled" /t REG_DWORD /d 1 /f',
+                    'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FlyoutMenuSettings" /v "ShowHibernateOption" /t REG_DWORD /d 1 /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
+        {
+            id: 'edge-debloat',
+            title: 'Debloat Microsoft Edge',
+            category: '🟢 Essential Tweaks',
+            description: 'Disables various telemetry options, popups, and annoying features in Microsoft Edge.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v "PersonalizationReportingEnabled"');
+                return result.stdout.includes('PersonalizationReportingEnabled    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                const commands = [
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\EdgeUpdate" /v "CreateDesktopShortcutDefault" /t REG_DWORD /d 0 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v "PersonalizationReportingEnabled" /t REG_DWORD /d 0 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v "ShowRecommendationsEnabled" /t REG_DWORD /d 0 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v "HideFirstRunExperience" /t REG_DWORD /d 1 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v "UserFeedbackAllowed" /t REG_DWORD /d 0 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v "ConfigureDoNotTrack" /t REG_DWORD /d 1 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v "EdgeShoppingAssistantEnabled" /t REG_DWORD /d 0 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v "ShowMicrosoftRewards" /t REG_DWORD /d 0 /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                const commands = [
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\EdgeUpdate" /v "CreateDesktopShortcutDefault" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v "PersonalizationReportingEnabled" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v "ShowRecommendationsEnabled" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v "HideFirstRunExperience" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v "UserFeedbackAllowed" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v "ConfigureDoNotTrack" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v "EdgeShoppingAssistantEnabled" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v "ShowMicrosoftRewards" /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
+        {
+            id: 'disable-gamedvr',
+            title: 'Disable GameDVR',
+            category: '🟢 Essential Tweaks',
+            description: 'Disables Windows GameDVR which can impact gaming performance.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKCU\\System\\GameConfigStore" /v "GameDVR_Enabled"');
+                return result.stdout.includes('GameDVR_Enabled    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                const commands = [
+                    'reg add "HKCU\\System\\GameConfigStore" /v "GameDVR_FSEBehavior" /t REG_DWORD /d 2 /f',
+                    'reg add "HKCU\\System\\GameConfigStore" /v "GameDVR_Enabled" /t REG_DWORD /d 0 /f',
+                    'reg add "HKCU\\System\\GameConfigStore" /v "GameDVR_HonorUserFSEBehaviorMode" /t REG_DWORD /d 1 /f',
+                    'reg add "HKCU\\System\\GameConfigStore" /v "GameDVR_EFSEFeatureFlags" /t REG_DWORD /d 0 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v "AllowGameDVR" /t REG_DWORD /d 0 /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                const commands = [
+                    'reg add "HKCU\\System\\GameConfigStore" /v "GameDVR_FSEBehavior" /t REG_DWORD /d 1 /f',
+                    'reg add "HKCU\\System\\GameConfigStore" /v "GameDVR_Enabled" /t REG_DWORD /d 1 /f',
+                    'reg add "HKCU\\System\\GameConfigStore" /v "GameDVR_HonorUserFSEBehaviorMode" /t REG_DWORD /d 0 /f',
+                    'reg add "HKCU\\System\\GameConfigStore" /v "GameDVR_EFSEFeatureFlags" /t REG_DWORD /d 1 /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v "AllowGameDVR" /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
+        {
+            id: 'cleanup-temp-files',
+            title: 'Clean Temporary Files',
+            category: '🟢 Essential Tweaks',
+            description: 'Cleans temporary files from Windows and user temp directories.',
+            safety: 'safe',
+            check: async () => {
+                // This is a one-time action, so we'll always show it as available
+                return false;
+            },
+            apply: async () => {
+                const commands = [
+                    'powershell -Command "Get-ChildItem -Path \\"C:\\\\Windows\\\\Temp\\" -Recurse -Force | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue"',
+                    'powershell -Command "Get-ChildItem -Path $env:TEMP -Recurse -Force | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue"'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                // Cannot revert file deletion
+                console.log('Cannot revert temporary file cleanup');
+            }
+        },
+        {
+            id: 'disk-cleanup',
+            title: 'Run Disk Cleanup',
+            category: '🟢 Essential Tweaks',
+            description: 'Runs Windows Disk Cleanup and removes old Windows Updates.',
+            safety: 'safe',
+            check: async () => {
+                // This is a one-time action, so we'll always show it as available
+                return false;
+            },
+            apply: async () => {
+                const commands = [
+                    'cleanmgr.exe /d C: /VERYLOWDISK',
+                    'Dism.exe /online /Cleanup-Image /StartComponentCleanup /ResetBase'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                // Cannot revert disk cleanup
+                console.log('Cannot revert disk cleanup');
             }
         },
         {
             id: 'show-file-extensions',
             title: 'Show File Extensions',
-            category: 'System Tweaks',
-            description: 'Shows file extensions in File Explorer.',
+            category: '🟢 Essential Tweaks',
+            description: 'Shows file extensions in File Explorer for better file identification.',
+            safety: 'safe',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "HideFileExt"');
                 return result.stdout.includes('HideFileExt    REG_DWORD    0x0');
@@ -39,10 +297,647 @@ if (tweaksGrid) {
             }
         },
         {
+            id: 'disable-windows-defender-realtime',
+            title: 'Disable Windows Defender Real-time Protection',
+            category: '🟢 Essential Tweaks',
+            description: 'Disables Windows Defender real-time protection. WARNING: Only disable if you have alternative antivirus.',
+            safety: 'caution',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection" /v "DisableRealtimeMonitoring"');
+                return result.stdout.includes('DisableRealtimeMonitoring    REG_DWORD    0x1');
+            },
+            apply: async () => {
+                const commands = [
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection" /v "DisableRealtimeMonitoring" /t REG_DWORD /d 1 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender" /v "DisableAntiSpyware" /t REG_DWORD /d 1 /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                const commands = [
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection" /v "DisableRealtimeMonitoring" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender" /v "DisableAntiSpyware" /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
+        {
+            id: 'disable-windows-update-automatic',
+            title: 'Disable Automatic Windows Updates',
+            category: '🟢 Essential Tweaks',
+            description: 'Disables automatic Windows Updates. You can still manually check for updates.',
+            safety: 'caution',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v "NoAutoUpdate"');
+                return result.stdout.includes('NoAutoUpdate    REG_DWORD    0x1');
+            },
+            apply: async () => {
+                const commands = [
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v "NoAutoUpdate" /t REG_DWORD /d 1 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v "AUOptions" /t REG_DWORD /d 2 /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                const commands = [
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v "NoAutoUpdate" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v "AUOptions" /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
+        {
+            id: 'disable-fast-startup',
+            title: 'Disable Fast Startup',
+            category: '🟢 Essential Tweaks',
+            description: 'Disables Windows Fast Startup which can cause issues with dual-boot systems and some hardware.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" /v "HiberbootEnabled"');
+                return result.stdout.includes('HiberbootEnabled    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" /v "HiberbootEnabled" /t REG_DWORD /d 0 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" /v "HiberbootEnabled" /t REG_DWORD /d 1 /f');
+            }
+        },
+        {
+            id: 'disable-startup-delay',
+            title: 'Disable Startup Delay',
+            category: '🟢 Essential Tweaks',
+            description: 'Removes the 10-second delay before startup programs launch, making boot faster.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Serialize" /v "StartupDelayInMSec"');
+                return result.stdout.includes('StartupDelayInMSec    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Serialize" /v "StartupDelayInMSec" /t REG_DWORD /d 0 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg delete "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Serialize" /v "StartupDelayInMSec" /f');
+            }
+        },
+        {
+            id: 'disable-error-reporting',
+            title: 'Disable Windows Error Reporting',
+            category: '🟢 Essential Tweaks',
+            description: 'Disables Windows Error Reporting to prevent sending crash data to Microsoft.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting" /v "Disabled"');
+                return result.stdout.includes('Disabled    REG_DWORD    0x1');
+            },
+            apply: async () => {
+                const commands = [
+                    'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting" /v "Disabled" /t REG_DWORD /d 1 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Error Reporting" /v "Disabled" /t REG_DWORD /d 1 /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                const commands = [
+                    'reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting" /v "Disabled" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Error Reporting" /v "Disabled" /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
+        {
+            id: 'disable-customer-experience-program',
+            title: 'Disable Customer Experience Improvement Program',
+            category: '🟢 Essential Tweaks',
+            description: 'Opts out of the Windows Customer Experience Improvement Program.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\SQMClient\\Windows" /v "CEIPEnable"');
+                return result.stdout.includes('CEIPEnable    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                const commands = [
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\SQMClient\\Windows" /v "CEIPEnable" /t REG_DWORD /d 0 /f',
+                    'reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Sqm\\Windows" /v "CEIPEnable" /t REG_DWORD /d 0 /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                const commands = [
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\SQMClient\\Windows" /v "CEIPEnable" /f',
+                    'reg delete "HKEY_CURRENT_USER\\Software\\Microsoft\\Sqm\\Windows" /v "CEIPEnable" /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
+        {
+            id: 'disable-feedback-notifications',
+            title: 'Disable Feedback Notifications',
+            category: '🟢 Essential Tweaks',
+            description: 'Disables Windows feedback notifications and requests.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Siuf\\Rules" /v "NumberOfSIUFInPeriod"');
+                return result.stdout.includes('NumberOfSIUFInPeriod    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                const commands = [
+                    'reg add "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Siuf\\Rules" /v "NumberOfSIUFInPeriod" /t REG_DWORD /d 0 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v "DoNotShowFeedbackNotifications" /t REG_DWORD /d 1 /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                const commands = [
+                    'reg delete "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Siuf\\Rules" /v "NumberOfSIUFInPeriod" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v "DoNotShowFeedbackNotifications" /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
+        {
+            id: 'disable-advertising-id',
+            title: 'Disable Advertising ID',
+            category: '🟢 Essential Tweaks',
+            description: 'Disables Windows Advertising ID used for targeted advertising.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo" /v "Enabled"');
+                return result.stdout.includes('Enabled    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                const commands = [
+                    'reg add "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo" /v "Enabled" /t REG_DWORD /d 0 /f',
+                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AdvertisingInfo" /v "DisabledByGroupPolicy" /t REG_DWORD /d 1 /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                const commands = [
+                    'reg add "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo" /v "Enabled" /t REG_DWORD /d 1 /f',
+                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AdvertisingInfo" /v "DisabledByGroupPolicy" /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
+
+        // ===== UI CUSTOMIZATION TWEAKS =====
+        {
+            id: 'dark-theme-apps',
+            title: 'Dark Theme for Apps',
+            category: '🔵 UI Customization',
+            description: 'Switches Windows applications to use dark theme.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v "AppsUseLightTheme"');
+                return result.stdout.includes('AppsUseLightTheme    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                const commands = [
+                    'reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v "AppsUseLightTheme" /t REG_DWORD /d 0 /f',
+                    'reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v "SystemUsesLightTheme" /t REG_DWORD /d 0 /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                const commands = [
+                    'reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v "AppsUseLightTheme" /t REG_DWORD /d 1 /f',
+                    'reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v "SystemUsesLightTheme" /t REG_DWORD /d 1 /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
+        {
+            id: 'show-hidden-files',
+            title: 'Show Hidden Files and Folders',
+            category: '🔵 UI Customization',
+            description: 'Makes hidden files and folders visible in File Explorer.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "Hidden"');
+                return result.stdout.includes('Hidden    REG_DWORD    0x1');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "Hidden" /t REG_DWORD /d 1 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "Hidden" /t REG_DWORD /d 2 /f');
+            }
+        },
+        {
+            id: 'taskbar-search-disable',
+            title: 'Disable Taskbar Search',
+            category: '🔵 UI Customization',
+            description: 'Removes the search box from the Windows taskbar.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v "SearchboxTaskbarMode"');
+                return result.stdout.includes('SearchboxTaskbarMode    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v "SearchboxTaskbarMode" /t REG_DWORD /d 0 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v "SearchboxTaskbarMode" /t REG_DWORD /d 1 /f');
+            }
+        },
+        {
+            id: 'taskbar-widgets-disable',
+            title: 'Disable Taskbar Widgets',
+            category: '🔵 UI Customization',
+            description: 'Removes the widgets button from the Windows 11 taskbar.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "TaskbarDa"');
+                return result.stdout.includes('TaskbarDa    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "TaskbarDa" /t REG_DWORD /d 0 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "TaskbarDa" /t REG_DWORD /d 1 /f');
+            }
+        },
+        {
+            id: 'taskbar-alignment-left',
+            title: 'Left-Align Taskbar Items',
+            category: '🔵 UI Customization',
+            description: 'Moves Windows 11 taskbar items to the left side (Windows 10 style).',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "TaskbarAl"');
+                return result.stdout.includes('TaskbarAl    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "TaskbarAl" /t REG_DWORD /d 0 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "TaskbarAl" /t REG_DWORD /d 1 /f');
+            }
+        },
+        {
+            id: 'disable-action-center',
+            title: 'Disable Action Center',
+            category: '🔵 UI Customization',
+            description: 'Disables the Windows Action Center notification panel.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v "DisableNotificationCenter"');
+                return result.stdout.includes('DisableNotificationCenter    REG_DWORD    0x1');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v "DisableNotificationCenter" /t REG_DWORD /d 1 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg delete "HKEY_CURRENT_USER\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v "DisableNotificationCenter" /f');
+            }
+        },
+        {
+            id: 'remove-3d-objects',
+            title: 'Remove 3D Objects from File Explorer',
+            category: '🔵 UI Customization',
+            description: 'Removes the "3D Objects" folder from This PC in File Explorer.',
+            safety: 'safe',
+            check: async () => {
+                // Check both 64-bit and 32-bit registry locations
+                const result64 = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}"');
+                const result32 = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}"');
+                // If both commands fail, the keys don't exist, so the tweak is applied
+                return !result64.success && !result32.success;
+            },
+            apply: async () => {
+                // Remove from both locations to ensure complete removal
+                const commands = [
+                    'reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}" /f',
+                    'reg delete "HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}" /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                // Restore the 3D Objects folder by recreating the registry keys
+                const commands = [
+                    'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}" /f',
+                    'reg add "HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}" /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
+        {
+            id: 'enable-verbose-status',
+            title: 'Enable Verbose Status Messages',
+            category: '🔵 UI Customization',
+            description: 'Shows detailed information during startup, shutdown, logon, and logoff for troubleshooting.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v "VerboseStatus"');
+                return result.stdout.includes('VerboseStatus    REG_DWORD    0x1');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v "VerboseStatus" /t REG_DWORD /d 1 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v "VerboseStatus" /f');
+            }
+        },
+        {
+            id: 'disable-suggested-actions',
+            title: 'Disable Suggested Actions',
+            category: '🔵 UI Customization',
+            description: 'Disables suggested actions when copying phone numbers, dates, etc. for cleaner experience.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\SmartActionPlatform\\SmartClipboard" /v "Disabled"');
+                return result.stdout.includes('Disabled    REG_DWORD    0x1');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\SmartActionPlatform\\SmartClipboard" /v "Disabled" /t REG_DWORD /d 1 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg delete "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\SmartActionPlatform\\SmartClipboard" /v "Disabled" /f');
+            }
+        },
+        {
+            id: 'disable-taskbar-chat',
+            title: 'Disable Taskbar Chat (Teams)',
+            category: '🔵 UI Customization',
+            description: 'Removes the Chat/Teams icon from the Windows 11 taskbar.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "TaskbarMn"');
+                return result.stdout.includes('TaskbarMn    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "TaskbarMn" /t REG_DWORD /d 0 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "TaskbarMn" /t REG_DWORD /d 1 /f');
+            }
+        },
+        {
+            id: 'disable-taskbar-task-view',
+            title: 'Disable Task View Button',
+            category: '🔵 UI Customization',
+            description: 'Removes the Task View button from the taskbar.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "ShowTaskViewButton"');
+                return result.stdout.includes('ShowTaskViewButton    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "ShowTaskViewButton" /t REG_DWORD /d 0 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "ShowTaskViewButton" /t REG_DWORD /d 1 /f');
+            }
+        },
+        {
+            id: 'show-seconds-in-clock',
+            title: 'Show Seconds in Taskbar Clock',
+            category: '🔵 UI Customization',
+            description: 'Displays seconds in the taskbar clock.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "ShowSecondsInSystemClock"');
+                return result.stdout.includes('ShowSecondsInSystemClock    REG_DWORD    0x1');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "ShowSecondsInSystemClock" /t REG_DWORD /d 1 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg delete "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "ShowSecondsInSystemClock" /f');
+            }
+        },
+        {
+            id: 'disable-news-and-interests',
+            title: 'Disable News and Interests',
+            category: '🔵 UI Customization',
+            description: 'Removes News and Interests from the Windows 10 taskbar.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Feeds" /v "ShellFeedsTaskbarViewMode"');
+                return result.stdout.includes('ShellFeedsTaskbarViewMode    REG_DWORD    0x2');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Feeds" /v "ShellFeedsTaskbarViewMode" /t REG_DWORD /d 2 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Feeds" /v "ShellFeedsTaskbarViewMode" /t REG_DWORD /d 1 /f');
+            }
+        },
+        {
+            id: 'disable-people-taskbar',
+            title: 'Disable People in Taskbar',
+            category: '🔵 UI Customization',
+            description: 'Removes the People icon from the taskbar.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\People" /v "PeopleBand"');
+                return result.stdout.includes('PeopleBand    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\People" /v "PeopleBand" /t REG_DWORD /d 0 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\People" /v "PeopleBand" /t REG_DWORD /d 1 /f');
+            }
+        },
+        {
+            id: 'classic-context-menu',
+            title: 'Enable Classic Context Menu',
+            category: '🔵 UI Customization',
+            description: 'Restores the classic Windows 10 context menu in Windows 11.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32"');
+                return result.success && result.stdout.includes('InprocServer32');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32" /f /ve');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg delete "HKEY_CURRENT_USER\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}" /f');
+            }
+        },
+        {
+            id: 'disable-transparency-effects',
+            title: 'Disable Transparency Effects',
+            category: '🔵 UI Customization',
+            description: 'Disables transparency effects in Windows for better performance.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v "EnableTransparency"');
+                return result.stdout.includes('EnableTransparency    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v "EnableTransparency" /t REG_DWORD /d 0 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v "EnableTransparency" /t REG_DWORD /d 1 /f');
+            }
+        },
+        {
+            id: 'show-protected-os-files',
+            title: 'Show Protected Operating System Files',
+            category: '🔵 UI Customization',
+            description: 'Shows protected operating system files in File Explorer. Use with caution.',
+            safety: 'caution',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "ShowSuperHidden"');
+                return result.stdout.includes('ShowSuperHidden    REG_DWORD    0x1');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "ShowSuperHidden" /t REG_DWORD /d 1 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "ShowSuperHidden" /t REG_DWORD /d 0 /f');
+            }
+        },
+        {
+            id: 'disable-animations',
+            title: 'Disable Windows Animations',
+            category: '🔵 UI Customization',
+            description: 'Disables Windows animations for better performance on slower systems.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Control Panel\\Desktop\\WindowMetrics" /v "MinAnimate"');
+                return result.stdout.includes('MinAnimate    REG_SZ    0');
+            },
+            apply: async () => {
+                const commands = [
+                    'reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop\\WindowMetrics" /v "MinAnimate" /t REG_SZ /d "0" /f',
+                    'reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop" /v "UserPreferencesMask" /t REG_BINARY /d "9012038010000000" /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                const commands = [
+                    'reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop\\WindowMetrics" /v "MinAnimate" /t REG_SZ /d "1" /f',
+                    'reg add "HKEY_CURRENT_USER\\Control Panel\\Desktop" /v "UserPreferencesMask" /t REG_BINARY /d "9E3E078012000000" /f'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
+        {
+            id: 'disable-balloon-tips',
+            title: 'Disable Balloon Tips',
+            category: '🔵 UI Customization',
+            description: 'Disables balloon tip notifications in the system tray.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "EnableBalloonTips"');
+                return result.stdout.includes('EnableBalloonTips    REG_DWORD    0x0');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "EnableBalloonTips" /t REG_DWORD /d 0 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "EnableBalloonTips" /t REG_DWORD /d 1 /f');
+            }
+        },
+
+        // ===== ADVANCED TWEAKS (CAUTION REQUIRED) =====
+        {
+            id: 'remove-onedrive',
+            title: 'Remove OneDrive',
+            category: '🟡 Advanced Tweaks',
+            description: '⚠️ CAUTION: Completely removes OneDrive from the system. Files will be moved to local folders.',
+            safety: 'caution',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('where onedrive');
+                return result.stderr.includes('Could not find');
+            },
+            apply: async () => {
+                const script = `
+                    $OneDrivePath = "$env:userprofile\\OneDrive"
+                    if (Test-Path $OneDrivePath) {
+                        Write-Host "Backing up OneDrive files..."
+                        robocopy "$OneDrivePath" "$env:userprofile" /E /COPYALL /R:1 /W:1
+                    }
+                    taskkill.exe /F /IM "OneDrive.exe"
+                    Start-Sleep 3
+                    winget uninstall Microsoft.OneDrive
+                    Remove-Item -Path "$env:userprofile\\OneDrive" -Recurse -Force -ErrorAction SilentlyContinue
+                `;
+                await window.electronAPI.runAdminCommand(`powershell -Command "${script}"`);
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('winget install -e --accept-source-agreements --accept-package-agreements --silent Microsoft.OneDrive');
+            }
+        },
+        {
+            id: 'disable-ipv6',
+            title: 'Disable IPv6',
+            category: '🟡 Advanced Tweaks',
+            description: '⚠️ CAUTION: Completely disables IPv6. May cause network issues on some configurations.',
+            safety: 'caution',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v "DisabledComponents"');
+                return result.stdout.includes('DisabledComponents    REG_DWORD    0xff');
+            },
+            apply: async () => {
+                const commands = [
+                    'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v "DisabledComponents" /t REG_DWORD /d 255 /f',
+                    'powershell -Command "Disable-NetAdapterBinding -Name \\"*\\" -ComponentID ms_tcpip6"'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                const commands = [
+                    'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v "DisabledComponents" /t REG_DWORD /d 0 /f',
+                    'powershell -Command "Enable-NetAdapterBinding -Name \\"*\\" -ComponentID ms_tcpip6"'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
+        {
+            id: 'disable-background-apps',
+            title: 'Disable Background Apps',
+            category: '🟡 Advanced Tweaks',
+            description: '⚠️ CAUTION: Disables all Microsoft Store apps from running in the background.',
+            safety: 'caution',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\BackgroundAccessApplications" /v "GlobalUserDisabled"');
+                return result.stdout.includes('GlobalUserDisabled    REG_DWORD    0x1');
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\BackgroundAccessApplications" /v "GlobalUserDisabled" /t REG_DWORD /d 1 /f');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\BackgroundAccessApplications" /v "GlobalUserDisabled" /t REG_DWORD /d 0 /f');
+            }
+        },
+        {
+            id: 'classic-right-click-menu',
+            title: 'Classic Right-Click Menu',
+            category: '🟡 Advanced Tweaks',
+            description: 'Restores the classic Windows 10 right-click context menu in Windows 11.',
+            safety: 'caution',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('reg query "HKCU\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32"');
+                return !result.stderr.includes('ERROR');
+            },
+            apply: async () => {
+                const commands = [
+                    'reg add "HKCU\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32" /f /ve',
+                    'taskkill /f /im explorer.exe',
+                    'start explorer.exe'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                const commands = [
+                    'reg delete "HKCU\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}" /f',
+                    'taskkill /f /im explorer.exe',
+                    'start explorer.exe'
+                ].join(' & ');
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
+        {
             id: 'disable-telemetry',
-            title: 'Disable Telemetry',
-            category: 'System Tweaks',
-            description: 'Disables Windows telemetry services, tasks, and data collection. Enhanced for Windows 11 24H2.',
+            title: 'Disable Telemetry (Enhanced)',
+            category: '🟢 Essential Tweaks',
+            description: 'Comprehensively disables Windows telemetry services, tasks, and data collection.',
             check: async () => {
                 const regResult = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v "AllowTelemetry"');
                 const serviceResult = await window.electronAPI.runCommand('sc.exe query DiagTrack');
@@ -86,88 +981,13 @@ if (tweaksGrid) {
                 await window.electronAPI.runAdminCommand(commands);
             }
         },
-        {
-            id: 'dark-theme-apps',
-            title: 'Use Dark Theme for Apps',
-            category: 'System Tweaks',
-            description: 'Switches the application theme to dark mode.',
-            check: async () => {
-                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v "AppsUseLightTheme"');
-                return result.stdout.includes('AppsUseLightTheme    REG_DWORD    0x0');
-            },
-            apply: async () => {
-                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v "AppsUseLightTheme" /t REG_DWORD /d 0 /f');
-            },
-            revert: async () => {
-                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v "AppsUseLightTheme" /t REG_DWORD /d 1 /f');
-            }
-        },
-        {
-            id: 'show-hidden-files',
-            title: 'Show Hidden Files and Folders',
-            category: 'System Tweaks',
-            description: 'Makes hidden files and folders visible in File Explorer.',
-            check: async () => {
-                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "Hidden"');
-                return result.stdout.includes('Hidden    REG_DWORD    0x1');
-            },
-            apply: async () => {
-                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "Hidden" /t REG_DWORD /d 1 /f');
-            },
-            revert: async () => {
-                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "Hidden" /t REG_DWORD /d 2 /f');
-            }
-        },
-        {
-            id: 'disable-action-center',
-            title: 'Disable Action Center',
-            category: 'System Tweaks',
-            description: 'Disables the Action Center.',
-            check: async () => {
-                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v "DisableNotificationCenter"');
-                return result.stdout.includes('DisableNotificationCenter    REG_DWORD    0x1');
-            },
-            apply: async () => {
-                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v "DisableNotificationCenter" /t REG_DWORD /d 1 /f');
-            },
-            revert: async () => {
-                await window.electronAPI.runAdminCommand('reg delete "HKEY_CURRENT_USER\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v "DisableNotificationCenter" /f');
-            }
-        },
-        {
-            id: 'remove-3d-objects',
-            title: 'Remove 3D Objects from File Explorer',
-            category: 'System Tweaks',
-            description: 'Removes the "3D Objects" folder from This PC. (Note: May already be removed in Windows 11 24H2)',
-            check: async () => {
-                // Check both 64-bit and 32-bit registry locations
-                const result64 = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}"');
-                const result32 = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}"');
-                // If both commands fail, the keys don't exist, so the tweak is applied
-                return !result64.success && !result32.success;
-            },
-            apply: async () => {
-                // Remove from both locations to ensure complete removal
-                const commands = [
-                    'reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}" /f',
-                    'reg delete "HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}" /f'
-                ].join(' & ');
-                await window.electronAPI.runAdminCommand(commands);
-            },
-            revert: async () => {
-                // Restore the 3D Objects folder by recreating the registry keys
-                const commands = [
-                    'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}" /f',
-                    'reg add "HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}" /f'
-                ].join(' & ');
-                await window.electronAPI.runAdminCommand(commands);
-            }
-        },
+
         {
             id: 'disable-lock-screen',
             title: 'Disable Lock Screen',
-            category: 'System Tweaks',
-            description: 'Disables the lock screen, showing the login screen directly.',
+            category: '🟡 Advanced Tweaks',
+            description: '⚠️ CAUTION: Disables the lock screen, showing the login screen directly. May affect security.',
+            safety: 'caution',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Personalization" /v "NoLockScreen"');
                 return result.stdout.includes('NoLockScreen    REG_DWORD    0x1');
@@ -182,8 +1002,9 @@ if (tweaksGrid) {
         {
             id: 'enable-verbose-status',
             title: 'Enable Verbose Status Messages',
-            category: 'System Tweaks',
-            description: 'Displays detailed information during startup, shutdown, logon, and logoff.',
+            category: '🔵 UI Customization',
+            description: 'Shows detailed information during startup, shutdown, logon, and logoff for troubleshooting.',
+            safety: 'safe',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v "VerboseStatus"');
                 return result.stdout.includes('VerboseStatus    REG_DWORD    0x1');
@@ -198,8 +1019,9 @@ if (tweaksGrid) {
         {
             id: 'disable-auto-reboot-on-failure',
             title: 'Disable Automatic Restart on System Failure',
-            category: 'System Tweaks',
-            description: 'Prevents Windows from automatically restarting after a Blue Screen of Death (BSOD).',
+            category: '🟢 Essential Tweaks',
+            description: 'Prevents Windows from automatically restarting after a Blue Screen, allowing you to read error messages.',
+            safety: 'safe',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\CrashControl" /v "AutoReboot"');
                 return result.stdout.includes('AutoReboot    REG_DWORD    0x0');
@@ -211,55 +1033,14 @@ if (tweaksGrid) {
                 await window.electronAPI.runAdminCommand('reg add "HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\CrashControl" /v "AutoReboot" /t REG_DWORD /d 1 /f');
             }
         },
-        {
-            id: 'disable-widgets',
-            title: 'Disable Widgets',
-            category: 'System Tweaks',
-            description: 'Disables the Widgets feature and taskbar widgets button. Enhanced for Windows 11 24H2.',
-            check: async () => {
-                const result1 = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v "AllowNewsAndInterests"');
-                const result2 = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "TaskbarDa"');
-                return result1.stdout.includes('AllowNewsAndInterests    REG_DWORD    0x0') &&
-                       result2.stdout.includes('TaskbarDa    REG_DWORD    0x0');
-            },
-            apply: async () => {
-                const commands = [
-                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v "AllowNewsAndInterests" /t REG_DWORD /d 0 /f',
-                    'reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "TaskbarDa" /t REG_DWORD /d 0 /f',
-                    'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Feeds" /v "EnableFeeds" /t REG_DWORD /d 0 /f'
-                ].join(' & ');
-                await window.electronAPI.runAdminCommand(commands);
-            },
-            revert: async () => {
-                const commands = [
-                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v "AllowNewsAndInterests" /f',
-                    'reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v "TaskbarDa" /t REG_DWORD /d 1 /f',
-                    'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Feeds" /v "EnableFeeds" /f'
-                ].join(' & ');
-                await window.electronAPI.runAdminCommand(commands);
-            }
-        },
-        {
-            id: 'disable-game-dvr',
-            title: 'Disable Game DVR',
-            category: 'System Tweaks',
-            description: 'Disables Game DVR and the Game Bar.',
-            check: async () => {
-                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v "AllowGameDVR"');
-                return result.stdout.includes('AllowGameDVR    REG_DWORD    0x0');
-            },
-            apply: async () => {
-                await window.electronAPI.runAdminCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v "AllowGameDVR" /t REG_DWORD /d 0 /f');
-            },
-            revert: async () => {
-                await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v "AllowGameDVR" /f');
-            }
-        },
+
+
         {
             id: 'disable-storage-sense',
             title: 'Disable Storage Sense',
-            category: 'System Tweaks',
-            description: 'Disables Storage Sense, which automatically frees up disk space.',
+            category: '🟡 Advanced Tweaks',
+            description: '⚠️ CAUTION: Disables Storage Sense automatic disk cleanup. You\'ll need to manage disk space manually.',
+            safety: 'caution',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\StorageSense" /v "AllowStorageSense"');
                 return result.stdout.includes('AllowStorageSense    REG_DWORD    0x0');
@@ -271,27 +1052,13 @@ if (tweaksGrid) {
                 await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\StorageSense" /v "AllowStorageSense" /f');
             }
         },
-        {
-            id: 'disable-consumer-experience',
-            title: 'Disable Consumer Experience',
-            category: 'System Tweaks',
-            description: 'Disables the Microsoft Consumer Experience, which installs suggested apps.',
-            check: async () => {
-                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v "DisableWindowsConsumerFeatures"');
-                return result.stdout.includes('DisableWindowsConsumerFeatures    REG_DWORD    0x1');
-            },
-            apply: async () => {
-                await window.electronAPI.runAdminCommand('reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v "DisableWindowsConsumerFeatures" /t REG_DWORD /d 1 /f');
-            },
-            revert: async () => {
-                await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v "DisableWindowsConsumerFeatures" /f');
-            }
-        },
+
         {
             id: 'disable-copilot',
             title: 'Disable Windows Copilot',
-            category: 'System Tweaks',
-            description: 'Disables the Windows Copilot AI assistant feature introduced in Windows 11.',
+            category: '🟢 Essential Tweaks',
+            description: 'Disables the Windows Copilot AI assistant feature for enhanced privacy.',
+            safety: 'safe',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v "TurnOffWindowsCopilot"');
                 return result.stdout.includes('TurnOffWindowsCopilot    REG_DWORD    0x1');
@@ -306,8 +1073,9 @@ if (tweaksGrid) {
         {
             id: 'disable-recall',
             title: 'Disable Windows Recall',
-            category: 'System Tweaks',
-            description: 'Disables Windows Recall feature that takes screenshots for AI analysis.',
+            category: '🟢 Essential Tweaks',
+            description: 'Disables Windows Recall feature that takes screenshots for AI analysis - major privacy concern.',
+            safety: 'safe',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI" /v "DisableAIDataAnalysis"');
                 return result.stdout.includes('DisableAIDataAnalysis    REG_DWORD    0x1');
@@ -322,8 +1090,9 @@ if (tweaksGrid) {
         {
             id: 'disable-enhanced-phishing-protection',
             title: 'Disable Enhanced Phishing Protection',
-            category: 'System Tweaks',
-            description: 'Disables Enhanced Phishing Protection that monitors password usage.',
+            category: '🟢 Essential Tweaks',
+            description: 'Disables Enhanced Phishing Protection that monitors password usage for privacy.',
+            safety: 'safe',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WTDS\\Components" /v "ServiceEnabled"');
                 return result.stdout.includes('ServiceEnabled    REG_DWORD    0x0');
@@ -338,8 +1107,9 @@ if (tweaksGrid) {
         {
             id: 'disable-voice-activation',
             title: 'Disable Voice Activation',
-            category: 'System Tweaks',
-            description: 'Disables voice activation for apps while the system is locked.',
+            category: '🟢 Essential Tweaks',
+            description: 'Disables voice activation for apps while the system is locked for enhanced security.',
+            safety: 'safe',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" /v "LetAppsActivateWithVoiceAboveLock"');
                 return result.stdout.includes('LetAppsActivateWithVoiceAboveLock    REG_DWORD    0x2');
@@ -354,8 +1124,9 @@ if (tweaksGrid) {
         {
             id: 'disable-suggested-actions',
             title: 'Disable Suggested Actions',
-            category: 'System Tweaks',
-            description: 'Disables suggested actions when copying phone numbers, dates, etc.',
+            category: '🔵 UI Customization',
+            description: 'Disables suggested actions when copying phone numbers, dates, etc. for cleaner experience.',
+            safety: 'safe',
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\SmartActionPlatform\\SmartClipboard" /v "Disabled"');
                 return result.stdout.includes('Disabled    REG_DWORD    0x1');
@@ -368,10 +1139,145 @@ if (tweaksGrid) {
             }
         },
         {
+            id: 'disable-windows-media-player-sharing',
+            title: 'Disable Windows Media Player Network Sharing',
+            category: '🔧 Useless Services',
+            description: 'Disables Windows Media Player Network Sharing Service. Unnecessary if you don\'t share media.',
+            safety: 'safe',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"WMPNetworkSvc\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('powershell -Command "Set-Service -Name \\"WMPNetworkSvc\\" -StartupType Disabled -ErrorAction SilentlyContinue"');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('powershell -Command "Set-Service -Name \\"WMPNetworkSvc\\" -StartupType Manual -ErrorAction SilentlyContinue"');
+            }
+        },
+        {
+            id: 'disable-telephony-service',
+            title: 'Disable Telephony Service',
+            category: '🔧 Useless Services',
+            description: 'Disables Telephony API support. Unnecessary for most desktop users.',
+            safety: 'safe',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"TapiSrv\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('powershell -Command "Set-Service -Name \\"TapiSrv\\" -StartupType Disabled -ErrorAction SilentlyContinue"');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('powershell -Command "Set-Service -Name \\"TapiSrv\\" -StartupType Manual -ErrorAction SilentlyContinue"');
+            }
+        },
+        {
+            id: 'disable-smart-card-service',
+            title: 'Disable Smart Card Services',
+            category: '🔧 Useless Services',
+            description: 'Disables Smart Card services. Unnecessary if you don\'t use smart cards.',
+            safety: 'safe',
+            check: async () => {
+                const services = ['SCardSvr', 'ScDeviceEnum'];
+                for (const service of services) {
+                    const command = `powershell -NoProfile -Command "(Get-Service -Name \\"${service}\\" -ErrorAction SilentlyContinue).StartType"`;
+                    const result = await window.electronAPI.runCommand(command);
+                    if (result.stdout.trim() !== 'Disabled') {
+                        return false;
+                    }
+                }
+                return true;
+            },
+            apply: async () => {
+                const services = ['SCardSvr', 'ScDeviceEnum'];
+                for (const service of services) {
+                    await window.electronAPI.runAdminCommand(`powershell -Command "Set-Service -Name \\"${service}\\" -StartupType Disabled -ErrorAction SilentlyContinue"`);
+                }
+            },
+            revert: async () => {
+                const services = ['SCardSvr', 'ScDeviceEnum'];
+                for (const service of services) {
+                    await window.electronAPI.runAdminCommand(`powershell -Command "Set-Service -Name \\"${service}\\" -StartupType Manual -ErrorAction SilentlyContinue"`);
+                }
+            }
+        },
+        {
+            id: 'disable-sensor-services',
+            title: 'Disable Sensor Services',
+            category: '🔧 Useless Services',
+            description: 'Disables sensor monitoring services. Unnecessary for most desktop computers.',
+            safety: 'safe',
+            check: async () => {
+                const services = ['SensrSvc', 'SensorService'];
+                for (const service of services) {
+                    const command = `powershell -NoProfile -Command "(Get-Service -Name \\"${service}\\" -ErrorAction SilentlyContinue).StartType"`;
+                    const result = await window.electronAPI.runCommand(command);
+                    if (result.stdout.trim() !== 'Disabled') {
+                        return false;
+                    }
+                }
+                return true;
+            },
+            apply: async () => {
+                const services = ['SensrSvc', 'SensorService'];
+                for (const service of services) {
+                    await window.electronAPI.runAdminCommand(`powershell -Command "Set-Service -Name \\"${service}\\" -StartupType Disabled -ErrorAction SilentlyContinue"`);
+                }
+            },
+            revert: async () => {
+                const services = ['SensrSvc', 'SensorService'];
+                for (const service of services) {
+                    await window.electronAPI.runAdminCommand(`powershell -Command "Set-Service -Name \\"${service}\\" -StartupType Manual -ErrorAction SilentlyContinue"`);
+                }
+            }
+        },
+        {
+            id: 'disable-mobile-hotspot-service',
+            title: 'Disable Mobile Hotspot Service',
+            category: '🔧 Useless Services',
+            description: 'Disables Internet Connection Sharing service. Unnecessary if you don\'t share internet.',
+            safety: 'safe',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"SharedAccess\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('powershell -Command "Set-Service -Name \\"SharedAccess\\" -StartupType Disabled -ErrorAction SilentlyContinue"');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('powershell -Command "Set-Service -Name \\"SharedAccess\\" -StartupType Manual -ErrorAction SilentlyContinue"');
+            }
+        },
+        {
+            id: 'disable-windows-time-service',
+            title: 'Disable Windows Time Service',
+            category: '🔧 Useless Services',
+            description: '⚠️ CAUTION: Disables automatic time synchronization. Your clock may drift over time.',
+            safety: 'caution',
+            check: async () => {
+                const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"W32Time\\" -ErrorAction SilentlyContinue).StartType"';
+                const result = await window.electronAPI.runCommand(command);
+                return result.stdout.trim() === 'Disabled';
+            },
+            apply: async () => {
+                await window.electronAPI.runAdminCommand('powershell -Command "Set-Service -Name \\"W32Time\\" -StartupType Disabled -ErrorAction SilentlyContinue"');
+            },
+            revert: async () => {
+                await window.electronAPI.runAdminCommand('powershell -Command "Set-Service -Name \\"W32Time\\" -StartupType Manual -ErrorAction SilentlyContinue"');
+            }
+        },
+
+        // ===== USELESS SERVICES =====
+        {
             id: 'disable-sysmain',
             title: 'Disable SysMain (Superfetch)',
-            category: 'Useless Services',
+            category: '🔧 Useless Services',
             description: 'Disables the SysMain service, which preloads frequently used apps. Disabling may improve performance on SSDs.',
+            safety: 'safe',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"SysMain\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -387,7 +1293,8 @@ if (tweaksGrid) {
         {
             id: 'disable-print-spooler',
             title: 'Disable Print Spooler',
-            category: 'Useless Services',
+            category: '🔧 Useless Services',
+            safety: 'caution',
             description: 'Disables the Print Spooler service. If you don\'t use a printer, this can free up resources.',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"Spooler\\" -ErrorAction SilentlyContinue).StartType"';
@@ -404,8 +1311,9 @@ if (tweaksGrid) {
         {
             id: 'disable-fax-service',
             title: 'Disable Fax Service',
-            category: 'Useless Services',
+            category: '🔧 Useless Services',
             description: 'Disables the Fax service. Most users do not need this service. (Note: Service may not exist in Windows 11 24H2)',
+            safety: 'safe',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"Fax\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -429,8 +1337,9 @@ if (tweaksGrid) {
         {
             id: 'disable-windows-search',
             title: 'Disable Windows Search',
-            category: 'Useless Services',
-            description: 'Disables the Windows Search service, which indexes files for faster searching. Disabling it can improve system performance.',
+            category: '🔧 Useless Services',
+            description: '⚠️ CAUTION: Disables the Windows Search service, which indexes files for faster searching. You\'ll lose file search functionality.',
+            safety: 'caution',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"WSearch\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -446,7 +1355,8 @@ if (tweaksGrid) {
         {
             id: 'disable-windows-insider-service',
             title: 'Disable Windows Insider Service',
-            category: 'Useless Services',
+            category: '🔧 Useless Services',
+            safety: 'safe',
             description: 'Disables the Windows Insider Service. If you are not part of the Windows Insider Program, this service is not needed.',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"wisvc\\" -ErrorAction SilentlyContinue).StartType"';
@@ -463,8 +1373,9 @@ if (tweaksGrid) {
         {
             id: 'disable-remote-registry',
             title: 'Disable Remote Registry',
-            category: 'Useless Services',
+            category: '🔧 Useless Services',
             description: 'Disables the ability for remote users to modify registry settings. Recommended to keep disabled for security.',
+            safety: 'safe',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"RemoteRegistry\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -480,8 +1391,9 @@ if (tweaksGrid) {
         {
             id: 'disable-alljoyn-router',
             title: 'Disable AllJoyn Router Service',
-            category: 'Useless Services',
+            category: '🔧 Useless Services',
             description: 'Disables the service for communicating with nearby Internet of Things (IoT) devices. Most users do not need this.',
+            safety: 'safe',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"AJRouter\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -497,8 +1409,9 @@ if (tweaksGrid) {
         {
             id: 'disable-program-compatibility-assistant',
             title: 'Disable Program Compatibility Assistant',
-            category: 'Useless Services',
+            category: '🔧 Useless Services',
             description: 'Disables the service that monitors for program compatibility issues. Can be turned off if not needed.',
+            safety: 'safe',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"PcaSvc\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -514,8 +1427,9 @@ if (tweaksGrid) {
         {
             id: 'disable-ip-helper',
             title: 'Disable IP Helper',
-            category: 'Useless Services',
-            description: 'Disables IPv6 connectivity over an IPv4 network. Disable if you only use IPv4. Note: May impact some network features.',
+            category: '🔧 Useless Services',
+            description: '⚠️ CAUTION: Disables IPv6 connectivity over an IPv4 network. May impact some network features.',
+            safety: 'caution',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"iphlpsvc\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -531,8 +1445,9 @@ if (tweaksGrid) {
         {
             id: 'disable-security-center',
             title: 'Disable Security Center',
-            category: 'Useless Services',
+            category: '🔧 Useless Services',
             description: 'Disables Windows Security Center notifications. This will NOT disable your antivirus or firewall.',
+            safety: 'safe',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"wscsvc\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -548,8 +1463,9 @@ if (tweaksGrid) {
         {
             id: 'disable-remote-desktop',
             title: 'Disable Remote Desktop Service',
-            category: 'Useless Services',
-            description: 'Disables the TermService for Remote Desktop. If you do not use Remote Desktop, this can be disabled.',
+            category: '🔧 Useless Services',
+            description: '⚠️ CAUTION: Disables Remote Desktop. Only disable if you never use Remote Desktop connections.',
+            safety: 'caution',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"TermService\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -565,8 +1481,9 @@ if (tweaksGrid) {
         {
             id: 'disable-remote-access',
             title: 'Disable Routing and Remote Access',
-            category: 'Useless Services',
-            description: 'Disables the Remote Access service. Only needed for VPN/dial-up connections.',
+            category: '🔧 Useless Services',
+            description: '⚠️ CAUTION: Disables Remote Access service. Only disable if you don\'t use VPN/dial-up connections.',
+            safety: 'caution',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"RemoteAccess\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -582,8 +1499,9 @@ if (tweaksGrid) {
         {
             id: 'disable-winrm',
             title: 'Disable Windows Remote Management',
-            category: 'Useless Services',
-            description: 'Disables the WinRM service for remote management. If not managing this PC remotely, it can be disabled.',
+            category: '🔧 Useless Services',
+            description: '⚠️ CAUTION: Disables Windows Remote Management. Only disable if you don\'t manage this PC remotely.',
+            safety: 'caution',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"WinRM\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -599,8 +1517,9 @@ if (tweaksGrid) {
         {
             id: 'disable-link-tracking',
             title: 'Disable Distributed Link Tracking',
-            category: 'Useless Services',
+            category: '🔧 Useless Services',
             description: 'Disables tracking of linked files across NTFS volumes. Rarely needed on a single-user PC.',
+            safety: 'safe',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"TrkWks\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -616,8 +1535,9 @@ if (tweaksGrid) {
         {
             id: 'disable-netlogon',
             title: 'Disable Netlogon Service',
-            category: 'Useless Services',
-            description: 'Disables Netlogon service. Not needed if the computer is not part of a domain.',
+            category: '🔧 Useless Services',
+            description: '⚠️ CAUTION: Disables Netlogon service. Only disable if computer is not part of a domain.',
+            safety: 'caution',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"Netlogon\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -633,8 +1553,9 @@ if (tweaksGrid) {
         {
             id: 'disable-secondary-logon',
             title: 'Disable Secondary Logon',
-            category: 'Useless Services',
-            description: 'Disables the Secondary Logon service (Run As). If you do not use this feature, it can be disabled for security.',
+            category: '🔧 Useless Services',
+            description: 'Disables the Secondary Logon service (Run As). Can be disabled for security if not needed.',
+            safety: 'safe',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"seclogon\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -650,8 +1571,9 @@ if (tweaksGrid) {
         {
             id: 'disable-tablet-input',
             title: 'Disable Touch Keyboard and Handwriting',
-            category: 'Useless Services',
-            description: 'Disables the service for touch keyboard and handwriting panel. Unnecessary for most desktop users. (Note: Service may not exist in Windows 11 24H2)',
+            category: '🔧 Useless Services',
+            description: 'Disables touch keyboard and handwriting panel service. Unnecessary for most desktop users.',
+            safety: 'safe',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"TabletInputService\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -673,8 +1595,9 @@ if (tweaksGrid) {
         {
             id: 'disable-waas-medic',
             title: 'Disable Windows Update Medic Service',
-            category: 'Useless Services',
-            description: 'Disables WaaSMedicSvc, which attempts to repair Windows Update components. Can be disabled if not needed.',
+            category: '🔧 Useless Services',
+            description: '⚠️ CAUTION: Disables Windows Update Medic Service. May affect Windows Update repair functionality.',
+            safety: 'caution',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"WaaSMedicSvc\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -690,8 +1613,9 @@ if (tweaksGrid) {
         {
             id: 'disable-gaming-services',
             title: 'Disable Xbox Gaming Services',
-            category: 'Useless Services',
+            category: '🔧 Useless Services',
             description: 'Disables all Xbox-related services. Recommended if you do not use the Xbox app or Game Bar.',
+            safety: 'safe',
             check: async () => {
                 const services = ['XblAuthManager', 'XblGameSave', 'XboxNetApiSvc', 'XboxGipSvc'];
                 for (const service of services) {
@@ -725,8 +1649,9 @@ if (tweaksGrid) {
         {
             id: 'disable-biometric-service',
             title: 'Disable Windows Biometric Service',
-            category: 'Useless Services',
+            category: '🔧 Useless Services',
             description: 'Disables biometric services (fingerprint, facial recognition). Disable if you do not use these features.',
+            safety: 'safe',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"WbioSrvc\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -742,8 +1667,9 @@ if (tweaksGrid) {
         {
             id: 'disable-geolocation-service',
             title: 'Disable Geolocation Service',
-            category: 'Useless Services',
+            category: '🔧 Useless Services',
             description: 'Disables the lfsvc for location tracking. Disable for privacy if not needed by any applications.',
+            safety: 'safe',
             check: async () => {
                 const command = 'powershell -NoProfile -Command "(Get-Service -Name \\"lfsvc\\" -ErrorAction SilentlyContinue).StartType"';
                 const result = await window.electronAPI.runCommand(command);
@@ -757,27 +1683,96 @@ if (tweaksGrid) {
             }
         },
 
+        // ===== SERVICE OPTIMIZATION =====
+        {
+            id: 'optimize-services-bulk',
+            title: 'Optimize Windows Services (Bulk)',
+            category: '🟢 Essential Tweaks',
+            description: 'Sets many unnecessary Windows services to manual startup to improve boot time and performance.',
+            safety: 'safe',
+            check: async () => {
+                const result = await window.electronAPI.runCommand('sc.exe query DiagTrack');
+                return !result.stdout.includes('STATE_RUNNING');
+            },
+            apply: async () => {
+                const services = [
+                    'DiagTrack', 'dmwappushservice', 'WerSvc', 'Spooler', 'Fax',
+                    'WSearch', 'TabletInputService', 'WMPNetworkSvc', 'WbioSrvc',
+                    'lfsvc', 'MapsBroker', 'RetailDemo', 'TrkWks', 'WpcMonSvc'
+                ];
+
+                const commands = services.map(service =>
+                    `sc.exe config "${service}" start=demand`
+                ).join(' & ');
+
+                await window.electronAPI.runAdminCommand(commands);
+            },
+            revert: async () => {
+                const services = [
+                    'DiagTrack:auto', 'dmwappushservice:auto', 'WerSvc:demand', 'Spooler:auto', 'Fax:demand',
+                    'WSearch:auto', 'TabletInputService:demand', 'WMPNetworkSvc:demand', 'WbioSrvc:demand',
+                    'lfsvc:demand', 'MapsBroker:auto', 'RetailDemo:demand', 'TrkWks:auto', 'WpcMonSvc:demand'
+                ];
+
+                const commands = services.map(service => {
+                    const [name, startType] = service.split(':');
+                    return `sc.exe config "${name}" start=${startType}`;
+                }).join(' & ');
+
+                await window.electronAPI.runAdminCommand(commands);
+            }
+        },
+        {
+            id: 'create-restore-point',
+            title: 'Create System Restore Point',
+            category: '🟢 Essential Tweaks',
+            description: 'Creates a system restore point before applying major changes.',
+            safety: 'safe',
+            check: async () => {
+                // This is a one-time action, so we'll always show it as available
+                return false;
+            },
+            apply: async () => {
+                const script = `
+                    Enable-ComputerRestore -Drive "C:\\"
+                    Checkpoint-Computer -Description "WinTool System Modifications" -RestorePointType "MODIFY_SETTINGS"
+                    Write-Host "System restore point created successfully"
+                `;
+                await window.electronAPI.runAdminCommand(`powershell -Command "${script}"`);
+            },
+            revert: async () => {
+                // Cannot revert restore point creation
+                console.log('Cannot revert restore point creation');
+            }
+        }
+
     ];
 
-    const renderTweaks = (filteredTweaks) => {
+    const renderTweaks = async (filteredTweaks) => {
         const tweaksToRender = filteredTweaks || tweaks;
         tweaksGrid.innerHTML = '';
-    
+
         const categories = [...new Set(tweaksToRender.map(t => t.category || 'System Tweaks'))];
-    
+
+        // First, render all cards with loading state
         categories.forEach(category => {
             const categoryHeader = document.createElement('h3');
             categoryHeader.className = 'plugin-section-header';
             categoryHeader.textContent = category;
             tweaksGrid.appendChild(categoryHeader);
-    
+
             const categoryTweaks = tweaksToRender.filter(t => (t.category || 'System Tweaks') === category);
-    
+
             categoryTweaks.forEach(tweak => {
                 const card = document.createElement('div');
                 card.className = 'plugin-card';
                 card.dataset.tweakId = tweak.id;
-    
+
+                // Add safety level attribute for styling
+                if (tweak.safety) {
+                    card.dataset.safety = tweak.safety;
+                }
+
                 card.innerHTML = `
                     <div class="plugin-card-header">
                         <h4 class="plugin-title">${tweak.title}</h4>
@@ -795,8 +1790,27 @@ if (tweaksGrid) {
                     </div>
                 `;
                 tweaksGrid.appendChild(card);
-    
-                tweak.check().then(status => {
+            });
+        });
+
+        // Now perform checking (batch where possible, individual otherwise)
+        await performOptimizedTweakChecks(tweaksToRender);
+    };
+
+    // Function to perform optimized tweak status checks
+    const performOptimizedTweakChecks = async (tweaksToCheck) => {
+        console.log('performOptimizedTweakChecks called with', tweaksToCheck.length, 'tweaks');
+
+        // For now, use individual checks but with better batching in the future
+        // This ensures all tweaks work while we can optimize specific patterns later
+
+        const checkPromises = tweaksToCheck.map(async (tweak) => {
+            const card = document.querySelector(`[data-tweak-id="${tweak.id}"]`);
+            if (!card) return;
+
+            try {
+                const status = await tweak.check();
+
                 const statusIndicator = card.querySelector('.status-indicator');
                 const statusText = card.querySelector('.status-text');
                 const checkbox = card.querySelector('.tweak-checkbox');
@@ -805,14 +1819,33 @@ if (tweaksGrid) {
                 statusText.textContent = status ? 'Active' : 'Inactive';
                 checkbox.checked = status;
                 checkbox.disabled = false;
-            }).catch(error => {
+            } catch (error) {
                 console.error(`Failed to check tweak status for ${tweak.title}`, error);
                 const statusText = card.querySelector('.status-text');
-                statusText.textContent = 'Error';
-            });
+                if (statusText) {
+                    statusText.textContent = 'Error';
+                }
+                const checkbox = card.querySelector('.tweak-checkbox');
+                if (checkbox) {
+                    checkbox.disabled = false;
+                }
+            }
         });
-    });
-};
+
+        // Execute all checks concurrently but with a reasonable limit
+        const batchSize = 10; // Process 10 tweaks at a time to avoid overwhelming the system
+        for (let i = 0; i < checkPromises.length; i += batchSize) {
+            const batch = checkPromises.slice(i, i + batchSize);
+            await Promise.all(batch);
+
+            // Small delay between batches to prevent system overload
+            if (i + batchSize < checkPromises.length) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+
+        console.log('All tweak checks completed');
+    };
 
     tweaksGrid.addEventListener('change', async (event) => {
         if (event.target.classList.contains('tweak-checkbox')) {

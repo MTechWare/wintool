@@ -143,6 +143,17 @@
       "type": "user",
       "consequences": "New Outlook app will be unavailable"
     },
+    "7EE7776C.LinkedInforWindows": {
+      "name": "LinkedIn",
+      "packageName": "7EE7776C.LinkedInforWindows",
+      "publisher": "LinkedIn Corporation",
+      "description": "Professional networking and career development platform",
+      "category": "communication",
+      "icon": "fab fa-linkedin",
+      "safeToRemove": true,
+      "type": "user",
+      "consequences": "LinkedIn app will be removed"
+    },
     "Microsoft.WidgetsPlatformRuntime": {
       "name": "Widgets Platform",
       "packageName": "Microsoft.WidgetsPlatformRuntime",

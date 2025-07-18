@@ -1,18 +1,32 @@
 /**
- * Cleanup Tab JavaScript - Remastered
- * Simple and reliable Windows system cleanup functionality
- * Enhanced with security validations and safe file operations
+ * Advanced System Cleanup Tab JavaScript
+ * Professional-grade system optimization and cleanup functionality
+ * Enhanced with advanced features, security validations, and modern UI
  */
 
-// Simple cleanup state
+// Enhanced cleanup state management
 let cleanupState = {
     isRunning: false,
-    startTime: null
+    isPaused: false,
+    startTime: null,
+    currentCategory: null,
+    totalCategories: 0,
+    completedCategories: 0,
+    selectedCategories: new Set(),
+    scanResults: new Map(),
+    cleanupHistory: [],
+    settings: {
+        confirmBeforeDelete: true,
+        skipRecentFiles: true,
+        createRestorePoint: false,
+        cleanupThreads: 1,
+        deepScanMode: false
+    }
 };
 
-// Security configuration for cleanup operations
+// Enhanced security configuration
 const CLEANUP_SECURITY_CONFIG = {
-    allowedCategories: ['temp', 'system', 'cache', 'registry'],
+    allowedCategories: ['temp', 'cache', 'browser', 'updates', 'logs', 'recycle', 'registry', 'dumps'],
     maxConcurrentOperations: 1,
     confirmationRequired: true,
     safetyChecks: true,
@@ -22,8 +36,20 @@ const CLEANUP_SECURITY_CONFIG = {
         'C:\\Program Files',
         'C:\\Program Files (x86)',
         'C:\\Users\\Default',
-        'C:\\ProgramData\\Microsoft\\Windows\\Start Menu'
-    ]
+        'C:\\ProgramData\\Microsoft\\Windows\\Start Menu',
+        'C:\\Windows\\Boot',
+        'C:\\Windows\\System32\\drivers'
+    ],
+    categoryInfo: {
+        temp: { name: 'Temporary Files', icon: 'file-alt', risk: 'low' },
+        cache: { name: 'System Cache', icon: 'database', risk: 'low' },
+        browser: { name: 'Browser Data', icon: 'globe', risk: 'medium' },
+        updates: { name: 'Windows Update', icon: 'download', risk: 'low' },
+        logs: { name: 'System Logs', icon: 'file-text', risk: 'medium' },
+        recycle: { name: 'Recycle Bin', icon: 'trash', risk: 'high' },
+        registry: { name: 'Registry Cleanup', icon: 'cogs', risk: 'high' },
+        dumps: { name: 'Memory Dumps', icon: 'bug', risk: 'medium' }
+    }
 };
 
 // Security validation functions
@@ -85,32 +111,138 @@ function escapeHtml(text) {
 
 // Initialize cleanup tab when loaded
 document.addEventListener('DOMContentLoaded', function() {
-    initCleanupTab();
+    initAdvancedCleanupTab();
 });
 
 // Also initialize when the tab becomes active
 if (typeof tabContainer !== 'undefined' && tabContainer) {
-    initCleanupTab();
+    initAdvancedCleanupTab();
 }
 
 /**
- * Initialize the cleanup tab
+ * Initialize the advanced cleanup tab
  */
-function initCleanupTab() {
-    console.log('Initializing cleanup tab...');
+function initAdvancedCleanupTab() {
+    console.log('Initializing advanced cleanup tab...');
 
     // Check if we're in the cleanup tab
     const cleanupContent = document.querySelector('.cleanup-content');
     if (!cleanupContent) {
         console.log('Cleanup content not found, waiting...');
-        setTimeout(initCleanupTab, 500);
+        setTimeout(initAdvancedCleanupTab, 500);
         return;
     }
 
-    console.log('Cleanup tab initialized successfully');
+    console.log('Advanced cleanup tab initialized successfully');
 
-    // Load disk space data
+    // Initialize components
     loadDiskSpace();
+    initializeCategoryCards();
+    loadCleanupSettings();
+    setupEventListeners();
+    startInitialScan();
+}
+
+/**
+ * Initialize category cards and setup interactions
+ */
+function initializeCategoryCards() {
+    const categoryCards = document.querySelectorAll('.category-card');
+
+    categoryCards.forEach(card => {
+        const checkbox = card.querySelector('input[type="checkbox"]');
+        const category = card.dataset.category;
+
+        // Set up click handler for the entire card
+        card.addEventListener('click', (e) => {
+            if (e.target.type !== 'checkbox') {
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            }
+        });
+
+        // Set up checkbox change handler
+        checkbox.addEventListener('change', () => {
+            updateCategorySelection(category, checkbox.checked);
+            updateCleanupSummary();
+        });
+
+        // Initialize selection state
+        if (checkbox.checked) {
+            cleanupState.selectedCategories.add(category);
+            card.classList.add('selected');
+        }
+    });
+
+    updateCleanupSummary();
+}
+
+/**
+ * Setup event listeners for various UI elements
+ */
+function setupEventListeners() {
+    // Deep scan button (now in main action buttons)
+    const deepScanBtn = document.getElementById('deep-scan-btn');
+
+    if (deepScanBtn) {
+        deepScanBtn.addEventListener('click', deepScan);
+    }
+
+    // Category selection buttons
+    const selectAllBtn = document.querySelector('[onclick="selectAllCategories()"]');
+    const deselectAllBtn = document.querySelector('[onclick="deselectAllCategories()"]');
+    const scanBtn = document.getElementById('scan-btn');
+
+    if (selectAllBtn) selectAllBtn.addEventListener('click', selectAllCategories);
+    if (deselectAllBtn) deselectAllBtn.addEventListener('click', deselectAllCategories);
+    if (scanBtn) scanBtn.addEventListener('click', scanSelectedCategories);
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', handleKeyboardShortcuts);
+}
+
+/**
+ * Handle keyboard shortcuts
+ */
+function handleKeyboardShortcuts(e) {
+    if (e.ctrlKey) {
+        switch (e.key) {
+            case 'a':
+                e.preventDefault();
+                selectAllCategories();
+                break;
+            case 'd':
+                e.preventDefault();
+                deselectAllCategories();
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (!cleanupState.isRunning) {
+                    startAdvancedCleanup();
+                }
+                break;
+        }
+    }
+
+    if (e.key === 'Escape') {
+        hideCleanupSettings();
+        hideHistory();
+    }
+}
+
+/**
+ * Start initial scan of selected categories
+ */
+function startInitialScan() {
+    console.log('Starting initial category scan...');
+
+    // Scan default selected categories
+    const defaultCategories = ['temp', 'cache', 'updates'];
+    defaultCategories.forEach(category => {
+        if (cleanupState.selectedCategories.has(category)) {
+            scanCategory(category);
+        }
+    });
 }
 
 /**
@@ -140,23 +272,35 @@ async function loadDiskSpace() {
 }
 
 /**
- * Update disk space display
+ * Update disk space display with enhanced information
  */
 function updateDiskSpaceDisplay(diskData) {
-    const { total, used, free } = diskData;
+    const { total, used, free, cleanable } = diskData;
 
     // Format and display values
     document.getElementById('total-space').textContent = formatBytes(total);
     document.getElementById('used-space').textContent = formatBytes(used);
     document.getElementById('free-space').textContent = formatBytes(free);
 
+    // Update cleanable space if available
+    const cleanableEl = document.getElementById('cleanable-space');
+    if (cleanableEl && cleanable) {
+        cleanableEl.textContent = formatBytes(cleanable);
+    }
+
     // Update progress bars
     const usedPercentage = (used / total) * 100;
     const freePercentage = (free / total) * 100;
+    const cleanablePercentage = cleanable ? (cleanable / total) * 100 : 0;
 
     document.getElementById('total-space-bar').style.width = '100%';
     document.getElementById('used-space-bar').style.width = `${usedPercentage}%`;
     document.getElementById('free-space-bar').style.width = `${freePercentage}%`;
+
+    const cleanableBar = document.getElementById('cleanable-space-bar');
+    if (cleanableBar) {
+        cleanableBar.style.width = `${cleanablePercentage}%`;
+    }
 
     // Color coding for used space bar
     const usedBar = document.getElementById('used-space-bar');
@@ -166,6 +310,172 @@ function updateDiskSpaceDisplay(diskData) {
         usedBar.style.background = '#f39c12'; // Orange
     } else {
         usedBar.style.background = 'var(--primary-color)'; // Default
+    }
+
+    // Update details
+    updateDiskDetails(diskData);
+}
+
+/**
+ * Update disk details with additional information
+ */
+function updateDiskDetails(diskData) {
+    const { total, used, free, cleanable } = diskData;
+
+    const totalDetails = document.getElementById('total-space-details');
+    const usedDetails = document.getElementById('used-space-details');
+    const freeDetails = document.getElementById('free-space-details');
+    const cleanableDetails = document.getElementById('cleanable-space-details');
+
+    if (totalDetails) {
+        totalDetails.textContent = `${formatBytes(total)} total capacity`;
+    }
+
+    if (usedDetails) {
+        const usedPercentage = ((used / total) * 100).toFixed(1);
+        usedDetails.textContent = `${usedPercentage}% of total space`;
+    }
+
+    if (freeDetails) {
+        const freePercentage = ((free / total) * 100).toFixed(1);
+        freeDetails.textContent = `${freePercentage}% available`;
+    }
+
+    if (cleanableDetails && cleanable) {
+        const cleanablePercentage = ((cleanable / total) * 100).toFixed(1);
+        cleanableDetails.textContent = `${cleanablePercentage}% can be cleaned`;
+    }
+}
+
+/**
+ * Update category selection state
+ */
+function updateCategorySelection(category, isSelected) {
+    const card = document.querySelector(`[data-category="${category}"]`);
+
+    if (isSelected) {
+        cleanupState.selectedCategories.add(category);
+        card?.classList.add('selected');
+    } else {
+        cleanupState.selectedCategories.delete(category);
+        card?.classList.remove('selected');
+    }
+}
+
+/**
+ * Select all categories
+ */
+function selectAllCategories() {
+    const checkboxes = document.querySelectorAll('.category-card input[type="checkbox"]');
+
+    checkboxes.forEach(checkbox => {
+        if (!checkbox.checked) {
+            checkbox.checked = true;
+            const category = checkbox.closest('.category-card').dataset.category;
+            updateCategorySelection(category, true);
+        }
+    });
+
+    updateCleanupSummary();
+    showNotification('All categories selected', 'info', 2000);
+}
+
+/**
+ * Deselect all categories
+ */
+function deselectAllCategories() {
+    const checkboxes = document.querySelectorAll('.category-card input[type="checkbox"]');
+
+    checkboxes.forEach(checkbox => {
+        if (checkbox.checked) {
+            checkbox.checked = false;
+            const category = checkbox.closest('.category-card').dataset.category;
+            updateCategorySelection(category, false);
+        }
+    });
+
+    updateCleanupSummary();
+    showNotification('All categories deselected', 'info', 2000);
+}
+
+/**
+ * Update cleanup summary display
+ */
+function updateCleanupSummary() {
+    const selectedCountEl = document.getElementById('selected-count');
+    const estimatedSpaceEl = document.getElementById('estimated-space');
+
+    if (selectedCountEl) {
+        selectedCountEl.textContent = cleanupState.selectedCategories.size;
+    }
+
+    // Calculate estimated space from scan results with validation
+    let totalEstimatedSpace = 0;
+    cleanupState.selectedCategories.forEach(category => {
+        const result = cleanupState.scanResults.get(category);
+        if (result && typeof result.estimatedSize === 'number' && !isNaN(result.estimatedSize)) {
+            totalEstimatedSpace += Math.max(result.estimatedSize, 0);
+        }
+    });
+
+    if (estimatedSpaceEl) {
+        estimatedSpaceEl.textContent = formatBytes(totalEstimatedSpace);
+
+        // Update color based on amount
+        if (totalEstimatedSpace > 0) {
+            estimatedSpaceEl.style.color = 'var(--primary-color)';
+        } else {
+            estimatedSpaceEl.style.color = 'var(--text-secondary)';
+        }
+    }
+
+    // Update total cleanable space in disk display
+    updateTotalCleanableSpace();
+}
+
+/**
+ * Update the total cleanable space display based on all scan results
+ */
+function updateTotalCleanableSpace() {
+    const cleanableEl = document.getElementById('cleanable-space');
+    const cleanableDetailsEl = document.getElementById('cleanable-space-details');
+    const cleanableBarEl = document.getElementById('cleanable-space-bar');
+
+    // Calculate total cleanable space from all scan results
+    let totalCleanableSpace = 0;
+    let scannedCategories = 0;
+
+    cleanupState.scanResults.forEach((result, category) => {
+        if (result && typeof result.estimatedSize === 'number' && !isNaN(result.estimatedSize)) {
+            totalCleanableSpace += Math.max(result.estimatedSize, 0);
+            scannedCategories++;
+        }
+    });
+
+    if (cleanableEl) {
+        if (scannedCategories === 0) {
+            cleanableEl.textContent = 'Scan to calculate';
+            cleanableEl.style.color = 'var(--text-secondary)';
+        } else {
+            cleanableEl.textContent = formatBytes(totalCleanableSpace);
+            cleanableEl.style.color = totalCleanableSpace > 0 ? 'var(--primary-color)' : 'var(--text-secondary)';
+        }
+    }
+
+    if (cleanableDetailsEl) {
+        if (scannedCategories === 0) {
+            cleanableDetailsEl.textContent = 'Run scan to see cleanable space';
+        } else {
+            const totalCategories = 8; // temp, cache, browser, updates, logs, recycle, registry, dumps
+            cleanableDetailsEl.textContent = `${scannedCategories}/${totalCategories} categories scanned`;
+        }
+    }
+
+    // Update progress bar (assuming 1TB total disk space for calculation)
+    if (cleanableBarEl && totalCleanableSpace > 0) {
+        const totalDiskSpace = 1000000000000; // 1TB
+        const cleanablePercentage = Math.min((totalCleanableSpace / totalDiskSpace) * 100, 100);
+        cleanableBarEl.style.width = `${cleanablePercentage}%`;
     }
 }
 
@@ -233,6 +543,462 @@ async function startCleanupSecure() {
 // Legacy function for backward compatibility (deprecated)
 async function startCleanup() {
     return startCleanupSecure();
+}
+
+/**
+ * Quick cleanup - clean safe categories with minimal confirmation
+ */
+async function quickCleanup() {
+    if (cleanupState.isRunning) {
+        showNotification('Cleanup operation already in progress', 'warning');
+        return;
+    }
+
+    // Select safe categories for quick cleanup
+    const safeCategories = ['temp', 'cache', 'updates'];
+
+    // Clear current selection and select safe categories
+    cleanupState.selectedCategories.clear();
+    safeCategories.forEach(category => {
+        cleanupState.selectedCategories.add(category);
+        const checkbox = document.getElementById(`cat-${category}`);
+        if (checkbox) {
+            checkbox.checked = true;
+            updateCategorySelection(category, true);
+        }
+    });
+
+    updateCleanupSummary();
+
+    // Quick confirmation
+    const confirmed = confirm(
+        'Quick Cleanup\n\n' +
+        'This will clean safe categories:\n' +
+        '• Temporary files\n' +
+        '• System cache\n' +
+        '• Windows update cache\n\n' +
+        'Continue with quick cleanup?'
+    );
+
+    if (confirmed) {
+        await startAdvancedCleanup();
+    }
+}
+
+/**
+ * Deep scan - comprehensive analysis of all categories
+ */
+async function deepScan() {
+    if (cleanupState.isRunning) {
+        showNotification('Deep scan already in progress', 'warning');
+        return;
+    }
+
+    const deepScanBtn = document.getElementById('deep-scan-btn');
+    if (deepScanBtn) {
+        deepScanBtn.classList.add('active');
+        deepScanBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Deep Scanning...</span>';
+    }
+
+    try {
+        // Enable deep scan mode
+        cleanupState.settings.deepScanMode = true;
+
+        // Select all categories for deep scan
+        selectAllCategories();
+
+        // Scan all categories
+        await scanSelectedCategories();
+
+        showNotification('Deep scan completed - review results before cleaning', 'success');
+
+    } catch (error) {
+        console.error('Deep scan failed:', error);
+        showNotification('Deep scan failed: ' + error.message, 'error');
+    } finally {
+        cleanupState.settings.deepScanMode = false;
+
+        if (deepScanBtn) {
+            deepScanBtn.classList.remove('active');
+            deepScanBtn.innerHTML = '<i class="fas fa-search-plus"></i><span>Deep Scan</span>';
+        }
+    }
+}
+
+/**
+ * Start advanced cleanup process
+ */
+async function startAdvancedCleanup() {
+    if (cleanupState.isRunning) {
+        showNotification('Cleanup operation already in progress', 'warning');
+        return;
+    }
+
+    if (cleanupState.selectedCategories.size === 0) {
+        showNotification('Please select at least one category to clean', 'warning');
+        return;
+    }
+
+    // Enhanced confirmation based on selected categories
+    const riskLevel = calculateRiskLevel();
+    const confirmed = await showAdvancedConfirmation(riskLevel);
+
+    if (!confirmed) {
+        return;
+    }
+
+    cleanupState.isRunning = true;
+    cleanupState.startTime = Date.now();
+    cleanupState.totalCategories = cleanupState.selectedCategories.size;
+    cleanupState.completedCategories = 0;
+
+    // Update UI
+    showAdvancedProgress();
+    updateCleanupButton(true);
+    hideResults();
+
+    try {
+        await performAdvancedCleanupProcess();
+        showNotification('Advanced cleanup completed successfully', 'success');
+
+        // Add to history
+        addToCleanupHistory();
+
+    } catch (error) {
+        console.error('Advanced cleanup failed:', error);
+        showNotification(`Cleanup failed: ${error.message}`, 'error');
+        addLogEntry(`Error: ${error.message}`, 'error');
+    } finally {
+        cleanupState.isRunning = false;
+        cleanupState.isPaused = false;
+        hideProgress();
+        updateCleanupButton(false);
+    }
+}
+
+/**
+ * Calculate risk level based on selected categories
+ */
+function calculateRiskLevel() {
+    let riskScore = 0;
+    const riskWeights = { low: 1, medium: 2, high: 3 };
+
+    cleanupState.selectedCategories.forEach(category => {
+        const categoryInfo = CLEANUP_SECURITY_CONFIG.categoryInfo[category];
+        if (categoryInfo) {
+            riskScore += riskWeights[categoryInfo.risk] || 1;
+        }
+    });
+
+    if (riskScore <= 3) return 'low';
+    if (riskScore <= 6) return 'medium';
+    return 'high';
+}
+
+/**
+ * Show advanced confirmation dialog
+ */
+async function showAdvancedConfirmation(riskLevel) {
+    const selectedCategories = Array.from(cleanupState.selectedCategories);
+    const categoryNames = selectedCategories.map(cat =>
+        CLEANUP_SECURITY_CONFIG.categoryInfo[cat]?.name || cat
+    ).join('\n• ');
+
+    const riskMessages = {
+        low: 'This is a low-risk cleanup operation.',
+        medium: 'This cleanup includes medium-risk categories. Please review carefully.',
+        high: '⚠️ HIGH RISK OPERATION ⚠️\nThis cleanup includes high-risk categories that may affect system functionality.'
+    };
+
+    const message = `Advanced System Cleanup\n\n` +
+        `Selected categories:\n• ${categoryNames}\n\n` +
+        `${riskMessages[riskLevel]}\n\n` +
+        `This action cannot be undone.\n\n` +
+        `Continue with cleanup?`;
+
+    return confirm(message);
+}
+
+/**
+ * Scan selected categories for cleanable content
+ */
+async function scanSelectedCategories() {
+    const scanBtn = document.getElementById('scan-btn');
+    if (!scanBtn) return;
+
+    // Update button state
+    scanBtn.disabled = true;
+    scanBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
+
+    try {
+        // Try batch scanning first for better performance
+        const categoriesToScan = Array.from(cleanupState.selectedCategories);
+        let batchResults = null;
+
+        // Update all category statuses to scanning
+        categoriesToScan.forEach(category => {
+            const statusEl = document.getElementById(`${category}-status`);
+            if (statusEl) {
+                statusEl.className = 'category-status scanning';
+                statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            }
+        });
+
+        // Try batch scanning if available
+        if (window.electronAPI && window.electronAPI.executeBatchPowerShell) {
+            try {
+                console.log('Attempting batch cleanup scan for categories:', categoriesToScan);
+
+                const batchData = {
+                    categories: categoriesToScan
+                };
+
+                batchResults = await window.electronAPI.executeBatchPowerShell('batch-cleanup-scan', batchData);
+                console.log('Batch scan results:', batchResults);
+
+                // Process batch results
+                if (batchResults && typeof batchResults === 'object') {
+                    categoriesToScan.forEach(category => {
+                        const size = batchResults[category] || 0;
+                        const result = {
+                            category,
+                            fileCount: Math.floor(size / 50000), // Estimate file count
+                            estimatedSize: size,
+                            lastModified: new Date().toISOString(),
+                            status: 'completed'
+                        };
+
+                        cleanupState.scanResults.set(category, result);
+                        updateCategoryDisplay(category, result);
+                    });
+
+                    showNotification('Batch scan completed successfully', 'success');
+                    updateCleanupSummary();
+                    return;
+                }
+            } catch (batchError) {
+                console.warn('Batch scanning failed, falling back to individual scans:', batchError);
+            }
+        }
+
+        // Fallback to individual scanning if batch failed or not available
+        const scanPromises = categoriesToScan.map(category => {
+            return Promise.race([
+                scanCategory(category),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error(`Scan timeout for ${category}`)), 30000)
+                )
+            ]).catch(error => {
+                console.warn(`Scan failed for ${category}:`, error);
+                // Return a default result instead of failing completely
+                const errorResult = {
+                    category,
+                    fileCount: 0,
+                    estimatedSize: 0,
+                    lastModified: new Date().toISOString(),
+                    status: 'timeout',
+                    error: error.message
+                };
+                cleanupState.scanResults.set(category, errorResult);
+                return errorResult;
+            });
+        });
+
+        const results = await Promise.all(scanPromises);
+
+        // Count successful scans
+        const successCount = results.filter(r => r && r.status !== 'error' && r.status !== 'timeout').length;
+        const totalCount = cleanupState.selectedCategories.size;
+
+        if (successCount === totalCount) {
+            showNotification('Category scan completed successfully', 'success');
+        } else {
+            showNotification(`${successCount}/${totalCount} categories scanned successfully`, 'warning');
+        }
+
+        updateCleanupSummary();
+
+    } catch (error) {
+        console.error('Scan failed:', error);
+        showNotification('Scan failed: ' + error.message, 'error');
+    } finally {
+        // Restore button state
+        scanBtn.disabled = false;
+        scanBtn.innerHTML = '<i class="fas fa-search"></i> Scan Selected';
+    }
+}
+
+/**
+ * Update category display with scan results
+ */
+function updateCategoryDisplay(category, result) {
+    const statusEl = document.getElementById(`${category}-status`);
+    const sizeEl = document.getElementById(`${category}-size`);
+
+    if (statusEl) {
+        if (result.status === 'completed' && result.estimatedSize > 0) {
+            statusEl.className = 'category-status ready';
+            statusEl.innerHTML = '<i class="fas fa-check"></i>';
+        } else if (result.status === 'error' || result.status === 'timeout') {
+            statusEl.className = 'category-status error';
+            statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+        } else {
+            statusEl.className = 'category-status empty';
+            statusEl.innerHTML = '<i class="fas fa-info-circle"></i>';
+        }
+    }
+
+    if (sizeEl) {
+        if (result.estimatedSize > 0) {
+            sizeEl.textContent = formatBytes(result.estimatedSize);
+            sizeEl.style.color = '#4CAF50';
+        } else {
+            sizeEl.textContent = 'No files found';
+            sizeEl.style.color = '#666';
+        }
+    }
+}
+
+/**
+ * Scan individual category for cleanable content
+ */
+async function scanCategory(category) {
+    console.log(`Scanning category: ${category}`);
+
+    const statusEl = document.getElementById(`${category}-status`);
+    const sizeEl = document.getElementById(`${category}-size`);
+
+    // Update status to scanning
+    if (statusEl) {
+        statusEl.className = 'category-status scanning';
+        statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    }
+
+    // Update size to show scanning
+    if (sizeEl) {
+        sizeEl.textContent = 'Scanning...';
+    }
+
+    try {
+        let result;
+
+        if (window.electronAPI && window.electronAPI.scanCleanupCategory) {
+            try {
+                result = await window.electronAPI.scanCleanupCategory(category);
+            } catch (electronError) {
+                console.warn(`Electron API failed for ${category}, falling back to simulation:`, electronError);
+                result = null; // Will trigger fallback below
+            }
+        }
+
+        // If no result from Electron API, return zero values instead of fake data
+        if (!result) {
+            result = {
+                category: category,
+                fileCount: 0,
+                estimatedSize: 0,
+                lastModified: new Date().toISOString(),
+                status: 'no_data'
+            };
+        }
+
+        // Validate and sanitize result data
+        if (!result || typeof result !== 'object') {
+            throw new Error(`No valid result returned for category: ${category}`);
+        }
+
+        // Ensure all required properties exist and are valid
+        result.category = result.category || category;
+
+        // More careful number conversion to avoid losing valid values
+        if (typeof result.estimatedSize !== 'number' || isNaN(result.estimatedSize)) {
+            const converted = Number(result.estimatedSize);
+            result.estimatedSize = isNaN(converted) ? 0 : converted;
+        }
+
+        if (typeof result.fileCount !== 'number' || isNaN(result.fileCount)) {
+            const converted = Number(result.fileCount);
+            result.fileCount = isNaN(converted) ? 0 : converted;
+        }
+
+        result.lastModified = result.lastModified || new Date().toISOString();
+        result.status = result.status || 'success';
+
+        // Ensure non-negative values
+        result.estimatedSize = Math.max(result.estimatedSize, 0);
+        result.fileCount = Math.max(result.fileCount, 0);
+
+        // Final validation - only check for NaN, don't force artificial minimums
+        if (isNaN(result.estimatedSize) || isNaN(result.fileCount)) {
+            throw new Error(`Invalid numeric values in scan result for category: ${category}`);
+        }
+
+        // Debug logging to help identify issues
+        console.log(`Scan result for ${category}:`, {
+            estimatedSize: result.estimatedSize,
+            fileCount: result.fileCount,
+            formatted: formatBytes(result.estimatedSize)
+        });
+
+        // Store scan result
+        cleanupState.scanResults.set(category, result);
+
+        // Update UI with validated data
+        if (sizeEl) {
+            const formattedSize = formatBytes(result.estimatedSize);
+            sizeEl.textContent = formattedSize;
+            sizeEl.style.color = result.estimatedSize > 0 ? 'var(--primary-color)' : 'var(--text-secondary)';
+        }
+
+        if (statusEl) {
+            statusEl.className = 'category-status ready';
+            statusEl.innerHTML = '<i class="fas fa-check"></i>';
+        }
+
+        console.log(`Scan completed for ${category}: ${formatBytes(result.estimatedSize)}, ${result.fileCount} files`);
+
+        // Update cleanable space display after each scan
+        updateTotalCleanableSpace();
+
+        return result;
+
+    } catch (error) {
+        console.error(`Failed to scan ${category}:`, error);
+
+        // Create fallback result with some reasonable defaults to prevent NaN issues
+        const fallbackResult = {
+            category: category,
+            fileCount: 0,
+            estimatedSize: 0,
+            lastModified: new Date().toISOString(),
+            status: 'error',
+            error: error.message || 'Unknown error'
+        };
+
+        // Don't provide artificial estimates - show actual scan failure
+        fallbackResult.estimatedSize = 0;
+        fallbackResult.fileCount = 0;
+
+        cleanupState.scanResults.set(category, fallbackResult);
+
+        if (statusEl) {
+            statusEl.className = 'category-status error';
+            statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+            statusEl.title = `Scan failed: ${error.message}`;
+        }
+
+        if (sizeEl) {
+            sizeEl.textContent = formatBytes(0);
+            sizeEl.style.color = 'var(--text-secondary)';
+            sizeEl.title = 'Scan failed - no data available';
+        }
+
+        // Update cleanable space display even for fallback results
+        updateTotalCleanableSpace();
+
+        // Return fallback result instead of throwing to prevent breaking other scans
+        return fallbackResult;
+    }
 }
 
 /**
@@ -332,19 +1098,307 @@ async function performCleanupProcessSecure() {
     setTimeout(loadDiskSpace, 1000);
 }
 
+/**
+ * Perform advanced cleanup process with selected categories
+ */
+async function performAdvancedCleanupProcess() {
+    if (cleanupState.selectedCategories.size === 0) {
+        throw new Error('No categories selected for cleanup');
+    }
+
+    // Convert selected categories to the format expected by the cleanup process
+    const selectedCategoriesArray = Array.from(cleanupState.selectedCategories);
+    const categories = selectedCategoriesArray.map(categoryName => {
+        const categoryInfo = CLEANUP_SECURITY_CONFIG.categoryInfo[categoryName];
+        return {
+            name: categoryName,
+            label: categoryInfo?.name || categoryName.charAt(0).toUpperCase() + categoryName.slice(1)
+        };
+    });
+
+    // Validate all categories before starting
+    const validCategories = categories.filter(category => {
+        const isValid = validateCleanupCategory(category.name);
+        if (!isValid) {
+            console.warn(`Invalid cleanup category detected: ${category.name}`);
+            addLogEntry(`Skipping invalid category: ${category.name}`, 'warning');
+        }
+        return isValid;
+    });
+
+    if (validCategories.length === 0) {
+        throw new Error('No valid cleanup categories available');
+    }
+
+    let totalFilesRemoved = 0;
+    let totalSpaceFreed = 0;
+    const results = [];
+
+    for (let i = 0; i < validCategories.length; i++) {
+        const category = validCategories[i];
+        const progress = ((i + 1) / validCategories.length) * 100;
+
+        // Update advanced progress
+        cleanupState.currentCategory = category.name;
+        cleanupState.completedCategories = i;
+
+        updateAdvancedProgress(
+            progress,
+            `Cleaning ${escapeHtml(category.label)}...`,
+            `Processing category ${i + 1} of ${validCategories.length}`
+        );
+
+        addLogEntry(`Starting cleanup of ${category.label}...`, 'info');
+
+        try {
+            let result;
+            if (window.electronAPI && window.electronAPI.executeCleanup) {
+                // Sanitize category name before sending to backend
+                const sanitizedCategory = sanitizeCleanupCategory(category.name);
+
+                // Additional validation
+                if (!sanitizedCategory || sanitizedCategory !== category.name) {
+                    throw new Error(`Invalid category name: ${category.name}`);
+                }
+
+                result = await window.electronAPI.executeCleanup(sanitizedCategory);
+
+                // Validate result structure
+                if (!result || typeof result !== 'object') {
+                    throw new Error(`Invalid cleanup result for ${category.name}`);
+                }
+
+                // Sanitize numeric results
+                result.filesRemoved = Math.max(0, parseInt(result.filesRemoved) || 0);
+                result.sizeFreed = Math.max(0, parseInt(result.sizeFreed) || 0);
+
+            } else {
+                // Simulate cleanup for browser testing
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                result = {
+                    filesRemoved: Math.floor(Math.random() * 500) + 100,
+                    sizeFreed: Math.floor(Math.random() * 100000000) + 10000000 // 10-110MB
+                };
+            }
+
+            totalFilesRemoved += result.filesRemoved || 0;
+            totalSpaceFreed += result.sizeFreed || 0;
+
+            results.push({
+                category: category.name,
+                label: category.label,
+                filesRemoved: result.filesRemoved || 0,
+                sizeFreed: result.sizeFreed || 0,
+                success: true
+            });
+
+            addLogEntry(`${category.label}: ${result.filesRemoved || 0} files, ${formatBytes(result.sizeFreed || 0)} freed`, 'success');
+
+        } catch (error) {
+            console.warn(`Failed to clean ${category.name}:`, error);
+            addLogEntry(`Failed to clean ${category.label}: ${error.message}`, 'error');
+
+            results.push({
+                category: category.name,
+                label: category.label,
+                filesRemoved: 0,
+                sizeFreed: 0,
+                success: false,
+                error: error.message
+            });
+            // Continue with other categories
+        }
+
+        // Check if cleanup was paused or cancelled
+        if (cleanupState.isPaused) {
+            addLogEntry('Cleanup paused by user', 'info');
+            break;
+        }
+    }
+
+    // Update final progress
+    cleanupState.completedCategories = validCategories.length;
+    updateAdvancedProgress(100, 'Cleanup completed', 'Finalizing results...');
+
+    // Show results
+    const timeTaken = Math.round((Date.now() - cleanupState.startTime) / 1000);
+    showAdvancedResults(totalFilesRemoved, totalSpaceFreed, timeTaken, results);
+
+    // Refresh disk space
+    setTimeout(loadDiskSpace, 1000);
+
+    addLogEntry(`Cleanup completed in ${timeTaken} seconds`, 'success');
+}
+
 // Legacy function for backward compatibility (deprecated)
 async function performCleanupProcess() {
     return performCleanupProcessSecure();
 }
 
 /**
- * Show progress section
+ * Show advanced progress during cleanup
  */
-function showProgress() {
+function showAdvancedProgress() {
     const progressSection = document.getElementById('cleanup-progress');
     if (progressSection) {
-        progressSection.style.display = 'block';
+        progressSection.style.display = 'flex';
+
+        // Reset progress
+        updateAdvancedProgress(0, 'Initializing cleanup...', 'Preparing cleanup process...');
+
+        // Clear log
+        const logEl = document.getElementById('progress-log');
+        if (logEl) {
+            logEl.innerHTML = '<div class="log-entry">Starting cleanup process...</div>';
+        }
     }
+}
+
+/**
+ * Show progress section (legacy compatibility)
+ */
+function showProgress() {
+    showAdvancedProgress();
+}
+
+/**
+ * Update advanced progress display
+ */
+function updateAdvancedProgress(percentage, text, operation) {
+    const progressPercentage = document.getElementById('progress-percentage');
+    const progressText = document.getElementById('progress-text');
+    const progressBarFill = document.getElementById('progress-bar-fill');
+    const currentOperation = document.getElementById('current-operation');
+    const progressEta = document.getElementById('progress-eta');
+
+    if (progressPercentage) {
+        progressPercentage.textContent = `${Math.round(percentage)}%`;
+    }
+
+    if (progressText) {
+        progressText.textContent = text;
+    }
+
+    if (progressBarFill) {
+        progressBarFill.style.width = `${percentage}%`;
+    }
+
+    if (currentOperation && operation) {
+        currentOperation.textContent = operation;
+    }
+
+    // Calculate ETA
+    if (progressEta && cleanupState.startTime && percentage > 0) {
+        const elapsed = Date.now() - cleanupState.startTime;
+        const estimated = (elapsed / percentage) * (100 - percentage);
+        const eta = Math.round(estimated / 1000);
+        progressEta.textContent = eta > 0 ? `ETA: ${eta}s` : 'Calculating...';
+    }
+}
+
+/**
+ * Add entry to progress log
+ */
+function addLogEntry(message, type = 'info') {
+    const logEl = document.getElementById('progress-log');
+    if (!logEl) return;
+
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${type}`;
+    entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+
+    logEl.appendChild(entry);
+    logEl.scrollTop = logEl.scrollHeight;
+
+    // Limit log entries to prevent memory issues
+    const entries = logEl.querySelectorAll('.log-entry');
+    if (entries.length > 100) {
+        entries[0].remove();
+    }
+}
+
+/**
+ * Pause cleanup process
+ */
+function pauseCleanup() {
+    if (!cleanupState.isRunning) return;
+
+    cleanupState.isPaused = !cleanupState.isPaused;
+    const pauseBtn = document.getElementById('pause-btn');
+
+    if (cleanupState.isPaused) {
+        if (pauseBtn) {
+            pauseBtn.innerHTML = '<i class="fas fa-play"></i> Resume';
+        }
+        addLogEntry('Cleanup paused by user', 'warning');
+        showNotification('Cleanup paused', 'info');
+    } else {
+        if (pauseBtn) {
+            pauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+        }
+        addLogEntry('Cleanup resumed', 'info');
+        showNotification('Cleanup resumed', 'info');
+    }
+}
+
+/**
+ * Cancel cleanup process
+ */
+function cancelCleanup() {
+    if (!cleanupState.isRunning) return;
+
+    const confirmed = confirm('Are you sure you want to cancel the cleanup process?');
+    if (!confirmed) return;
+
+    cleanupState.isRunning = false;
+    cleanupState.isPaused = false;
+
+    addLogEntry('Cleanup cancelled by user', 'error');
+    showNotification('Cleanup cancelled', 'warning');
+
+    hideProgress();
+    updateCleanupButton(false);
+}
+
+/**
+ * Show cleanup settings modal
+ */
+function showCleanupSettings() {
+    const modal = document.getElementById('cleanup-settings-modal');
+    if (modal) {
+        // Load current settings
+        loadSettingsToModal();
+        modal.style.display = 'flex';
+    }
+}
+
+/**
+ * Hide cleanup settings modal
+ */
+function hideCleanupSettings() {
+    const modal = document.getElementById('cleanup-settings-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+/**
+ * Load settings to modal
+ */
+function loadSettingsToModal() {
+    const settings = cleanupState.settings;
+
+    const confirmBeforeDelete = document.getElementById('confirm-before-delete');
+    const skipRecentFiles = document.getElementById('skip-recent-files');
+    const createRestorePoint = document.getElementById('create-restore-point');
+    const cleanupThreads = document.getElementById('cleanup-threads');
+    const deepScanMode = document.getElementById('deep-scan-mode');
+
+    if (confirmBeforeDelete) confirmBeforeDelete.checked = settings.confirmBeforeDelete;
+    if (skipRecentFiles) skipRecentFiles.checked = settings.skipRecentFiles;
+    if (createRestorePoint) createRestorePoint.checked = settings.createRestorePoint;
+    if (cleanupThreads) cleanupThreads.value = settings.cleanupThreads;
+    if (deepScanMode) deepScanMode.checked = settings.deepScanMode;
 }
 
 /**
@@ -456,6 +1510,133 @@ function showResultsSecure(filesRemoved, spaceFreed, timeTaken, detailedResults 
     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
+/**
+ * Show advanced cleanup results with enhanced details
+ */
+function showAdvancedResults(filesRemoved, spaceFreed, timeTaken, detailedResults = []) {
+    const resultsSection = document.getElementById('results-section');
+    if (!resultsSection) return;
+
+    // Debug logging
+    console.log('showAdvancedResults called with:', { filesRemoved, spaceFreed, timeTaken, detailedResults });
+
+    // Validate and sanitize input values
+    const safeFilesRemoved = Math.max(0, parseInt(filesRemoved) || 0);
+    const safeSpaceFreed = Math.max(0, parseInt(spaceFreed) || 0);
+    const safeTimeTaken = Math.max(0, parseInt(timeTaken) || 0);
+
+    console.log('Sanitized values:', { safeFilesRemoved, safeSpaceFreed, safeTimeTaken });
+
+    // Add success class and timestamp
+    resultsSection.classList.add('success');
+
+    // Update timestamp
+    const timestampEl = document.getElementById('results-timestamp');
+    if (timestampEl) {
+        timestampEl.textContent = `Completed at ${new Date().toLocaleString()}`;
+    }
+
+    // Update main result values
+    const filesCleanedEl = document.getElementById('files-cleaned');
+    const spaceFreedEl = document.getElementById('space-freed');
+    const timeTakenEl = document.getElementById('time-taken');
+    const categoriesCleanedEl = document.getElementById('categories-cleaned');
+
+    if (filesCleanedEl) {
+        const value = safeFilesRemoved.toLocaleString();
+        filesCleanedEl.textContent = value;
+        console.log('Updated files-cleaned to:', value);
+    } else {
+        console.error('files-cleaned element not found');
+    }
+
+    if (spaceFreedEl) {
+        const value = formatBytes(safeSpaceFreed);
+        spaceFreedEl.textContent = value;
+        console.log('Updated space-freed to:', value);
+    } else {
+        console.error('space-freed element not found');
+    }
+
+    if (timeTakenEl) {
+        const value = `${safeTimeTaken}s`;
+        timeTakenEl.textContent = value;
+        console.log('Updated time-taken to:', value);
+    } else {
+        console.error('time-taken element not found');
+    }
+
+    if (categoriesCleanedEl) {
+        const value = detailedResults.length;
+        categoriesCleanedEl.textContent = value;
+        console.log('Updated categories-cleaned to:', value);
+    } else {
+        console.error('categories-cleaned element not found');
+    }
+
+    // Show detailed results with enhanced information
+    const detailsContainer = document.getElementById('cleanup-details');
+    if (detailsContainer && Array.isArray(detailedResults)) {
+        const successfulResults = detailedResults.filter(r => r.success);
+        const failedResults = detailedResults.filter(r => !r.success);
+
+        detailsContainer.innerHTML = `
+            <div class="results-summary">
+                <h4>Cleanup Summary</h4>
+                <div class="summary-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Categories Processed:</span>
+                        <span class="stat-value">${detailedResults.length}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Successful:</span>
+                        <span class="stat-value success">${successfulResults.length}</span>
+                    </div>
+                    ${failedResults.length > 0 ? `
+                    <div class="stat-item">
+                        <span class="stat-label">Failed:</span>
+                        <span class="stat-value error">${failedResults.length}</span>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+
+            <div class="results-details">
+                <h4>Detailed Results</h4>
+                ${detailedResults.map(result => {
+                    const statusIcon = result.success ?
+                        '<i class="fas fa-check-circle success"></i>' :
+                        '<i class="fas fa-exclamation-circle error"></i>';
+                    const statusText = result.success ? 'Success' : 'Failed';
+
+                    return `
+                        <div class="detail-item ${result.success ? 'success' : 'error'}">
+                            <div class="detail-header">
+                                ${statusIcon}
+                                <span class="detail-category">${escapeHtml(result.label)}</span>
+                                <span class="detail-status">${statusText}</span>
+                            </div>
+                            <div class="detail-stats">
+                                ${result.success ?
+                                    `Files: ${result.filesRemoved.toLocaleString()} | Space: ${formatBytes(result.sizeFreed)}` :
+                                    `Error: ${escapeHtml(result.error || 'Unknown error')}`
+                                }
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+
+    // Show results section
+    resultsSection.style.display = 'block';
+    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // Add to log
+    addLogEntry(`Results displayed: ${safeFilesRemoved} files, ${formatBytes(safeSpaceFreed)} freed`, 'success');
+}
+
 // Legacy function for backward compatibility (deprecated)
 function showResults(filesRemoved, spaceFreed, timeTaken) {
     return showResultsSecure(filesRemoved, spaceFreed, timeTaken);
@@ -504,11 +1685,25 @@ async function openDiskCleanup() {
  * Format bytes to human readable format
  */
 function formatBytes(bytes) {
+    // Handle invalid inputs
+    if (bytes === null || bytes === undefined || isNaN(bytes) || bytes < 0) {
+        return '0 B';
+    }
+
+    // Convert to number if it's a string
+    bytes = Number(bytes);
+
     if (bytes === 0) return '0 B';
+
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+
+    // Ensure i is within bounds
+    const sizeIndex = Math.min(i, sizes.length - 1);
+    const formattedValue = (bytes / Math.pow(k, sizeIndex)).toFixed(1);
+
+    return parseFloat(formattedValue) + ' ' + sizes[sizeIndex];
 }
 
 // Add CSS animations for notifications if not already present
@@ -594,8 +1789,449 @@ if (!document.querySelector('#cleanup-notification-styles')) {
     document.head.appendChild(notificationStyles);
 }
 
+
+
+
+
+
+
+/**
+ * Save cleanup settings
+ */
+function saveCleanupSettings() {
+    const confirmBeforeDelete = document.getElementById('confirm-before-delete');
+    const skipRecentFiles = document.getElementById('skip-recent-files');
+    const createRestorePoint = document.getElementById('create-restore-point');
+    const cleanupThreads = document.getElementById('cleanup-threads');
+    const deepScanMode = document.getElementById('deep-scan-mode');
+
+    cleanupState.settings = {
+        confirmBeforeDelete: confirmBeforeDelete?.checked || true,
+        skipRecentFiles: skipRecentFiles?.checked || true,
+        createRestorePoint: createRestorePoint?.checked || false,
+        cleanupThreads: parseInt(cleanupThreads?.value) || 1,
+        deepScanMode: deepScanMode?.checked || false
+    };
+
+    // Save to localStorage
+    try {
+        localStorage.setItem('cleanupSettings', JSON.stringify(cleanupState.settings));
+    } catch (error) {
+        console.warn('Failed to save settings to localStorage:', error);
+    }
+
+    showNotification('Settings saved successfully', 'success');
+    hideCleanupSettings();
+}
+
+/**
+ * Reset cleanup settings to defaults
+ */
+function resetCleanupSettings() {
+    const confirmed = confirm('Reset all settings to default values?');
+    if (!confirmed) return;
+
+    cleanupState.settings = {
+        confirmBeforeDelete: true,
+        skipRecentFiles: true,
+        createRestorePoint: false,
+        cleanupThreads: 1,
+        deepScanMode: false
+    };
+
+    loadSettingsToModal();
+    showNotification('Settings reset to defaults', 'info');
+}
+
+/**
+ * Load cleanup settings from localStorage
+ */
+function loadCleanupSettings() {
+    try {
+        const saved = localStorage.getItem('cleanupSettings');
+        if (saved) {
+            cleanupState.settings = { ...cleanupState.settings, ...JSON.parse(saved) };
+        }
+    } catch (error) {
+        console.warn('Failed to load settings from localStorage:', error);
+    }
+}
+
+/**
+ * Show cleanup history
+ */
+function showCleanupHistory() {
+    const historySection = document.getElementById('history-section');
+    if (historySection) {
+        loadCleanupHistory();
+        historySection.style.display = 'block';
+    }
+}
+
+/**
+ * Hide cleanup history
+ */
+function hideHistory() {
+    const historySection = document.getElementById('history-section');
+    if (historySection) {
+        historySection.style.display = 'none';
+    }
+}
+
+/**
+ * Load cleanup history from localStorage
+ */
+function loadCleanupHistory() {
+    try {
+        const saved = localStorage.getItem('cleanupHistory');
+        if (saved) {
+            cleanupState.cleanupHistory = JSON.parse(saved);
+        }
+    } catch (error) {
+        console.warn('Failed to load cleanup history:', error);
+    }
+
+    displayCleanupHistory();
+}
+
+/**
+ * Display cleanup history
+ */
+function displayCleanupHistory() {
+    const historyContent = document.getElementById('history-content');
+    if (!historyContent) return;
+
+    if (cleanupState.cleanupHistory.length === 0) {
+        historyContent.innerHTML = `
+            <div class="history-empty">
+                <i class="fas fa-clock"></i>
+                <p>No cleanup history available</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    cleanupState.cleanupHistory.slice(-20).reverse().forEach(entry => {
+        html += `
+            <div class="history-item">
+                <div class="history-info">
+                    <div class="history-date">${new Date(entry.date).toLocaleString()}</div>
+                    <div class="history-details">${entry.categories.join(', ')} • ${entry.duration}s</div>
+                </div>
+                <div class="history-stats">
+                    ${formatBytes(entry.spaceFreed)}<br>
+                    ${entry.filesDeleted} files
+                </div>
+            </div>
+        `;
+    });
+
+    historyContent.innerHTML = html;
+}
+
+/**
+ * Add entry to cleanup history
+ */
+function addToCleanupHistory() {
+    const entry = {
+        date: new Date().toISOString(),
+        categories: Array.from(cleanupState.selectedCategories),
+        spaceFreed: calculateTotalSpaceFreed(),
+        filesDeleted: calculateTotalFilesDeleted(),
+        duration: Math.round((Date.now() - cleanupState.startTime) / 1000)
+    };
+
+    cleanupState.cleanupHistory.push(entry);
+
+    // Keep only last 50 entries
+    if (cleanupState.cleanupHistory.length > 50) {
+        cleanupState.cleanupHistory = cleanupState.cleanupHistory.slice(-50);
+    }
+
+    // Save to localStorage
+    try {
+        localStorage.setItem('cleanupHistory', JSON.stringify(cleanupState.cleanupHistory));
+    } catch (error) {
+        console.warn('Failed to save cleanup history:', error);
+    }
+}
+
+/**
+ * Clear cleanup history
+ */
+function clearHistory() {
+    const confirmed = confirm('Are you sure you want to clear all cleanup history?');
+    if (!confirmed) return;
+
+    cleanupState.cleanupHistory = [];
+
+    try {
+        localStorage.removeItem('cleanupHistory');
+    } catch (error) {
+        console.warn('Failed to clear cleanup history:', error);
+    }
+
+    displayCleanupHistory();
+    showNotification('Cleanup history cleared', 'info');
+}
+
+/**
+ * Export cleanup results
+ */
+function exportResults() {
+    const results = generateCleanupReport();
+    const blob = new Blob([results], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cleanup-report-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
+    showNotification('Report exported successfully', 'success');
+}
+
+/**
+ * Generate cleanup report
+ */
+function generateCleanupReport() {
+    const timestamp = new Date().toLocaleString();
+    const categories = Array.from(cleanupState.selectedCategories);
+    const spaceFreed = calculateTotalSpaceFreed();
+    const filesDeleted = calculateTotalFilesDeleted();
+    const duration = Math.round((Date.now() - cleanupState.startTime) / 1000);
+
+    return `WinTool System Cleanup Report
+Generated: ${timestamp}
+
+=== CLEANUP SUMMARY ===
+Categories Cleaned: ${categories.join(', ')}
+Space Freed: ${formatBytes(spaceFreed)}
+Files Deleted: ${filesDeleted}
+Duration: ${duration} seconds
+
+=== DETAILED RESULTS ===
+${categories.map(cat => {
+    const result = cleanupState.scanResults.get(cat);
+    return `${cat.toUpperCase()}: ${result ? formatBytes(result.estimatedSize) : 'N/A'}`;
+}).join('\n')}
+
+=== SYSTEM INFO ===
+User Agent: ${navigator.userAgent}
+Platform: ${navigator.platform}
+Language: ${navigator.language}
+
+Report generated by WinTool Advanced System Cleanup
+`;
+}
+
+/**
+ * Calculate total space freed (mock calculation)
+ */
+function calculateTotalSpaceFreed() {
+    let total = 0;
+    cleanupState.selectedCategories.forEach(category => {
+        const result = cleanupState.scanResults.get(category);
+        if (result && result.estimatedSize) {
+            total += result.estimatedSize;
+        }
+    });
+    return total;
+}
+
+/**
+ * Calculate total files deleted (mock calculation)
+ */
+function calculateTotalFilesDeleted() {
+    let total = 0;
+    cleanupState.selectedCategories.forEach(category => {
+        const result = cleanupState.scanResults.get(category);
+        if (result && result.fileCount) {
+            total += result.fileCount;
+        }
+    });
+    return total;
+}
+
+/**
+ * Deep scan all categories for comprehensive analysis
+ */
+async function deepScan() {
+    console.log('Starting deep scan...');
+
+    const deepScanBtn = document.getElementById('deep-scan-btn');
+    if (deepScanBtn) {
+        deepScanBtn.disabled = true;
+        deepScanBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Deep Scanning...</span>';
+    }
+
+    // Select all categories for deep scan
+    const categories = ['temp', 'cache', 'browser', 'updates', 'logs', 'recycle', 'registry', 'dumps'];
+    cleanupState.selectedCategories.clear();
+    categories.forEach(category => {
+        cleanupState.selectedCategories.add(category);
+        const checkbox = document.getElementById(`cat-${category}`);
+        if (checkbox) {
+            checkbox.checked = true;
+            // Update visual state
+            const card = document.querySelector(`[data-category="${category}"]`);
+            if (card) card.classList.add('selected');
+        }
+    });
+
+    try {
+        // Perform comprehensive scan with extended timeout
+        const scanPromises = categories.map(category => {
+            return Promise.race([
+                scanCategory(category),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error(`Deep scan timeout for ${category}`)), 60000)
+                )
+            ]).catch(error => {
+                console.warn(`Deep scan failed for ${category}:`, error);
+                return {
+                    category,
+                    fileCount: 0,
+                    estimatedSize: 0,
+                    lastModified: new Date().toISOString(),
+                    status: 'timeout',
+                    error: error.message
+                };
+            });
+        });
+
+        const results = await Promise.all(scanPromises);
+
+        // Store results
+        results.forEach(result => {
+            if (result) {
+                cleanupState.scanResults.set(result.category, result);
+            }
+        });
+
+        updateCleanupSummary();
+
+        const successCount = results.filter(r => r && r.status !== 'error' && r.status !== 'timeout').length;
+        if (successCount === categories.length) {
+            showNotification('Deep scan completed successfully', 'success');
+        } else {
+            showNotification(`Deep scan completed: ${successCount}/${categories.length} categories scanned`, 'warning');
+        }
+
+    } catch (error) {
+        console.error('Deep scan failed:', error);
+        showNotification('Deep scan failed: ' + error.message, 'error');
+    } finally {
+        if (deepScanBtn) {
+            deepScanBtn.disabled = false;
+            deepScanBtn.innerHTML = '<i class="fas fa-search-plus"></i> <span>Deep Scan</span>';
+        }
+    }
+}
+
+/**
+ * Initialize category displays with default values and click handlers
+ */
+function initializeCategoryDisplays() {
+    const categories = ['temp', 'cache', 'browser', 'updates', 'logs', 'recycle', 'registry', 'dumps'];
+
+    categories.forEach(category => {
+        const sizeEl = document.getElementById(`${category}-size`);
+        const statusEl = document.getElementById(`${category}-status`);
+        const categoryCard = document.querySelector(`[data-category="${category}"]`);
+
+        if (sizeEl) {
+            sizeEl.textContent = 'Click to scan';
+            sizeEl.style.color = 'var(--text-secondary)';
+            sizeEl.style.cursor = 'pointer';
+
+            // Add click handler to scan individual category
+            sizeEl.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (sizeEl.textContent === 'Click to scan' || sizeEl.textContent.includes('failed')) {
+                    await scanCategory(category);
+                }
+            });
+        }
+
+        if (statusEl) {
+            statusEl.className = 'category-status';
+            statusEl.innerHTML = '<i class="fas fa-clock"></i>';
+            statusEl.style.cursor = 'pointer';
+
+            // Add click handler to status icon as well
+            statusEl.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (!statusEl.classList.contains('scanning')) {
+                    await scanCategory(category);
+                }
+            });
+        }
+
+        // Add hover effects
+        if (categoryCard) {
+            categoryCard.addEventListener('mouseenter', () => {
+                if (sizeEl && sizeEl.textContent === 'Click to scan') {
+                    sizeEl.style.color = 'var(--primary-color)';
+                }
+            });
+
+            categoryCard.addEventListener('mouseleave', () => {
+                if (sizeEl && sizeEl.textContent === 'Click to scan') {
+                    sizeEl.style.color = 'var(--text-secondary)';
+                }
+            });
+        }
+    });
+}
+
+// Initialize cleanup tab when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Cleanup tab initialized');
+
+    // Initialize category displays
+    initializeCategoryDisplays();
+
+    // Initialize disk space display
+    updateDiskSpaceDisplay({
+        total: 1000000000000, // 1TB
+        used: 600000000000,   // 600GB
+        free: 400000000000,   // 400GB
+        cleanable: 0 // Will be calculated from scan results
+    });
+
+    // Initialize cleanable space display
+    updateTotalCleanableSpace();
+
+    // Load cleanup history
+    loadCleanupHistory();
+
+    // Initialize cleanup summary
+    updateCleanupSummary();
+});
+
 // Make functions available globally
 window.startCleanup = startCleanupSecure;
+window.startAdvancedCleanup = startAdvancedCleanup;
+window.quickCleanup = quickCleanup;
+window.deepScan = deepScan;
+window.selectAllCategories = selectAllCategories;
+window.deselectAllCategories = deselectAllCategories;
+window.scanSelectedCategories = scanSelectedCategories;
+window.pauseCleanup = pauseCleanup;
+window.cancelCleanup = cancelCleanup;
+window.showCleanupSettings = showCleanupSettings;
+window.hideCleanupSettings = hideCleanupSettings;
+window.saveCleanupSettings = saveCleanupSettings;
+window.resetCleanupSettings = resetCleanupSettings;
+window.showCleanupHistory = showCleanupHistory;
+window.hideHistory = hideHistory;
+window.clearHistory = clearHistory;
+window.exportResults = exportResults;
 window.openDiskCleanup = openDiskCleanup;
 
-console.log('Cleanup tab script loaded successfully with security enhancements');
+console.log('Advanced cleanup tab script loaded successfully with enhanced features');
