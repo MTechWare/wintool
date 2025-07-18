@@ -121,14 +121,21 @@ async function loadCurrentSettings() {
                 disableAnimationsCheckbox.checked = disableAnimations;
             }
 
-            
+
             const topMost = await window.electronAPI.getSetting('topMost', false);
             const topMostCheckbox = document.getElementById('top-most-checkbox');
             if (topMostCheckbox) {
                 topMostCheckbox.checked = topMost;
             }
 
-            
+            // Load lazy loading setting
+            const enableLazyLoading = await window.electronAPI.getSetting('enableLazyLoading', true);
+            const lazyLoadingCheckbox = document.getElementById('enable-lazy-loading');
+            if (lazyLoadingCheckbox) {
+                lazyLoadingCheckbox.checked = enableLazyLoading;
+            }
+
+
             await loadKeyboardShortcutsSettings();
         }
     } catch (error) {
@@ -285,11 +292,15 @@ export async function saveSettings() {
             const disableAnimations = document.getElementById('disable-animations-checkbox')?.checked || false;
             await window.electronAPI.setSetting('disableAnimations', disableAnimations);
 
-            
+
             const topMost = document.getElementById('top-most-checkbox')?.checked || false;
             await window.electronAPI.setSetting('topMost', topMost);
 
-            
+            // Save lazy loading setting
+            const enableLazyLoading = document.getElementById('enable-lazy-loading')?.checked !== false; // Default to true
+            await window.electronAPI.setSetting('enableLazyLoading', enableLazyLoading);
+
+
             await saveKeyboardShortcuts();
 
             

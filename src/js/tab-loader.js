@@ -16,6 +16,10 @@ class TabLoader {
         this.onCompleteCallback = null;
         this.tabInitializationPromises = new Map();
         this.tabReadyCallbacks = new Map();
+        // Configuration for sequential loading
+        this.sequentialLoadDelay = 50; // milliseconds between tab loads
+        // Lazy loading configuration (default: enabled)
+        this.lazyLoadingEnabled = true;
     }
 
     /**
@@ -30,6 +34,20 @@ class TabLoader {
      */
     setCompleteCallback(callback) {
         this.onCompleteCallback = callback;
+    }
+
+    /**
+     * Configure the delay between sequential tab loads
+     */
+    setSequentialLoadDelay(delayMs) {
+        this.sequentialLoadDelay = Math.max(0, delayMs); // Ensure non-negative
+    }
+
+    /**
+     * Set lazy loading preference
+     */
+    setLazyLoadingEnabled(enabled) {
+        this.lazyLoadingEnabled = enabled;
     }
 
     /**
@@ -61,7 +79,8 @@ class TabLoader {
             if (this.initializedTabsCount >= this.totalTabs) {
                 this.updateProgress('All tabs ready!', 100);
                 if (this.onCompleteCallback) {
-                    setTimeout(() => this.onCompleteCallback(this.loadedTabs), 500);
+                    // Reduced timeout for faster completion
+                    setTimeout(() => this.onCompleteCallback(this.loadedTabs), 100);
                 }
             }
         }
@@ -111,25 +130,32 @@ class TabLoader {
             if (this.totalTabs === 0) {
                 this.updateProgress('No tabs to load', 100);
                 if (this.onCompleteCallback) {
-                    setTimeout(() => this.onCompleteCallback(this.loadedTabs), 500);
+                    // Reduced timeout for faster completion
+                    setTimeout(() => this.onCompleteCallback(this.loadedTabs), 100);
                 }
                 return;
             }
 
             this.updateProgress('Loading tabs...', 0);
 
-            let pluginsHeaderShown = false;
-            for (const item of allItems) {
-                if (item.type === 'plugin' && !pluginsHeaderShown) {
-                    pluginsHeaderShown = true;
-                    const pluginLoadProgress = (this.loadedTabsCount / this.totalTabs) * 50;
-                    this.updateProgress('Loading plugins...', pluginLoadProgress);
+            // Load tabs one at a time to prevent resource spikes
+            this.updateProgress('Loading tabs sequentially...', 10);
+
+            for (let i = 0; i < allItems.length; i++) {
+                const item = allItems[i];
+                try {
+                    this.updateProgress(`Loading ${item.name}...`, 10 + (i / this.totalTabs) * 40);
+                    await this.loadTab(item.name);
+                    this.loadedTabsCount++;
+
+                    // Add delay between tab loads to prevent resource spikes
+                    if (i < allItems.length - 1 && this.sequentialLoadDelay > 0) {
+                        await new Promise(resolve => setTimeout(resolve, this.sequentialLoadDelay));
+                    }
+                } catch (error) {
+                    console.error(`Error loading tab ${item.name}:`, error);
+                    this.loadedTabsCount++; // Still count it to prevent hanging
                 }
-                
-                await this.loadTab(item.name);
-                this.loadedTabsCount++;
-                const loadProgress = (this.loadedTabsCount / this.totalTabs) * 50;
-                this.updateProgress(`Loaded ${item.name}`, loadProgress);
             }
 
             this.updateProgress('Waiting for tabs to initialize...', 50);
@@ -151,7 +177,7 @@ class TabLoader {
      * Wait for all tabs to initialize with a global timeout
      */
     waitForInitialization() {
-        const timeout = 10000; // 10 seconds global timeout
+        const timeout = 5000; // 5 seconds global timeout (reduced for faster startup)
         const checkInterval = 100;
         let elapsedTime = 0;
 
@@ -231,9 +257,22 @@ class TabLoader {
             // Register tab for initialization tracking
             this.registerTabForInitialization(tabId);
 
-            // Execute tab-specific JavaScript after DOM is ready
+            // Handle JavaScript execution based on lazy loading preference
             if (js.trim()) {
-                this.executeTabJS(tabId, js);
+                this.loadedTabs.get(tabId).jsExecuted = false;
+
+                // Check if lazy loading is enabled and this isn't the welcome tab
+                const shouldDeferExecution = this.lazyLoadingEnabled &&
+                    (tabId !== 'welcome' && folderName !== 'welcome');
+
+                if (shouldDeferExecution) {
+                    console.log(`Deferring JavaScript execution for tab: ${tabId} (lazy loading enabled)`);
+                    // Mark as ready without executing JS - will be executed on demand
+                    this.markTabAsReady(tabId);
+                } else {
+                    console.log(`Executing JavaScript immediately for tab: ${tabId} (lazy loading disabled or welcome tab)`);
+                    this.executeTabJS(tabId, js);
+                }
             } else {
                 // If no JavaScript, mark as ready immediately
                 this.markTabAsReady(tabId);
@@ -401,6 +440,18 @@ class TabLoader {
      */
     getTabData(tabId) {
         return this.loadedTabs.get(tabId);
+    }
+
+    /**
+     * Execute tab JavaScript on demand (lazy loading)
+     */
+    executeTabJSOnDemand(tabId) {
+        const tabData = this.loadedTabs.get(tabId);
+        if (tabData && tabData.js && !tabData.jsExecuted) {
+            console.log(`Lazy loading JavaScript for tab: ${tabId}`);
+            tabData.jsExecuted = true;
+            this.executeTabJS(tabId, tabData.js);
+        }
     }
 
     /**

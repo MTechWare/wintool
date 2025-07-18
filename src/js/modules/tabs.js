@@ -312,6 +312,10 @@ export async function switchToTab(tabName) {
 
     setCurrentTab(tabName);
 
+    // Trigger lazy loading for the tab if needed
+    if (window.tabLoader && typeof window.tabLoader.executeTabJSOnDemand === 'function') {
+        window.tabLoader.executeTabJSOnDemand(tabName);
+    }
 
     const tabItems = document.querySelectorAll('.tab-item');
     tabItems.forEach(item => {

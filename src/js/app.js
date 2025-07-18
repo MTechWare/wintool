@@ -60,9 +60,8 @@ async function deferredBoot() {
 
 document.addEventListener('DOMContentLoaded', async function() {
     await initialBoot();
-    // Use a short timeout to ensure the UI has a chance to render before we
-    // start the heavy lifting.
-    setTimeout(deferredBoot, 100);
+    // Reduced timeout for faster tab loading - UI should render quickly enough
+    setTimeout(deferredBoot, 10);
 });
 
 
@@ -78,12 +77,21 @@ async function continueNormalStartup() {
             window.tabLoader = newTabLoader;
 
             
-            tabLoader.setProgressCallback((message, percentage) => {
-                const adjustedPercentage = 40 + (percentage * 0.6); 
+            newTabLoader.setProgressCallback((message, percentage) => {
+                const adjustedPercentage = 40 + (percentage * 0.6);
                 updateSplashProgress(message, adjustedPercentage);
             });
 
-            tabLoader.setCompleteCallback(async (loadedTabs) => {
+            // Configure sequential loading delay (can be customized via settings)
+            // Use 100ms delay to prevent PowerShell process spikes during startup
+            const sequentialLoadDelay = await window.electronAPI.getSetting('sequentialLoadDelay', 100);
+            newTabLoader.setSequentialLoadDelay(sequentialLoadDelay);
+
+            // Configure lazy loading preference (default: enabled)
+            const enableLazyLoading = await window.electronAPI.getSetting('enableLazyLoading', true);
+            newTabLoader.setLazyLoadingEnabled(enableLazyLoading);
+
+            newTabLoader.setCompleteCallback(async (loadedTabs) => {
                 
                 await loadTabOrder();
                 
@@ -93,10 +101,16 @@ async function continueNormalStartup() {
                 
                 await restoreLastActiveTab();
 
-                
+
                 registerDefaultCommands(loadedTabs);
 
-                
+                // Finish startup phase early to allow more PowerShell processes
+                console.log('Finishing startup phase early after tab loading...');
+                if (window.electronAPI && window.electronAPI.finishStartupPhase) {
+                    await window.electronAPI.finishStartupPhase();
+                }
+
+
                 try {
                     const services = await window.electronAPI.getServices();
                     registerServiceControlCommands(services);
@@ -116,7 +130,7 @@ async function continueNormalStartup() {
                 hideSplashScreen();
             });
 
-            await tabLoader.init(DEFAULT_TAB_ORDER);
+            await newTabLoader.init(DEFAULT_TAB_ORDER);
         } else {
             
             await restoreLastActiveTab();
