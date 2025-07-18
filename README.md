@@ -9,7 +9,6 @@
 
 **🏆 Comprehensive. Intuitive. Professional.**
 
-[![Download Latest](https://img.shields.io/badge/📥_Download_Latest-WinTool.exe-ff6b35?style=for-the-badge&logo=download)](https://github.com/MTechWare/wintool/releases/tag/release)
 [![Plugin Marketplace](https://img.shields.io/badge/🔌_Plugin-Marketplace-4CAF50?style=for-the-badge&logo=puzzle-piece)](https://mtechware.github.io/plugins.html)
 [![Discord Community](https://img.shields.io/badge/💬_Join-Discord-7289DA?style=for-the-badge&logo=discord)](https://discord.gg/GSTEfkxhmD)
 
