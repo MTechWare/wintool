@@ -1,6 +1,6 @@
 {
   "name": "wintool",
-  "version": "0.2.0w",
+  "version": "0.2.1w",
   "main": "src/main.js",
   "description": "WinTool - Windows System Management Tool",
   "author": "MTech",
@@ -12,10 +12,10 @@
     "dist": "electron-builder --win --x64"
   },
   "build": {
-    "appId": "com.mtechware.wintool",
+    "appId": "io.github.mtechware",
     "productName": "WinTool",
     "icon": "src/assets/images/icon.ico",
-    "copyright": "Copyright © 2024 MTechWare",
+    "copyright": "Copyright © 2025 MTechWare",
     "fileAssociations": [],
     "nsis": {
       "oneClick": false,
@@ -41,7 +41,6 @@
       "src/**/*",
       "!src/**/*.md",
       "!src/**/test/**/*",
-      "ANTIVIRUS_WHITELIST.md",
       "LICENSE.txt"
     ],
     "extraResources": [
