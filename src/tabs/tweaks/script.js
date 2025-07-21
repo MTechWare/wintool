@@ -2,22 +2,152 @@
 
 // c:\Users\userv\OneDrive - Southeast Community College\wintool-MAIN\src\tabs\tweaks\script.js
 
-// Load the batch checker utility
-const batchCheckerScript = document.createElement('script');
-batchCheckerScript.src = '../../js/utils/batch-checker.js';
-batchCheckerScript.onload = () => {
-    console.log('BatchChecker utility loaded successfully');
+// Tweak ID to display name mapping (will be populated from the tweaks array)
+let tweakDisplayNames = {};
+
+// Preset configurations for Windows Tweaks
+const tweakPresets = {
+    essential: {
+        name: 'Essential Tweaks',
+        description: 'Safe privacy and performance improvements',
+        tweaks: [
+            'disable-activity-history',
+            'disable-telemetry',
+            'disable-location-tracking',
+            'disable-advertising-id',
+            'disable-startup-delay',
+            'disable-background-apps',
+            'cleanup-temp-files',
+            'create-restore-point'
+        ]
+    },
+    performance: {
+        name: 'Performance Optimization',
+        description: 'Maximum performance optimization',
+        tweaks: [
+            'disable-startup-delay',
+            'disable-background-apps',
+            'disable-animations',
+            'disable-visual-effects',
+            'disable-search-indexing',
+            'disable-superfetch',
+            'disable-prefetch',
+            'cleanup-temp-files',
+            'optimize-power-plan',
+            'disable-hibernation'
+        ]
+    },
+    privacy: {
+        name: 'Privacy Focus',
+        description: 'Maximum privacy protection',
+        tweaks: [
+            'disable-telemetry',
+            'disable-activity-history',
+            'disable-location-tracking',
+            'disable-advertising-id',
+            'disable-cortana',
+            'disable-web-search',
+            'disable-feedback',
+            'disable-tailored-experiences',
+            'disable-app-suggestions',
+            'disable-timeline'
+        ]
+    },
+    gaming: {
+        name: 'Gaming Optimization',
+        description: 'Optimized for gaming performance',
+        tweaks: [
+            'enable-game-mode',
+            'disable-fullscreen-optimizations',
+            'disable-nagle-algorithm',
+            'optimize-power-plan',
+            'disable-background-apps',
+            'disable-startup-delay',
+            'disable-visual-effects',
+            'cleanup-temp-files'
+        ]
+    }
 };
-batchCheckerScript.onerror = (error) => {
-    console.error('Failed to load BatchChecker utility:', error);
-};
-document.head.appendChild(batchCheckerScript);
+
+// Simple inline batch checker implementation
+class SimpleBatchChecker {
+    constructor() {
+        this.registryChecks = [];
+        this.results = new Map();
+    }
+
+    addRegistryCheck(key, path, name, expectedValue) {
+        this.registryChecks.push({ key, path, name, expectedValue });
+    }
+
+    async executeRegistryChecks() {
+        if (this.registryChecks.length === 0) {
+            return {};
+        }
+
+        try {
+            // Build a single PowerShell command to check multiple registry values
+            const commands = this.registryChecks.map(check =>
+                `try { $result = reg query "${check.path}" /v "${check.name}" 2>$null; if ($LASTEXITCODE -eq 0) { Write-Output "${check.key}:SUCCESS:$result" } else { Write-Output "${check.key}:NOTFOUND:" } } catch { Write-Output "${check.key}:ERROR:" }`
+            );
+
+            const psCommand = commands.join('; ');
+            const result = await window.electronAPI.runCommand(`powershell -Command "${psCommand}"`);
+
+            const results = {};
+            if (result.stdout) {
+                const lines = result.stdout.split('\n');
+                lines.forEach(line => {
+                    const parts = line.trim().split(':');
+                    if (parts.length >= 3) {
+                        const key = parts[0];
+                        const status = parts[1];
+                        const output = parts.slice(2).join(':');
+
+                        const check = this.registryChecks.find(c => c.key === key);
+                        if (check) {
+                            const isMatch = status === 'SUCCESS' && output.includes(check.expectedValue);
+                            results[key] = {
+                                found: status === 'SUCCESS',
+                                matches: isMatch,
+                                output: output
+                            };
+                            this.results.set(key, results[key]);
+                        }
+                    }
+                });
+            }
+
+            return results;
+        } catch (error) {
+            console.error('Batch registry check failed:', error);
+            // Return empty results on failure
+            const emptyResults = {};
+            this.registryChecks.forEach(check => {
+                emptyResults[check.key] = { found: false, matches: false, output: null };
+                this.results.set(check.key, emptyResults[check.key]);
+            });
+            return emptyResults;
+        }
+    }
+
+    isRegistryCheckMatched(key) {
+        const result = this.results.get(key);
+        return result ? result.matches : false;
+    }
+}
+
+// Make it available globally
+window.SimpleBatchChecker = SimpleBatchChecker;
 
 const tweaksGrid = document.getElementById('tweaks-grid');
 
-// Global batch checker instance
+// Global batch checker instance and caching
 let globalBatchChecker = null;
 let batchCheckResults = new Map();
+let tweakStatusCache = new Map();
+let cacheTimestamp = 0;
+const CACHE_DURATION = 30000; // 30 seconds cache
 
 if (tweaksGrid) {
     const tweaks = [
@@ -117,6 +247,12 @@ if (tweaksGrid) {
             category: '🟢 Essential Tweaks',
             description: 'Disables Windows location tracking and related services for enhanced privacy.',
             safety: 'safe',
+            batchCheck: {
+                type: 'registry',
+                path: 'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location',
+                name: 'Value',
+                expectedValue: 'Value    REG_SZ    Deny'
+            },
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location" /v "Value"');
                 return result.stdout.includes('Value    REG_SZ    Deny');
@@ -173,6 +309,12 @@ if (tweaksGrid) {
             category: '🟢 Essential Tweaks',
             description: 'Disables various telemetry options, popups, and annoying features in Microsoft Edge.',
             safety: 'safe',
+            batchCheck: {
+                type: 'registry',
+                path: 'HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge',
+                name: 'PersonalizationReportingEnabled',
+                expectedValue: 'PersonalizationReportingEnabled    REG_DWORD    0x0'
+            },
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v "PersonalizationReportingEnabled"');
                 return result.stdout.includes('PersonalizationReportingEnabled    REG_DWORD    0x0');
@@ -210,6 +352,12 @@ if (tweaksGrid) {
             category: '🟢 Essential Tweaks',
             description: 'Disables Windows GameDVR which can impact gaming performance.',
             safety: 'safe',
+            batchCheck: {
+                type: 'registry',
+                path: 'HKCU\\System\\GameConfigStore',
+                name: 'GameDVR_Enabled',
+                expectedValue: 'GameDVR_Enabled    REG_DWORD    0x0'
+            },
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKCU\\System\\GameConfigStore" /v "GameDVR_Enabled"');
                 return result.stdout.includes('GameDVR_Enabled    REG_DWORD    0x0');
@@ -628,6 +776,12 @@ if (tweaksGrid) {
             category: '🔵 UI Customization',
             description: 'Shows detailed information during startup, shutdown, logon, and logoff for troubleshooting.',
             safety: 'safe',
+            batchCheck: {
+                type: 'registry',
+                path: 'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System',
+                name: 'VerboseStatus',
+                expectedValue: 'VerboseStatus    REG_DWORD    0x1'
+            },
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v "VerboseStatus"');
                 return result.stdout.includes('VerboseStatus    REG_DWORD    0x1');
@@ -645,6 +799,12 @@ if (tweaksGrid) {
             category: '🔵 UI Customization',
             description: 'Disables suggested actions when copying phone numbers, dates, etc. for cleaner experience.',
             safety: 'safe',
+            batchCheck: {
+                type: 'registry',
+                path: 'HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\SmartActionPlatform\\SmartClipboard',
+                name: 'Disabled',
+                expectedValue: 'Disabled    REG_DWORD    0x1'
+            },
             check: async () => {
                 const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\SmartActionPlatform\\SmartClipboard" /v "Disabled"');
                 return result.stdout.includes('Disabled    REG_DWORD    0x1');
@@ -1000,23 +1160,6 @@ if (tweaksGrid) {
             }
         },
         {
-            id: 'enable-verbose-status',
-            title: 'Enable Verbose Status Messages',
-            category: '🔵 UI Customization',
-            description: 'Shows detailed information during startup, shutdown, logon, and logoff for troubleshooting.',
-            safety: 'safe',
-            check: async () => {
-                const result = await window.electronAPI.runCommand('reg query "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v "VerboseStatus"');
-                return result.stdout.includes('VerboseStatus    REG_DWORD    0x1');
-            },
-            apply: async () => {
-                await window.electronAPI.runAdminCommand('reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v "VerboseStatus" /t REG_DWORD /d 1 /f');
-            },
-            revert: async () => {
-                await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v "VerboseStatus" /f');
-            }
-        },
-        {
             id: 'disable-auto-reboot-on-failure',
             title: 'Disable Automatic Restart on System Failure',
             category: '🟢 Essential Tweaks',
@@ -1119,23 +1262,6 @@ if (tweaksGrid) {
             },
             revert: async () => {
                 await window.electronAPI.runAdminCommand('reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" /v "LetAppsActivateWithVoiceAboveLock" /f');
-            }
-        },
-        {
-            id: 'disable-suggested-actions',
-            title: 'Disable Suggested Actions',
-            category: '🔵 UI Customization',
-            description: 'Disables suggested actions when copying phone numbers, dates, etc. for cleaner experience.',
-            safety: 'safe',
-            check: async () => {
-                const result = await window.electronAPI.runCommand('reg query "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\SmartActionPlatform\\SmartClipboard" /v "Disabled"');
-                return result.stdout.includes('Disabled    REG_DWORD    0x1');
-            },
-            apply: async () => {
-                await window.electronAPI.runAdminCommand('reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\SmartActionPlatform\\SmartClipboard" /v "Disabled" /t REG_DWORD /d 1 /f');
-            },
-            revert: async () => {
-                await window.electronAPI.runAdminCommand('reg delete "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\SmartActionPlatform\\SmartClipboard" /v "Disabled" /f');
             }
         },
         {
@@ -1748,14 +1874,41 @@ if (tweaksGrid) {
 
     ];
 
+    // Populate tweak display names mapping
+    tweaks.forEach(tweak => {
+        tweakDisplayNames[tweak.id] = tweak.title;
+    });
+
     const renderTweaks = async (filteredTweaks) => {
         const tweaksToRender = filteredTweaks || tweaks;
+
+        // Show loading indicator
+        showLoadingIndicator();
+
         tweaksGrid.innerHTML = '';
 
         const categories = [...new Set(tweaksToRender.map(t => t.category || 'System Tweaks'))];
 
-        // First, render all cards with loading state
-        categories.forEach(category => {
+        // Progressive rendering to prevent UI blocking
+        await renderTweaksProgressively(categories, tweaksToRender);
+
+        // Use requestAnimationFrame to ensure UI is rendered before starting checks
+        requestAnimationFrame(async () => {
+            try {
+                // Now perform checking (batch where possible, individual otherwise)
+                await performOptimizedTweakChecks(tweaksToRender);
+            } finally {
+                hideLoadingIndicator();
+            }
+        });
+    };
+
+    // Progressive rendering function to prevent UI blocking
+    const renderTweaksProgressively = async (categories, tweaksToRender) => {
+        const CHUNK_SIZE = 10; // Render 10 cards at a time
+
+        for (const category of categories) {
+            // Render category header
             const categoryHeader = document.createElement('h3');
             categoryHeader.className = 'plugin-section-header';
             categoryHeader.textContent = category;
@@ -1763,62 +1916,164 @@ if (tweaksGrid) {
 
             const categoryTweaks = tweaksToRender.filter(t => (t.category || 'System Tweaks') === category);
 
-            categoryTweaks.forEach(tweak => {
-                const card = document.createElement('div');
-                card.className = 'plugin-card';
-                card.dataset.tweakId = tweak.id;
+            // Render tweaks in chunks
+            for (let i = 0; i < categoryTweaks.length; i += CHUNK_SIZE) {
+                const chunk = categoryTweaks.slice(i, i + CHUNK_SIZE);
 
-                // Add safety level attribute for styling
-                if (tweak.safety) {
-                    card.dataset.safety = tweak.safety;
+                // Render chunk
+                chunk.forEach(tweak => {
+                    const card = createTweakCard(tweak);
+                    tweaksGrid.appendChild(card);
+                });
+
+                // Yield control to browser after each chunk
+                if (i + CHUNK_SIZE < categoryTweaks.length) {
+                    await new Promise(resolve => setTimeout(resolve, 0));
                 }
-
-                card.innerHTML = `
-                    <div class="plugin-card-header">
-                        <h4 class="plugin-title">${tweak.title}</h4>
-                        <div class="plugin-status">
-                            <span class="status-indicator"></span>
-                            <span class="status-text">Loading...</span>
-                        </div>
-                    </div>
-                    <p class="plugin-description">${tweak.description}</p>
-                    <div class="plugin-card-footer">
-                        <label class="toggle-switch">
-                            <input type="checkbox" class="tweak-checkbox" disabled>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                `;
-                tweaksGrid.appendChild(card);
-            });
-        });
-
-        // Now perform checking (batch where possible, individual otherwise)
-        await performOptimizedTweakChecks(tweaksToRender);
+            }
+        }
     };
 
-    // Function to perform optimized tweak status checks
+    // Helper function to create a tweak card
+    const createTweakCard = (tweak) => {
+        const card = document.createElement('div');
+        card.className = 'plugin-card';
+        card.dataset.tweakId = tweak.id;
+
+        // Add safety level attribute for styling
+        if (tweak.safety) {
+            card.dataset.safety = tweak.safety;
+        }
+
+        card.innerHTML = `
+            <div class="plugin-card-header">
+                <h4 class="plugin-title">${tweak.title}</h4>
+                <div class="plugin-status">
+                    <span class="status-indicator"></span>
+                    <span class="status-text">Loading...</span>
+                </div>
+            </div>
+            <p class="plugin-description">${tweak.description}</p>
+            <div class="plugin-card-footer">
+                <label class="toggle-switch">
+                    <input type="checkbox" class="tweak-checkbox" disabled>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        `;
+
+        return card;
+    };
+
+    // Loading indicator functions
+    const showLoadingIndicator = () => {
+        let loadingIndicator = document.getElementById('tweaks-loading-indicator');
+        if (!loadingIndicator) {
+            loadingIndicator = document.createElement('div');
+            loadingIndicator.id = 'tweaks-loading-indicator';
+            loadingIndicator.className = 'loading-indicator';
+            loadingIndicator.innerHTML = `
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Loading tweak status...</div>
+            `;
+            tweaksGrid.parentNode.insertBefore(loadingIndicator, tweaksGrid);
+        }
+        loadingIndicator.style.display = 'flex';
+    };
+
+    const hideLoadingIndicator = () => {
+        const loadingIndicator = document.getElementById('tweaks-loading-indicator');
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+        }
+    };
+
+    // Function to perform optimized tweak status checks using batch operations
     const performOptimizedTweakChecks = async (tweaksToCheck) => {
         console.log('performOptimizedTweakChecks called with', tweaksToCheck.length, 'tweaks');
 
-        // For now, use individual checks but with better batching in the future
-        // This ensures all tweaks work while we can optimize specific patterns later
+        // Use SimpleBatchChecker for optimized registry checks
+        console.log('Using SimpleBatchChecker for optimized registry checks');
+        await performBatchOptimizedChecks(tweaksToCheck);
+
+        console.log('All tweak checks completed');
+    };
+
+    // Optimized batch checking using SimpleBatchChecker utility
+    const performBatchOptimizedChecks = async (tweaksToCheck) => {
+        const batchChecker = new SimpleBatchChecker();
+        const batchableTweaks = [];
+        const individualTweaks = [];
+
+        // Separate tweaks that can be batched vs those that need individual checks
+        tweaksToCheck.forEach(tweak => {
+            if (tweak.batchCheck && tweak.batchCheck.type === 'registry') {
+                batchableTweaks.push(tweak);
+                batchChecker.addRegistryCheck(
+                    tweak.id,
+                    tweak.batchCheck.path,
+                    tweak.batchCheck.name,
+                    tweak.batchCheck.expectedValue
+                );
+            } else {
+                individualTweaks.push(tweak);
+            }
+        });
+
+        console.log(`Batching ${batchableTweaks.length} registry checks, ${individualTweaks.length} individual checks`);
+
+        // Execute batch checks first
+        if (batchableTweaks.length > 0) {
+            try {
+                await batchChecker.executeRegistryChecks();
+
+                // Update UI for batched tweaks
+                batchableTweaks.forEach(tweak => {
+                    const card = document.querySelector(`[data-tweak-id="${tweak.id}"]`);
+                    if (!card) return;
+
+                    const status = batchChecker.isRegistryCheckMatched(tweak.id);
+                    updateTweakCardStatus(card, status);
+
+                    // Cache the result
+                    tweakStatusCache.set(tweak.id, status);
+                });
+            } catch (error) {
+                console.error('Batch registry checks failed, falling back to individual checks:', error);
+                // Fall back to individual checks for batched tweaks
+                await performIndividualChecks(batchableTweaks);
+            }
+        }
+
+        // Execute individual checks for remaining tweaks
+        if (individualTweaks.length > 0) {
+            await performIndividualChecks(individualTweaks);
+        }
+    };
+
+    // Individual check fallback method with caching
+    const performIndividualChecks = async (tweaksToCheck) => {
+        const currentTime = Date.now();
+        const isCacheValid = (currentTime - cacheTimestamp) < CACHE_DURATION;
 
         const checkPromises = tweaksToCheck.map(async (tweak) => {
             const card = document.querySelector(`[data-tweak-id="${tweak.id}"]`);
             if (!card) return;
 
             try {
-                const status = await tweak.check();
+                let status;
 
-                const statusIndicator = card.querySelector('.status-indicator');
-                const statusText = card.querySelector('.status-text');
-                const checkbox = card.querySelector('.tweak-checkbox');
+                // Check cache first
+                if (isCacheValid && tweakStatusCache.has(tweak.id)) {
+                    status = tweakStatusCache.get(tweak.id);
+                } else {
+                    // Perform actual check
+                    status = await tweak.check();
+                    // Cache the result
+                    tweakStatusCache.set(tweak.id, status);
+                }
 
-                statusIndicator.classList.toggle('active', status);
-                statusText.textContent = status ? 'Active' : 'Inactive';
-                checkbox.checked = status;
-                checkbox.disabled = false;
+                updateTweakCardStatus(card, status);
             } catch (error) {
                 console.error(`Failed to check tweak status for ${tweak.title}`, error);
                 const statusText = card.querySelector('.status-text');
@@ -1832,19 +2087,45 @@ if (tweaksGrid) {
             }
         });
 
-        // Execute all checks concurrently but with a reasonable limit
-        const batchSize = 10; // Process 10 tweaks at a time to avoid overwhelming the system
+        // Update cache timestamp if we performed new checks
+        if (!isCacheValid) {
+            cacheTimestamp = currentTime;
+        }
+
+        // Execute checks in smaller batches to prevent overwhelming the system
+        const batchSize = 5; // Reduced batch size for individual checks
         for (let i = 0; i < checkPromises.length; i += batchSize) {
             const batch = checkPromises.slice(i, i + batchSize);
             await Promise.all(batch);
 
-            // Small delay between batches to prevent system overload
+            // Smaller delay between batches
             if (i + batchSize < checkPromises.length) {
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, 50));
             }
         }
+    };
 
-        console.log('All tweak checks completed');
+    // Helper function to update tweak card status
+    const updateTweakCardStatus = (card, status) => {
+        const statusIndicator = card.querySelector('.status-indicator');
+        const statusText = card.querySelector('.status-text');
+        const checkbox = card.querySelector('.tweak-checkbox');
+
+        statusIndicator.classList.toggle('active', status);
+        statusText.textContent = status ? 'Active' : 'Inactive';
+        checkbox.checked = status;
+        checkbox.disabled = false;
+    };
+
+    // Helper function to clear cache for a specific tweak
+    const clearTweakCache = (tweakId) => {
+        tweakStatusCache.delete(tweakId);
+    };
+
+    // Helper function to clear all cache
+    const clearAllCache = () => {
+        tweakStatusCache.clear();
+        cacheTimestamp = 0;
     };
 
     tweaksGrid.addEventListener('change', async (event) => {
@@ -1865,10 +2146,14 @@ if (tweaksGrid) {
                     await tweak.apply();
                     statusIndicator.classList.add('active');
                     statusText.textContent = 'Active';
+                    // Update cache
+                    tweakStatusCache.set(tweakId, true);
                 } else {
                     await tweak.revert();
                     statusIndicator.classList.remove('active');
                     statusText.textContent = 'Inactive';
+                    // Update cache
+                    tweakStatusCache.set(tweakId, false);
                 }
             } catch (error) {
                 console.error(`Failed to apply/revert tweak: ${tweak.title}`, error);
@@ -1929,6 +2214,12 @@ if (tweaksGrid) {
         }
     });
 
+    // Save Preset functionality
+    const savePresetBtn = document.getElementById('save-preset-btn');
+    if (savePresetBtn) {
+        savePresetBtn.addEventListener('click', showSavePresetModal);
+    }
+
     const importTweaksBtn = document.getElementById('import-tweaks-btn');
     importTweaksBtn.addEventListener('click', async () => {
         const result = await window.electronAPI.showOpenDialog({
@@ -1942,15 +2233,41 @@ if (tweaksGrid) {
             try {
                 const content = await window.electronAPI.readFile(filePath);
                 const importedData = JSON.parse(content);
-                
-                // Support both the new format and the old simple array format
-                const importedTweakIds = Array.isArray(importedData) 
-                    ? importedData 
-                    : importedData.appliedTweakIds;
+
+                // Support multiple formats: preset files, export files, and simple arrays
+                let importedTweakIds;
+                let importType = 'unknown';
+
+                if (Array.isArray(importedData)) {
+                    // Simple array format
+                    importedTweakIds = importedData;
+                    importType = 'simple array';
+                } else if (importedData.tweaks && Array.isArray(importedData.tweaks)) {
+                    // Preset format
+                    importedTweakIds = importedData.tweaks;
+                    importType = `preset "${importedData.name || 'Unknown'}"`;
+                } else if (importedData.appliedTweakIds && Array.isArray(importedData.appliedTweakIds)) {
+                    // Export format
+                    importedTweakIds = importedData.appliedTweakIds;
+                    importType = 'export file';
+                } else {
+                    console.error('Imported file does not contain a valid format.');
+                    alert('Invalid file format. Please select a valid tweaks export file or preset file.');
+                    return;
+                }
 
                 if (!Array.isArray(importedTweakIds)) {
-                    console.error('Imported tweaks file does not contain a valid array of tweak IDs.');
+                    console.error('Imported file does not contain a valid array of tweak IDs.');
+                    alert('Invalid file format. Please select a valid tweaks export file or preset file.');
                     return;
+                }
+
+                // Show confirmation for presets
+                if (importType.includes('preset')) {
+                    const confirmMessage = `Import ${importType}?\n\nThis will apply ${importedTweakIds.length} tweaks from the preset.\n\nDo you want to continue?`;
+                    if (!confirm(confirmMessage)) {
+                        return;
+                    }
                 }
 
                 let appliedCount = 0;
@@ -1966,11 +2283,19 @@ if (tweaksGrid) {
                                 // Dispatch change event to trigger the apply logic
                                 checkbox.dispatchEvent(new Event('change', { bubbles: true }));
                                 appliedCount++;
+
+                                // Add a small delay for presets to prevent overwhelming the system
+                                if (importType.includes('preset')) {
+                                    await new Promise(resolve => setTimeout(resolve, 100));
+                                }
                             }
                         }
                     }
                 }
-                console.log(`${appliedCount} tweaks were newly applied from the import file.`);
+
+                const message = `Successfully imported ${importType}!\n\n${appliedCount} tweaks were newly applied.`;
+                console.log(message);
+                alert(message);
 
             } catch (error) {
                 console.error('Failed to read or parse imported tweaks file:', error);
@@ -1978,7 +2303,25 @@ if (tweaksGrid) {
         }
     });
 
-    renderTweaks();
+    // Performance monitoring
+    const startTime = performance.now();
+    console.log('Starting tweaks tab initialization...');
+    console.log(`Total tweaks to load: ${tweaks.length}`);
+
+    // Count batchable tweaks
+    const batchableTweaks = tweaks.filter(tweak => tweak.batchCheck && tweak.batchCheck.type === 'registry');
+    console.log(`Batchable tweaks: ${batchableTweaks.length}, Individual tweaks: ${tweaks.length - batchableTweaks.length}`);
+
+    renderTweaks().then(() => {
+        const endTime = performance.now();
+        console.log(`Tweaks tab loaded in ${(endTime - startTime).toFixed(2)}ms`);
+        console.log(`Cache entries: ${tweakStatusCache.size}`);
+    });
+
+    // Populate preset tooltips after DOM is ready
+    setTimeout(() => {
+        populatePresetTooltips();
+    }, 100);
 
     // Notify tab loader that this tab is ready
     if (window.tabLoader) {
@@ -1991,3 +2334,155 @@ if (tweaksGrid) {
         window.tabLoader.markTabAsReady('tweaks');
     }
 }
+
+/**
+ * Load a preset configuration
+ */
+function loadTweakPreset(presetName) {
+    const preset = tweakPresets[presetName];
+    if (!preset) {
+        console.error(`Preset "${presetName}" not found`);
+        return;
+    }
+
+    // Find the preset card that was clicked
+    const presetCard = document.querySelector(`[onclick="loadTweakPreset('${presetName}')"]`);
+
+    // Show confirmation dialog
+    const confirmMessage = `This will apply the "${preset.name}" preset which includes ${preset.tweaks.length} tweaks:\n\n${preset.description}\n\nDo you want to continue?`;
+
+    if (confirm(confirmMessage)) {
+        // Add loading state to the preset card
+        if (presetCard) {
+            presetCard.classList.add('loading');
+        }
+
+        applyPresetTweaks(preset).finally(() => {
+            // Remove loading state
+            if (presetCard) {
+                presetCard.classList.remove('loading');
+            }
+        });
+    }
+}
+
+/**
+ * Apply tweaks from a preset
+ */
+async function applyPresetTweaks(preset) {
+    let appliedCount = 0;
+    let skippedCount = 0;
+
+    console.log(`Applying preset: ${preset.name}`);
+
+    for (const tweakId of preset.tweaks) {
+        const card = tweaksGrid.querySelector(`[data-tweak-id="${tweakId}"]`);
+        if (card) {
+            const checkbox = card.querySelector('.tweak-checkbox');
+            if (checkbox && !checkbox.checked) {
+                // Simulate clicking the checkbox to apply the tweak
+                checkbox.checked = true;
+                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                appliedCount++;
+
+                // Add a small delay to prevent overwhelming the system
+                await new Promise(resolve => setTimeout(resolve, 100));
+            } else if (checkbox && checkbox.checked) {
+                skippedCount++;
+            }
+        } else {
+            console.warn(`Tweak "${tweakId}" not found in current tweaks list`);
+        }
+    }
+
+    console.log(`Preset "${preset.name}" applied: ${appliedCount} tweaks applied, ${skippedCount} already applied`);
+
+    // Show completion message
+    alert(`Preset "${preset.name}" applied successfully!\n\n${appliedCount} tweaks were applied\n${skippedCount} tweaks were already applied\n\nA system restart is recommended for all changes to take effect.`);
+}
+
+/**
+ * Show save preset modal
+ */
+function showSavePresetModal() {
+    // Get currently applied tweaks
+    const appliedTweaks = [];
+    const allTweakCards = tweaksGrid.querySelectorAll('.plugin-card');
+
+    allTweakCards.forEach(card => {
+        const checkbox = card.querySelector('.tweak-checkbox');
+        if (checkbox && checkbox.checked) {
+            appliedTweaks.push(card.dataset.tweakId);
+        }
+    });
+
+    if (appliedTweaks.length === 0) {
+        alert('No tweaks are currently applied. Apply some tweaks first before saving a preset.');
+        return;
+    }
+
+    const presetName = prompt(`Enter a name for your custom preset:\n\n(${appliedTweaks.length} tweaks will be included)`);
+
+    if (presetName && presetName.trim()) {
+        saveCustomPreset(presetName.trim(), appliedTweaks);
+    }
+}
+
+/**
+ * Save a custom preset
+ */
+async function saveCustomPreset(name, tweakIds) {
+    const customPreset = {
+        name: name,
+        description: `Custom preset with ${tweakIds.length} tweaks`,
+        tweaks: tweakIds,
+        created: new Date().toISOString(),
+        type: 'custom'
+    };
+
+    const content = JSON.stringify(customPreset, null, 2);
+    const result = await window.electronAPI.saveFile(content, {
+        title: 'Save Custom Preset',
+        defaultPath: `${name.replace(/[^a-zA-Z0-9]/g, '_')}-preset.json`,
+        filters: [{ name: 'JSON Files', extensions: ['json'] }]
+    });
+
+    if (result && result.filePath) {
+        console.log(`Custom preset "${name}" saved successfully to ${result.filePath}`);
+        alert(`Custom preset "${name}" saved successfully!\n\nYou can import this preset later using the Import button.`);
+    }
+}
+
+/**
+ * Populate preset tooltips with tweak names
+ */
+function populatePresetTooltips() {
+    console.log('Populating preset tooltips...');
+
+    Object.keys(tweakPresets).forEach(presetKey => {
+        const preset = tweakPresets[presetKey];
+        const listElement = document.getElementById(`${presetKey}-tweaks-list`);
+
+        console.log(`Looking for element: ${presetKey}-tweaks-list`, listElement);
+
+        if (listElement) {
+            listElement.innerHTML = '';
+
+            preset.tweaks.forEach(tweakId => {
+                const tweakName = tweakDisplayNames[tweakId] || tweakId;
+                const listItem = document.createElement('li');
+                listItem.textContent = tweakName;
+                listElement.appendChild(listItem);
+            });
+
+            console.log(`Populated ${preset.tweaks.length} tweaks for ${presetKey}`);
+        } else {
+            console.warn(`Could not find list element for ${presetKey}`);
+        }
+    });
+}
+
+// Make functions globally available
+window.loadTweakPreset = loadTweakPreset;
+window.showSavePresetModal = showSavePresetModal;
+window.populatePresetTooltips = populatePresetTooltips;

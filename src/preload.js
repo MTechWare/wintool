@@ -111,7 +111,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Cleanup functionality
     getDiskSpace: () => ipcRenderer.invoke('get-disk-space'),
-    scanCleanupCategory: (category) => ipcRenderer.invoke('scan-cleanup-category', category),
     executeCleanup: (category) => ipcRenderer.invoke('execute-cleanup', category),
     openDiskCleanup: () => ipcRenderer.invoke('open-disk-cleanup'),
 
@@ -149,7 +148,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Editor functions
     executeScript: (script, shell) => ipcRenderer.invoke('execute-script', { script, shell }),
     executePowerShell: (command) => ipcRenderer.invoke('execute-powershell', command),
-    executeBatchPowerShell: (operation, data) => ipcRenderer.invoke('execute-batch-powershell', operation, data),
     finishStartupPhase: () => ipcRenderer.invoke('finish-startup-phase'),
     showSaveDialog: (options) => ipcRenderer.invoke('show-save-dialog', options),
 
@@ -195,6 +193,28 @@ contextBridge.exposeInMainWorld('wintoolAPI', {
      */
     showNotification: ({ title, body, type = 'info' }) => {
         ipcRenderer.send('plugin-show-notification', { title, body, type });
+    },
+
+    /**
+     * Shows a native Windows notification for system alerts.
+     * @param {object} options - The notification options.
+     * @param {string} options.title - The title of the notification.
+     * @param {string} options.body - The main text of the notification.
+     * @param {string} [options.urgency='normal'] - The urgency level ('normal', 'critical', 'low').
+     * @param {boolean} [options.silent=false] - Whether to play notification sound.
+     * @param {boolean} [options.persistent=false] - Whether critical notifications should persist.
+     * @returns {Promise<object>} A promise that resolves with the result.
+     */
+    showNativeNotification: ({ title, body, urgency = 'normal', silent = false, persistent = false }) => {
+        return ipcRenderer.invoke('show-native-notification', { title, body, urgency, silent, persistent });
+    },
+
+    /**
+     * Test notification function for debugging.
+     * @returns {Promise<object>} A promise that resolves with the result.
+     */
+    testNotification: () => {
+        return ipcRenderer.invoke('test-notification');
     },
 
     /**

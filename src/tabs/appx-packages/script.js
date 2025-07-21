@@ -236,10 +236,12 @@ class AppXPackageManager {
                 const pkgDef = packageData.packages[packageKey];
                 const isInstalled = this.isPackageInstalled(packageKey, installedPackages);
 
+                // Normalize package type to user or system only
+                const normalizedType = pkgDef.type === 'user' ? 'user' : 'system';
+
                 if (this.packageType === 'all' ||
-                    (this.packageType === 'user' && pkgDef.type === 'user') ||
-                    (this.packageType === 'system' && pkgDef.type === 'system') ||
-                    (this.packageType === 'provisioned' && isInstalled)) {
+                    (this.packageType === 'user' && normalizedType === 'user') ||
+                    (this.packageType === 'system' && normalizedType === 'system')) {
 
                     this.packages[packageKey] = {
                         name: pkgDef.name,
@@ -331,20 +333,16 @@ class AppXPackageManager {
     }
 
     /**
-     * Determine package type based on package info
+     * Determine package type based on package info - simplified to user or system only
      */
     determinePackageType(pkg) {
-        if (this.packageType === 'provisioned') {
-            return 'provisioned';
-        }
-        
         // Check if it's a system package
-        if (pkg.IsFramework || 
+        if (pkg.IsFramework ||
             (pkg.InstallLocation && pkg.InstallLocation.includes('SystemApps')) ||
             (pkg.Publisher && pkg.Publisher.includes('Microsoft Corporation'))) {
             return 'system';
         }
-        
+
         return 'user';
     }
 
@@ -502,18 +500,57 @@ class AppXPackageManager {
             `;
         }
 
-        // Type with safety indicator
+        // Enhanced Type with safety indicator
         const type = document.createElement('div');
-        type.className = `appx-package-type ${pkg.type}`;
-        if (pkg.safeToRemove) {
-            type.classList.add('safe');
-            type.textContent = `${pkg.type} ✓`;
-            type.title = 'Safe to remove';
+        type.className = 'appx-package-type';
+
+        const typeSafetyContainer = document.createElement('div');
+        typeSafetyContainer.className = 'type-safety-container';
+
+        // Package type badge - normalize to user or system only
+        const packageType = pkg.type === 'user' ? 'user' : 'system';
+        const typeBadge = document.createElement('div');
+        typeBadge.className = `package-type-badge ${packageType}`;
+
+        // Add appropriate icon for package type
+        const typeIcon = document.createElement('i');
+        if (packageType === 'user') {
+            typeIcon.className = 'fas fa-user';
+            typeBadge.title = 'User Package - Installed by user, generally safe to remove';
         } else {
-            type.classList.add('unsafe');
-            type.textContent = `${pkg.type} ⚠`;
-            type.title = 'Not recommended to remove';
+            typeIcon.className = 'fas fa-cog';
+            typeBadge.title = 'System Package - Core Windows component, removal may cause issues';
         }
+
+        const typeText = document.createElement('span');
+        typeText.textContent = packageType.toUpperCase();
+
+        typeBadge.appendChild(typeIcon);
+        typeBadge.appendChild(typeText);
+
+        // Safety indicator
+        const safetyIndicator = document.createElement('div');
+        safetyIndicator.className = `safety-indicator ${pkg.safeToRemove ? 'safe' : 'unsafe'}`;
+
+        const safetyIcon = document.createElement('div');
+        safetyIcon.className = 'safety-icon';
+        safetyIcon.textContent = pkg.safeToRemove ? '✓' : '!';
+
+        const safetyText = document.createElement('span');
+        safetyText.textContent = pkg.safeToRemove ? 'SAFE' : 'CAUTION';
+
+        safetyIndicator.appendChild(safetyIcon);
+        safetyIndicator.appendChild(safetyText);
+
+        if (pkg.safeToRemove) {
+            safetyIndicator.title = 'Safe to remove - No critical system dependencies';
+        } else {
+            safetyIndicator.title = 'Caution - May be required by system or other applications';
+        }
+
+        typeSafetyContainer.appendChild(typeBadge);
+        typeSafetyContainer.appendChild(safetyIndicator);
+        type.appendChild(typeSafetyContainer);
 
         // Actions
         const actions = document.createElement('div');
@@ -715,18 +752,11 @@ class AppXPackageManager {
 
                 this.appendProgressOutput(`Attempting to uninstall: ${pkg.name} (${pkg.packageName})\n`);
 
-                // Use appropriate PowerShell command based on package type
-                let command;
-                if (this.packageType === 'provisioned') {
-                    const escapedPackageName = pkg.packageName.replace(/'/g, "''");
-                    command = `Remove-AppxProvisionedPackage -Online -PackageName '${escapedPackageName}'`;
-                } else {
-                    // Use a simpler, more reliable approach
-                    const packageIdentifier = pkg.packageName || pkg.name;
-                    // Escape any special characters in the package name
-                    const escapedPackageName = packageIdentifier.replace(/'/g, "''");
-                    command = `Get-AppxPackage -Name '${escapedPackageName}' | Remove-AppxPackage`;
-                }
+                // Use standard PowerShell command for all packages
+                const packageIdentifier = pkg.packageName || pkg.name;
+                // Escape any special characters in the package name
+                const escapedPackageName = packageIdentifier.replace(/'/g, "''");
+                const command = `Get-AppxPackage -Name '${escapedPackageName}' | Remove-AppxPackage`;
 
                 this.appendProgressOutput(`Executing: ${command}\n`);
 

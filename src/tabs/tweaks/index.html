@@ -8,6 +8,55 @@
     <i class="fas fa-exclamation-triangle"></i>
     <span><strong>Disclaimer:</strong> Applying tweaks or disabling services can have unintended consequences. For changes to take full effect, a system <strong>restart is highly recommended</strong>. Always create a system restore point before making significant changes.</span>
 </div>
+
+<!-- Preset Quick Actions -->
+<div class="preset-quick-actions">
+    <div class="preset-card" onclick="loadTweakPreset('essential')" id="preset-essential">
+        <i class="fas fa-shield-alt"></i>
+        <h4>Essential Tweaks <span class="tweak-count" id="essential-count"></span></h4>
+        <p>Safe privacy and performance improvements</p>
+        <div class="preset-tooltip">
+            <h5>Included Tweaks:</h5>
+            <ul id="essential-tweaks-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </div>
+    </div>
+    <div class="preset-card" onclick="loadTweakPreset('performance')" id="preset-performance">
+        <i class="fas fa-tachometer-alt"></i>
+        <h4>Performance <span class="tweak-count" id="performance-count"></span></h4>
+        <p>Maximum performance optimization</p>
+        <div class="preset-tooltip">
+            <h5>Included Tweaks:</h5>
+            <ul id="performance-tweaks-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </div>
+    </div>
+    <div class="preset-card" onclick="loadTweakPreset('privacy')" id="preset-privacy">
+        <i class="fas fa-user-secret"></i>
+        <h4>Privacy Focus <span class="tweak-count" id="privacy-count"></span></h4>
+        <p>Maximum privacy protection</p>
+        <div class="preset-tooltip">
+            <h5>Included Tweaks:</h5>
+            <ul id="privacy-tweaks-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </div>
+    </div>
+    <div class="preset-card" onclick="loadTweakPreset('gaming')" id="preset-gaming">
+        <i class="fas fa-gamepad"></i>
+        <h4>Gaming <span class="tweak-count" id="gaming-count"></span></h4>
+        <p>Optimized for gaming performance</p>
+        <div class="preset-tooltip">
+            <h5>Included Tweaks:</h5>
+            <ul id="gaming-tweaks-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </div>
+    </div>
+</div>
+
 <div id="tweaks-content-area">
     <div class="tweaks-header-controls">
         <div class="search-container">
@@ -15,6 +64,7 @@
             <i class="fas fa-search search-icon"></i>
         </div>
         <div class="tweak-actions">
+            <button id="save-preset-btn" class="btn btn-primary"><i class="fas fa-save"></i> Save Preset</button>
             <button id="import-tweaks-btn" class="btn btn-secondary"><i class="fas fa-file-import"></i> Import</button>
             <button id="export-tweaks-btn" class="btn btn-secondary"><i class="fas fa-file-export"></i> Export</button>
         </div>

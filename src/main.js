@@ -18,7 +18,7 @@
  * For antivirus whitelist instructions, see ANTIVIRUS_WHITELIST.md
  */
 
-const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, dialog, session, shell, globalShortcut } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, dialog, session, shell, globalShortcut, Notification } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs').promises;
@@ -327,6 +327,7 @@ let tray = null;
 let visibilityCheckInterval = null;
 let windowCreationAttempts = 0;
 const MAX_WINDOW_CREATION_ATTEMPTS = 3;
+let isIntentionallyHidden = false; // Track if window was intentionally hidden to tray
 
 // --- Helper Functions ---
 
@@ -800,6 +801,9 @@ async function createWindow() {
         mainWindow = null;
     });
 
+    // Clear the intentionally hidden flag when creating a new window
+    isIntentionallyHidden = false;
+
     return mainWindow;
 }
 
@@ -887,6 +891,7 @@ function createTray() {
  */
 async function showWindow() {
     console.log('showWindow() called');
+    isIntentionallyHidden = false; // Clear the intentionally hidden flag
 
     if (mainWindow) {
         try {
@@ -988,6 +993,7 @@ async function showWindow() {
  */
 function hideWindow() {
     if (mainWindow) {
+        isIntentionallyHidden = true; // Mark as intentionally hidden
         mainWindow.hide();
     }
 }
@@ -1008,8 +1014,8 @@ function startVisibilityMonitoring() {
             const isMinimized = mainWindow.isMinimized();
             const opacity = mainWindow.getOpacity();
 
-            // Only log if there's an issue
-            if (!isVisible && !isMinimized) {
+            // Only log if there's an issue AND the window wasn't intentionally hidden
+            if (!isVisible && !isMinimized && !isIntentionallyHidden) {
                 console.warn(`Window visibility issue detected: visible=${isVisible}, minimized=${isMinimized}, opacity=${opacity}`);
 
                 // Attempt to recover
@@ -1160,6 +1166,12 @@ async function initializeApplication() {
     console.log(`Node version: ${process.versions.node}`);
     console.log(`App path: ${app.getAppPath()}`);
     console.log(`User data path: ${app.getPath('userData')}`);
+
+    // Set app user model ID for Windows notifications
+    if (process.platform === 'win32') {
+        app.setAppUserModelId('com.mtechware.wintool');
+        console.log('App User Model ID set for Windows notifications');
+    }
 
     globalShortcut.register('Control+Q', () => {
         console.log('Control+Q shortcut detected, quitting application.');
@@ -2674,6 +2686,130 @@ ipcMain.on('plugin-show-notification', (event, { title, body, type }) => {
     }
 });
 
+// Handle native Windows notifications for System Health Dashboard
+ipcMain.handle('show-native-notification', async (event, { title, body, urgency = 'normal', silent = false, persistent = false }) => {
+    try {
+        console.log('Native notification requested:', { title, body, urgency, silent, persistent });
+
+        // Check if notifications are supported
+        if (!Notification.isSupported()) {
+            console.warn('Native notifications are not supported on this system');
+            return { success: false, error: 'Notifications not supported' };
+        }
+
+        console.log('Native notifications are supported');
+
+        // Create the notification
+        const notification = new Notification({
+            title: title,
+            body: body,
+            icon: path.join(__dirname, 'assets', 'images', 'icon.ico'), // Use app icon
+            urgency: urgency, // 'normal', 'critical', or 'low'
+            silent: silent,
+            timeoutType: (urgency === 'critical' && persistent) ? 'never' : 'default',
+            actions: urgency === 'critical' ? [
+                {
+                    type: 'button',
+                    text: 'View System Health'
+                }
+            ] : []
+        });
+
+        // Handle notification events
+        notification.on('show', () => {
+            console.log(`Native notification shown: ${title} (urgency: ${urgency}, persistent: ${persistent})`);
+        });
+
+        notification.on('click', () => {
+            console.log('Native notification clicked:', title);
+            // Bring the app to foreground when notification is clicked
+            if (mainWindow) {
+                if (mainWindow.isMinimized()) mainWindow.restore();
+                mainWindow.focus();
+                showWindow();
+
+                // Send message to switch to system health tab
+                mainWindow.webContents.send('message', 'switch-to-tab:system-health');
+            }
+        });
+
+        notification.on('action', (event, index) => {
+            console.log('Notification action clicked:', index);
+            // Handle action button clicks
+            if (index === 0) { // "View System Health" button
+                if (mainWindow) {
+                    if (mainWindow.isMinimized()) mainWindow.restore();
+                    mainWindow.focus();
+                    showWindow();
+                    mainWindow.webContents.send('message', 'switch-to-tab:system-health');
+                }
+            }
+        });
+
+        notification.on('close', () => {
+            console.log('Native notification closed:', title);
+        });
+
+        // Show the notification
+        notification.show();
+
+        return { success: true };
+    } catch (error) {
+        console.error('Error showing native notification:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+// Test notification handler for debugging
+ipcMain.handle('test-notification', async () => {
+    try {
+        console.log('Testing simple notification...');
+        console.log('Platform:', process.platform);
+        console.log('App User Model ID:', app.getAppUserModelId());
+
+        if (!Notification.isSupported()) {
+            console.log('Notifications not supported');
+            return { success: false, error: 'Not supported' };
+        }
+
+        console.log('Notifications are supported, creating notification...');
+
+        const iconPath = path.join(__dirname, 'assets', 'images', 'icon.ico');
+        console.log('Icon path:', iconPath);
+
+        // Check if icon file exists
+        try {
+            await fs.access(iconPath);
+            console.log('Icon file exists');
+        } catch (iconError) {
+            console.warn('Icon file not found:', iconError.message);
+        }
+
+        const notification = new Notification({
+            title: 'WinTool Test',
+            body: 'This is a test notification from WinTool System Health Dashboard',
+            icon: iconPath,
+            silent: false
+        });
+
+        notification.on('show', () => {
+            console.log('Test notification shown successfully');
+        });
+
+        notification.on('failed', (error) => {
+            console.error('Test notification failed:', error);
+        });
+
+        notification.show();
+        console.log('Test notification.show() called');
+
+        return { success: true };
+    } catch (error) {
+        console.error('Test notification error:', error);
+        return { success: false, error: error.message };
+    }
+});
+
 // 2. Handle plugin-specific storage
 ipcMain.handle('plugin-storage-get', async (event, pluginId, key) => {
     const settingsStore = await getStore();
@@ -3278,99 +3414,7 @@ ipcMain.handle('get-disk-space', async () => {
 
 });
 
-ipcMain.handle('scan-cleanup-category', async (event, category) => {
-    console.log('scan-cleanup-category handler called for:', category);
 
-    return new Promise((resolve, reject) => {
-        const path = require('path');
-        let scriptPath = '';
-
-        // Determine the correct scripts directory based on whether app is packaged
-        const scriptsDir = app.isPackaged
-            ? path.join(process.resourcesPath, 'scripts')
-            : path.join(__dirname, 'scripts');
-
-        switch (category) {
-            case 'temp':
-                scriptPath = path.join(scriptsDir, 'scan-temp.ps1');
-                break;
-
-            case 'system':
-                scriptPath = path.join(scriptsDir, 'scan-system.ps1');
-                break;
-
-            case 'cache':
-                scriptPath = path.join(scriptsDir, 'scan-cache.ps1');
-                break;
-
-            case 'browser':
-                scriptPath = path.join(scriptsDir, 'scan-browser.ps1');
-                break;
-
-            case 'updates':
-                scriptPath = path.join(scriptsDir, 'scan-updates.ps1');
-                break;
-
-            case 'logs':
-                scriptPath = path.join(scriptsDir, 'scan-logs.ps1');
-                break;
-
-            case 'recycle':
-                scriptPath = path.join(scriptsDir, 'scan-recycle.ps1');
-                break;
-
-            case 'dumps':
-                scriptPath = path.join(scriptsDir, 'scan-dumps.ps1');
-                break;
-
-            case 'registry':
-                // For registry, we'll return a small simulated size since actual registry cleanup is complex
-                resolve({ category, size: 5242880 }); // 5MB simulated
-                return;
-
-            default:
-                reject(new Error('Unknown cleanup category'));
-                return;
-        }
-
-        const psProcess = spawn('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath], {
-            shell: false, // Changed from true to false for security
-            stdio: ['pipe', 'pipe', 'pipe']
-        });
-
-        let stdout = '';
-        let stderr = '';
-
-        psProcess.stdout.on('data', (data) => {
-            stdout += data.toString();
-        });
-
-        psProcess.stderr.on('data', (data) => {
-            stderr += data.toString();
-        });
-
-        psProcess.on('close', (code) => {
-            console.log(`Scan ${category} - Exit code: ${code}, stdout: ${stdout.trim()}, stderr: ${stderr.trim()}`);
-
-            if (code === 0 || stdout.trim()) {
-                const size = parseInt(stdout.trim()) || 0;
-                resolve({ category, size });
-            } else {
-                console.log(`Scan failed for ${category}, using fallback`);
-                // Return fallback size instead of rejecting
-                const fallbackSizes = { temp: 100*1024*1024, system: 50*1024*1024, cache: 10*1024*1024, registry: 5*1024*1024 };
-                resolve({ category, size: fallbackSizes[category] || 0 });
-            }
-        });
-
-        psProcess.on('error', (error) => {
-            console.log(`PowerShell error for ${category}:`, error.message);
-            // Return fallback size instead of rejecting
-            const fallbackSizes = { temp: 100*1024*1024, system: 50*1024*1024, cache: 10*1024*1024, registry: 5*1024*1024 };
-            resolve({ category, size: fallbackSizes[category] || 0 });
-        });
-    });
-});
 
 ipcMain.handle('execute-cleanup', async (event, category) => {
     console.log('execute-cleanup handler called for:', category);
@@ -3867,72 +3911,6 @@ ipcMain.handle('execute-powershell', async (event, command) => {
     }
 });
 
-// Batch PowerShell operations handler
-ipcMain.handle('execute-batch-powershell', async (event, operation, data) => {
-    console.log('execute-batch-powershell handler called with operation:', operation);
-    console.log('Data being passed:', JSON.stringify(data));
-
-    try {
-        const path = require('path');
-        // Determine the correct scripts directory based on whether app is packaged
-        const scriptsDir = app.isPackaged
-            ? path.join(process.resourcesPath, 'scripts')
-            : path.join(__dirname, 'scripts');
-        const scriptPath = path.join(scriptsDir, 'batch-operations.ps1');
-
-        // Use spawn instead of command string to avoid JSON escaping issues
-        const { spawn } = require('child_process');
-
-        return new Promise((resolve, reject) => {
-            const psProcess = spawn('powershell.exe', [
-                '-NoProfile',
-                '-ExecutionPolicy', 'Bypass',
-                '-File', scriptPath,
-                '-Operation', operation,
-                '-Data', JSON.stringify(data)
-            ], {
-                stdio: ['pipe', 'pipe', 'pipe'],
-                shell: false
-            });
-
-            let output = '';
-            let errorOutput = '';
-
-            psProcess.stdout.on('data', (data) => {
-                output += data.toString();
-            });
-
-            psProcess.stderr.on('data', (data) => {
-                errorOutput += data.toString();
-            });
-
-            psProcess.on('close', (code) => {
-                console.log(`Batch PowerShell exit code: ${code}`);
-                console.log(`Batch PowerShell stdout: ${output.substring(0, 200)}...`);
-                console.log(`Batch PowerShell stderr: ${errorOutput}`);
-
-                if (code === 0) {
-                    try {
-                        const result = JSON.parse(output.trim());
-                        resolve(result);
-                    } catch (parseError) {
-                        console.warn('Failed to parse batch PowerShell result as JSON:', parseError);
-                        resolve({ output: output.trim(), error: null });
-                    }
-                } else {
-                    reject(new Error(errorOutput || `PowerShell exited with code ${code}`));
-                }
-            });
-
-            psProcess.on('error', (error) => {
-                reject(new Error(`Failed to execute batch PowerShell: ${error.message}`));
-            });
-        });
-    } catch (error) {
-        console.error('Batch PowerShell execution failed:', error);
-        throw error;
-    }
-});
 
 // Handler to finish startup phase early
 ipcMain.handle('finish-startup-phase', async () => {

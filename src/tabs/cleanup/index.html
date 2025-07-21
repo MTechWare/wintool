@@ -40,16 +40,7 @@
                 </div>
                 <div class="disk-details" id="free-space-details">Calculating...</div>
             </div>
-            <div class="disk-item">
-                <div class="disk-header">
-                    <div class="disk-label">Cleanable Space</div>
-                    <div class="disk-value" id="cleanable-space">Scanning...</div>
-                </div>
-                <div class="disk-bar">
-                    <div class="disk-bar-fill" id="cleanable-space-bar"></div>
-                </div>
-                <div class="disk-details" id="cleanable-space-details">Analyzing...</div>
-            </div>
+
         </div>
     </div>
 
@@ -64,9 +55,7 @@
                 <button class="btn btn-sm btn-secondary" onclick="deselectAllCategories()">
                     <i class="fas fa-times"></i> Deselect All
                 </button>
-                <button class="btn btn-sm btn-primary" onclick="scanSelectedCategories()" id="scan-btn">
-                    <i class="fas fa-search"></i> Scan Selected
-                </button>
+
             </div>
         </div>
 
@@ -83,7 +72,7 @@
                 <div class="category-info">
                     <h4>Temporary Files</h4>
                     <p>System and user temp files, cache data</p>
-                    <div class="category-size" id="temp-size">Scanning...</div>
+                    <div class="category-size" id="temp-size">Ready to clean</div>
                 </div>
                 <div class="category-status" id="temp-status">
                     <i class="fas fa-clock"></i>
@@ -102,7 +91,7 @@
                 <div class="category-info">
                     <h4>System Cache</h4>
                     <p>Prefetch, font cache, thumbnail cache</p>
-                    <div class="category-size" id="cache-size">Scanning...</div>
+                    <div class="category-size" id="cache-size">Ready to clean</div>
                 </div>
                 <div class="category-status" id="cache-status">
                     <i class="fas fa-clock"></i>
@@ -121,7 +110,7 @@
                 <div class="category-info">
                     <h4>Browser Data</h4>
                     <p>Cache, cookies, history, downloads</p>
-                    <div class="category-size" id="browser-size">Scanning...</div>
+                    <div class="category-size" id="browser-size">Ready to clean</div>
                 </div>
                 <div class="category-status" id="browser-status">
                     <i class="fas fa-clock"></i>
@@ -140,7 +129,7 @@
                 <div class="category-info">
                     <h4>Windows Update</h4>
                     <p>Update cache, installation files</p>
-                    <div class="category-size" id="updates-size">Scanning...</div>
+                    <div class="category-size" id="updates-size">Ready to clean</div>
                 </div>
                 <div class="category-status" id="updates-status">
                     <i class="fas fa-clock"></i>
@@ -159,7 +148,7 @@
                 <div class="category-info">
                     <h4>System Logs</h4>
                     <p>Event logs, error reports, crash dumps</p>
-                    <div class="category-size" id="logs-size">Scanning...</div>
+                    <div class="category-size" id="logs-size">Ready to clean</div>
                 </div>
                 <div class="category-status" id="logs-status">
                     <i class="fas fa-clock"></i>
@@ -178,7 +167,7 @@
                 <div class="category-info">
                     <h4>Recycle Bin</h4>
                     <p>Permanently delete recycled files</p>
-                    <div class="category-size" id="recycle-size">Scanning...</div>
+                    <div class="category-size" id="recycle-size">Ready to clean</div>
                 </div>
                 <div class="category-status" id="recycle-status">
                     <i class="fas fa-clock"></i>
@@ -197,7 +186,7 @@
                 <div class="category-info">
                     <h4>Registry Cleanup</h4>
                     <p>Invalid entries, broken references</p>
-                    <div class="category-size" id="registry-size">Scanning...</div>
+                    <div class="category-size" id="registry-size">Ready to clean</div>
                 </div>
                 <div class="category-status" id="registry-status">
                     <i class="fas fa-clock"></i>
@@ -216,7 +205,7 @@
                 <div class="category-info">
                     <h4>Memory Dumps</h4>
                     <p>Crash dumps, minidumps, debug files</p>
-                    <div class="category-size" id="dumps-size">Scanning...</div>
+                    <div class="category-size" id="dumps-size">Ready to clean</div>
                 </div>
                 <div class="category-status" id="dumps-status">
                     <i class="fas fa-clock"></i>
@@ -240,9 +229,7 @@
                 <button class="btn btn-primary btn-large" onclick="startAdvancedCleanup()" id="cleanup-btn">
                     <i class="fas fa-broom"></i> Start Cleanup
                 </button>
-                <button class="btn btn-secondary" onclick="deepScan()" id="deep-scan-btn">
-                    <i class="fas fa-search-plus"></i> Deep Scan
-                </button>
+
                 <button class="btn btn-secondary" onclick="openDiskCleanup()">
                     <i class="fas fa-external-link-alt"></i> Windows Cleanup
                 </button>
@@ -418,10 +405,7 @@
                             <option value="4">4 (Fast)</option>
                         </select>
                     </label>
-                    <label class="setting-item">
-                        <input type="checkbox" id="deep-scan-mode">
-                        <span>Enable deep scan mode</span>
-                    </label>
+
                 </div>
             </div>
             <div class="modal-footer">
