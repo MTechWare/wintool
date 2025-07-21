@@ -1,5 +1,6 @@
 import { showSettings } from './settings.js';
 import { showNotification } from './notifications.js';
+import { switchToTab } from './tabs.js';
 
 
 export function initSystemTrayListeners() {
@@ -8,6 +9,9 @@ export function initSystemTrayListeners() {
         window.electronAPI.onMessage((event, message) => {
             if (message === 'show-settings') {
                 showSettings();
+            } else if (message.startsWith('switch-to-tab:')) {
+                const tabId = message.split(':')[1];
+                switchToTab(tabId);
             }
         });
     }
