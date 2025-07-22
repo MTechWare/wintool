@@ -196,25 +196,6 @@ function setupEventListeners() {
  * Handle keyboard shortcuts
  */
 function handleKeyboardShortcuts(e) {
-    if (e.ctrlKey) {
-        switch (e.key) {
-            case 'a':
-                e.preventDefault();
-                selectAllCategories();
-                break;
-            case 'd':
-                e.preventDefault();
-                deselectAllCategories();
-                break;
-            case 'Enter':
-                e.preventDefault();
-                if (!cleanupState.isRunning) {
-                    startAdvancedCleanup();
-                }
-                break;
-        }
-    }
-
     if (e.key === 'Escape') {
         hideCleanupSettings();
         hideHistory();

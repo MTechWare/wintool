@@ -1,14 +1,17 @@
-// Simple Script Editor
+// CodeMirror Script Editor
 console.log('=== SCRIPT EDITOR JAVASCRIPT FILE LOADING ===');
 
 // Global variables for script editor
 let currentFile = null;
 let isModified = false;
+let codeMirrorEditor = null;
 let settings = {
     fontSize: 14,
     tabSize: 4,
     wordWrap: false,
-    autoSave: true
+    autoSave: true,
+    theme: 'vs-dark',
+    language: 'javascript'
 };
 
 // Load settings from localStorage
@@ -32,13 +35,116 @@ function saveSettings() {
     }
 }
 
+// Initialize CodeMirror editor
+function initializeCodeMirror(container) {
+    const editorElement = container.querySelector('#code-editor');
+    if (!editorElement || codeMirrorEditor) {
+        console.log('CodeMirror init skipped - element not found or already initialized');
+        return; // Already initialized or element not found
+    }
+
+    console.log('Initializing CodeMirror editor...');
+    console.log('CodeMirror available:', typeof CodeMirror !== 'undefined');
+
+    if (typeof CodeMirror === 'undefined') {
+        console.error('CodeMirror is not available! Falling back to textarea.');
+        // Create a fallback textarea
+        const textarea = document.createElement('textarea');
+        textarea.className = 'code-editor-fallback';
+        textarea.style.width = '100%';
+        textarea.style.height = '400px';
+        textarea.style.fontFamily = 'Consolas, Monaco, monospace';
+        textarea.style.fontSize = '14px';
+        textarea.placeholder = 'Start typing your code here...';
+        editorElement.appendChild(textarea);
+
+        // Set up change listener for fallback
+        textarea.addEventListener('input', () => onContentChange(container));
+        return;
+    }
+
+    // Create CodeMirror instance
+    codeMirrorEditor = CodeMirror(editorElement, {
+        value: '// Start typing your code here...\n',
+        mode: getCodeMirrorMode(settings.language),
+        theme: settings.theme,
+        lineNumbers: true,
+        lineWrapping: settings.wordWrap,
+        indentUnit: settings.tabSize,
+        tabSize: settings.tabSize,
+        autoCloseBrackets: true,
+        matchBrackets: true,
+        foldGutter: true,
+        gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+        extraKeys: {
+            "Ctrl-Space": "autocomplete",
+            "F11": function(cm) {
+                cm.setOption("fullScreen", !cm.getOption("fullScreen"));
+            },
+            "Esc": function(cm) {
+                if (cm.getOption("fullScreen")) cm.setOption("fullScreen", false);
+            }
+        }
+    });
+
+    // Set up change listener
+    codeMirrorEditor.on('change', () => {
+        onContentChange(container);
+    });
+
+    console.log('CodeMirror editor initialized successfully');
+}
+
+// Get CodeMirror mode for language
+function getCodeMirrorMode(language) {
+    const modeMap = {
+        'javascript': 'javascript',
+        'python': 'python',
+        'powershell': 'powershell',
+        'shell': 'shell',
+        'sql': 'sql',
+        'html': 'htmlmixed',
+        'css': 'css',
+        'json': { name: 'javascript', json: true },
+        'xml': 'xml',
+        'yaml': 'yaml',
+        'markdown': 'markdown',
+        'text': 'text/plain'
+    };
+    return modeMap[language] || 'text/plain';
+}
+
+// Detect language from file extension
+function detectLanguageFromExtension(extension) {
+    const extensionMap = {
+        'js': 'javascript',
+        'py': 'python',
+        'ps1': 'powershell',
+        'sh': 'shell',
+        'bash': 'shell',
+        'sql': 'sql',
+        'html': 'html',
+        'htm': 'html',
+        'css': 'css',
+        'json': 'json',
+        'xml': 'xml',
+        'yaml': 'yaml',
+        'yml': 'yaml',
+        'md': 'markdown',
+        'txt': 'text'
+    };
+    return extensionMap[extension] || 'text';
+}
+
 // Apply settings to the editor
 function applySettings(container) {
-    const editor = container.querySelector('#code-editor');
-    if (editor) {
-        editor.style.fontSize = `${settings.fontSize}px`;
-        editor.style.whiteSpace = settings.wordWrap ? 'pre-wrap' : 'pre';
-        editor.style.tabSize = settings.tabSize;
+    if (codeMirrorEditor) {
+        codeMirrorEditor.setOption('theme', settings.theme);
+        codeMirrorEditor.setOption('mode', getCodeMirrorMode(settings.language));
+        codeMirrorEditor.setOption('lineWrapping', settings.wordWrap);
+        codeMirrorEditor.setOption('indentUnit', settings.tabSize);
+        codeMirrorEditor.setOption('tabSize', settings.tabSize);
+        codeMirrorEditor.refresh();
     }
 
     // Update settings modal inputs
@@ -51,6 +157,33 @@ function applySettings(container) {
     if (tabSizeInput) tabSizeInput.value = settings.tabSize;
     if (wordWrapCheckbox) wordWrapCheckbox.checked = settings.wordWrap;
     if (autoSaveCheckbox) autoSaveCheckbox.checked = settings.autoSave;
+
+    // Update language and theme selectors
+    const languageSelect = container.querySelector('#language-select');
+    const themeSelect = container.querySelector('#theme-select');
+    if (languageSelect) languageSelect.value = settings.language;
+    if (themeSelect) themeSelect.value = settings.theme;
+}
+
+// Get editor content (CodeMirror or fallback)
+function getEditorContent(container) {
+    if (codeMirrorEditor) {
+        return codeMirrorEditor.getValue();
+    }
+    // Fallback to textarea
+    const textarea = container.querySelector('.code-editor-fallback');
+    return textarea ? textarea.value : '';
+}
+
+// Set editor content (CodeMirror or fallback)
+function setEditorContent(container, content) {
+    if (codeMirrorEditor) {
+        codeMirrorEditor.setValue(content);
+    } else {
+        // Fallback to textarea
+        const textarea = container.querySelector('.code-editor-fallback');
+        if (textarea) textarea.value = content;
+    }
 }
 
 // New file function
@@ -59,10 +192,7 @@ function newFile(container) {
         return;
     }
 
-    const editor = container.querySelector('#code-editor');
-    if (editor) {
-        editor.value = '';
-    }
+    setEditorContent(container, '');
 
     currentFile = null;
     isModified = false;
@@ -76,9 +206,17 @@ async function openFile(container) {
         if (window.electronAPI && window.electronAPI.openFile) {
             const result = await window.electronAPI.openFile();
             if (result && result.content !== undefined) {
-                const editor = container.querySelector('#code-editor');
-                if (editor) {
-                    editor.value = result.content;
+                if (codeMirrorEditor) {
+                    codeMirrorEditor.setValue(result.content);
+                    // Auto-detect language from file extension
+                    const extension = result.filePath.split('.').pop().toLowerCase();
+                    const language = detectLanguageFromExtension(extension);
+                    if (language) {
+                        settings.language = language;
+                        codeMirrorEditor.setOption('mode', getCodeMirrorMode(language));
+                        const languageSelect = container.querySelector('#language-select');
+                        if (languageSelect) languageSelect.value = language;
+                    }
                 }
                 currentFile = result.filePath;
                 isModified = false;
@@ -95,9 +233,17 @@ async function openFile(container) {
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = (e) => {
-                        const editor = container.querySelector('#code-editor');
-                        if (editor) {
-                            editor.value = e.target.result;
+                        if (codeMirrorEditor) {
+                            codeMirrorEditor.setValue(e.target.result);
+                            // Auto-detect language from file extension
+                            const extension = file.name.split('.').pop().toLowerCase();
+                            const language = detectLanguageFromExtension(extension);
+                            if (language) {
+                                settings.language = language;
+                                codeMirrorEditor.setOption('mode', getCodeMirrorMode(language));
+                                const languageSelect = container.querySelector('#language-select');
+                                if (languageSelect) languageSelect.value = language;
+                            }
                         }
                         currentFile = file.name;
                         isModified = false;
@@ -117,10 +263,9 @@ async function openFile(container) {
 
 // Save file function
 async function saveFile(container) {
-    const editor = container.querySelector('#code-editor');
-    if (!editor) return;
+    if (!codeMirrorEditor) return;
 
-    const content = editor.value;
+    const content = codeMirrorEditor.getValue();
 
     try {
         if (window.electronAPI && window.electronAPI.saveFile) {
@@ -150,12 +295,11 @@ async function saveFile(container) {
 
 // Run script function
 async function runScript(container) {
-    const editor = container.querySelector('#code-editor');
     const languageSelect = container.querySelector('#language-select');
 
-    if (!editor || !languageSelect) return;
+    if (!codeMirrorEditor || !languageSelect) return;
 
-    const content = editor.value.trim();
+    const content = codeMirrorEditor.getValue().trim();
     const language = languageSelect.value;
 
     if (!content) {
@@ -166,28 +310,79 @@ async function runScript(container) {
     addToOutput(container, `Running ${language} script...`);
 
     try {
-        if (window.electronAPI && window.electronAPI.runScript) {
-            const result = await window.electronAPI.runScript(content, language);
-            addToOutput(container, result.output || 'Script completed.');
-            if (result.error) {
-                addToOutput(container, `Error: ${result.error}`);
+        if (window.electronAPI) {
+            let result;
+
+            // Map languages to appropriate execution methods
+            switch (language) {
+                case 'powershell':
+                    result = await window.electronAPI.executePowerShell(content);
+                    addToOutput(container, 'PowerShell Output:');
+                    addToOutput(container, result || 'Script completed successfully.');
+                    break;
+
+                case 'shell':
+                case 'batch':
+                    result = await window.electronAPI.executeCmd(content);
+                    addToOutput(container, 'CMD Output:');
+                    addToOutput(container, result || 'Script completed successfully.');
+                    break;
+
+                case 'javascript':
+                    // For JavaScript, we can use eval in the renderer process
+                    try {
+                        const evalResult = eval(content);
+                        addToOutput(container, 'JavaScript Output:');
+                        addToOutput(container, `Result: ${evalResult}`);
+                    } catch (error) {
+                        addToOutput(container, `JavaScript Error: ${error.message}`);
+                    }
+                    break;
+
+                case 'python':
+                    // For Python, we need to execute it as a script file
+                    result = await window.electronAPI.executeScript(content, 'python');
+                    if (result.success) {
+                        addToOutput(container, 'Python Output:');
+                        addToOutput(container, result.stdout || 'Script completed successfully.');
+                        if (result.stderr) {
+                            addToOutput(container, `Errors: ${result.stderr}`);
+                        }
+                    } else {
+                        addToOutput(container, `Python Error: ${result.stderr}`);
+                    }
+                    break;
+
+                default:
+                    // For other languages, try to execute as a generic script
+                    result = await window.electronAPI.executeScript(content, language);
+                    if (result.success) {
+                        addToOutput(container, `${language.toUpperCase()} Output:`);
+                        addToOutput(container, result.stdout || 'Script completed successfully.');
+                        if (result.stderr) {
+                            addToOutput(container, `Errors: ${result.stderr}`);
+                        }
+                    } else {
+                        addToOutput(container, `${language.toUpperCase()} Error: ${result.stderr}`);
+                    }
+                    break;
             }
         } else {
             // Browser mode - limited execution
             if (language === 'javascript') {
                 try {
                     const result = eval(content);
-                    addToOutput(container, `Result: ${result}`);
+                    addToOutput(container, `JavaScript Result: ${result}`);
                 } catch (error) {
                     addToOutput(container, `JavaScript Error: ${error.message}`);
                 }
             } else {
-                addToOutput(container, 'Script execution not available in browser mode.');
+                addToOutput(container, 'Script execution not available in browser mode. Only JavaScript can be executed.');
             }
         }
     } catch (error) {
         console.error('Error running script:', error);
-        addToOutput(container, `Error: ${error.message}`);
+        addToOutput(container, `Execution Error: ${error.message}`);
     }
 }
 
@@ -319,10 +514,27 @@ function setupEventListeners(container) {
         modalClose.addEventListener('click', () => hideSettings(container));
     }
 
-    // Editor content change
-    const editor = container.querySelector('#code-editor');
-    if (editor) {
-        editor.addEventListener('input', () => onContentChange(container));
+    // Language and theme selectors
+    const languageSelect = container.querySelector('#language-select');
+    if (languageSelect) {
+        languageSelect.addEventListener('change', (e) => {
+            settings.language = e.target.value;
+            if (codeMirrorEditor) {
+                codeMirrorEditor.setOption('mode', getCodeMirrorMode(settings.language));
+            }
+            saveSettings();
+        });
+    }
+
+    const themeSelect = container.querySelector('#theme-select');
+    if (themeSelect) {
+        themeSelect.addEventListener('change', (e) => {
+            settings.theme = e.target.value;
+            if (codeMirrorEditor) {
+                codeMirrorEditor.setOption('theme', settings.theme);
+            }
+            saveSettings();
+        });
     }
 
     // Settings inputs
@@ -368,6 +580,9 @@ function initializeScriptEditor(container) {
 
     // Load settings
     loadSettings();
+
+    // Initialize CodeMirror editor
+    initializeCodeMirror(container);
 
     // Apply settings
     applySettings(container);

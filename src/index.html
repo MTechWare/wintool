@@ -7,21 +7,21 @@
     <link rel="stylesheet" href="assets/fontawesome/all.min.css">
     <link rel="icon" type="image/x-icon" href="assets/icon.ico">
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/dialog/dialog.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/search/matchesonscrollbar.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/fold/foldgutter.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/dracula.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/material.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/material-darker.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/material-palenight.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/monokai.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/eclipse.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/solarized.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/tomorrow-night-bright.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/vs.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/vs-dark.min.css">
+    <link rel="stylesheet" href="assets/codemirror/css/codemirror.min.css">
+    <link rel="stylesheet" href="assets/codemirror/addons/dialog.min.css">
+    <link rel="stylesheet" href="assets/codemirror/addons/matchesonscrollbar.min.css">
+    <link rel="stylesheet" href="assets/codemirror/addons/foldgutter.min.css">
+    <link rel="stylesheet" href="assets/codemirror/addons/show-hint.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/dracula.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/material.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/material-darker.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/material-palenight.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/monokai.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/eclipse.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/solarized.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/tomorrow-night-bright.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/vs.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/vs-dark.min.css">
 </head>
 <body>
     <!-- Custom Title Bar -->
@@ -427,6 +427,10 @@
                             <i class="fas fa-cogs"></i>
                             <span>Behavior</span>
                         </div>
+                        <div class="settings-nav-item" data-settings-tab="performance">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Performance</span>
+                        </div>
                         <div class="settings-nav-item" data-settings-tab="shortcuts">
                             <i class="fas fa-keyboard"></i>
                             <span>Keyboard Shortcuts</span>
@@ -528,6 +532,13 @@
                             <p class="settings-description">Automatically refresh system information every 30 seconds</p>
                         </div>
                         <div class="settings-group">
+                            <label class="settings-label">
+                                <input type="checkbox" id="enable-lazy-loading" class="settings-checkbox">
+                                Enable Lazy Loading
+                            </label>
+                            <p class="settings-description">Load tab content only when accessed for faster startup. Disabling this will load all tabs immediately, which may slow startup but ensures all content is ready instantly.</p>
+                        </div>
+                        <div class="settings-group">
                             <label class="settings-label" for="elevation-preference">Administrator Privileges</label>
                             <select id="elevation-preference" class="settings-select">
                                 <option value="ask">Always ask</option>
@@ -536,13 +547,7 @@
                             </select>
                             <p class="settings-description">Choose how the application should handle administrator privileges on startup.</p>
                         </div>
-                        <div class="settings-group">
-                            <label class="settings-label">
-                                <input type="checkbox" id="enable-discord-rpc" class="settings-checkbox">
-                                Enable Discord Rich Presence
-                            </label>
-                            <p class="settings-description">Show your current WinTool activity in Discord.</p>
-                        </div>
+
                         <div class="settings-group">
                             <label class="settings-label">
                                 <input type="checkbox" id="top-most-checkbox" class="settings-checkbox">
@@ -550,13 +555,7 @@
                             </label>
                             <p class="settings-description">Keep the application window always on top of other windows.</p>
                         </div>
-                        <div class="settings-group">
-                            <label class="settings-label">
-                                <input type="checkbox" id="enable-lazy-loading" class="settings-checkbox">
-                                Enable Lazy Loading
-                            </label>
-                            <p class="settings-description">Load tab content only when accessed to improve startup performance. Disable to load all tabs immediately on startup.</p>
-                        </div>
+
                     </div>
 
                     <!-- Keyboard Shortcuts Settings -->
@@ -657,6 +656,75 @@
                                 </button>
                             </div>
                             <p class="settings-description">Manage your keyboard shortcut configurations</p>
+                        </div>
+                    </div>
+
+                    <!-- Performance Settings -->
+                    <div id="settings-performance" class="settings-panel">
+                        <h4>Performance Settings</h4>
+
+                        <div class="settings-group">
+                            <label class="settings-label">Performance Mode</label>
+                            <p class="settings-description">Choose how WinTool should balance features and performance based on your system capabilities.</p>
+
+                            <div class="performance-mode-grid">
+                                <div class="mode-card" data-mode="low-end">
+                                    <div class="mode-title">🐌 Low-End Mode</div>
+                                    <div class="mode-description">
+                                        Optimized for systems with limited resources. Reduces background operations,
+                                        enables caching, and disables non-essential features for maximum performance.
+                                    </div>
+                                </div>
+
+                                <div class="mode-card" data-mode="auto">
+                                    <div class="mode-title">⚡ Auto Mode</div>
+                                    <div class="mode-description">
+                                        Automatically adjusts performance based on detected system capabilities.
+                                        Recommended for most users.
+                                    </div>
+                                </div>
+
+                                <div class="mode-card" data-mode="high-end">
+                                    <div class="mode-title">🚀 High-End Mode</div>
+                                    <div class="mode-description">
+                                        Enables all features and faster update intervals. Best for powerful systems
+                                        with plenty of RAM and CPU cores.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="recommendation" id="performance-recommendation" style="display: none;">
+                                <h5>💡 Recommendation</h5>
+                                <p id="performance-recommendation-text"></p>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <label class="settings-label">Advanced Performance Options</label>
+
+                            <div class="settings-group">
+                                <label class="settings-label">
+                                    <input type="checkbox" id="fast-system-info" class="settings-checkbox">
+                                    Fast System Information
+                                </label>
+                                <p class="settings-description">Use basic system information instead of detailed hardware scanning for faster loading.</p>
+                            </div>
+
+                            <div class="settings-group">
+                                <label class="settings-label">
+                                    <input type="checkbox" id="cache-system-info" class="settings-checkbox">
+                                    Cache System Information
+                                </label>
+                                <p class="settings-description">Cache system information for 5 minutes to reduce repeated hardware queries.</p>
+                            </div>
+
+                            <div class="settings-group">
+                                <label class="settings-label">
+                                    <input type="checkbox" id="enable-discord-rpc" class="settings-checkbox">
+                                    Discord Rich Presence
+                                </label>
+                                <p class="settings-description">Show WinTool activity in Discord. Disable to save system resources.</p>
+                            </div>
                         </div>
                     </div>
 
@@ -784,39 +852,39 @@
         </ul>
     </div>
     <!-- JavaScript -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="assets/codemirror/js/codemirror.min.js"></script>
 
     <!-- CodeMirror Modes -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/powershell/powershell.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/shell/shell.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/python/python.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/sql/sql.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/xml/xml.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/css/css.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/htmlmixed/htmlmixed.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/yaml/yaml.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/markdown/markdown.min.js"></script>
+    <script src="assets/codemirror/modes/powershell.min.js"></script>
+    <script src="assets/codemirror/modes/shell.min.js"></script>
+    <script src="assets/codemirror/modes/javascript.min.js"></script>
+    <script src="assets/codemirror/modes/python.min.js"></script>
+    <script src="assets/codemirror/modes/sql.min.js"></script>
+    <script src="assets/codemirror/modes/xml.min.js"></script>
+    <script src="assets/codemirror/modes/css.min.js"></script>
+    <script src="assets/codemirror/modes/htmlmixed.min.js"></script>
+    <script src="assets/codemirror/modes/yaml.min.js"></script>
+    <script src="assets/codemirror/modes/markdown.min.js"></script>
 
     <!-- CodeMirror Addons -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/edit/closebrackets.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/edit/matchbrackets.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/edit/closetag.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/fold/foldcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/fold/foldgutter.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/fold/brace-fold.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/fold/comment-fold.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/search/search.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/search/searchcursor.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/search/jump-to-line.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/dialog/dialog.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/anyword-hint.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/javascript-hint.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/sql-hint.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/selection/active-line.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/comment/comment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/display/autorefresh.min.js"></script>
+    <script src="assets/codemirror/addons/closebrackets.min.js"></script>
+    <script src="assets/codemirror/addons/matchbrackets.min.js"></script>
+    <script src="assets/codemirror/addons/closetag.min.js"></script>
+    <script src="assets/codemirror/addons/foldcode.min.js"></script>
+    <script src="assets/codemirror/addons/foldgutter.min.js"></script>
+    <script src="assets/codemirror/addons/brace-fold.min.js"></script>
+    <script src="assets/codemirror/addons/comment-fold.min.js"></script>
+    <script src="assets/codemirror/addons/search.min.js"></script>
+    <script src="assets/codemirror/addons/searchcursor.min.js"></script>
+    <script src="assets/codemirror/addons/jump-to-line.min.js"></script>
+    <script src="assets/codemirror/addons/dialog.min.js"></script>
+    <script src="assets/codemirror/addons/show-hint.min.js"></script>
+    <script src="assets/codemirror/addons/anyword-hint.min.js"></script>
+    <script src="assets/codemirror/addons/javascript-hint.min.js"></script>
+    <script src="assets/codemirror/addons/sql-hint.min.js"></script>
+    <script src="assets/codemirror/addons/active-line.min.js"></script>
+    <script src="assets/codemirror/addons/comment.min.js"></script>
+    <script src="assets/codemirror/addons/autorefresh.min.js"></script>
     <script src="js/tab-loader.js"></script>
     <script type="module" src="js/app.js"></script>
 </body>

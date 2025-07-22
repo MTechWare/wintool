@@ -26,7 +26,21 @@
             <input type="text" id="package-search" placeholder="Search packages..." class="search-input">
             <i class="fas fa-search search-icon"></i>
         </div>
-        
+
+        <!-- Package Status Filter -->
+        <div class="package-status-filter">
+            <label for="package-status-select">Show:</label>
+            <select id="package-status-select" class="package-status-select">
+                <option value="all" selected>All Packages</option>
+                <option value="installed">Installed Only</option>
+                <option value="available">Available Only</option>
+                <option value="updates">Updates Available</option>
+            </select>
+            <button id="refresh-installed" class="action-btn refresh-btn" title="Refresh installed packages and check for updates">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+
         <div class="category-filters">
             <button class="category-btn active" data-category="all">All</button>
             <button class="category-btn" data-category="Browsers">Browsers</button>

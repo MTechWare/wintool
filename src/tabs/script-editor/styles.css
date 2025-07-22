@@ -134,19 +134,23 @@
 .code-editor {
     width: 100%;
     height: 400px;
-    padding: 15px;
-    background: #1e1e1e;
-    color: #cccccc;
     border: none;
     outline: none;
-    resize: vertical;
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     font-size: 14px;
     line-height: 1.5;
 }
 
-.code-editor::placeholder {
-    color: #666666;
+/* CodeMirror specific styles */
+.code-editor .CodeMirror {
+    height: 400px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.code-editor .CodeMirror-scroll {
+    min-height: 400px;
 }
 
 /* Output Section */

@@ -38,9 +38,13 @@ class ProcessPoolManager {
         this.cmdPool = [];
         this.maxPoolSize = 3; // Limit concurrent processes
         this.activeProcesses = 0;
-        this.maxActiveProcesses = 2; // Very conservative limit during startup
+        this.maxActiveProcesses = 3; // Increased for faster startup
         this.pendingOperations = [];
         this.isStartupPhase = true;
+        this.systemCapabilities = null; // Will be determined during startup
+        // Command caching for frequently used operations
+        this.commandCache = new Map();
+        this.cacheTimeout = 30000; // 30 seconds cache timeout
     }
 
     async getPooledPowerShellProcess() {
@@ -76,6 +80,8 @@ class ProcessPoolManager {
     returnToPool(process, type = 'powershell') {
         if (type === 'powershell' && this.powershellPool.length < this.maxPoolSize) {
             this.powershellPool.push(process);
+        } else if (type === 'cmd' && this.cmdPool.length < this.maxPoolSize) {
+            this.cmdPool.push(process);
         } else {
             process.kill();
         }
@@ -88,23 +94,99 @@ class ProcessPoolManager {
         }
     }
 
-    finishStartupPhase() {
+    async detectSystemCapabilities() {
+        try {
+            const totalMemory = os.totalmem();
+            const cpuCount = os.cpus().length;
+
+            // Determine system capabilities
+            const memoryGB = totalMemory / (1024 * 1024 * 1024);
+
+            if (memoryGB < 4 || cpuCount < 4) {
+                this.systemCapabilities = 'low-end';
+                this.maxActiveProcesses = 2; // Very conservative for low-end
+            } else if (memoryGB >= 8 && cpuCount >= 8) {
+                this.systemCapabilities = 'high-end';
+                this.maxActiveProcesses = 15; // More aggressive for high-end
+            } else {
+                this.systemCapabilities = 'mid-range';
+                this.maxActiveProcesses = 8; // Balanced for mid-range
+            }
+
+            console.log(`Detected system capabilities: ${this.systemCapabilities} (${memoryGB.toFixed(1)}GB RAM, ${cpuCount} cores)`);
+            console.log(`Set max active processes to: ${this.maxActiveProcesses}`);
+
+        } catch (error) {
+            console.error('Error detecting system capabilities:', error);
+            this.systemCapabilities = 'unknown';
+            this.maxActiveProcesses = 5; // Safe default
+        }
+    }
+
+    async finishStartupPhase() {
+        // Detect system capabilities before finishing startup
+        await this.detectSystemCapabilities();
+
         this.isStartupPhase = false;
-        this.maxActiveProcesses = 10; // Allow more processes after startup
+
         // Process any remaining pending operations
         while (this.pendingOperations.length > 0 && this.activeProcesses < this.maxActiveProcesses) {
             this.processNextPending();
         }
+
+        console.log(`Startup phase finished. System: ${this.systemCapabilities}, Max processes: ${this.maxActiveProcesses}`);
     }
 
     async executePowerShellCommand(command, timeout = 30000) {
-        // Use proper process limiting during startup phase
-        if (this.isStartupPhase) {
-            return this.executeWithStartupLimit(() => this._executePowerShellDirect(command, timeout));
+        // Check cache first for read-only operations
+        const cacheKey = this.getCacheKey(command);
+        if (this.isReadOnlyCommand(command) && this.commandCache.has(cacheKey)) {
+            const cached = this.commandCache.get(cacheKey);
+            if (Date.now() - cached.timestamp < this.cacheTimeout) {
+                console.log('Returning cached PowerShell result');
+                return cached.result;
+            } else {
+                this.commandCache.delete(cacheKey);
+            }
         }
 
-        // After startup, use direct execution for better performance
-        return this._executePowerShellDirect(command, timeout);
+        // Use proper process limiting during startup phase
+        let result;
+        if (this.isStartupPhase) {
+            result = await this.executeWithStartupLimit(() => this._executePowerShellDirect(command, timeout));
+        } else {
+            // After startup, use direct execution for better performance
+            result = await this._executePowerShellDirect(command, timeout);
+        }
+
+        // Cache read-only command results
+        if (this.isReadOnlyCommand(command)) {
+            this.commandCache.set(cacheKey, {
+                result: result,
+                timestamp: Date.now()
+            });
+        }
+
+        return result;
+    }
+
+    getCacheKey(command) {
+        // Create a simple hash of the command for caching
+        return command.replace(/\s+/g, ' ').trim().toLowerCase();
+    }
+
+    isReadOnlyCommand(command) {
+        // Identify read-only commands that can be safely cached
+        const readOnlyPatterns = [
+            /^Get-/i,
+            /^Test-Path/i,
+            /^\$env:/i,
+            /^sc\.exe query/i,
+            /^reg query/i,
+            /^wmic/i
+        ];
+
+        return readOnlyPatterns.some(pattern => pattern.test(command.trim()));
     }
 
     async executeWithStartupLimit(operation) {
@@ -127,9 +209,17 @@ class ProcessPoolManager {
 
     async _executePowerShellDirect(command, timeout = 30000) {
         return new Promise((resolve, reject) => {
+            // Adaptive timeout based on system capabilities
+            let adaptiveTimeout = timeout;
+            if (this.systemCapabilities === 'low-end') {
+                adaptiveTimeout = Math.min(timeout * 1.5, 45000); // Give low-end systems more time
+            } else if (this.systemCapabilities === 'high-end') {
+                adaptiveTimeout = Math.max(timeout * 0.8, 15000); // Expect faster execution on high-end
+            }
+
             const timeoutId = setTimeout(() => {
-                reject(new Error(`PowerShell command timed out after ${timeout}ms`));
-            }, timeout);
+                reject(new Error(`PowerShell command timed out after ${adaptiveTimeout}ms`));
+            }, adaptiveTimeout);
 
             try {
                 // Track active processes during startup
@@ -137,14 +227,21 @@ class ProcessPoolManager {
                     this.activeProcesses++;
                 }
 
-                // Use more secure PowerShell execution parameters
-                const psProcess = spawn('powershell.exe', [
-                    '-NoProfile',
-                    '-NonInteractive',
-                    '-WindowStyle', 'Hidden',
-                    '-ExecutionPolicy', 'RemoteSigned', // Less suspicious than Bypass
-                    '-Command', command
-                ], {
+                // Optimize PowerShell parameters based on system capabilities
+                let psArgs = ['-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden'];
+
+                if (this.systemCapabilities === 'low-end') {
+                    // More conservative settings for low-end systems
+                    psArgs.push('-ExecutionPolicy', 'RemoteSigned');
+                    psArgs.push('-NoLogo'); // Reduce startup overhead
+                } else {
+                    // Standard settings for other systems
+                    psArgs.push('-ExecutionPolicy', 'RemoteSigned');
+                }
+
+                psArgs.push('-Command', command);
+
+                const psProcess = spawn('powershell.exe', psArgs, {
                     stdio: ['pipe', 'pipe', 'pipe'],
                     shell: false
                 });
@@ -202,6 +299,118 @@ class ProcessPoolManager {
         });
     }
 
+    // CMD Process Pool Methods
+    async getPooledCmdProcess() {
+        if (this.cmdPool.length > 0) {
+            return this.cmdPool.pop();
+        }
+
+        if (this.activeProcesses >= this.maxActiveProcesses && this.isStartupPhase) {
+            // Queue the operation during startup
+            return new Promise((resolve) => {
+                this.pendingOperations.push(() => resolve(this.createCmdProcess()));
+            });
+        }
+
+        return this.createCmdProcess();
+    }
+
+    createCmdProcess() {
+        this.activeProcesses++;
+        const process = spawn('cmd.exe', ['/Q'], { // /Q for quiet mode
+            stdio: ['pipe', 'pipe', 'pipe'],
+            shell: false
+        });
+
+        process.on('close', () => {
+            this.activeProcesses--;
+            this.processNextPending();
+        });
+
+        return process;
+    }
+
+    async executeCmdCommand(command, timeout = 30000) {
+        // Use proper process limiting during startup phase
+        if (this.isStartupPhase) {
+            return this.executeWithStartupLimit(() => this._executeCmdDirect(command, timeout));
+        }
+
+        // After startup, use direct execution for better performance
+        return this._executeCmdDirect(command, timeout);
+    }
+
+    async _executeCmdDirect(command, timeout = 30000) {
+        return new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+                reject(new Error(`CMD command timed out after ${timeout}ms`));
+            }, timeout);
+
+            try {
+                // Track active processes during startup
+                if (this.isStartupPhase) {
+                    this.activeProcesses++;
+                }
+
+                // Use CMD with /C to execute command and exit
+                const cmdProcess = spawn('cmd.exe', ['/C', command], {
+                    stdio: ['pipe', 'pipe', 'pipe'],
+                    shell: false
+                });
+
+                let output = '';
+                let errorOutput = '';
+
+                cmdProcess.stdout.on('data', (data) => {
+                    output += data.toString();
+                });
+
+                cmdProcess.stderr.on('data', (data) => {
+                    errorOutput += data.toString();
+                });
+
+                cmdProcess.on('close', (code) => {
+                    clearTimeout(timeoutId);
+
+                    // Decrease active process count
+                    if (this.isStartupPhase) {
+                        this.activeProcesses--;
+                        this.processNextPending();
+                    }
+
+                    if (code === 0) {
+                        resolve(output);
+                    } else {
+                        reject(new Error(`CMD command failed with exit code ${code}: ${errorOutput || 'Unknown error'}`));
+                    }
+                });
+
+                cmdProcess.on('error', (error) => {
+                    clearTimeout(timeoutId);
+
+                    // Decrease active process count on error
+                    if (this.isStartupPhase) {
+                        this.activeProcesses--;
+                        this.processNextPending();
+                    }
+
+                    reject(new Error(`CMD process error: ${error.message}`));
+                });
+
+            } catch (error) {
+                clearTimeout(timeoutId);
+
+                // Decrease active process count on exception
+                if (this.isStartupPhase) {
+                    this.activeProcesses--;
+                    this.processNextPending();
+                }
+
+                reject(error);
+            }
+        });
+    }
+
     cleanup() {
         // Clean up all pooled processes
         [...this.powershellPool, ...this.cmdPool].forEach(process => {
@@ -223,7 +432,7 @@ const processPool = new ProcessPoolManager();
 class StartupProcessLimiter {
     constructor() {
         this.isStartupPhase = true;
-        this.maxConcurrentProcesses = 1; // Very conservative - only 1 concurrent process during startup
+        this.maxConcurrentProcesses = 4; // Increased for faster startup
         this.activeProcesses = 0;
         this.pendingOperations = [];
     }
@@ -278,6 +487,71 @@ class StartupProcessLimiter {
 
 // Global startup limiter instance
 const startupLimiter = new StartupProcessLimiter();
+
+// Performance optimization based on system capabilities
+async function applyPerformanceOptimizations() {
+    try {
+        const settingsStore = await getStore();
+        if (!settingsStore) return;
+
+        // Get system capabilities from process pool
+        const systemCapabilities = processPool.systemCapabilities;
+
+        if (systemCapabilities === 'low-end') {
+            console.log('Applying low-end system optimizations...');
+
+            // Enable performance optimizations for low-end systems
+            settingsStore.set('fastSystemInfo', true);
+            settingsStore.set('performanceMode', 'low-end');
+            settingsStore.set('cacheSystemInfo', true);
+            settingsStore.set('enableDiscordRpc', false); // Disable Discord RPC for performance
+            settingsStore.set('clearPluginCache', true); // Clear plugin cache to save memory
+
+            // Reduce window visibility monitoring frequency
+            if (visibilityCheckInterval) {
+                clearInterval(visibilityCheckInterval);
+                visibilityCheckInterval = setInterval(async () => {
+                    // Reduced frequency visibility check for low-end systems
+                    if (mainWindow && !mainWindow.isDestroyed()) {
+                        const isVisible = mainWindow.isVisible();
+                        const isMinimized = mainWindow.isMinimized();
+
+                        if (!isVisible && !isMinimized && !isIntentionallyHidden) {
+                            console.warn('Window visibility issue detected (low-end mode)');
+                            try {
+                                mainWindow.show();
+                                mainWindow.focus();
+                            } catch (error) {
+                                console.error('Error during visibility recovery:', error);
+                            }
+                        }
+                    }
+                }, 30000); // Check every 30 seconds instead of 10
+            }
+
+        } else if (systemCapabilities === 'high-end') {
+            console.log('Applying high-end system optimizations...');
+
+            // Enable full features for high-end systems
+            settingsStore.set('fastSystemInfo', false);
+            settingsStore.set('performanceMode', 'high-end');
+            settingsStore.set('cacheSystemInfo', true);
+            settingsStore.set('enableDiscordRpc', true);
+
+        } else {
+            console.log('Applying balanced optimizations for mid-range system...');
+
+            // Balanced settings for mid-range systems
+            settingsStore.set('performanceMode', 'auto');
+            settingsStore.set('cacheSystemInfo', true);
+        }
+
+        console.log(`Performance optimizations applied for ${systemCapabilities} system`);
+
+    } catch (error) {
+        console.error('Error applying performance optimizations:', error);
+    }
+}
 
 // Fetch verified plugins list from GitHub only
 async function updateVerifiedPluginsList() {
@@ -517,6 +791,35 @@ async function getStore() {
         }
     }
     return store;
+}
+
+/**
+ * Create performance settings window
+ */
+function createPerformanceSettingsWindow() {
+    const performanceWindow = new BrowserWindow({
+        width: 900,
+        height: 700,
+        title: 'Performance Settings - WinTool',
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            nodeIntegration: false,
+            contextIsolation: true,
+        },
+        parent: mainWindow,
+        modal: true,
+        resizable: true,
+        minimizable: false,
+        maximizable: false,
+    });
+
+    performanceWindow.loadFile(path.join(__dirname, 'performance-settings.html'));
+
+    performanceWindow.on('closed', () => {
+        // Window closed
+    });
+
+    return performanceWindow;
 }
 
 /**
@@ -1078,12 +1381,14 @@ function restartApp() {
 const loadedPluginBackends = new Map();
 
 async function loadPluginBackends() {
-    console.log('Loading plugin backends...');
+    const pluginStart = performance.now();
+    console.log('🔌 Loading plugin backends...');
     const pluginMap = await getPluginMap();
 
-    // Batch plugin loading to reduce concurrent processes
+    // Batch plugin loading to reduce concurrent processes - optimized for faster startup
     const pluginEntries = Array.from(pluginMap.entries());
-    const batchSize = 3; // Process 3 plugins at a time
+    const batchSize = 8; // Increased for faster plugin loading
+    console.log(`📦 Found ${pluginEntries.length} plugins to load in batches of ${batchSize}`);
 
     for (let i = 0; i < pluginEntries.length; i += batchSize) {
         const batch = pluginEntries.slice(i, i + batchSize);
@@ -1139,11 +1444,13 @@ async function loadPluginBackends() {
             }
         }));
 
-        // Small delay between batches to prevent overwhelming the system
+        // Reduced delay between batches for faster startup
         if (i + batchSize < pluginEntries.length) {
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise(resolve => setTimeout(resolve, 25)); // Further reduced for faster startup
         }
     }
+
+    console.log(`✅ Plugin backends loaded in ${(performance.now() - pluginStart).toFixed(2)}ms`);
 }
 
 // Generic handler for all plugin frontend-to-backend communication
@@ -1185,6 +1492,50 @@ async function initializeApplication() {
     const elevated = await isElevated();
     console.log(`Running elevated: ${elevated}`);
 
+
+
+    const showElevationPrompt = () => {
+        const promptWindow = new BrowserWindow({
+            width: 500,
+            height: 300,
+            frame: false,
+            resizable: false,
+            webPreferences: {
+                preload: path.join(__dirname, 'preload.js'),
+                nodeIntegration: false,
+                contextIsolation: true
+            }
+        });
+
+        promptWindow.loadFile(path.join(__dirname, 'elevation-prompt.html'));
+
+        promptWindow.webContents.on('did-finish-load', async () => {
+            if (settingsStore) {
+                const themeSettings = {
+                    theme: settingsStore.get('theme', 'classic-dark'),
+                    primaryColor: settingsStore.get('primaryColor', '#ff9800'),
+                    customTheme: settingsStore.get('customTheme', {}),
+                    rainbowMode: settingsStore.get('rainbowMode', false)
+                };
+                promptWindow.webContents.send('theme-data', themeSettings);
+            }
+        });
+
+        ipcMain.once('elevation-choice', (event, { choice, remember }) => {
+            promptWindow.close();
+
+            if (remember && settingsStore) {
+                settingsStore.set('elevationChoice', choice ? 'yes' : 'no');
+            }
+
+            if (choice) {
+                restartWithElevation();
+            } else {
+                showWindowAndFinishSetup();
+            }
+        });
+    };
+
     const showWindowAndFinishSetup = async () => {
         console.log('=== Starting Window and Setup Process ===');
 
@@ -1225,8 +1576,12 @@ async function initializeApplication() {
                     });
 
                     // Finish startup phase to allow more processes
-                    processPool.finishStartupPhase();
+                    await processPool.finishStartupPhase();
                     startupLimiter.finishStartupPhase();
+
+                    // Apply performance optimizations based on detected system
+                    await applyPerformanceOptimizations();
+
                     console.log('=== Background initialization finished ===');
                 } catch (error) {
                     console.error('Error during background startup tasks:', error);
@@ -1428,7 +1783,7 @@ ipcMain.handle('quit-app', () => {
     return true;
 });
 
-// Generic command execution handler
+// Generic command execution handler with PowerShell Process Optimization
 ipcMain.handle('run-admin-command', async (event, command) => {
     console.log('run-admin-command handler called with:', command);
 
@@ -1438,27 +1793,17 @@ ipcMain.handle('run-admin-command', async (event, command) => {
 
     // Escape double quotes in the command for PowerShell
     const escapedCommand = command.replace(/"/g, '`"');
-    
+
     // Construct the PowerShell command to run the original command elevated
     const psScript = `Start-Process -Verb RunAs -Wait -FilePath "cmd.exe" -ArgumentList "/c ${escapedCommand}"`;
 
-    return new Promise((resolve, reject) => {
-        const childProcess = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', psScript]);
-
-        childProcess.on('close', (code) => {
-            if (code === 0) {
-                // The elevated process was launched successfully. We can't get its direct output,
-                // but we can assume it worked if the user approved the UAC prompt.
-                resolve({ success: true });
-            } else {
-                reject(new Error(`Elevated process failed to start with exit code: ${code}. The user may have denied the UAC prompt.`));
-            }
-        });
-
-        childProcess.on('error', (error) => {
-            reject(error);
-        });
-    });
+    try {
+        // Use the optimized PowerShell execution with process pool
+        await processPool.executePowerShellCommand(psScript);
+        return { success: true };
+    } catch (error) {
+        throw new Error(`Elevated process failed: ${error.message}. The user may have denied the UAC prompt.`);
+    }
 });
 
 ipcMain.handle('run-command', async (event, command, asAdmin = false) => {
@@ -1470,61 +1815,45 @@ ipcMain.handle('run-command', async (event, command, asAdmin = false) => {
 
     // For commands that need to run as admin
     if (asAdmin) {
-        return new Promise((resolve, reject) => {
-            const commandParts = command.split(' ');
-            const executable = commandParts.shift();
-            const args = commandParts.join(' ');
-            
-            // Use PowerShell to start the process with elevated privileges
-            const psScript = `Start-Process -FilePath "${executable}" -ArgumentList "${args}" -Verb RunAs -Wait`;
-            
-            const psProcess = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', psScript]);
+        const commandParts = command.split(' ');
+        const executable = commandParts.shift();
+        const args = commandParts.join(' ');
 
-            psProcess.on('close', (code) => {
-                if (code === 0) {
-                    resolve({ success: true, message: `Command '${command}' executed successfully as admin.` });
-                } else {
-                    reject(new Error(`Elevated process exited with code ${code}. The user may have cancelled the UAC prompt.`));
-                }
-            });
+        // Use PowerShell to start the process with elevated privileges using process optimization
+        const psScript = `Start-Process -FilePath "${executable}" -ArgumentList "${args}" -Verb RunAs -Wait`;
 
-            psProcess.on('error', (err) => {
-                reject(new Error(`Failed to start elevated process: ${err.message}`));
+        return processPool.executePowerShellCommand(psScript)
+            .then(() => {
+                return { success: true, message: `Command '${command}' executed successfully as admin.` };
+            })
+            .catch((error) => {
+                throw new Error(`Elevated process failed: ${error.message}. The user may have cancelled the UAC prompt.`);
             });
-        });
     }
 
-    // For non-admin commands, we capture output and don't fail on non-zero exit codes.
-    return new Promise((resolve, reject) => {
-        const child = spawn(command, { shell: true, stdio: 'pipe' });
+    // For non-admin commands, use CMD Process Pool
+    try {
+        const output = await processPool.executeCmdCommand(command);
+        return {
+            success: true,
+            code: 0,
+            stdout: output,
+            stderr: '',
+            message: 'Command finished with exit code 0.'
+        };
+    } catch (error) {
+        // Extract exit code from error message if available
+        const codeMatch = error.message.match(/exit code (\d+)/);
+        const exitCode = codeMatch ? parseInt(codeMatch[1]) : 1;
 
-        let stdout = '';
-        let stderr = '';
-
-        child.stdout.on('data', (data) => {
-            stdout += data.toString();
-        });
-
-        child.stderr.on('data', (data) => {
-            stderr += data.toString();
-        });
-
-        child.on('close', (code) => {
-            // Always resolve, let the caller decide if a non-zero code is an error.
-            resolve({
-                success: code === 0,
-                code: code,
-                stdout: stdout,
-                stderr: stderr,
-                message: `Command finished with exit code ${code}.`
-            });
-        });
-
-        child.on('error', (err) => {
-            // Reject only if the process itself fails to start.
-            reject(new Error(`Failed to execute command: ${err.message}`));
-        });
-    });
+        return {
+            success: false,
+            code: exitCode,
+            stdout: '',
+            stderr: error.message,
+            message: `Command finished with exit code ${exitCode}.`
+        };
+    }
 });
 
 ipcMain.handle('open-app-directory', () => {
@@ -1598,6 +1927,11 @@ ipcMain.handle('open-log-viewer', () => {
     createLogViewerWindow();
 });
 
+// Open performance settings handler
+ipcMain.handle('open-performance-settings', () => {
+    createPerformanceSettingsWindow();
+});
+
 // Window visibility debugging handler
 ipcMain.handle('report-visibility-issue', async (event, details) => {
     console.log('Visibility issue reported from renderer:', details);
@@ -1637,9 +1971,30 @@ ipcMain.handle('report-visibility-issue', async (event, details) => {
     return { success: false, message: 'No action needed or window not available' };
 });
 
-// Performance metrics handler
+// Performance metrics handler with adaptive monitoring
 let performanceInterval;
 let performanceUpdateCount = 0; // Track how many components are requesting updates
+let currentPerformanceInterval = 2000; // Start with 2 seconds
+let performanceCache = null;
+let performanceCacheTime = 0;
+
+// Adaptive performance monitoring based on system load
+async function getAdaptiveInterval() {
+    const settingsStore = await getStore();
+    const performanceMode = settingsStore ? settingsStore.get('performanceMode', 'auto') : 'auto';
+
+    if (performanceMode === 'low-end') {
+        return 5000; // 5 seconds for low-end systems
+    } else if (performanceMode === 'high-end') {
+        return 1000; // 1 second for high-end systems
+    } else {
+        // Auto mode: adapt based on memory usage
+        if (performanceCache && performanceCache.mem > 80) {
+            return 4000; // Slower updates when memory is high
+        }
+        return 2000; // Default 2 seconds
+    }
+}
 
 // Process pool for PowerShell to reduce CPU overhead
 const powershellProcessPool = {
@@ -1695,28 +2050,59 @@ const powershellProcessPool = {
     }
 };
 
-ipcMain.handle('start-performance-updates', () => {
+ipcMain.handle('start-performance-updates', async () => {
     performanceUpdateCount++;
     console.log(`Performance updates requested. Active requests: ${performanceUpdateCount}`);
 
     // Only start the interval if it's not already running
     if (!performanceInterval) {
-        console.log('Starting performance monitoring interval...');
-        performanceInterval = setInterval(async () => {
+        console.log('Starting adaptive performance monitoring interval...');
+
+        const updatePerformanceMetrics = async () => {
             try {
-                // Only monitor memory usage (CPU monitoring removed)
-                // Reduced frequency to lower CPU usage
+                // Use cached data if recent (within 1 second)
+                const now = Date.now();
+                if (performanceCache && (now - performanceCacheTime) < 1000) {
+                    if (mainWindow && mainWindow.webContents) {
+                        mainWindow.webContents.send('performance-update', performanceCache);
+                    }
+                    return;
+                }
+
+                // Only monitor memory usage (CPU monitoring removed for performance)
                 const memInfo = await si.mem();
                 const metrics = {
                     mem: ((memInfo.active / memInfo.total) * 100).toFixed(2)
                 };
+
+                // Cache the metrics
+                performanceCache = metrics;
+                performanceCacheTime = now;
+
                 if (mainWindow && mainWindow.webContents) {
                     mainWindow.webContents.send('performance-update', metrics);
+                }
+
+                // Adapt interval based on current metrics
+                const newInterval = await getAdaptiveInterval();
+                if (newInterval !== currentPerformanceInterval) {
+                    currentPerformanceInterval = newInterval;
+                    console.log(`Adapted performance monitoring interval to ${newInterval}ms`);
+
+                    // Restart interval with new timing
+                    if (performanceInterval) {
+                        clearInterval(performanceInterval);
+                        performanceInterval = setInterval(updatePerformanceMetrics, currentPerformanceInterval);
+                    }
                 }
             } catch (error) {
                 console.error('Failed to get performance metrics:', error);
             }
-        }, 2000); // Update every 2 seconds instead of 1 to reduce CPU usage
+        };
+
+        // Start with adaptive interval
+        currentPerformanceInterval = await getAdaptiveInterval();
+        performanceInterval = setInterval(updatePerformanceMetrics, currentPerformanceInterval);
     }
 });
 
@@ -1735,6 +2121,45 @@ ipcMain.handle('stop-performance-updates', () => {
     }
 });
 
+// Performance settings handlers
+ipcMain.handle('get-performance-mode', async () => {
+    const settingsStore = await getStore();
+    return settingsStore ? settingsStore.get('performanceMode', 'auto') : 'auto';
+});
+
+ipcMain.handle('set-performance-mode', async (event, mode) => {
+    const settingsStore = await getStore();
+    if (!settingsStore) return false;
+
+    try {
+        settingsStore.set('performanceMode', mode);
+
+        // Apply immediate optimizations based on mode
+        if (mode === 'low-end') {
+            settingsStore.set('fastSystemInfo', true);
+            settingsStore.set('cacheSystemInfo', true);
+            settingsStore.set('enableDiscordRpc', false);
+        } else if (mode === 'high-end') {
+            settingsStore.set('fastSystemInfo', false);
+            settingsStore.set('cacheSystemInfo', true);
+            settingsStore.set('enableDiscordRpc', true);
+        }
+
+        console.log(`Performance mode set to: ${mode}`);
+        return true;
+    } catch (error) {
+        console.error('Error setting performance mode:', error);
+        return false;
+    }
+});
+
+ipcMain.handle('get-system-capabilities', () => {
+    return {
+        capabilities: processPool.systemCapabilities || 'unknown',
+        maxActiveProcesses: processPool.maxActiveProcesses,
+        isStartupPhase: processPool.isStartupPhase
+    };
+});
 
 // Clear all settings handler
 ipcMain.handle('clear-all-settings', async () => {
@@ -1819,8 +2244,7 @@ ipcMain.handle('set-environment-variable', async (event, name, value, target) =>
         throw new Error('Variable name contains invalid characters');
     }
 
-    return new Promise((resolve, reject) => {
-        const psScript = `
+    const psScript = `
         try {
             [Environment]::SetEnvironmentVariable("${sanitizedName}", "${value.replace(/"/g, '""')}", [EnvironmentVariableTarget]::${target})
             Write-Output "SUCCESS"
@@ -1829,40 +2253,12 @@ ipcMain.handle('set-environment-variable', async (event, name, value, target) =>
         }
         `.trim();
 
-        const psProcess = spawn('powershell.exe', [
-            '-NoProfile',
-            '-ExecutionPolicy', 'Bypass',
-            '-Command', psScript
-        ], {
-            stdio: ['pipe', 'pipe', 'pipe']
-        });
-
-        let output = '';
-        let errorOutput = '';
-
-        psProcess.stdout.on('data', (data) => {
-            output += data.toString();
-        });
-
-        psProcess.stderr.on('data', (data) => {
-            errorOutput += data.toString();
-        });
-
-        psProcess.on('close', (code) => {
-            if (code === 0 && output.includes('SUCCESS')) {
-                resolve({
-                    success: true,
-                    message: `Environment variable ${sanitizedName} set successfully`
-                });
-            } else {
-                reject(new Error(`Failed to set environment variable: ${errorOutput || 'Unknown error'}`));
-            }
-        });
-
-        psProcess.on('error', (error) => {
-            reject(new Error(`Failed to execute PowerShell: ${error.message}`));
-        });
-    });
+    try {
+        const output = await processPool.executePowerShellCommand(psScript);
+        return { success: true, message: 'Environment variable set successfully' };
+    } catch (error) {
+        throw new Error(`Failed to set environment variable: ${error.message}`);
+    }
 });
 
 ipcMain.handle('delete-environment-variable', async (event, name, target) => {
@@ -1887,8 +2283,7 @@ ipcMain.handle('delete-environment-variable', async (event, name, target) => {
         throw new Error('Variable name contains invalid characters');
     }
 
-    return new Promise((resolve, reject) => {
-        const psScript = `
+    const psScript = `
         try {
             [Environment]::SetEnvironmentVariable("${sanitizedName}", $null, [EnvironmentVariableTarget]::${target})
             Write-Output "SUCCESS"
@@ -1897,40 +2292,12 @@ ipcMain.handle('delete-environment-variable', async (event, name, target) => {
         }
         `.trim();
 
-        const psProcess = spawn('powershell.exe', [
-            '-NoProfile',
-            '-ExecutionPolicy', 'Bypass',
-            '-Command', psScript
-        ], {
-            stdio: ['pipe', 'pipe', 'pipe']
-        });
-
-        let output = '';
-        let errorOutput = '';
-
-        psProcess.stdout.on('data', (data) => {
-            output += data.toString();
-        });
-
-        psProcess.stderr.on('data', (data) => {
-            errorOutput += data.toString();
-        });
-
-        psProcess.on('close', (code) => {
-            if (code === 0 && output.includes('SUCCESS')) {
-                resolve({
-                    success: true,
-                    message: `Environment variable ${sanitizedName} deleted successfully`
-                });
-            } else {
-                reject(new Error(`Failed to delete environment variable: ${errorOutput || 'Unknown error'}`));
-            }
-        });
-
-        psProcess.on('error', (error) => {
-            reject(new Error(`Failed to execute PowerShell: ${error.message}`));
-        });
-    });
+    try {
+        const output = await processPool.executePowerShellCommand(psScript);
+        return { success: true, message: `Environment variable ${sanitizedName} deleted successfully` };
+    } catch (error) {
+        throw new Error(`Failed to delete environment variable: ${error.message}`);
+    }
 });
 
 
@@ -1969,11 +2336,50 @@ ipcMain.handle('get-system-health-info', async () => {
     }
 });
 
+// System information cache
+let systemInfoCache = null;
+let systemInfoCacheTime = 0;
+const SYSTEM_INFO_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+
 // Comprehensive system info handler using systeminformation
 ipcMain.handle('get-system-info', async (event, type) => {
     console.log(`get-system-info handler called for type: ${type || 'all'}`);
 
     try {
+        // Check if we should use fast mode (basic info only)
+        const settingsStore = await getStore();
+        // Default to fast mode during startup phase for better performance
+        const isStartupPhase = processPool && processPool.isStartupPhase;
+        const fastMode = settingsStore ? settingsStore.get('fastSystemInfo', isStartupPhase) : isStartupPhase;
+        const useCache = settingsStore ? settingsStore.get('cacheSystemInfo', true) : true;
+
+        // Check cache first if enabled and no specific type requested
+        if (!type && useCache && systemInfoCache && (Date.now() - systemInfoCacheTime) < SYSTEM_INFO_CACHE_DURATION) {
+            console.log('Returning cached system information');
+            return systemInfoCache;
+        }
+
+        // Fast mode for basic info only
+        if (!type && fastMode) {
+            console.log('🚀 Using fast mode for system information (startup optimization)');
+            const basicInfo = {
+                platform: os.platform(),
+                arch: os.arch(),
+                hostname: os.hostname(),
+
+                cpuCores: os.cpus().length + ' cores',
+                uptime: Math.round(os.uptime() / 3600) + ' hours',
+                fastMode: true
+            };
+
+            if (useCache) {
+                systemInfoCache = basicInfo;
+                systemInfoCacheTime = Date.now();
+            }
+
+            return basicInfo;
+        }
+
         if (type) {
             // Handle specific requests for individual data points (for plugins)
             switch (type) {
@@ -1992,7 +2398,26 @@ ipcMain.handle('get-system-info', async (event, type) => {
             }
         }
 
-        // The original full system information logic
+        const sysInfoStart = performance.now();
+        console.log('🔍 Gathering full system information...');
+
+        // Use timeout wrapper for system information gathering to prevent hanging on slow systems
+        const systemInfoPromise = Promise.all([
+            si.system(),
+            si.bios(),
+            si.baseboard(),
+            si.cpu(),
+            si.cpuTemperature().catch(() => ({ main: null, cores: [], max: null })),
+            si.cpuCurrentSpeed(),
+            si.osInfo(),
+            si.diskLayout(),
+            si.fsSize(),
+            si.networkInterfaces(),
+            si.graphics(),
+            si.chassis()
+        ]);
+
+        // Reduced timeout from 15 to 10 seconds for faster startup
         const [
             system,
             bios,
@@ -2000,32 +2425,13 @@ ipcMain.handle('get-system-info', async (event, type) => {
             cpu,
             cpuTemperature,
             cpuCurrentSpeed,
-            mem,
-            memLayout,
             osInfo,
             diskLayout,
             fsSize,
             networkInterfaces,
             graphics,
-            battery,
             chassis
-        ] = await Promise.all([
-            si.system(),
-            si.bios(),
-            si.baseboard(),
-            si.cpu(),
-            si.cpuTemperature().catch(() => ({ main: null, cores: [], max: null })),
-            si.cpuCurrentSpeed(),
-            si.mem(),
-            si.memLayout(),
-            si.osInfo(),
-            si.diskLayout(),
-            si.fsSize(),
-            si.networkInterfaces(),
-            si.graphics(),
-            si.battery().catch(() => ({ hasBattery: false })),
-            si.chassis()
-        ]);
+        ] = await withTimeout(systemInfoPromise, 10000, 'System information gathering');
 
         // Format uptime
         const uptimeSeconds = os.uptime();
@@ -2043,20 +2449,15 @@ ipcMain.handle('get-system-info', async (event, type) => {
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         };
 
-        console.log('System info gathered successfully, returning data...');
-        return {
+        console.log(`✅ System info gathered successfully in ${(performance.now() - sysInfoStart).toFixed(2)}ms, building result...`);
+        const result = {
             // Basic system info
             platform: osInfo.platform || os.platform(),
             arch: osInfo.arch || os.arch(),
             hostname: osInfo.hostname || os.hostname(),
             uptime: formattedUptime,
 
-            // Memory information
-            totalMemory: formatBytes(mem.total),
-            freeMemory: formatBytes(mem.free),
-            usedMemory: formatBytes(mem.used),
-            availableMemory: formatBytes(mem.available),
-            memoryUsagePercent: Math.round((mem.used / mem.total) * 100),
+
 
             // CPU information
             cpuManufacturer: cpu.manufacturer,
@@ -2111,16 +2512,7 @@ ipcMain.handle('get-system-info', async (event, type) => {
             osBuild: osInfo.build || 'Unknown',
             osSerial: osInfo.serial || 'Unknown',
 
-            // Memory layout
-            memorySlots: memLayout.length,
-            memoryDetails: memLayout.map(slot => ({
-                size: formatBytes(slot.size),
-                type: slot.type || 'Unknown',
-                clockSpeed: slot.clockSpeed ? slot.clockSpeed + ' MHz' : 'Unknown',
-                manufacturer: slot.manufacturer || 'Unknown',
-                partNum: slot.partNum || 'Unknown',
-                serialNum: slot.serialNum || 'Unknown'
-            })),
+
 
             // Storage information
             storageDevices: diskLayout.map(disk => ({
@@ -2178,18 +2570,17 @@ ipcMain.handle('get-system-info', async (event, type) => {
                 currentRefreshRate: display.currentRefreshRate || 0
             })),
 
-            // Battery information
-            battery: {
-                hasBattery: battery.hasBattery || false,
-                isCharging: battery.isCharging || false,
-                percent: battery.percent || 0,
-                timeRemaining: battery.timeRemaining || null,
-                acConnected: battery.acConnected || false,
-                type: battery.type || 'Unknown',
-                model: battery.model || 'Unknown',
-                manufacturer: battery.manufacturer || 'Unknown'
-            }
+
         };
+
+        // Cache the result if caching is enabled
+        if (useCache) {
+            systemInfoCache = result;
+            systemInfoCacheTime = Date.now();
+            console.log('System information cached for future requests');
+        }
+
+        return result;
 
     } catch (error) {
         console.error('Error getting system information:', error);
@@ -2198,8 +2589,7 @@ ipcMain.handle('get-system-info', async (event, type) => {
             platform: os.platform(),
             arch: os.arch(),
             hostname: os.hostname(),
-            totalMemory: Math.round(os.totalmem() / (1024 * 1024 * 1024)) + ' GB',
-            freeMemory: Math.round(os.freemem() / (1024 * 1024 * 1024)) + ' GB',
+
             cpuCores: os.cpus().length + ' cores',
             uptime: Math.round(os.uptime() / 3600) + ' hours',
             error: 'Failed to get detailed system information'
@@ -2286,56 +2676,6 @@ ipcMain.handle('get-network-stats', async () => {
             error: 'Failed to get network statistics'
         };
     }
-});
-// Processes information handler
-ipcMain.handle('get-processes', async () => {
-    console.log('get-processes handler called');
-    try {
-        const processes = await si.processes();
-        return processes;
-    } catch (error) {
-        console.error('Error getting processes:', error);
-        return { error: 'Failed to get process information' };
-    }
-});
-// Terminate process handler
-ipcMain.handle('terminate-process', async (event, pid) => {
-    console.log(`terminate-process handler called for PID: ${pid}`);
-    const numericPid = parseInt(pid, 10);
-
-    if (isNaN(numericPid) || numericPid <= 0) {
-        throw new Error('Invalid PID');
-    }
-
-    return new Promise((resolve, reject) => {
-        const command = `taskkill /F /PID ${numericPid}`;
-        const childProcess = spawn('cmd.exe', ['/c', command], {
-            stdio: 'pipe'
-        });
-
-        let stdout = '';
-        let stderr = '';
-
-        childProcess.stdout.on('data', (data) => {
-            stdout += data.toString();
-        });
-
-        childProcess.stderr.on('data', (data) => {
-            stderr += data.toString();
-        });
-
-        childProcess.on('close', (code) => {
-            if (code === 0) {
-                resolve({ success: true, message: stdout });
-            } else {
-                reject(new Error(stderr || `Failed to terminate process with PID ${pid}`));
-            }
-        });
-
-        childProcess.on('error', (error) => {
-            reject(error);
-        });
-    });
 });
 
 // Tab and plugin folder management handlers
@@ -2653,27 +2993,15 @@ ipcMain.handle('run-plugin-script', async (event, pluginId, scriptPath) => {
     // Check that the script exists
     await fs.stat(fullScriptPath);
 
-    return new Promise((resolve, reject) => {
-        const psProcess = spawn('powershell.exe', [
-            '-NoProfile',
-            '-ExecutionPolicy', 'Bypass',
-            '-File', fullScriptPath
-        ]);
+    // Use optimized PowerShell execution for script files
+    const scriptCommand = `& "${fullScriptPath}"`;
 
-        let output = '';
-        let errorOutput = '';
-
-        psProcess.stdout.on('data', (data) => { output += data.toString(); });
-        psProcess.stderr.on('data', (data) => { errorOutput += data.toString(); });
-
-        psProcess.on('close', (code) => {
-            if (code === 0) {
-                resolve(output);
-            } else {
-                reject(new Error(errorOutput || `Script exited with code ${code}`));
-            }
-        });
-    });
+    try {
+        const output = await processPool.executePowerShellCommand(scriptCommand);
+        return output;
+    } catch (error) {
+        throw new Error(`Plugin script execution failed: ${error.message}`);
+    }
 });
 
 // --- New Plugin API Handlers ---
@@ -3050,7 +3378,7 @@ ipcMain.handle('execute-choco-command', async (event, command) => {
         throw new Error('Invalid command parameter');
     }
 
-    const allowedCommands = ['search', 'install', 'uninstall', 'list', 'info', 'upgrade'];
+    const allowedCommands = ['search', 'install', 'uninstall', 'list', 'info', 'upgrade', 'outdated'];
     const commandParts = command.trim().split(' ');
     const mainCommand = commandParts[0];
 
@@ -3110,7 +3438,7 @@ ipcMain.handle('execute-choco-command-with-progress', async (event, command) => 
         throw new Error('Invalid command parameter');
     }
 
-    const allowedCommands = ['search', 'install', 'uninstall', 'list', 'info', 'upgrade'];
+    const allowedCommands = ['search', 'install', 'uninstall', 'list', 'info', 'upgrade', 'outdated'];
     const commandParts = command.trim().split(' ');
     const mainCommand = commandParts[0];
 
@@ -3471,29 +3799,15 @@ ipcMain.handle('execute-cleanup', async (event, category) => {
                 return;
         }
 
-        const psProcess = spawn('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath], {
-            shell: false, // Changed from true to false for security
-            stdio: ['pipe', 'pipe', 'pipe']
-        });
+        // Use optimized PowerShell execution for script files
+        const scriptCommand = `& "${scriptPath}"`;
 
-        let stdout = '';
-        let stderr = '';
+        processPool.executePowerShellCommand(scriptCommand)
+            .then((output) => {
+                console.log(`Cleanup PowerShell completed successfully`);
+                console.log(`Cleanup PowerShell output: ${output}`);
 
-        psProcess.stdout.on('data', (data) => {
-            stdout += data.toString();
-        });
-
-        psProcess.stderr.on('data', (data) => {
-            stderr += data.toString();
-        });
-
-        psProcess.on('close', (code) => {
-            console.log(`Cleanup PowerShell exit code: ${code}`);
-            console.log(`Cleanup PowerShell stdout: ${stdout}`);
-            console.log(`Cleanup PowerShell stderr: ${stderr}`);
-
-            if (code === 0) {
-                const trimmedOutput = stdout.trim();
+                const trimmedOutput = output.trim();
                 if (trimmedOutput) {
                     try {
                         const result = JSON.parse(trimmedOutput);
@@ -3517,16 +3831,11 @@ ipcMain.handle('execute-cleanup', async (event, category) => {
                         sizeFreed: 0
                     });
                 }
-            } else {
-                console.error('Cleanup PowerShell command failed');
-                const errorMessage = stderr.trim() || `PowerShell exited with code ${code}`;
-                reject(new Error(`Failed to clean ${category} files: ${errorMessage}`));
-            }
-        });
-
-        psProcess.on('error', (error) => {
-            reject(new Error(`Failed to execute PowerShell: ${error.message}`));
-        });
+            })
+            .catch((error) => {
+                console.error('Cleanup PowerShell command failed:', error);
+                reject(new Error(`Failed to clean ${category} files: ${error.message}`));
+            });
     });
 });
 
@@ -3911,6 +4220,16 @@ ipcMain.handle('execute-powershell', async (event, command) => {
     }
 });
 
+// CMD execution handler for debugging
+ipcMain.handle('execute-cmd', async (event, command) => {
+    console.log('execute-cmd handler called with command:', command);
+    try {
+        return await processPool.executeCmdCommand(command);
+    } catch (error) {
+        throw error;
+    }
+});
+
 
 // Handler to finish startup phase early
 ipcMain.handle('finish-startup-phase', async () => {
@@ -3998,44 +4317,39 @@ ipcMain.handle('show-save-dialog', async (event, options) => {
 ipcMain.handle('execute-script', async (event, { script, shell }) => {
     console.log(`execute-script handler called for shell: ${shell}`);
 
-    return new Promise((resolve, reject) => {
-        let childProcess;
-        const shellExecutable = shell === 'powershell' ? 'powershell.exe' : 'cmd.exe';
-        const shellArgs = shell === 'powershell' ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script] : ['/c', script];
-
+    // Use Process Pool for PowerShell, direct execution for CMD
+    if (shell === 'powershell') {
         try {
-            childProcess = spawn(shellExecutable, shellArgs, {
-                stdio: ['pipe', 'pipe', 'pipe'],
-                shell: true
-            });
-
-            let stdout = '';
-            let stderr = '';
-
-            childProcess.stdout.on('data', (data) => {
-                stdout += data.toString();
-            });
-
-            childProcess.stderr.on('data', (data) => {
-                stderr += data.toString();
-            });
-
-            childProcess.on('close', (code) => {
-                resolve({
-                    success: code === 0,
-                    stdout,
-                    stderr
-                });
-            });
-
-            childProcess.on('error', (error) => {
-                reject(error);
-            });
-
+            const output = await processPool.executePowerShellCommand(script);
+            return {
+                success: true,
+                stdout: output,
+                stderr: ''
+            };
         } catch (error) {
-            reject(error);
+            return {
+                success: false,
+                stdout: '',
+                stderr: error.message
+            };
         }
-    });
+    }
+
+    // For CMD, use Process Pool
+    try {
+        const output = await processPool.executeCmdCommand(script);
+        return {
+            success: true,
+            stdout: output,
+            stderr: ''
+        };
+    } catch (error) {
+        return {
+            success: false,
+            stdout: '',
+            stderr: error.message
+        };
+    }
 });
 
 
@@ -4051,56 +4365,24 @@ ipcMain.handle('get-event-logs', async (event, logName) => {
         throw new Error('Invalid log name parameter');
     }
 
-    return new Promise((resolve, reject) => {
-        const psScript = `
-            Get-WinEvent -LogName "${logName}" -MaxEvents 100 -ErrorAction Stop | Select-Object @{Name='TimeCreated';Expression={$_.TimeCreated.ToString('o')}}, LevelDisplayName, ProviderName, Id, Message | ConvertTo-Json
-        `.trim();
+    const psScript = `
+        Get-WinEvent -LogName "${logName}" -MaxEvents 100 -ErrorAction Stop | Select-Object @{Name='TimeCreated';Expression={$_.TimeCreated.ToString('o')}}, LevelDisplayName, ProviderName, Id, Message | ConvertTo-Json
+    `.trim();
 
-        const psProcess = spawn('powershell.exe', [
-            '-NoProfile',
-            '-ExecutionPolicy', 'Bypass',
-            '-Command', psScript
-        ], {
-            stdio: ['pipe', 'pipe', 'pipe']
-        });
+    try {
+        const output = await processPool.executePowerShellCommand(psScript);
+        const trimmedOutput = output.trim();
 
-        let output = '';
-        let errorOutput = '';
+        if (!trimmedOutput) {
+            return [];
+        }
 
-        psProcess.stdout.on('data', (data) => {
-            output += data.toString();
-        });
-
-        psProcess.stderr.on('data', (data) => {
-            errorOutput += data.toString();
-        });
-
-        psProcess.on('close', (code) => {
-            if (code === 0) {
-                try {
-                    const trimmedOutput = output.trim();
-                    if (!trimmedOutput) {
-                        resolve([]);
-                        return;
-                    }
-                    const events = JSON.parse(trimmedOutput);
-                    const eventArray = Array.isArray(events) ? events : [events];
-                    resolve(eventArray);
-                } catch (parseError) {
-                    console.error('Error parsing event logs JSON:', parseError, 'Raw output:', output);
-                    reject(new Error(`Failed to parse event logs: ${parseError.message}`));
-                }
-            } else {
-                console.error('PowerShell error:', errorOutput);
-                reject(new Error(`PowerShell exited with code ${code}: ${errorOutput}`));
-            }
-        });
-
-        psProcess.on('error', (error) => {
-            console.error('PowerShell process error:', error);
-            reject(new Error(`Failed to execute PowerShell: ${error.message}`));
-        });
-    });
+        const events = JSON.parse(trimmedOutput);
+        return Array.isArray(events) ? events : [events];
+    } catch (error) {
+        console.error('Error getting event logs:', error);
+        throw new Error(`Failed to get event logs: ${error.message}`);
+    }
 });
 
 ipcMain.handle('save-file-dialog-and-write', async (event, content, options) => {

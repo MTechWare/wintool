@@ -13,6 +13,11 @@ class PackageManager {
         this.currentOperation = null;
         this.currentPackageManager = 'winget'; // Default to winget
         this.chocoAvailable = false; // Will be checked during init
+        this.installedPackages = new Set(); // Track installed packages
+        this.packagesWithUpdates = new Set(); // Track packages with available updates
+        this.currentStatusFilter = 'all'; // all, installed, available, updates
+        this.currentOperationPackage = null; // Track package being operated on
+        this.currentOperationType = null; // Track operation type (install, uninstall, update)
 
         // Security configuration
         this.securityConfig = {
@@ -88,6 +93,12 @@ class PackageManager {
             // Update package manager selector based on availability
             this.updatePackageManagerSelector();
 
+            // Load installed packages
+            await this.getInstalledPackages();
+
+            // Automatically check for updates
+            await this.checkForUpdates();
+
             // Render initial package list
             this.renderPackages();
 
@@ -119,6 +130,99 @@ class PackageManager {
             console.error('Error checking Chocolatey availability:', error);
             this.chocoAvailable = false;
         }
+    }
+
+    async getInstalledPackages() {
+        this.installedPackages.clear();
+
+        try {
+            if (this.currentPackageManager === 'winget') {
+                await this.getWingetInstalledPackages();
+            } else if (this.currentPackageManager === 'choco' && this.chocoAvailable) {
+                await this.getChocoInstalledPackages();
+            }
+        } catch (error) {
+            console.error('Error getting installed packages:', error);
+            this.showStatus(`Failed to get installed packages: ${error.message}`, 'error');
+        }
+    }
+
+    async getWingetInstalledPackages() {
+        try {
+            if (window.electronAPI && window.electronAPI.executeWingetCommand) {
+                const result = await window.electronAPI.executeWingetCommand('list');
+                if (result && result.output) {
+                    this.parseWingetList(result.output);
+                }
+            } else {
+                console.log('Winget command execution not available (browser mode)');
+            }
+        } catch (error) {
+            console.error('Error getting winget installed packages:', error);
+        }
+    }
+
+    async getChocoInstalledPackages() {
+        try {
+            if (window.electronAPI && window.electronAPI.executeChocoCommand) {
+                const result = await window.electronAPI.executeChocoCommand('list --local-only');
+                if (result && result.output) {
+                    this.parseChocoList(result.output);
+                }
+            } else {
+                console.log('Choco command execution not available (browser mode)');
+            }
+        } catch (error) {
+            console.error('Error getting choco installed packages:', error);
+        }
+    }
+
+    parseWingetList(output) {
+        const lines = output.split('\n');
+        let startParsing = false;
+
+        for (const line of lines) {
+            // Skip header lines until we find the separator
+            if (line.includes('---')) {
+                startParsing = true;
+                continue;
+            }
+
+            if (!startParsing || !line.trim()) continue;
+
+            // Parse winget list output format: Name Id Version Available Source
+            const parts = line.trim().split(/\s{2,}/); // Split on multiple spaces
+            if (parts.length >= 2) {
+                const packageId = parts[1].trim();
+                if (packageId) {
+                    this.installedPackages.add(packageId.toLowerCase());
+                }
+            }
+        }
+
+        console.log(`Found ${this.installedPackages.size} installed winget packages`);
+    }
+
+    parseChocoList(output) {
+        const lines = output.split('\n');
+
+        for (const line of lines) {
+            // Skip non-package lines
+            if (!line.trim() || line.includes('Chocolatey v') || line.includes('packages installed')) {
+                continue;
+            }
+
+            // Parse choco list output format: packagename version
+            const parts = line.trim().split(' ');
+            if (parts.length >= 1) {
+                const packageId = parts[0].trim();
+                if (packageId && !packageId.includes('=')) { // Skip summary lines
+                    this.installedPackages.add(packageId.toLowerCase());
+                }
+            }
+        }
+
+        console.log(`Found ${this.installedPackages.size} installed chocolatey packages`);
     }
 
     updatePackageManagerSelector() {
@@ -201,8 +305,25 @@ class PackageManager {
         // Package manager selector
         const packageManagerSelect = document.getElementById('package-manager-select');
         if (packageManagerSelect) {
-            packageManagerSelect.addEventListener('change', (e) => {
-                this.switchPackageManager(e.target.value);
+            packageManagerSelect.addEventListener('change', async (e) => {
+                await this.switchPackageManager(e.target.value);
+            });
+        }
+
+        // Package status filter
+        const packageStatusSelect = document.getElementById('package-status-select');
+        if (packageStatusSelect) {
+            packageStatusSelect.addEventListener('change', (e) => {
+                this.currentStatusFilter = e.target.value;
+                this.filterPackages();
+            });
+        }
+
+        // Refresh installed packages button
+        const refreshInstalledBtn = document.getElementById('refresh-installed');
+        if (refreshInstalledBtn) {
+            refreshInstalledBtn.addEventListener('click', () => {
+                this.refreshInstalledPackages();
             });
         }
 
@@ -262,7 +383,7 @@ class PackageManager {
         // Progress modal close button will be set up when modal is shown
     }
 
-    switchPackageManager(packageManager) {
+    async switchPackageManager(packageManager) {
         // Check if trying to switch to Chocolatey when it's not available
         if (packageManager === 'choco' && !this.chocoAvailable) {
             this.showStatus('Chocolatey is not installed. Please install Chocolatey first: https://chocolatey.org/install', 'error');
@@ -287,11 +408,18 @@ class PackageManager {
             }
         }
 
-        // Clear current selection
+        // Clear current selection and updates
         this.selectedPackages.clear();
+        this.packagesWithUpdates.clear();
         this.updateSelectionInfo();
 
-        // Re-render packages to show appropriate package IDs
+        // Refresh installed packages for the new package manager
+        await this.getInstalledPackages();
+
+        // Automatically check for updates with the new package manager
+        await this.checkForUpdates();
+
+        // Re-render packages to show appropriate package IDs and installation status
         this.renderPackages();
 
         // Show status message
@@ -301,24 +429,236 @@ class PackageManager {
 
     filterPackages() {
         this.filteredPackages = {};
-        
+
         Object.keys(this.packages).forEach(key => {
             const pkg = this.packages[key];
-            
+
             // Category filter
             const categoryMatch = this.currentCategory === 'all' || pkg.category === this.currentCategory;
-            
+
             // Search filter
-            const searchMatch = this.searchTerm === '' || 
+            const searchMatch = this.searchTerm === '' ||
                 pkg.content.toLowerCase().includes(this.searchTerm) ||
                 pkg.description.toLowerCase().includes(this.searchTerm);
-            
-            if (categoryMatch && searchMatch) {
+
+            // Status filter (installed/available/updates)
+            const packageId = this.currentPackageManager === 'choco' ? pkg.choco : pkg.winget;
+            const isInstalled = packageId && this.installedPackages.has(packageId.toLowerCase());
+            const hasUpdate = packageId && this.packagesWithUpdates.has(packageId.toLowerCase());
+
+            let statusMatch = true;
+            if (this.currentStatusFilter === 'installed') {
+                statusMatch = isInstalled;
+            } else if (this.currentStatusFilter === 'available') {
+                statusMatch = !isInstalled;
+            } else if (this.currentStatusFilter === 'updates') {
+                statusMatch = hasUpdate;
+            }
+
+            if (categoryMatch && searchMatch && statusMatch) {
                 this.filteredPackages[key] = pkg;
             }
         });
-        
+
         this.renderPackages();
+        this.updateTotalPackageCount(Object.keys(this.filteredPackages).length);
+    }
+
+    async refreshInstalledPackages() {
+        this.showStatus('Refreshing installed packages and checking for updates...', 'info');
+
+        try {
+            await this.getInstalledPackages();
+            await this.checkForUpdates();
+            this.filterPackages();
+
+            const updateCount = this.packagesWithUpdates.size;
+            const installedCount = this.installedPackages.size;
+
+            if (updateCount > 0) {
+                this.showStatus(`Found ${installedCount} installed packages with ${updateCount} updates available`, 'success');
+            } else {
+                this.showStatus(`Found ${installedCount} installed packages - all up to date`, 'success');
+            }
+        } catch (error) {
+            console.error('Error refreshing installed packages:', error);
+            this.showStatus(`Failed to refresh installed packages: ${error.message}`, 'error');
+        }
+    }
+
+    async checkForUpdates() {
+        this.packagesWithUpdates.clear();
+
+        try {
+            if (this.currentPackageManager === 'winget') {
+                await this.getWingetUpdates();
+            } else if (this.currentPackageManager === 'choco' && this.chocoAvailable) {
+                await this.getChocoUpdates();
+            }
+
+            console.log(`Found ${this.packagesWithUpdates.size} packages with available updates`);
+        } catch (error) {
+            console.error('Error checking for updates:', error);
+            // Don't show error status since this runs automatically
+        }
+    }
+
+    async getWingetUpdates() {
+        try {
+            if (window.electronAPI && window.electronAPI.executeWingetCommand) {
+                const result = await window.electronAPI.executeWingetCommand('upgrade');
+                if (result && result.output) {
+                    this.parseWingetUpgrade(result.output);
+                }
+            } else {
+                console.log('Winget command execution not available (browser mode)');
+            }
+        } catch (error) {
+            console.error('Error getting winget updates:', error);
+        }
+    }
+
+    async getChocoUpdates() {
+        try {
+            if (window.electronAPI && window.electronAPI.executeChocoCommand) {
+                const result = await window.electronAPI.executeChocoCommand('outdated');
+                if (result && result.output) {
+                    this.parseChocoOutdated(result.output);
+                }
+            } else {
+                console.log('Choco command execution not available (browser mode)');
+            }
+        } catch (error) {
+            console.error('Error getting choco updates:', error);
+        }
+    }
+
+    parseWingetUpgrade(output) {
+        const lines = output.split('\n');
+        let startParsing = false;
+
+        for (const line of lines) {
+            // Skip header lines until we find the separator
+            if (line.includes('---')) {
+                startParsing = true;
+                continue;
+            }
+
+            if (!startParsing || !line.trim()) continue;
+
+            // Parse winget upgrade output format: Name Id Version Available Source
+            const parts = line.trim().split(/\s{2,}/); // Split on multiple spaces
+            if (parts.length >= 4) {
+                const packageId = parts[1].trim();
+                if (packageId && packageId !== 'Id') { // Skip header row
+                    this.packagesWithUpdates.add(packageId.toLowerCase());
+                }
+            }
+        }
+
+        console.log(`Found ${this.packagesWithUpdates.size} winget packages with updates`);
+    }
+
+    parseChocoOutdated(output) {
+        const lines = output.split('\n');
+
+        for (const line of lines) {
+            // Skip non-package lines
+            if (!line.trim() || line.includes('Chocolatey v') || line.includes('packages have newer') || line.includes('Output is package name')) {
+                continue;
+            }
+
+            // Parse choco outdated output format: packagename|current|available|pinned
+            if (line.includes('|')) {
+                const parts = line.trim().split('|');
+                if (parts.length >= 3) {
+                    const packageId = parts[0].trim();
+                    if (packageId) {
+                        this.packagesWithUpdates.add(packageId.toLowerCase());
+                    }
+                }
+            }
+        }
+
+        console.log(`Found ${this.packagesWithUpdates.size} chocolatey packages with updates`);
+    }
+
+    refreshPackageDisplay(packageKey) {
+        // Find the package item in the DOM
+        const packageItem = document.querySelector(`[data-package-key="${packageKey}"]`);
+        if (!packageItem) return;
+
+        const pkg = this.packages[packageKey];
+        const packageId = this.currentPackageManager === 'choco' ? pkg.choco : pkg.winget;
+
+        if (!pkg || !packageId) return;
+
+        // Check current status
+        const isInstalled = this.installedPackages.has(packageId.toLowerCase());
+        const hasUpdate = this.packagesWithUpdates.has(packageId.toLowerCase());
+
+        // Update the badge
+        const nameContainer = packageItem.querySelector('.package-name-container');
+        if (nameContainer) {
+            // Remove existing badges
+            const existingBadges = nameContainer.querySelectorAll('.update-badge, .installed-badge');
+            existingBadges.forEach(badge => badge.remove());
+
+            // Add appropriate badge
+            if (hasUpdate) {
+                const updateBadge = document.createElement('span');
+                updateBadge.className = 'update-badge';
+                updateBadge.innerHTML = '<i class="fas fa-arrow-up"></i> Update Available';
+                updateBadge.title = 'An update is available for this package';
+                nameContainer.appendChild(updateBadge);
+            } else if (isInstalled) {
+                const installedBadge = document.createElement('span');
+                installedBadge.className = 'installed-badge';
+                installedBadge.innerHTML = '<i class="fas fa-check-circle"></i> Installed';
+                installedBadge.title = 'This package is currently installed';
+                nameContainer.appendChild(installedBadge);
+            }
+        }
+
+        // Update the action buttons
+        const actionsContainer = packageItem.querySelector('.package-actions');
+        if (actionsContainer) {
+            actionsContainer.innerHTML = ''; // Clear existing buttons
+
+            if (hasUpdate) {
+                // Create update button for packages with available updates
+                const updateBtn = document.createElement('button');
+                updateBtn.className = 'package-action-btn update-package-btn';
+                updateBtn.title = 'Update Package';
+                updateBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
+                updateBtn.onclick = () => this.updatePackageSecure(packageKey);
+                actionsContainer.appendChild(updateBtn);
+
+                // Also add uninstall button for packages with updates
+                const uninstallBtn = document.createElement('button');
+                uninstallBtn.className = 'package-action-btn uninstall-package-btn';
+                uninstallBtn.title = 'Uninstall Package';
+                uninstallBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                uninstallBtn.onclick = () => this.uninstallPackageSecure(packageKey);
+                actionsContainer.appendChild(uninstallBtn);
+            } else if (isInstalled) {
+                // Create uninstall button for installed packages without updates
+                const uninstallBtn = document.createElement('button');
+                uninstallBtn.className = 'package-action-btn uninstall-package-btn';
+                uninstallBtn.title = 'Uninstall Package';
+                uninstallBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                uninstallBtn.onclick = () => this.uninstallPackageSecure(packageKey);
+                actionsContainer.appendChild(uninstallBtn);
+            } else {
+                // Create install button for non-installed packages
+                const installBtn = document.createElement('button');
+                installBtn.className = 'package-action-btn install-package-btn';
+                installBtn.title = 'Install Package';
+                installBtn.innerHTML = '<i class="fas fa-download"></i>';
+                installBtn.onclick = () => this.installPackageSecure(packageKey);
+                actionsContainer.appendChild(installBtn);
+            }
+        }
     }
 
     renderPackages() {
@@ -406,17 +746,42 @@ class PackageManager {
         const packageName = document.createElement('div');
         packageName.className = 'package-name';
 
+        // Check if package is installed and has updates
+        const isInstalled = this.installedPackages.has(packageId.toLowerCase());
+        const hasUpdate = this.packagesWithUpdates.has(packageId.toLowerCase());
+
+        const nameContainer = document.createElement('div');
+        nameContainer.className = 'package-name-container';
+
         if (pkg.link) {
             const link = document.createElement('a');
             link.href = pkg.link;
             link.textContent = pkg.content || 'Unknown Package';
             link.target = '_blank'; // Open in new tab
             link.title = `Visit ${pkg.content} website`;
-            packageName.appendChild(link);
+            nameContainer.appendChild(link);
         } else {
-            packageName.textContent = pkg.content || 'Unknown Package';
+            const nameText = document.createElement('span');
+            nameText.textContent = pkg.content || 'Unknown Package';
+            nameContainer.appendChild(nameText);
         }
 
+        // Add status badges
+        if (hasUpdate) {
+            const updateBadge = document.createElement('span');
+            updateBadge.className = 'update-badge';
+            updateBadge.innerHTML = '<i class="fas fa-arrow-up"></i> Update Available';
+            updateBadge.title = 'An update is available for this package';
+            nameContainer.appendChild(updateBadge);
+        } else if (isInstalled) {
+            const installedBadge = document.createElement('span');
+            installedBadge.className = 'installed-badge';
+            installedBadge.innerHTML = '<i class="fas fa-check-circle"></i> Installed';
+            installedBadge.title = 'This package is currently installed';
+            nameContainer.appendChild(installedBadge);
+        }
+
+        packageName.appendChild(nameContainer);
         packageInfo.appendChild(iconContainer);
         packageInfo.appendChild(packageName);
 
@@ -434,22 +799,40 @@ class PackageManager {
         const actions = document.createElement('div');
         actions.className = 'package-actions';
 
-        // Create install button
-        const installBtn = document.createElement('button');
-        installBtn.className = 'package-action-btn install-package-btn';
-        installBtn.title = 'Install Package';
-        installBtn.innerHTML = '<i class="fas fa-download"></i>';
-        installBtn.onclick = () => this.installPackageSecure(key);
+        // Show appropriate buttons based on installation and update status
+        if (hasUpdate) {
+            // Create update button for packages with available updates
+            const updateBtn = document.createElement('button');
+            updateBtn.className = 'package-action-btn update-package-btn';
+            updateBtn.title = 'Update Package';
+            updateBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
+            updateBtn.onclick = () => this.updatePackageSecure(key);
+            actions.appendChild(updateBtn);
 
-        // Create uninstall button
-        const uninstallBtn = document.createElement('button');
-        uninstallBtn.className = 'package-action-btn uninstall-package-btn';
-        uninstallBtn.title = 'Uninstall Package';
-        uninstallBtn.innerHTML = '<i class="fas fa-trash"></i>';
-        uninstallBtn.onclick = () => this.uninstallPackageSecure(key);
-
-        actions.appendChild(installBtn);
-        actions.appendChild(uninstallBtn);
+            // Also add uninstall button for packages with updates
+            const uninstallBtn = document.createElement('button');
+            uninstallBtn.className = 'package-action-btn uninstall-package-btn';
+            uninstallBtn.title = 'Uninstall Package';
+            uninstallBtn.innerHTML = '<i class="fas fa-trash"></i>';
+            uninstallBtn.onclick = () => this.uninstallPackageSecure(key);
+            actions.appendChild(uninstallBtn);
+        } else if (isInstalled) {
+            // Create uninstall button for installed packages without updates
+            const uninstallBtn = document.createElement('button');
+            uninstallBtn.className = 'package-action-btn uninstall-package-btn';
+            uninstallBtn.title = 'Uninstall Package';
+            uninstallBtn.innerHTML = '<i class="fas fa-trash"></i>';
+            uninstallBtn.onclick = () => this.uninstallPackageSecure(key);
+            actions.appendChild(uninstallBtn);
+        } else {
+            // Create install button for non-installed packages
+            const installBtn = document.createElement('button');
+            installBtn.className = 'package-action-btn install-package-btn';
+            installBtn.title = 'Install Package';
+            installBtn.innerHTML = '<i class="fas fa-download"></i>';
+            installBtn.onclick = () => this.installPackageSecure(key);
+            actions.appendChild(installBtn);
+        }
 
         // Assemble the item
         item.appendChild(checkboxContainer);
@@ -554,6 +937,11 @@ class PackageManager {
         }
 
         const sanitizedPackageId = this.sanitizePackageId(packageId);
+
+        // Set operation tracking
+        this.currentOperationPackage = { key: packageKey, id: sanitizedPackageId };
+        this.currentOperationType = 'install';
+
         this.showProgress('Installing Package', `Installing ${this.escapeHtml(pkg.content)}...`, 'installing');
 
         try {
@@ -569,6 +957,56 @@ class PackageManager {
             }
         } catch (error) {
             this.updateProgressError(`Error: ${error.message}`);
+            this.currentOperationPackage = null;
+            this.currentOperationType = null;
+        }
+    }
+
+    async updatePackageSecure(packageKey) {
+        const pkg = this.packages[packageKey];
+        const packageId = this.currentPackageManager === 'choco' ? pkg.choco : pkg.winget;
+
+        if (!pkg || !packageId) {
+            const managerName = this.currentPackageManager === 'choco' ? 'Chocolatey' : 'winget';
+            this.showStatus(`Package not found or ${managerName} ID missing`, 'error');
+            return;
+        }
+
+        // Validate package ID
+        if (!this.validatePackageId(packageId)) {
+            this.showStatus('Invalid package ID detected', 'error');
+            return;
+        }
+
+        // Check if operation is already running
+        if (this.currentOperation && !this.currentOperation.cancelled) {
+            this.showStatus('Another operation is already in progress', 'warning');
+            return;
+        }
+
+        const sanitizedPackageId = this.sanitizePackageId(packageId);
+
+        // Set operation tracking
+        this.currentOperationPackage = { key: packageKey, id: sanitizedPackageId };
+        this.currentOperationType = 'update';
+
+        this.showProgress('Updating Package', `Updating ${this.escapeHtml(pkg.content)}...`, 'updating');
+
+        try {
+            if (this.currentPackageManager === 'choco') {
+                // Execute chocolatey upgrade command
+                await this.executeChocoCommandWithProgressSecure('upgrade', sanitizedPackageId, ['-y']);
+            } else {
+                // Execute winget upgrade command with validated parameters
+                await this.executeWingetCommandWithProgressSecure('upgrade', sanitizedPackageId, [
+                    '--accept-package-agreements',
+                    '--accept-source-agreements'
+                ]);
+            }
+        } catch (error) {
+            this.updateProgressError(`Error: ${error.message}`);
+            this.currentOperationPackage = null;
+            this.currentOperationType = null;
         }
     }
 
@@ -605,6 +1043,11 @@ class PackageManager {
         }
 
         const sanitizedPackageId = this.sanitizePackageId(packageId);
+
+        // Set operation tracking
+        this.currentOperationPackage = { key: packageKey, id: sanitizedPackageId };
+        this.currentOperationType = 'uninstall';
+
         this.showProgress('Uninstalling Package', `Uninstalling ${this.escapeHtml(pkg.content)}...`, 'uninstalling');
 
         try {
@@ -617,6 +1060,8 @@ class PackageManager {
             }
         } catch (error) {
             this.updateProgressError(`Error: ${error.message}`);
+            this.currentOperationPackage = null;
+            this.currentOperationType = null;
         }
     }
 
@@ -1099,6 +1544,10 @@ class PackageManager {
     }
 
     updateProgressError(message) {
+        // Clear operation tracking on error
+        this.currentOperationPackage = null;
+        this.currentOperationType = null;
+
         const progressBar = document.getElementById('packages-progress-bar');
         const textElement = document.getElementById('packages-progress-text');
 
@@ -1163,6 +1612,32 @@ class PackageManager {
     completeProgress(message = 'Operation completed') {
         this.updateProgress(message, 100);
 
+        // Handle badge updates for successful operations
+        if (this.currentOperationPackage && this.currentOperationType) {
+            const { key, id } = this.currentOperationPackage;
+            const packageIdLower = id.toLowerCase();
+
+            switch (this.currentOperationType) {
+                case 'install':
+                    this.installedPackages.add(packageIdLower);
+                    break;
+                case 'update':
+                    this.packagesWithUpdates.delete(packageIdLower);
+                    break;
+                case 'uninstall':
+                    this.installedPackages.delete(packageIdLower);
+                    this.packagesWithUpdates.delete(packageIdLower);
+                    break;
+            }
+
+            // Refresh the package display
+            this.refreshPackageDisplay(key);
+
+            // Clear operation tracking
+            this.currentOperationPackage = null;
+            this.currentOperationType = null;
+        }
+
         // Add success styling
         const progressBar = document.getElementById('packages-progress-bar');
         const textElement = document.getElementById('packages-progress-text');
@@ -1184,6 +1659,32 @@ class PackageManager {
     }
 
     completeProgress(message) {
+        // Handle badge updates for successful operations
+        if (this.currentOperationPackage && this.currentOperationType) {
+            const { key, id } = this.currentOperationPackage;
+            const packageIdLower = id.toLowerCase();
+
+            switch (this.currentOperationType) {
+                case 'install':
+                    this.installedPackages.add(packageIdLower);
+                    break;
+                case 'update':
+                    this.packagesWithUpdates.delete(packageIdLower);
+                    break;
+                case 'uninstall':
+                    this.installedPackages.delete(packageIdLower);
+                    this.packagesWithUpdates.delete(packageIdLower);
+                    break;
+            }
+
+            // Refresh the package display
+            this.refreshPackageDisplay(key);
+
+            // Clear operation tracking
+            this.currentOperationPackage = null;
+            this.currentOperationType = null;
+        }
+
         const container = document.getElementById('progress-container');
         if (container) {
             container.className = 'progress-container completed';
@@ -1204,6 +1705,10 @@ class PackageManager {
             container.style.display = 'none';
         }
         this.currentOperation = null;
+
+        // Clear operation tracking
+        this.currentOperationPackage = null;
+        this.currentOperationType = null;
     }
 
     cancelOperation() {

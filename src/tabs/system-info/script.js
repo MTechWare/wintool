@@ -96,11 +96,7 @@ async function loadSystemInfo(container) {
                 updateElement(container, 'cpu-cache-l3', sysInfo.cpuCache.l3 || 'N/A');
             }
             
-            // Update memory information
-            updateElement(container, 'total-memory', sysInfo.totalMemory || 'Unknown');
-            updateElement(container, 'used-memory', sysInfo.usedMemory || 'Unknown');
-            updateElement(container, 'free-memory', sysInfo.freeMemory || 'Unknown');
-            updateElement(container, 'available-memory', sysInfo.availableMemory || 'Unknown');
+
             
             // Update hardware information
             updateElement(container, 'system-manufacturer', sysInfo.systemManufacturer || 'Unknown');
@@ -133,19 +129,7 @@ async function loadSystemInfo(container) {
             updateElement(container, 'os-build', sysInfo.osBuild || 'Unknown');
             updateElement(container, 'os-serial', sysInfo.osSerial || 'Unknown');
             
-            // Update battery information if available
-            if (sysInfo.battery && sysInfo.battery.hasBattery) {
-                const batterySection = container.querySelector('#battery-section') || document.querySelector('#battery-section');
-                if (batterySection) {
-                    batterySection.style.display = 'block';
-                    updateElement(container, 'battery-percent', `${sysInfo.battery.percent}%`);
-                    updateElement(container, 'battery-status', sysInfo.battery.isCharging ? 'Charging' : 'Discharging');
-                    updateElement(container, 'battery-type', sysInfo.battery.type || 'Unknown');
-                    updateElement(container, 'battery-model', sysInfo.battery.model || 'Unknown');
-                    updateElement(container, 'battery-manufacturer', sysInfo.battery.manufacturer || 'Unknown');
-                    updateElement(container, 'battery-ac-connected', sysInfo.battery.acConnected ? 'Yes' : 'No');
-                }
-            }
+
             
             console.log('System info updated successfully');
 

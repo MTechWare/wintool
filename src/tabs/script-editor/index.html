@@ -28,13 +28,23 @@
                 <option value="javascript">JavaScript</option>
                 <option value="python">Python</option>
                 <option value="powershell">PowerShell</option>
-                <option value="batch">Batch</option>
+                <option value="shell">Shell/Bash</option>
+                <option value="sql">SQL</option>
                 <option value="html">HTML</option>
                 <option value="css">CSS</option>
                 <option value="json">JSON</option>
                 <option value="xml">XML</option>
+                <option value="yaml">YAML</option>
                 <option value="markdown">Markdown</option>
                 <option value="text">Plain Text</option>
+            </select>
+            <select id="theme-select" class="control-select" title="Select Theme">
+                <option value="vs-dark">VS Dark</option>
+                <option value="vs">VS Light</option>
+                <option value="dracula">Dracula</option>
+                <option value="material">Material</option>
+                <option value="material-darker">Material Darker</option>
+                <option value="monokai">Monokai</option>
             </select>
             <button class="control-btn primary" id="run-btn" title="Run Script">
                 <i class="fas fa-play"></i> Run
@@ -50,7 +60,7 @@
 
     <!-- Editor Area -->
     <div class="editor-container">
-        <textarea id="code-editor" class="code-editor" placeholder="Start typing your code here..."></textarea>
+        <div id="code-editor" class="code-editor"></div>
     </div>
 
     <!-- Output Area -->

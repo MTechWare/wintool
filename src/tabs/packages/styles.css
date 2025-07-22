@@ -45,6 +45,93 @@
     color: #ffffff;
 }
 
+/* Package Status Filter */
+.package-status-filter {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.package-status-filter label {
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.package-status-select {
+    padding: 8px 12px;
+    background: #2a2a2a;
+    border: 1px solid #404040;
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s ease;
+    min-width: 150px;
+}
+
+.package-status-select:focus {
+    border-color: var(--primary-color);
+}
+
+.package-status-select option {
+    background: #2a2a2a;
+    color: #ffffff;
+}
+
+/* Package Name Container */
+.package-name-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Installed Badge */
+.installed-badge {
+    background: #28a745;
+    color: #ffffff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.installed-badge i {
+    font-size: 10px;
+}
+
+/* Update Badge */
+.update-badge {
+    background: #fd7e14;
+    color: #ffffff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    animation: pulse 2s infinite;
+}
+
+.update-badge i {
+    font-size: 10px;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
 .package-manager-select option:disabled {
     color: #808080;
 }
@@ -214,6 +301,14 @@
     background-color: #0069d9;
 }
 
+.refresh-btn {
+    background-color: var(--primary-color);
+}
+
+.refresh-btn:hover:not(:disabled) {
+    background-color: var(--primary-color-hover, #0056b3);
+}
+
 /* Package List */
 .packages-list-container {
     background: #2a2a2a;
@@ -349,6 +444,15 @@
 
 .uninstall-package-btn:hover {
     background: #c82333;
+}
+
+.update-package-btn {
+    background: #fd7e14;
+    color: #ffffff;
+}
+
+.update-package-btn:hover {
+    background: #e8650e;
 }
 
 /* Loading and Status */

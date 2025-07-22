@@ -39,6 +39,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     stopPerformanceUpdates: () => ipcRenderer.invoke('stop-performance-updates'),
     onPerformanceUpdate: (callback) => ipcRenderer.on('performance-update', (event, metrics) => callback(metrics)),
 
+    // Performance Settings
+    getPerformanceMode: () => ipcRenderer.invoke('get-performance-mode'),
+    setPerformanceMode: (mode) => ipcRenderer.invoke('set-performance-mode', mode),
+    getSystemCapabilities: () => ipcRenderer.invoke('get-system-capabilities'),
+    openPerformanceSettings: () => ipcRenderer.invoke('open-performance-settings'),
+
     // Generic command execution
     runCommand: (command, asAdmin = false) => ipcRenderer.invoke('run-command', command, asAdmin),
     runAdminCommand: (command) => ipcRenderer.invoke('run-admin-command', command),
@@ -51,8 +57,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
     getSystemHealthInfo: () => ipcRenderer.invoke('get-system-health-info'),
     getNetworkStats: () => ipcRenderer.invoke('get-network-stats'),
-    getProcesses: () => ipcRenderer.invoke('get-processes'),
-    terminateProcess: (pid) => ipcRenderer.invoke('terminate-process', pid),
+
 
     // Tab folder management
     getTabFolders: () => ipcRenderer.invoke('get-tab-folders'),
@@ -148,6 +153,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Editor functions
     executeScript: (script, shell) => ipcRenderer.invoke('execute-script', { script, shell }),
     executePowerShell: (command) => ipcRenderer.invoke('execute-powershell', command),
+    executeCmd: (command) => ipcRenderer.invoke('execute-cmd', command),
     finishStartupPhase: () => ipcRenderer.invoke('finish-startup-phase'),
     showSaveDialog: (options) => ipcRenderer.invoke('show-save-dialog', options),
 

@@ -3,9 +3,17 @@ let liveTailInterval = null;
 let liveTailEnabled = false;
 let notificationsEnabled = false;
 let lastEventTime = null;
+let isInitialized = false;
 
 async function initEventViewerTab() {
+    // Prevent double initialization
+    if (isInitialized) {
+        console.log('Event Viewer tab already initialized, skipping...');
+        return;
+    }
+    
     console.log('Initializing Event Viewer tab...');
+    isInitialized = true;
 
     setupEventViewerEventListeners();
 
@@ -231,7 +239,12 @@ async function loadEventViewerSettings() {
             liveTailEnabled = await window.electronAPI.getSetting('eventViewer.liveTailEnabled', false);
             const liveTailToggle = document.getElementById('live-tail-toggle');
             if (liveTailToggle) {
+                // Temporarily remove event listener to prevent triggering during initialization
+                liveTailToggle.removeEventListener('change', toggleLiveTail);
                 liveTailToggle.checked = liveTailEnabled;
+                // Re-add event listener
+                liveTailToggle.addEventListener('change', toggleLiveTail);
+                
                 if (liveTailEnabled) {
                     startLiveTail();
                 }
@@ -241,7 +254,11 @@ async function loadEventViewerSettings() {
             notificationsEnabled = await window.electronAPI.getSetting('eventViewer.notificationsEnabled', false);
             const notificationsToggle = document.getElementById('notifications-toggle');
             if (notificationsToggle) {
+                // Temporarily remove event listener to prevent triggering during initialization
+                notificationsToggle.removeEventListener('change', toggleNotifications);
                 notificationsToggle.checked = notificationsEnabled;
+                // Re-add event listener
+                notificationsToggle.addEventListener('change', toggleNotifications);
             }
 
             console.log('Event Viewer settings loaded:', { liveTailEnabled, notificationsEnabled });
