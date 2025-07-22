@@ -82,17 +82,23 @@ async function loadCurrentSettings() {
                 autoRefreshCheckbox.checked = autoRefreshData;
             }
 
+            // Load lazy loading setting
+            const enableLazyLoading = await window.electronAPI.getSetting('enableLazyLoading', true);
+            const enableLazyLoadingCheckbox = document.getElementById('enable-lazy-loading');
+            if (enableLazyLoadingCheckbox) {
+                enableLazyLoadingCheckbox.checked = enableLazyLoading;
+            }
+
+            // Load performance settings
+            await loadPerformanceSettings();
+
             const elevationPreference = await window.electronAPI.getSetting('elevationChoice', 'ask');
             const elevationSelector = document.getElementById('elevation-preference');
             if (elevationSelector) {
                 elevationSelector.value = elevationPreference;
             }
 
-            const enableDiscordRpc = await window.electronAPI.getSetting('enableDiscordRpc', true);
-            const enableDiscordRpcCheckbox = document.getElementById('enable-discord-rpc');
-            if (enableDiscordRpcCheckbox) {
-                enableDiscordRpcCheckbox.checked = enableDiscordRpc;
-            }
+
 
 
             
@@ -128,12 +134,7 @@ async function loadCurrentSettings() {
                 topMostCheckbox.checked = topMost;
             }
 
-            // Load lazy loading setting
-            const enableLazyLoading = await window.electronAPI.getSetting('enableLazyLoading', true);
-            const lazyLoadingCheckbox = document.getElementById('enable-lazy-loading');
-            if (lazyLoadingCheckbox) {
-                lazyLoadingCheckbox.checked = enableLazyLoading;
-            }
+
 
 
             await loadKeyboardShortcutsSettings();
@@ -278,8 +279,7 @@ export async function saveSettings() {
             const elevationPreference = document.getElementById('elevation-preference')?.value || 'ask';
             await window.electronAPI.setSetting('elevationChoice', elevationPreference);
 
-            const enableDiscordRpc = document.getElementById('enable-discord-rpc')?.checked || false;
-            await window.electronAPI.setSetting('enableDiscordRpc', enableDiscordRpc);
+
 
 
             
@@ -297,8 +297,21 @@ export async function saveSettings() {
             await window.electronAPI.setSetting('topMost', topMost);
 
             // Save lazy loading setting
-            const enableLazyLoading = document.getElementById('enable-lazy-loading')?.checked !== false; // Default to true
+            const lazyLoadingCheckbox = document.getElementById('enable-lazy-loading');
+            const enableLazyLoading = lazyLoadingCheckbox ? lazyLoadingCheckbox.checked : true;
+            const previousLazyLoading = await window.electronAPI.getSetting('enableLazyLoading', true);
             await window.electronAPI.setSetting('enableLazyLoading', enableLazyLoading);
+
+            // Notify user if lazy loading setting changed
+            if (enableLazyLoading !== previousLazyLoading) {
+                const message = enableLazyLoading
+                    ? 'Lazy loading enabled. Restart the application for optimal startup performance.'
+                    : 'Lazy loading disabled. All tabs will load immediately on startup.';
+                showNotification(message, 'info');
+            }
+
+            // Save performance settings
+            await savePerformanceSettings();
 
 
             await saveKeyboardShortcuts();
@@ -492,5 +505,225 @@ export async function applyAnimationSetting() {
         document.body.classList.add('no-animations');
     } else {
         document.body.classList.remove('no-animations');
+    }
+}
+
+// Debug function for lazy loading checkbox (can be called from console)
+window.debugLazyLoadingCheckbox = function() {
+    const checkbox = document.getElementById('enable-lazy-loading');
+    console.log('=== MANUAL LAZY LOADING DEBUG ===');
+    console.log('Checkbox element:', checkbox);
+    console.log('Checkbox checked:', checkbox?.checked);
+    console.log('Checkbox value:', checkbox?.value);
+    console.log('Checkbox type:', checkbox?.type);
+    console.log('=== END MANUAL DEBUG ===');
+    return checkbox;
+};
+
+// Debug function for performance mode (can be called from console)
+window.debugPerformanceMode = function() {
+    console.log('=== PERFORMANCE MODE DEBUG ===');
+    console.log('Current performance mode variable:', currentPerformanceMode);
+
+    const selectedCards = document.querySelectorAll('.mode-card.selected');
+    console.log('Selected mode cards:', selectedCards.length);
+    selectedCards.forEach(card => {
+        console.log('Selected card mode:', card.dataset.mode);
+    });
+
+    console.log('All mode cards:');
+    document.querySelectorAll('.mode-card').forEach(card => {
+        console.log(`- ${card.dataset.mode}: ${card.classList.contains('selected') ? 'SELECTED' : 'not selected'}`);
+    });
+    console.log('=== END PERFORMANCE DEBUG ===');
+    return currentPerformanceMode;
+};
+
+// Debug function for performance mode (can be called from console)
+window.debugPerformanceMode = function() {
+    console.log('=== PERFORMANCE MODE DEBUG ===');
+    console.log('Current performance mode variable:', currentPerformanceMode);
+
+    const selectedCards = document.querySelectorAll('.mode-card.selected');
+    console.log('Selected mode cards:', selectedCards.length);
+    selectedCards.forEach(card => {
+        console.log('Selected card mode:', card.dataset.mode);
+    });
+
+    console.log('All mode cards:');
+    document.querySelectorAll('.mode-card').forEach(card => {
+        console.log(`- ${card.dataset.mode}: ${card.classList.contains('selected') ? 'SELECTED' : 'not selected'}`);
+    });
+    console.log('=== END PERFORMANCE DEBUG ===');
+    return currentPerformanceMode;
+};
+
+// Performance Settings Functions
+let currentPerformanceMode = 'auto';
+
+async function loadPerformanceSettings() {
+    try {
+        if (window.electronAPI) {
+            // Load performance mode
+            const savedMode = await window.electronAPI.getSetting('performanceMode', 'auto');
+            console.log('=== PERFORMANCE MODE LOAD DEBUG ===');
+            console.log('Saved performance mode from storage:', savedMode);
+            currentPerformanceMode = savedMode;
+            console.log('Current performance mode variable set to:', currentPerformanceMode);
+            updatePerformanceModeSelection(currentPerformanceMode);
+
+            // Load advanced performance settings
+            const fastSystemInfo = await window.electronAPI.getSetting('fastSystemInfo', false);
+            const fastSystemInfoCheckbox = document.getElementById('fast-system-info');
+            if (fastSystemInfoCheckbox) {
+                fastSystemInfoCheckbox.checked = fastSystemInfo;
+            }
+
+            const cacheSystemInfo = await window.electronAPI.getSetting('cacheSystemInfo', true);
+            const cacheSystemInfoCheckbox = document.getElementById('cache-system-info');
+            if (cacheSystemInfoCheckbox) {
+                cacheSystemInfoCheckbox.checked = cacheSystemInfo;
+            }
+
+            const enableDiscordRpc = await window.electronAPI.getSetting('enableDiscordRpc', true);
+            const enableDiscordRpcCheckbox = document.getElementById('enable-discord-rpc');
+            if (enableDiscordRpcCheckbox) {
+                enableDiscordRpcCheckbox.checked = enableDiscordRpc;
+            }
+
+            // Setup performance mode card click handlers
+            setupPerformanceModeHandlers();
+
+            // Show recommendation
+            showPerformanceRecommendation();
+        }
+    } catch (error) {
+        console.error('Error loading performance settings:', error);
+    }
+}
+
+async function savePerformanceSettings() {
+    try {
+        if (window.electronAPI) {
+            // Save performance mode
+            console.log('=== PERFORMANCE MODE SAVE DEBUG ===');
+            console.log('Current performance mode variable:', currentPerformanceMode);
+
+            // Double-check which card is selected
+            const selectedCard = document.querySelector('.mode-card.selected');
+            console.log('Selected card element:', selectedCard);
+            console.log('Selected card mode:', selectedCard?.dataset?.mode);
+
+            await window.electronAPI.setSetting('performanceMode', currentPerformanceMode);
+            console.log('Performance mode saved successfully');
+
+            // Verify the setting was saved by reading it back
+            const savedMode = await window.electronAPI.getSetting('performanceMode', 'auto');
+            console.log('Verification - performance mode read back from storage:', savedMode);
+
+            // Save advanced performance settings
+            const fastSystemInfo = document.getElementById('fast-system-info')?.checked || false;
+            await window.electronAPI.setSetting('fastSystemInfo', fastSystemInfo);
+
+            const cacheSystemInfo = document.getElementById('cache-system-info')?.checked !== false; // Default to true
+            await window.electronAPI.setSetting('cacheSystemInfo', cacheSystemInfo);
+
+            const enableDiscordRpc = document.getElementById('enable-discord-rpc')?.checked !== false; // Default to true
+            await window.electronAPI.setSetting('enableDiscordRpc', enableDiscordRpc);
+
+            console.log('All performance settings saved successfully');
+            console.log('=== END PERFORMANCE DEBUG ===');
+        }
+    } catch (error) {
+        console.error('Error saving performance settings:', error);
+    }
+}
+
+function updatePerformanceModeSelection(mode) {
+    console.log('Updating performance mode selection to:', mode);
+    const cards = document.querySelectorAll('.mode-card');
+    console.log('Found mode cards for selection update:', cards.length);
+
+    cards.forEach(card => {
+        card.classList.remove('selected');
+        if (card.dataset.mode === mode) {
+            console.log('Selecting card with mode:', card.dataset.mode);
+            card.classList.add('selected');
+        }
+    });
+
+    // Verify selection
+    const selectedCard = document.querySelector('.mode-card.selected');
+    console.log('After update, selected card mode:', selectedCard?.dataset?.mode);
+}
+
+function setupPerformanceModeHandlers() {
+    const modeCards = document.querySelectorAll('.mode-card');
+    console.log('Setting up performance mode handlers. Found cards:', modeCards.length);
+
+    modeCards.forEach((card, index) => {
+        console.log(`Card ${index}: mode="${card.dataset.mode}"`);
+        card.addEventListener('click', () => {
+            console.log('Performance mode card clicked:', card.dataset.mode);
+            currentPerformanceMode = card.dataset.mode;
+            console.log('Current performance mode set to:', currentPerformanceMode);
+
+            // Add temporary visual feedback
+            card.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                card.style.transform = '';
+            }, 150);
+
+            updatePerformanceModeSelection(currentPerformanceMode);
+            showPerformanceRecommendation();
+
+            // Update advanced settings based on mode
+            if (currentPerformanceMode === 'low-end') {
+                document.getElementById('fast-system-info').checked = true;
+                document.getElementById('enable-discord-rpc').checked = false;
+            } else if (currentPerformanceMode === 'high-end') {
+                document.getElementById('fast-system-info').checked = false;
+                document.getElementById('enable-discord-rpc').checked = true;
+            }
+        });
+    });
+}
+
+async function showPerformanceRecommendation() {
+    const recommendation = document.getElementById('performance-recommendation');
+    const recommendationText = document.getElementById('performance-recommendation-text');
+
+    if (!recommendation || !recommendationText) return;
+
+    try {
+        if (window.electronAPI && window.electronAPI.getSystemInfo) {
+            const systemInfo = await window.electronAPI.getSystemInfo();
+            const memoryGB = systemInfo.totalMemory ?
+                Math.round(parseInt(systemInfo.totalMemory.replace(/[^\d]/g, '')) / 1024 / 1024 / 1024) : 4;
+            const cpuCores = systemInfo.cpuCores || 4;
+
+            let recommendedMode = 'auto';
+            let message = '';
+
+            if (memoryGB < 4 || cpuCores < 4) {
+                recommendedMode = 'low-end';
+                message = `Your system (${memoryGB}GB RAM, ${cpuCores} cores) would benefit from Low-End Mode for optimal performance.`;
+            } else if (memoryGB >= 8 && cpuCores >= 8) {
+                recommendedMode = 'high-end';
+                message = `Your system (${memoryGB}GB RAM, ${cpuCores} cores) can handle High-End Mode for maximum features.`;
+            } else {
+                message = `Your system (${memoryGB}GB RAM, ${cpuCores} cores) is well-suited for Auto Mode.`;
+            }
+
+            if (currentPerformanceMode !== recommendedMode && recommendedMode !== 'auto') {
+                recommendationText.textContent = message;
+                recommendation.style.display = 'block';
+            } else {
+                recommendation.style.display = 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error showing performance recommendation:', error);
+        recommendation.style.display = 'none';
     }
 }

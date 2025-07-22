@@ -73,14 +73,7 @@ export async function showSystemInfo() {
                             <h4>Hostname</h4>
                             <p>${systemInfo.hostname}</p>
                         </div>
-                        <div class="system-info-item">
-                            <h4>Total Memory</h4>
-                            <p>${systemInfo.totalMemory}</p>
-                        </div>
-                        <div class="system-info-item">
-                            <h4>Free Memory</h4>
-                            <p>${systemInfo.freeMemory}</p>
-                        </div>
+
                         <div class="system-info-item">
                             <h4>CPU Cores</h4>
                             <p>${systemInfo.cpus}</p>

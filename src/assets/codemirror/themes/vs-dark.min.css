@@ -1,0 +1,26 @@
+/* VS Dark Theme for CodeMirror */
+.cm-s-vs-dark.CodeMirror { background: #1e1e1e; color: #d4d4d4; }
+.cm-s-vs-dark .cm-keyword { color: #569cd6; }
+.cm-s-vs-dark .cm-atom { color: #4fc1ff; }
+.cm-s-vs-dark .cm-number { color: #b5cea8; }
+.cm-s-vs-dark .cm-def { color: #dcdcaa; }
+.cm-s-vs-dark .cm-variable { color: #9cdcfe; }
+.cm-s-vs-dark .cm-variable-2 { color: #4fc1ff; }
+.cm-s-vs-dark .cm-variable-3 { color: #4fc1ff; }
+.cm-s-vs-dark .cm-property { color: #9cdcfe; }
+.cm-s-vs-dark .cm-operator { color: #d4d4d4; }
+.cm-s-vs-dark .cm-comment { color: #6a9955; }
+.cm-s-vs-dark .cm-string { color: #ce9178; }
+.cm-s-vs-dark .cm-string-2 { color: #ce9178; }
+.cm-s-vs-dark .cm-meta { color: #569cd6; }
+.cm-s-vs-dark .cm-qualifier { color: #4ec9b0; }
+.cm-s-vs-dark .cm-builtin { color: #569cd6; }
+.cm-s-vs-dark .cm-bracket { color: #d4d4d4; }
+.cm-s-vs-dark .cm-tag { color: #569cd6; }
+.cm-s-vs-dark .cm-attribute { color: #9cdcfe; }
+.cm-s-vs-dark .cm-hr { color: #6a9955; }
+.cm-s-vs-dark .cm-link { color: #569cd6; }
+.cm-s-vs-dark .cm-error { color: #f44747; }
+.cm-s-vs-dark .CodeMirror-activeline-background { background: #2a2d2e; }
+.cm-s-vs-dark .CodeMirror-matchingbracket { outline: 1px solid grey; color: white !important; }
+.cm-s-vs-dark .CodeMirror-cursor { border-left: 1px solid #d4d4d4; }

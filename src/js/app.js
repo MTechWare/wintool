@@ -12,16 +12,21 @@ import { loadAndApplyStartupSettings, saveSettings, resetSettings, cancelSetting
 import { openThemeCreator, saveCustomTheme, importTheme, exportTheme, resetCustomTheme } from './modules/theme.js';
 import { initFpsCounter, showFpsCounter, hideFpsCounter } from './modules/fps-counter.js';
 import { DEFAULT_TAB_ORDER, setTabLoader } from './modules/state.js';
+import { initStartupOptimizer, getStartupRecommendations } from './modules/startup-optimizer.js';
 
 
 async function initialBoot() {
-    console.log('WinTool starting critical boot...');
+    const startTime = performance.now();
+    console.log('🚀 WinTool starting critical boot...');
     showSplashScreen();
+
+    const initStart = performance.now();
     initWindowControls();
     initModals();
     initSystemTrayListeners();
     initContextMenu();
     initFpsCounter();
+    console.log(`⚡ Critical initialization completed in ${(performance.now() - initStart).toFixed(2)}ms`);
 
     // Try to fetch help modal content, fallback to cached version if offline
     const helpModalContainer = document.getElementById('help-modal-container');
@@ -44,21 +49,37 @@ async function initialBoot() {
 }
 
 async function deferredBoot() {
-    console.log('WinTool starting deferred boot...');
+    const deferredStart = performance.now();
+    console.log('🔄 WinTool starting deferred boot...');
+
+    // Apply startup optimizations first
+    const optimizerStart = performance.now();
+    await initStartupOptimizer();
+    console.log(`🚀 Startup optimizer applied in ${(performance.now() - optimizerStart).toFixed(2)}ms`);
 
     // Initialize systems that can be loaded in the background.
+    const systemsStart = performance.now();
     initTabSystem();
     initGlobalKeyboardShortcuts();
     initPluginInstallButton();
     initOpenPluginsDirButton();
+    console.log(`⚙️ Background systems initialized in ${(performance.now() - systemsStart).toFixed(2)}ms`);
 
     updateSplashProgress('Loading settings...', 20);
+    const settingsStart = performance.now();
     await loadAndApplyStartupSettings();
+    console.log(`⚙️ Settings loaded in ${(performance.now() - settingsStart).toFixed(2)}ms`);
 
     await continueNormalStartup(); // This function already handles the rest of the loading process.
+    console.log(`🎯 Total deferred boot time: ${(performance.now() - deferredStart).toFixed(2)}ms`);
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
+    window.startupTimes = {
+        domContentLoaded: performance.now(),
+        phases: {}
+    };
+
     await initialBoot();
     // Reduced timeout for faster tab loading - UI should render quickly enough
     setTimeout(deferredBoot, 10);
@@ -66,8 +87,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 
 async function continueNormalStartup() {
+    const startupStart = performance.now();
     try {
-        
+        console.log('🏁 Starting normal startup sequence...');
         updateSplashProgress('Initializing tabs...', 40);
 
         
@@ -83,8 +105,9 @@ async function continueNormalStartup() {
             });
 
             // Configure sequential loading delay (can be customized via settings)
-            // Use 100ms delay to prevent PowerShell process spikes during startup
-            const sequentialLoadDelay = await window.electronAPI.getSetting('sequentialLoadDelay', 100);
+            // Reduced default from 100ms to 25ms for faster startup - system auto-detection will optimize further
+            const sequentialLoadDelay = await window.electronAPI.getSetting('sequentialLoadDelay', 25);
+            console.log(`📊 Using sequential load delay: ${sequentialLoadDelay}ms`);
             newTabLoader.setSequentialLoadDelay(sequentialLoadDelay);
 
             // Configure lazy loading preference (default: enabled)
@@ -92,30 +115,46 @@ async function continueNormalStartup() {
             newTabLoader.setLazyLoadingEnabled(enableLazyLoading);
 
             newTabLoader.setCompleteCallback(async (loadedTabs) => {
-                
+                const callbackStart = performance.now();
+                console.log('🎯 Tab loading completed, running completion callback...');
+
+                const tabOrderStart = performance.now();
                 await loadTabOrder();
-                
+                console.log(`📋 Tab order loaded in ${(performance.now() - tabOrderStart).toFixed(2)}ms`);
+
+                const hiddenTabsStart = performance.now();
                 await applyHiddenTabs();
-                
+                console.log(`👁️ Hidden tabs applied in ${(performance.now() - hiddenTabsStart).toFixed(2)}ms`);
+
+                const pluginCardsStart = performance.now();
                 renderPluginCards();
-                
+                console.log(`🔌 Plugin cards rendered in ${(performance.now() - pluginCardsStart).toFixed(2)}ms`);
+
+                const restoreTabStart = performance.now();
                 await restoreLastActiveTab();
+                console.log(`🔄 Last active tab restored in ${(performance.now() - restoreTabStart).toFixed(2)}ms`);
 
 
+                const commandsStart = performance.now();
                 registerDefaultCommands(loadedTabs);
+                console.log(`⌨️ Default commands registered in ${(performance.now() - commandsStart).toFixed(2)}ms`);
 
                 // Finish startup phase early to allow more PowerShell processes
-                console.log('Finishing startup phase early after tab loading...');
+                const finishPhaseStart = performance.now();
+                console.log('🏁 Finishing startup phase early after tab loading...');
                 if (window.electronAPI && window.electronAPI.finishStartupPhase) {
                     await window.electronAPI.finishStartupPhase();
                 }
+                console.log(`✅ Startup phase finished in ${(performance.now() - finishPhaseStart).toFixed(2)}ms`);
 
 
+                const servicesStart = performance.now();
                 try {
                     const services = await window.electronAPI.getServices();
                     registerServiceControlCommands(services);
                     // Cache services for offline use
                     localStorage.setItem('cachedServices', JSON.stringify(services));
+                    console.log(`🔧 Services loaded in ${(performance.now() - servicesStart).toFixed(2)}ms`);
                 } catch (error) {
                     console.error("Failed to fetch services:", error);
                     // Try to use cached services if available
@@ -124,13 +163,46 @@ async function continueNormalStartup() {
                         showNotification('Using cached service commands (offline mode)', 'warning');
                         registerServiceControlCommands(JSON.parse(cached));
                     }
+                    console.log(`⚠️ Services loading failed in ${(performance.now() - servicesStart).toFixed(2)}ms`);
                 }
 
+                const paletteStart = performance.now();
                 initCommandPalette();
+                console.log(`🎨 Command palette initialized in ${(performance.now() - paletteStart).toFixed(2)}ms`);
+
+                const splashEnd = performance.now();
                 hideSplashScreen();
+                console.log(`🎯 Total completion callback time: ${(performance.now() - callbackStart).toFixed(2)}ms`);
+
+                // Calculate and display comprehensive startup performance summary
+                const totalStartupTime = performance.now() - window.startupTimes.domContentLoaded;
+                console.log(`🚀 TOTAL STARTUP TIME: ${totalStartupTime.toFixed(2)}ms`);
+
+                // Store final timing for potential analysis
+                window.startupTimes.total = totalStartupTime;
+                window.startupTimes.phases.completion = performance.now() - callbackStart;
+
+                // Performance analysis and recommendations
+                const recommendations = getStartupRecommendations(totalStartupTime);
+                if (recommendations.length > 0) {
+                    console.log('💡 Startup Performance Recommendations:');
+                    recommendations.forEach(rec => {
+                        console.log(`${rec.type === 'critical' ? '🔴' : rec.type === 'warning' ? '🟡' : '🔵'} ${rec.message}`);
+                    });
+                }
+
+                if (totalStartupTime > 15000) {
+                    console.warn(`⚠️ Startup time (${totalStartupTime.toFixed(2)}ms) is slower than expected. Consider enabling performance optimizations.`);
+                } else if (totalStartupTime < 5000) {
+                    console.log(`🎉 Excellent startup performance! (${totalStartupTime.toFixed(2)}ms)`);
+                } else {
+                    console.log(`✅ Good startup performance (${totalStartupTime.toFixed(2)}ms)`);
+                }
             });
 
+            const tabLoaderStart = performance.now();
             await newTabLoader.init(DEFAULT_TAB_ORDER);
+            console.log(`📂 Tab loader initialization completed in ${(performance.now() - tabLoaderStart).toFixed(2)}ms`);
         } else {
             
             await restoreLastActiveTab();

@@ -16,10 +16,13 @@ class TabLoader {
         this.onCompleteCallback = null;
         this.tabInitializationPromises = new Map();
         this.tabReadyCallbacks = new Map();
-        // Configuration for sequential loading
-        this.sequentialLoadDelay = 50; // milliseconds between tab loads
+        // Configuration for sequential loading - optimized for faster startup
+        this.sequentialLoadDelay = 5; // Reduced default for faster loading
         // Lazy loading configuration (default: enabled)
         this.lazyLoadingEnabled = true;
+        // Performance mode detection
+        this.performanceMode = 'auto';
+        this.systemCapabilities = null;
     }
 
     /**
@@ -48,6 +51,61 @@ class TabLoader {
      */
     setLazyLoadingEnabled(enabled) {
         this.lazyLoadingEnabled = enabled;
+    }
+
+    /**
+     * Detect system capabilities and adjust performance settings
+     */
+    async detectSystemCapabilities() {
+        try {
+            // Get system info from electron API if available
+            if (window.electronAPI && window.electronAPI.getSystemInfo) {
+                const sysInfo = await window.electronAPI.getSystemInfo();
+
+                // Parse memory info
+                let memoryGB = 4; // Default assumption
+                if (sysInfo.totalMemory) {
+                    const memMatch = sysInfo.totalMemory.match(/(\d+(?:\.\d+)?)\s*GB/);
+                    if (memMatch) {
+                        memoryGB = parseFloat(memMatch[1]);
+                    }
+                }
+
+                // Parse CPU cores
+                let cpuCores = 4; // Default assumption
+                if (sysInfo.cpuCores) {
+                    cpuCores = parseInt(sysInfo.cpuCores) || 4;
+                }
+
+                // Determine system capabilities with more aggressive optimization
+                if (memoryGB < 4 || cpuCores < 4) {
+                    this.systemCapabilities = 'low-end';
+                    this.sequentialLoadDelay = 15; // Reduced from 25ms for faster startup
+                    this.performanceMode = 'low-end';
+                } else if (memoryGB >= 8 && cpuCores >= 8) {
+                    this.systemCapabilities = 'high-end';
+                    this.sequentialLoadDelay = 2; // Reduced from 5ms for faster startup
+                    this.performanceMode = 'high-end';
+                } else {
+                    this.systemCapabilities = 'mid-range';
+                    this.sequentialLoadDelay = 5; // Reduced from 10ms for faster startup
+                    this.performanceMode = 'mid-range';
+                }
+
+                console.log(`🖥️ Tab loader detected system: ${this.systemCapabilities} (${memoryGB}GB RAM, ${cpuCores} cores)`);
+                console.log(`⚡ Set sequential load delay to: ${this.sequentialLoadDelay}ms (optimized for faster startup)`);
+
+            } else {
+                // Fallback to browser detection
+                this.systemCapabilities = 'unknown';
+                this.sequentialLoadDelay = 15; // Conservative default
+                console.log('Tab loader using conservative settings (browser mode)');
+            }
+        } catch (error) {
+            console.error('Error detecting system capabilities in tab loader:', error);
+            this.systemCapabilities = 'unknown';
+            this.sequentialLoadDelay = 20; // Safe default
+        }
     }
 
     /**
@@ -91,6 +149,9 @@ class TabLoader {
      */
     async init(defaultOrder = []) {
         console.log('Initializing tab loader...');
+
+        // Detect system capabilities first
+        await this.detectSystemCapabilities();
 
         try {
             // 1. Get the combined, unsorted list of tabs and plugins
@@ -140,12 +201,15 @@ class TabLoader {
 
             // Load tabs one at a time to prevent resource spikes
             this.updateProgress('Loading tabs sequentially...', 10);
+            const sequentialStart = performance.now();
 
             for (let i = 0; i < allItems.length; i++) {
                 const item = allItems[i];
                 try {
                     this.updateProgress(`Loading ${item.name}...`, 10 + (i / this.totalTabs) * 40);
+                    const tabStart = performance.now();
                     await this.loadTab(item.name);
+                    console.log(`📂 Tab '${item.name}' loaded in ${(performance.now() - tabStart).toFixed(2)}ms`);
                     this.loadedTabsCount++;
 
                     // Add delay between tab loads to prevent resource spikes
@@ -153,10 +217,12 @@ class TabLoader {
                         await new Promise(resolve => setTimeout(resolve, this.sequentialLoadDelay));
                     }
                 } catch (error) {
-                    console.error(`Error loading tab ${item.name}:`, error);
+                    console.error(`❌ Error loading tab ${item.name}:`, error);
                     this.loadedTabsCount++; // Still count it to prevent hanging
                 }
             }
+
+            console.log(`📊 Sequential tab loading completed in ${(performance.now() - sequentialStart).toFixed(2)}ms`);
 
             this.updateProgress('Waiting for tabs to initialize...', 50);
             console.log(`Loaded ${allItems.length} folder-based tabs, waiting for initialization...`);
@@ -177,7 +243,14 @@ class TabLoader {
      * Wait for all tabs to initialize with a global timeout
      */
     waitForInitialization() {
-        const timeout = 5000; // 5 seconds global timeout (reduced for faster startup)
+        // Adaptive timeout based on system capabilities - optimized for faster startup
+        let timeout = 4000; // Reduced default from 5 to 4 seconds
+        if (this.systemCapabilities === 'low-end') {
+            timeout = 6000; // Reduced from 8 to 6 seconds
+        } else if (this.systemCapabilities === 'high-end') {
+            timeout = 2000; // Reduced from 3 to 2 seconds
+        }
+
         const checkInterval = 100;
         let elapsedTime = 0;
 
@@ -451,6 +524,12 @@ class TabLoader {
             console.log(`Lazy loading JavaScript for tab: ${tabId}`);
             tabData.jsExecuted = true;
             this.executeTabJS(tabId, tabData.js);
+        } else if (tabData && tabData.jsExecuted) {
+            console.log(`JavaScript already executed for tab: ${tabId}, skipping`);
+        } else if (!tabData) {
+            console.warn(`No tab data found for: ${tabId}`);
+        } else if (!tabData.js) {
+            console.log(`No JavaScript to execute for tab: ${tabId}`);
         }
     }
 

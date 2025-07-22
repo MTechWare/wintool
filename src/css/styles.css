@@ -1123,6 +1123,66 @@ html, body {
     justify-content: flex-end;
 }
 
+/* Performance Mode Cards */
+.mode-card {
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--card-bg, #2a2a2a);
+}
+
+.mode-card:hover {
+    border-color: var(--accent-color, #ff9800);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.mode-card.selected {
+    border-color: var(--accent-color, #ff9800) !important;
+    background: rgba(255, 152, 0, 0.1) !important;
+    box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.3) !important;
+}
+
+.mode-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.mode-description {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.performance-mode-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.recommendation {
+    margin-top: 15px;
+    padding: 10px;
+    background: var(--accent-color, #ff9800);
+    border-radius: 5px;
+    color: #000;
+}
+
+.recommendation h5 {
+    margin: 0 0 5px 0;
+    color: #000;
+}
+
+.recommendation p {
+    margin: 0;
+    color: #000;
+    font-size: 0.9em;
+}
+
 /* Settings Modal Specific Styles */
 .settings-modal-content {
     max-width: 1000px; /* A more reasonable max-width */

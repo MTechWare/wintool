@@ -425,6 +425,17 @@ export async function refreshCurrentTab() {
             if (refreshBtn) {
                 refreshBtn.click();
             }
+        } else if (currentTab === 'tweaks' || currentTab === 'folder-tweaks') {
+            // Reset tweaks initialization to force reload
+            if (window.resetTweaksInitialization && typeof window.resetTweaksInitialization === 'function') {
+                window.resetTweaksInitialization();
+                // Trigger re-render by switching away and back
+                setTimeout(() => {
+                    if (window.tabLoader && typeof window.tabLoader.executeTabJSOnDemand === 'function') {
+                        window.tabLoader.executeTabJSOnDemand(currentTab);
+                    }
+                }, 100);
+            }
         } else {
 
             const refreshBtn = activeTabContent.querySelector('button[id*="refresh"], .refresh-btn, [data-action="refresh"]');
