@@ -1,6 +1,6 @@
 {
   "name": "wintool",
-  "version": "0.2.1w",
+  "version": "0.2.2w",
   "main": "src/main.js",
   "description": "WinTool - Windows System Management Tool",
   "author": "MTech",
@@ -53,8 +53,8 @@
         "to": "scripts"
       }
     ],
-    "asar": true,
-    "compression": "normal",
+    "asar": false,
+    "compression": "store",
     "portable": {
       "artifactName": "${productName}.${ext}"
     }
