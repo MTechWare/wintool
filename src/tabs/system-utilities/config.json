@@ -1,7 +1,7 @@
 {
-    "name": "System Utilities",
-    "icon": "fas fa-tools",
-    "description": "Quick access to Windows system utilities and administrative tools",
-    "version": "1.0.0",
-    "author": "WinTool"
+  "name": "System Utilities",
+  "icon": "fas fa-tools",
+  "description": "Quick access to Windows system utilities and administrative tools",
+  "version": "1.0.0",
+  "author": "WinTool"
 }

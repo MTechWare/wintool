@@ -1,7 +1,7 @@
 {
-    "name": "AppX Packages",
-    "icon": "fas fa-cube",
-    "description": "Uninstall Microsoft apps and AppX packages",
-    "version": "1.0.0",
-    "author": "WinTool"
+  "name": "AppX Packages",
+  "icon": "fas fa-cube",
+  "description": "Uninstall Microsoft apps and AppX packages",
+  "version": "1.0.0",
+  "author": "WinTool"
 }

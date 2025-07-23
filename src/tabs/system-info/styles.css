@@ -1,344 +1,337 @@
 /* System Info Tab Styles - Clean Version */
 
 .tab-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
 .tab-header div:last-child {
-    display: flex;
-    gap: 10px;
+  display: flex;
+  gap: 10px;
 }
 
 #refresh-system-info-btn,
 #export-system-info-btn {
-    padding: 10px 12px;
-    font-size: 1rem;
-    background-color: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: all 0.3s ease;
+  padding: 10px 12px;
+  font-size: 1rem;
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 #refresh-system-info-btn:hover,
 #export-system-info-btn:hover {
-    color: var(--primary-color);
-    border-color: var(--primary-color);
+  color: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
 #refresh-system-info-btn i,
 #export-system-info-btn i {
-    color: var(--primary-color);
+  color: var(--primary-color);
 }
-
 
 /* System Overview */
 .system-overview {
-    margin-bottom: 40px;
+  margin-bottom: 40px;
 }
 
 .system-overview h3 {
-    text-align: center;
-    font-size: 24px;
-    margin-bottom: 30px;
-    color: var(--text-primary);
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 30px;
+  color: var(--text-primary);
 }
 
 .overview-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
 }
 
 .overview-card {
-    background: var(--background-card);
-    padding: 25px;
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    text-align: center;
-    transition: all 0.3s ease;
+  background: var(--background-card);
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  text-align: center;
+  transition: all 0.3s ease;
 }
 
 .overview-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .overview-card i {
-    font-size: 32px;
-    color: var(--primary-color);
-    margin-bottom: 15px;
+  font-size: 32px;
+  color: var(--primary-color);
+  margin-bottom: 15px;
 }
 
 .overview-card h4 {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 10px;
 }
 
 .overview-card p {
-    font-size: 14px;
-    color: var(--text-secondary);
-    margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
 }
-
-
 
 /* Hardware Section */
 .hardware-section {
-    margin-bottom: 40px;
+  margin-bottom: 40px;
 }
 
 .hardware-section h3 {
-    text-align: center;
-    font-size: 24px;
-    margin-bottom: 30px;
-    color: var(--text-primary);
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 30px;
+  color: var(--text-primary);
 }
 
 .hardware-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
 }
 
 .hardware-card {
-    background: var(--background-card);
-    padding: 25px;
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    transition: all 0.3s ease;
+  background: var(--background-card);
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
 }
 
 .hardware-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .hardware-card h4 {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .hardware-card h4 i {
-    color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 .hardware-details {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .detail-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .detail-row:last-child {
-    border-bottom: none;
+  border-bottom: none;
 }
 
 .detail-row .label {
-    font-weight: 500;
-    color: var(--text-secondary);
-    min-width: 120px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  min-width: 120px;
 }
 
 .detail-row span:last-child {
-    color: var(--text-primary);
-    text-align: right;
-    flex: 1;
-    margin-left: 10px;
-    word-break: break-word;
+  color: var(--text-primary);
+  text-align: right;
+  flex: 1;
+  margin-left: 10px;
+  word-break: break-word;
 }
 
 /* CPU Section */
 .cpu-section {
-    margin-bottom: 40px;
+  margin-bottom: 40px;
 }
 
 .cpu-section h3 {
-    text-align: center;
-    font-size: 24px;
-    margin-bottom: 30px;
-    color: var(--text-primary);
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 30px;
+  color: var(--text-primary);
 }
 
 .cpu-container {
-    background: var(--background-card);
-    padding: 30px;
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
+  background: var(--background-card);
+  padding: 30px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
 }
 
 .cpu-main-info {
-    display: flex;
-    align-items: center;
-    gap: 25px;
-    margin-bottom: 25px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .cpu-icon {
-    font-size: 48px;
-    color: var(--primary-color);
+  font-size: 48px;
+  color: var(--primary-color);
 }
 
 .cpu-details {
-    flex: 1;
+  flex: 1;
 }
 
 .cpu-brand {
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 5px;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 5px;
 }
 
 .cpu-manufacturer {
-    font-size: 14px;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
 }
 
 .cpu-specs {
-    font-size: 14px;
-    color: var(--text-secondary);
+  font-size: 14px;
+  color: var(--text-secondary);
 }
 
 .cpu-detailed-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
 }
 
 .cpu-detail-card {
-    background: var(--background-dark);
-    padding: 20px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
+  background: var(--background-dark);
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
 }
 
 .cpu-detail-card h5 {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--primary-color);
-    margin-bottom: 15px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* Operating System Section */
 .os-section {
-    margin-bottom: 40px;
+  margin-bottom: 40px;
 }
 
 .os-section h3 {
-    text-align: center;
-    font-size: 24px;
-    margin-bottom: 30px;
-    color: var(--text-primary);
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 30px;
+  color: var(--text-primary);
 }
 
 .os-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
 }
 
 .os-card {
-    background: var(--background-card);
-    padding: 25px;
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    transition: all 0.3s ease;
+  background: var(--background-card);
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
 }
 
 .os-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .os-card h4 {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .os-card h4 i {
-    color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 .os-details {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-
-
-
-
 
 /* Success/Error States */
 .success {
-    color: var(--success-color) !important;
+  color: var(--success-color) !important;
 }
 
 .error {
-    color: var(--error-color) !important;
+  color: var(--error-color) !important;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .overview-grid {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    }
+  .overview-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
 
-    .hardware-grid {
-        grid-template-columns: 1fr;
-    }
+  .hardware-grid {
+    grid-template-columns: 1fr;
+  }
 
-    .cpu-main-info {
-        flex-direction: column;
-        text-align: center;
-    }
+  .cpu-main-info {
+    flex-direction: column;
+    text-align: center;
+  }
 
-    .cpu-detailed-grid {
-        grid-template-columns: 1fr;
-    }
+  .cpu-detailed-grid {
+    grid-template-columns: 1fr;
+  }
 
-    .memory-stats {
-        grid-template-columns: 1fr;
-    }
+  .memory-stats {
+    grid-template-columns: 1fr;
+  }
 
-    .battery-card {
-        flex-direction: column;
-        text-align: center;
-    }
+  .battery-card {
+    flex-direction: column;
+    text-align: center;
+  }
 
-    .os-details {
-        grid-template-columns: 1fr;
-    }
+  .os-details {
+    grid-template-columns: 1fr;
+  }
 
-    .battery-info {
-        grid-template-columns: 1fr;
-    }
+  .battery-info {
+    grid-template-columns: 1fr;
+  }
 }
