@@ -1,353 +1,91 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WinTool Log Viewer</title>
-    <link rel="stylesheet" href="css/styles.css" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Viewer</title>
+    <link rel="stylesheet" href="css/styles.css">
     <style>
-      html,
-      body {
-        height: 100%;
-        margin: 0;
-        overflow: hidden;
-      }
-      body {
-        background-color: var(--background-dark);
-        color: var(--text-primary);
-        font-family: 'Courier New', monospace;
-        padding: 0;
-        box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
-      }
-      .toolbar {
-        display: flex;
-        padding: 10px;
-        background-color: var(--background-light);
-        border-bottom: 1px solid var(--border-color);
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-      .toolbar-section {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .toolbar-divider {
-        width: 1px;
-        height: 24px;
-        background-color: var(--border-color);
-        margin: 0 5px;
-      }
-      #search-input {
-        padding: 5px 10px;
-        border-radius: 4px;
-        border: 1px solid var(--border-color);
-        background-color: var(--background-dark);
-        color: var(--text-primary);
-        width: 200px;
-      }
-      .btn {
-        padding: 5px 10px;
-        border-radius: 4px;
-        border: 1px solid var(--border-color);
-        background-color: var(--background-dark);
-        color: var(--text-primary);
-        cursor: pointer;
-        transition: background-color 0.2s;
-      }
-      .btn:hover {
-        background-color: var(--primary-color);
-      }
-      .btn-active {
-        background-color: var(--primary-color);
-      }
-      #log-container {
-        flex: 1;
-        overflow-y: auto;
-        white-space: pre-wrap;
-        padding: 10px;
-      }
-      .log-message {
-        border-bottom: 1px solid var(--border-color);
-        padding: 5px 0;
-        word-break: break-all;
-        font-size: 14px;
-        line-height: 1.4;
-      }
-      .log-error {
-        color: var(--error-color);
-      }
-      .log-warn {
-        color: #ffc107;
-      }
-      .log-info {
-        color: var(--text-primary);
-      }
-      .log-debug {
-        color: #8bc34a;
-      }
-      .status-bar {
-        padding: 5px 10px;
-        background-color: var(--background-light);
-        border-top: 1px solid var(--border-color);
-        font-size: 12px;
-        display: flex;
-        justify-content: space-between;
-      }
-      .hidden {
-        display: none !important;
-      }
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+        body {
+            background-color: var(--background-dark);
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        #log-container {
+            height: 100%;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .log-message {
+            border-bottom: 1px solid var(--border-color);
+            padding: 5px 0;
+            word-break: break-all;
+        }
+        .log-error { color: var(--error-color); }
+        .log-warn { color: #ffc107; }
+        .log-info { color: var(--text-primary); }
     </style>
-  </head>
-  <body>
-    <div class="toolbar">
-      <div class="toolbar-section">
-        <button id="clear-logs" class="btn" title="Clear logs">Clear</button>
-        <button id="export-logs" class="btn" title="Export logs">Export</button>
-        <button id="open-log-file" class="btn" title="Open log file">Open Log File</button>
-      </div>
-      <div class="toolbar-divider"></div>
-      <div class="toolbar-section">
-        <button id="filter-all" class="btn btn-active" data-level="all">All</button>
-        <button id="filter-info" class="btn" data-level="info">Info</button>
-        <button id="filter-warn" class="btn" data-level="warn">Warnings</button>
-        <button id="filter-error" class="btn" data-level="error">Errors</button>
-        <button id="filter-debug" class="btn" data-level="debug">Debug</button>
-      </div>
-      <div class="toolbar-divider"></div>
-      <div class="toolbar-section">
-        <input type="text" id="search-input" placeholder="Search logs..." />
-        <button id="search-btn" class="btn">Search</button>
-      </div>
-      <div class="toolbar-section">
-        <button id="auto-scroll" class="btn btn-active" title="Auto scroll to new logs">Auto-scroll</button>
-      </div>
-    </div>
-
+</head>
+<body>
     <div id="log-container"></div>
-
-    <div class="status-bar">
-      <div id="log-count">Total logs: 0</div>
-      <div id="log-status"></div>
-    </div>
-
     <script>
-      // DOM Elements
-      const logContainer = document.getElementById('log-container');
-      const clearLogsBtn = document.getElementById('clear-logs');
-      const exportLogsBtn = document.getElementById('export-logs');
-      const openLogFileBtn = document.getElementById('open-log-file');
-      const searchInput = document.getElementById('search-input');
-      const searchBtn = document.getElementById('search-btn');
-      const autoScrollBtn = document.getElementById('auto-scroll');
-      const logCountElement = document.getElementById('log-count');
-      const logStatusElement = document.getElementById('log-status');
-      const filterButtons = document.querySelectorAll('[data-level]');
-
-      // State
-      let logs = [];
-      let filteredLogs = [];
-      let currentFilter = 'all';
-      let autoScroll = true;
-      let searchTerm = '';
-
-      // Initialize
-      updateLogCount();
-
-      // Event Listeners
-      clearLogsBtn.addEventListener('click', clearLogs);
-      exportLogsBtn.addEventListener('click', exportLogs);
-      openLogFileBtn.addEventListener('click', openLogFile);
-      searchBtn.addEventListener('click', performSearch);
-      autoScrollBtn.addEventListener('click', toggleAutoScroll);
-      searchInput.addEventListener('keyup', e => {
-        if (e.key === 'Enter') performSearch();
-      });
-
-      // Filter buttons
-      filterButtons.forEach(button => {
-        button.addEventListener('click', () => {
-          const level = button.getAttribute('data-level');
-          setActiveFilter(level);
-          applyFilters();
-        });
-      });
-
-      // Receive log messages from main process
-      window.electronAPI.onLogMessage((level, message) => {
-        const timestamp = new Date().toLocaleTimeString();
-        const logEntry = {
-          level,
-          message,
-          timestamp,
-          html: `[${timestamp}] [${level.toUpperCase()}]: ${message}`,
-        };
-
-        logs.push(logEntry);
-
-        // Apply current filter
-        if (currentFilter === 'all' || currentFilter === level) {
-          if (!searchTerm || logEntry.html.toLowerCase().includes(searchTerm.toLowerCase())) {
-            appendLogToView(logEntry);
-          }
-        }
-
-        updateLogCount();
-      });
-
-      // Apply theme data
-      window.electronAPI.onThemeData(themeData => {
-        applyTheme(themeData);
-      });
-
-      // Functions
-      function appendLogToView(logEntry) {
-        const logElement = document.createElement('div');
-        logElement.classList.add('log-message', `log-${logEntry.level}`);
-        logElement.textContent = `[${logEntry.timestamp}] [${logEntry.level.toUpperCase()}]: ${logEntry.message}`;
-        logContainer.appendChild(logElement);
-
-        if (autoScroll) {
-          logContainer.scrollTop = logContainer.scrollHeight;
-        }
-      }
-
-      function clearLogs() {
-        logs = [];
-        filteredLogs = [];
-        logContainer.innerHTML = '';
-        updateLogCount();
-        logStatusElement.textContent = 'Logs cleared';
-        setTimeout(() => {
-          logStatusElement.textContent = '';
-        }, 3000);
-      }
-
-      function exportLogs() {
-        window.electronAPI
-          .exportLogs(logs.map(log => log.html).join('\n'))
-          .then(() => {
-            logStatusElement.textContent = 'Logs exported successfully';
-            setTimeout(() => {
-              logStatusElement.textContent = '';
-            }, 3000);
-          })
-          .catch(error => {
-            logStatusElement.textContent = `Export failed: ${error}`;
-            setTimeout(() => {
-              logStatusElement.textContent = '';
-            }, 5000);
-          });
-      }
-
-      function openLogFile() {
-        window.electronAPI.openLogFile();
-      }
-
-      function performSearch() {
-        searchTerm = searchInput.value.trim();
-        applyFilters();
-
-        if (searchTerm) {
-          logStatusElement.textContent = `Searching for: "${searchTerm}"`;
-        } else {
-          logStatusElement.textContent = '';
-        }
-      }
-
-      function toggleAutoScroll() {
-        autoScroll = !autoScroll;
-        autoScrollBtn.classList.toggle('btn-active', autoScroll);
-
-        if (autoScroll) {
-          logContainer.scrollTop = logContainer.scrollHeight;
-        }
-      }
-
-      function setActiveFilter(level) {
-        currentFilter = level;
-
-        // Update button states
-        filterButtons.forEach(button => {
-          const buttonLevel = button.getAttribute('data-level');
-          button.classList.toggle('btn-active', buttonLevel === level);
-        });
-      }
-
-      function applyFilters() {
-        // Clear the view
-        logContainer.innerHTML = '';
-
-        // Filter logs based on level and search term
-        filteredLogs = logs.filter(log => {
-          const levelMatch = currentFilter === 'all' || log.level === currentFilter;
-          const searchMatch = !searchTerm || log.html.toLowerCase().includes(searchTerm.toLowerCase());
-          return levelMatch && searchMatch;
+        const logContainer = document.getElementById('log-container');
+        window.electronAPI.onLogMessage((level, message) => {
+            const logEntry = document.createElement('div');
+            logEntry.classList.add('log-message', `log-${level}`);
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] [${level.toUpperCase()}]: ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
         });
 
-        // Add filtered logs to view
-        filteredLogs.forEach(log => {
-          appendLogToView(log);
+        window.electronAPI.onThemeData((themeData) => {
+            applyTheme(themeData);
         });
 
-        updateLogCount();
+        function applyTheme(themeData) {
+            const { theme, primaryColor, customTheme } = themeData;
+            const root = document.documentElement;
 
-        // Scroll to bottom if auto-scroll is enabled
-        if (autoScroll) {
-          logContainer.scrollTop = logContainer.scrollHeight;
-        }
-      }
-
-      function updateLogCount() {
-        const totalCount = logs.length;
-        const filteredCount = filteredLogs.length;
-
-        if (currentFilter !== 'all' || searchTerm) {
-          logCountElement.textContent = `Showing ${filteredCount} of ${totalCount} logs`;
-        } else {
-          logCountElement.textContent = `Total logs: ${totalCount}`;
-        }
-      }
-
-      function applyTheme(themeData) {
-        const { theme, primaryColor, customTheme } = themeData;
-        const root = document.documentElement;
-
-        // This is a simplified version of the main app's theme logic
-        if (theme === 'custom' && customTheme) {
-          for (const [key, value] of Object.entries(customTheme)) {
-            if (key !== 'name') {
-              root.style.setProperty(key, value);
+            // This is a simplified version of the main app's theme logic
+            if (theme === 'custom' && customTheme) {
+                for (const [key, value] of Object.entries(customTheme)) {
+                    if (key !== 'name') {
+                        root.style.setProperty(key, value);
+                    }
+                }
+            } else {
+                // You might need to define the base themes here or load them from a shared file
+                const classicDark = {
+                    '--primary-color': primaryColor,
+                    '--background-dark': '#1c1c1e',
+                    '--background-light': '#2c2c2e',
+                    '--background-card': '#3a3a3c',
+                    '--border-color': '#444444',
+                    '--text-primary': '#ffffff',
+                    '--error-color': '#f44336'
+                };
+                const classicLight = {
+                     '--primary-color': primaryColor,
+                    '--background-dark': '#F0F2F5',
+                    '--background-light': '#FFFFFF',
+                    '--background-card': '#FFFFFF',
+                    '--border-color': '#E0E0E0',
+                    '--text-primary': '#212529',
+                    '--error-color': '#dc3545'
+                };
+                const themeColors = theme === 'classic-light' ? classicLight : classicDark;
+                 for (const [key, value] of Object.entries(themeColors)) {
+                    root.style.setProperty(key, value);
+                }
             }
-          }
-        } else {
-          // You might need to define the base themes here or load them from a shared file
-          const classicDark = {
-            '--primary-color': primaryColor,
-            '--background-dark': '#1c1c1e',
-            '--background-light': '#2c2c2e',
-            '--background-card': '#3a3a3c',
-            '--border-color': '#444444',
-            '--text-primary': '#ffffff',
-            '--error-color': '#f44336',
-          };
-          const classicLight = {
-            '--primary-color': primaryColor,
-            '--background-dark': '#F0F2F5',
-            '--background-light': '#FFFFFF',
-            '--background-card': '#FFFFFF',
-            '--border-color': '#E0E0E0',
-            '--text-primary': '#212529',
-            '--error-color': '#dc3545',
-          };
-          const themeColors = theme === 'classic-light' ? classicLight : classicDark;
-          for (const [key, value] of Object.entries(themeColors)) {
-            root.style.setProperty(key, value);
-          }
         }
-      }
     </script>
-  </body>
+</body>
 </html>

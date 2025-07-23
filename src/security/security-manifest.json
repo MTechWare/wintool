@@ -1,7 +1,7 @@
 {
   "applicationInfo": {
     "name": "WinTool",
-    "version": "0.2.2-wb",
+    "version": "0.1.9w",
     "publisher": "MTechWare",
     "description": "Windows System Management Tool",
     "license": "GPL-3.0-or-later",
@@ -75,7 +75,12 @@
     "privilegeEscalation": "user-prompted-only"
   },
   "antivirusGuidance": {
-    "commonFlags": ["unsigned-executable", "powershell-execution", "system-file-access", "process-spawning"],
+    "commonFlags": [
+      "unsigned-executable",
+      "powershell-execution",
+      "system-file-access",
+      "process-spawning"
+    ],
     "whitelistRecommendation": "Add WinTool.exe and installation directory to antivirus exclusions",
     "falsePositiveReporting": "Report false positives to antivirus vendors",
     "verificationSteps": [

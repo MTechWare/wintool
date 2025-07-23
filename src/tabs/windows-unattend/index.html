@@ -1,2050 +1,1503 @@
 <div class="tab-header">
-  <h1><i class="fas fa-robot"></i> Windows Unattend Generator</h1>
-  <p>Create and export Windows unattend.xml files for automated installations and deployments</p>
+    <h1><i class="fas fa-robot"></i> Windows Unattend Generator</h1>
+    <p>Create and export Windows unattend.xml files for automated installations and deployments</p>
 </div>
 
 <div class="windows-unattend-content">
-  <!-- Quick Actions -->
-  <div class="quick-actions">
-    <div
-      class="action-card"
-      onclick="loadPreset('basic')"
-      data-tooltip="Loads a basic Windows installation preset with standard settings, automatic login, and minimal privacy tweaks. Good for personal computers and simple deployments."
-    >
-      <i class="fas fa-rocket"></i>
-      <h4>Basic Setup</h4>
-      <p>Standard installation with minimal configuration</p>
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <div class="action-card" onclick="loadPreset('basic')"
+             data-tooltip="Loads a basic Windows installation preset with standard settings, automatic login, and minimal privacy tweaks. Good for personal computers and simple deployments.">
+            <i class="fas fa-rocket"></i>
+            <h4>Basic Setup</h4>
+            <p>Standard installation with minimal configuration</p>
+        </div>
+        <div class="action-card" onclick="loadPreset('enterprise')"
+             data-tooltip="Loads an enterprise preset optimized for corporate environments with domain joining, enhanced security features, and business-focused settings.">
+            <i class="fas fa-building"></i>
+            <h4>Enterprise</h4>
+            <p>Corporate environment with domain join</p>
+        </div>
+        <div class="action-card" onclick="loadPreset('secure')"
+             data-tooltip="Loads a security-focused preset with maximum privacy settings, disabled telemetry, enhanced security features, and minimal data collection.">
+            <i class="fas fa-shield-alt"></i>
+            <h4>Secure</h4>
+            <p>Enhanced security settings enabled</p>
+        </div>
     </div>
-    <div
-      class="action-card"
-      onclick="loadPreset('enterprise')"
-      data-tooltip="Loads an enterprise preset optimized for corporate environments with domain joining, enhanced security features, and business-focused settings."
-    >
-      <i class="fas fa-building"></i>
-      <h4>Enterprise</h4>
-      <p>Corporate environment with domain join</p>
+
+    <!-- Export Controls -->
+    <div class="export-controls">
+        <button id="preview-xml" class="preview-btn"
+                data-tooltip="Preview the generated unattend.xml file content before exporting. Shows the complete XML structure with your current settings.">
+            <i class="fas fa-eye"></i>
+            Preview XML
+        </button>
+        <button id="export-unattend" class="export-btn"
+                data-tooltip="Generate and download the unattend.xml file with your current configuration. This file can be used for automated Windows installations.">
+            <i class="fas fa-download"></i>
+            Export Unattend.xml
+        </button>
+        <button id="import-xml" class="import-btn"
+                data-tooltip="Import an existing unattend.xml file to populate the form with its settings.">
+            <i class="fas fa-upload"></i>
+            Import XML
+        </button>
+        <button id="validate-config" class="validate-btn"
+                data-tooltip="Validate the current configuration for errors and compatibility issues.">
+            <i class="fas fa-check-circle"></i>
+            Validate Config
+        </button>
+        <button id="reset-form" class="reset-btn"
+                data-tooltip="Reset all form fields to their default values. This will clear all your current settings and start fresh.">
+            <i class="fas fa-undo"></i>
+            Reset Form
+        </button>
+        <button class="help-btn" onclick="showHelpModal()" data-tooltip="Show comprehensive help and documentation">
+            <i class="fas fa-book"></i>
+            Help & Documentation
+        </button>
     </div>
-    <div
-      class="action-card"
-      onclick="loadPreset('secure')"
-      data-tooltip="Loads a security-focused preset with maximum privacy settings, disabled telemetry, enhanced security features, and minimal data collection."
-    >
-      <i class="fas fa-shield-alt"></i>
-      <h4>Secure</h4>
-      <p>Enhanced security settings enabled</p>
-    </div>
-  </div>
 
-  <!-- Export Controls -->
-  <div class="export-controls">
-    <button
-      id="preview-xml"
-      class="preview-btn"
-      data-tooltip="Preview the generated unattend.xml file content before exporting. Shows the complete XML structure with your current settings."
-    >
-      <i class="fas fa-eye"></i>
-      Preview XML
-    </button>
-    <button
-      id="export-unattend"
-      class="export-btn"
-      data-tooltip="Generate and download the unattend.xml file with your current configuration. This file can be used for automated Windows installations."
-    >
-      <i class="fas fa-download"></i>
-      Export Unattend.xml
-    </button>
-    <button
-      id="import-xml"
-      class="import-btn"
-      data-tooltip="Import an existing unattend.xml file to populate the form with its settings."
-    >
-      <i class="fas fa-upload"></i>
-      Import XML
-    </button>
-    <button
-      id="validate-config"
-      class="validate-btn"
-      data-tooltip="Validate the current configuration for errors and compatibility issues."
-    >
-      <i class="fas fa-check-circle"></i>
-      Validate Config
-    </button>
-    <button
-      id="reset-form"
-      class="reset-btn"
-      data-tooltip="Reset all form fields to their default values. This will clear all your current settings and start fresh."
-    >
-      <i class="fas fa-undo"></i>
-      Reset Form
-    </button>
-    <button class="help-btn" onclick="showHelpModal()" data-tooltip="Show comprehensive help and documentation">
-      <i class="fas fa-book"></i>
-      Help & Documentation
-    </button>
-  </div>
-
-  <!-- User Accounts Section -->
-  <div class="unattend-section">
-    <h3><i class="fas fa-users"></i> User Accounts & Authentication</h3>
-    <div class="section-content">
-      <div class="form-row">
-        <div class="form-group">
-          <label for="admin-username">Administrator Username:</label>
-          <input
-            type="text"
-            id="admin-username"
-            placeholder="Administrator"
-            value="Administrator"
-            data-tooltip="The username for the built-in administrator account. This account has full system privileges."
-          />
-        </div>
-        <div class="form-group">
-          <label for="admin-password">Administrator Password:</label>
-          <input
-            type="password"
-            id="admin-password"
-            placeholder="Enter secure password"
-            value="P@ssw0rd123"
-            data-tooltip="Password for the administrator account. Use a strong password with mixed case, numbers, and symbols."
-          />
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="user-username">Standard User Username:</label>
-          <input
-            type="text"
-            id="user-username"
-            placeholder="User"
-            value="User"
-            data-tooltip="Username for the standard user account. This account has limited privileges for daily use."
-          />
-        </div>
-        <div class="form-group">
-          <label for="user-password">Standard User Password:</label>
-          <input
-            type="password"
-            id="user-password"
-            placeholder="Enter user password"
-            value="User123"
-            data-tooltip="Password for the standard user account. Can be simpler than admin password."
-          />
-        </div>
-      </div>
-      <div class="checkbox-row">
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="auto-logon"
-            checked
-            data-tooltip="Automatically log in the standard user after Windows starts, skipping the login screen."
-          />
-          <label for="auto-logon">Enable automatic logon for standard user</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="hide-admin"
-            checked
-            data-tooltip="Hide the administrator account from the Windows login screen for security."
-          />
-          <label for="hide-admin">Hide administrator account from login screen</label>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Regional Settings Section -->
-  <div class="unattend-section">
-    <h3><i class="fas fa-globe"></i> Regional & Language Settings</h3>
-    <div class="section-content">
-      <div class="form-row">
-        <div class="form-group">
-          <label for="timezone">Time Zone:</label>
-          <select
-            id="timezone"
-            data-tooltip="Sets the system time zone. Choose the time zone where the computer will be used."
-          >
-            <option value="Eastern Standard Time" selected>Eastern Time (US & Canada)</option>
-            <option value="Central Standard Time">Central Time (US & Canada)</option>
-            <option value="Mountain Standard Time">Mountain Time (US & Canada)</option>
-            <option value="Pacific Standard Time">Pacific Time (US & Canada)</option>
-            <option value="UTC">UTC</option>
-            <option value="GMT Standard Time">GMT (London)</option>
-            <option value="Central European Standard Time">Central European Time</option>
-            <option value="W. Europe Standard Time">Western European Time</option>
-            <option value="Tokyo Standard Time">Tokyo Time</option>
-            <option value="China Standard Time">China Standard Time</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="language">System Language:</label>
-          <select
-            id="language"
-            data-tooltip="Sets the default display language for Windows interface, menus, and dialogs."
-          >
-            <option value="en-US" selected>English (United States)</option>
-            <option value="en-GB">English (United Kingdom)</option>
-            <option value="en-CA">English (Canada)</option>
-            <option value="es-ES">Spanish (Spain)</option>
-            <option value="es-MX">Spanish (Mexico)</option>
-            <option value="fr-FR">French (France)</option>
-            <option value="fr-CA">French (Canada)</option>
-            <option value="de-DE">German (Germany)</option>
-            <option value="it-IT">Italian (Italy)</option>
-            <option value="pt-BR">Portuguese (Brazil)</option>
-            <option value="ja-JP">Japanese (Japan)</option>
-            <option value="ko-KR">Korean (Korea)</option>
-            <option value="zh-CN">Chinese (Simplified)</option>
-            <option value="zh-TW">Chinese (Traditional)</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="keyboard">Keyboard Layout:</label>
-          <select
-            id="keyboard"
-            data-tooltip="Sets the keyboard layout and input method. Choose based on your physical keyboard."
-          >
-            <option value="0409:00000409" selected>US English (QWERTY)</option>
-            <option value="0809:00000809">UK English (QWERTY)</option>
-            <option value="1009:00000409">Canadian English</option>
-            <option value="040c:0000040c">French (AZERTY)</option>
-            <option value="0407:00000407">German (QWERTZ)</option>
-            <option value="0410:00000410">Italian (QWERTY)</option>
-            <option value="040a:0000040a">Spanish (QWERTY)</option>
-            <option value="0416:00000416">Portuguese (Brazil)</option>
-            <option value="0411:00000411">Japanese</option>
-            <option value="0412:00000412">Korean</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="locale">Regional Format:</label>
-          <select
-            id="locale"
-            data-tooltip="Sets number, currency, date, and time formats based on regional conventions."
-          >
-            <option value="en-US" selected>English (United States)</option>
-            <option value="en-GB">English (United Kingdom)</option>
-            <option value="en-CA">English (Canada)</option>
-            <option value="fr-FR">French (France)</option>
-            <option value="de-DE">German (Germany)</option>
-            <option value="es-ES">Spanish (Spain)</option>
-            <option value="it-IT">Italian (Italy)</option>
-            <option value="ja-JP">Japanese (Japan)</option>
-          </select>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Computer Settings Section -->
-  <div class="unattend-section">
-    <h3><i class="fas fa-desktop"></i> Computer & Organization Settings</h3>
-    <div class="section-content">
-      <div class="form-row">
-        <div class="form-group">
-          <label for="computer-name">Computer Name:</label>
-          <input
-            type="text"
-            id="computer-name"
-            placeholder="WIN-PC"
-            value="WIN-DESKTOP"
-            data-tooltip="The name that identifies this computer on the network. Must be unique on the network."
-          />
-          <small>Leave empty to generate random name</small>
-        </div>
-        <div class="form-group">
-          <label for="workgroup">Workgroup:</label>
-          <input
-            type="text"
-            id="workgroup"
-            placeholder="WORKGROUP"
-            value="WORKGROUP"
-            data-tooltip="The workgroup name for peer-to-peer networking. Default is 'WORKGROUP'."
-          />
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="organization">Organization:</label>
-          <input
-            type="text"
-            id="organization"
-            placeholder="Your Organization"
-            value="My Company"
-            data-tooltip="The organization name displayed in Windows system properties and about dialogs."
-          />
-        </div>
-        <div class="form-group">
-          <label for="owner">Registered Owner:</label>
-          <input
-            type="text"
-            id="owner"
-            placeholder="User"
-            value="System Administrator"
-            data-tooltip="The registered owner name displayed in Windows system properties."
-          />
-        </div>
-      </div>
-      <div class="form-group">
-        <label for="description">Computer Description:</label>
-        <input
-          type="text"
-          id="description"
-          placeholder="Windows workstation"
-          value="Windows 11 Workstation"
-          data-tooltip="A description of this computer's purpose or role, visible in network browsing."
-        />
-      </div>
-    </div>
-  </div>
-
-  <!-- Product Key & Edition Section -->
-  <div class="unattend-section">
-    <h3><i class="fas fa-key"></i> Product Key & Windows Edition</h3>
-    <div class="section-content">
-      <div class="form-row">
-        <div class="form-group">
-          <label for="windows-edition">Windows Edition:</label>
-          <select
-            id="windows-edition"
-            data-tooltip="Select the Windows edition to install. Must match your installation media and license."
-          >
-            <option value="Windows 11 Pro" selected>Windows 11 Pro</option>
-            <option value="Windows 11 Home">Windows 11 Home</option>
-            <option value="Windows 11 Enterprise">Windows 11 Enterprise</option>
-            <option value="Windows 11 Education">Windows 11 Education</option>
-            <option value="Windows 10 Pro">Windows 10 Pro</option>
-            <option value="Windows 10 Home">Windows 10 Home</option>
-            <option value="Windows 10 Enterprise">Windows 10 Enterprise</option>
-            <option value="Windows 10 Education">Windows 10 Education</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="architecture">Architecture:</label>
-          <select
-            id="architecture"
-            data-tooltip="Select the processor architecture. 64-bit (x64) is recommended for modern systems."
-          >
-            <option value="amd64" selected>64-bit (x64)</option>
-            <option value="x86">32-bit (x86)</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label for="product-key">Windows Product Key:</label>
-        <input
-          type="text"
-          id="product-key"
-          placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
-          data-tooltip="25-character Windows product key. Leave empty to enter key after installation."
-        />
-        <small>Leave empty to skip product key during installation (will prompt later)</small>
-      </div>
-      <div class="checkbox-row">
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="accept-eula"
-            checked
-            data-tooltip="Automatically accept the End User License Agreement during installation."
-          />
-          <label for="accept-eula">Automatically accept EULA</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="skip-oem"
-            checked
-            data-tooltip="Skip manufacturer registration and setup screens during installation."
-          />
-          <label for="skip-oem">Skip OEM registration screens</label>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Disk Partitioning Section -->
-  <div class="unattend-section">
-    <h3><i class="fas fa-hdd"></i> Disk Partitioning Configuration</h3>
-    <div class="section-content">
-      <div class="form-group checkbox-group">
-        <input
-          type="checkbox"
-          id="enable-disk-config"
-          data-tooltip="Enable automatic disk partitioning during installation. WARNING: This will erase all data on the target disk."
-        />
-        <label for="enable-disk-config">Enable automatic disk partitioning</label>
-      </div>
-
-      <div class="disk-config-settings" id="disk-config-settings" style="display: none">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="disk-id">Target Disk ID:</label>
-            <select id="disk-id" data-tooltip="Select which disk to partition. Disk 0 is typically the primary drive.">
-              <option value="0" selected>Disk 0 (Primary)</option>
-              <option value="1">Disk 1 (Secondary)</option>
-              <option value="2">Disk 2</option>
-              <option value="3">Disk 3</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="partition-style">Partition Style:</label>
-            <select
-              id="partition-style"
-              data-tooltip="GPT is recommended for UEFI systems and drives larger than 2TB. MBR is for legacy BIOS systems."
-            >
-              <option value="GPT" selected>GPT (UEFI - Recommended)</option>
-              <option value="MBR">MBR (Legacy BIOS)</option>
-            </select>
-          </div>
-        </div>
-
-        <h4>Partition Configuration</h4>
-        <div class="partition-presets">
-          <div class="preset-buttons">
-            <button
-              type="button"
-              class="preset-btn"
-              onclick="loadPartitionPreset('standard')"
-              data-tooltip="Standard Windows partition layout with system, recovery, and OS partitions"
-            >
-              <i class="fas fa-desktop"></i> Standard Layout
-            </button>
-            <button
-              type="button"
-              class="preset-btn"
-              onclick="loadPartitionPreset('minimal')"
-              data-tooltip="Minimal partition layout with only system and OS partitions"
-            >
-              <i class="fas fa-compress"></i> Minimal Layout
-            </button>
-            <button
-              type="button"
-              class="preset-btn"
-              onclick="loadPartitionPreset('custom')"
-              data-tooltip="Custom partition layout for advanced users"
-            >
-              <i class="fas fa-cogs"></i> Custom Layout
-            </button>
-          </div>
-        </div>
-
-        <div class="partition-details" id="partition-details">
-          <div class="partition-item">
-            <h5><i class="fas fa-shield-alt"></i> System Partition (EFI/Boot)</h5>
+    <!-- User Accounts Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-users"></i> User Accounts & Authentication</h3>
+        <div class="section-content">
             <div class="form-row">
-              <div class="form-group">
-                <label for="system-partition-size">Size (MB):</label>
-                <input
-                  type="number"
-                  id="system-partition-size"
-                  value="100"
-                  min="100"
-                  max="1024"
-                  data-tooltip="Size of the system partition. 100MB for BIOS, 260MB+ for UEFI recommended."
-                />
-              </div>
-              <div class="form-group">
-                <label for="system-partition-type">Type:</label>
-                <select id="system-partition-type" data-tooltip="Partition type depends on firmware type (BIOS/UEFI).">
-                  <option value="EFI">EFI System Partition (UEFI)</option>
-                  <option value="Primary">Primary (BIOS)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div class="partition-item">
-            <h5><i class="fas fa-database"></i> Main OS Partition</h5>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="os-partition-size">Size:</label>
-                <select id="os-partition-size" data-tooltip="Size of the main Windows partition.">
-                  <option value="remaining" selected>Use Remaining Space</option>
-                  <option value="custom">Custom Size (GB)</option>
-                </select>
-              </div>
-              <div class="form-group" id="os-custom-size-group" style="display: none">
-                <label for="os-custom-size">Custom Size (GB):</label>
-                <input
-                  type="number"
-                  id="os-custom-size"
-                  value="100"
-                  min="50"
-                  max="2000"
-                  data-tooltip="Custom size for the OS partition in GB. Minimum 50GB recommended."
-                />
-              </div>
+                <div class="form-group">
+                    <label for="admin-username">Administrator Username:</label>
+                    <input type="text" id="admin-username" placeholder="Administrator" value="Administrator"
+                           data-tooltip="The username for the built-in administrator account. This account has full system privileges.">
+                </div>
+                <div class="form-group">
+                    <label for="admin-password">Administrator Password:</label>
+                    <input type="password" id="admin-password" placeholder="Enter secure password" value="P@ssw0rd123"
+                           data-tooltip="Password for the administrator account. Use a strong password with mixed case, numbers, and symbols.">
+                </div>
             </div>
             <div class="form-row">
-              <div class="form-group">
-                <label for="os-partition-label">Label:</label>
-                <input
-                  type="text"
-                  id="os-partition-label"
-                  value="Windows"
-                  maxlength="32"
-                  data-tooltip="Volume label for the main Windows partition."
-                />
-              </div>
-              <div class="form-group checkbox-group">
-                <input
-                  type="checkbox"
-                  id="os-partition-active"
-                  checked
-                  data-tooltip="Mark this partition as active (bootable). Required for BIOS systems."
-                />
-                <label for="os-partition-active">Set as Active</label>
-              </div>
-            </div>
-          </div>
-
-          <div class="partition-item">
-            <h5><i class="fas fa-life-ring"></i> Recovery Partition</h5>
-            <div class="form-row">
-              <div class="form-group checkbox-group">
-                <input
-                  type="checkbox"
-                  id="enable-recovery-partition"
-                  checked
-                  data-tooltip="Create a Windows Recovery Environment (WinRE) partition for system recovery."
-                />
-                <label for="enable-recovery-partition">Create Recovery Partition</label>
-              </div>
-              <div class="form-group">
-                <label for="recovery-partition-size">Size (MB):</label>
-                <input
-                  type="number"
-                  id="recovery-partition-size"
-                  value="1000"
-                  min="500"
-                  max="5000"
-                  data-tooltip="Size of the recovery partition. 1000MB is recommended for Windows 11."
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="disk-config-warning">
-          <i class="fas fa-exclamation-triangle"></i>
-          <strong>Warning:</strong> Enabling disk partitioning will completely erase the target disk and create new
-          partitions. All existing data will be lost. Make sure to backup important data before proceeding.
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Network & Domain Settings Section -->
-  <div class="unattend-section">
-    <h3><i class="fas fa-network-wired"></i> Advanced Network & Domain Configuration</h3>
-    <div class="section-content">
-      <h4>Basic Network Settings</h4>
-      <div class="checkbox-row">
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="enable-network"
-            checked
-            data-tooltip="Enable network connectivity during Windows installation for updates and drivers."
-          />
-          <label for="enable-network">Enable network during installation</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="skip-network-setup"
-            checked
-            data-tooltip="Skip the network setup wizard during the Out-of-Box Experience."
-          />
-          <label for="skip-network-setup">Skip network setup in OOBE</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="enable-network-discovery"
-            checked
-            data-tooltip="Enable network discovery to find other computers and devices on the network."
-          />
-          <label for="enable-network-discovery">Enable network discovery</label>
-        </div>
-      </div>
-
-      <h4>Wi-Fi Configuration</h4>
-      <div class="form-group checkbox-group">
-        <input
-          type="checkbox"
-          id="enable-wifi-config"
-          data-tooltip="Configure Wi-Fi profiles during installation for automatic connection."
-        />
-        <label for="enable-wifi-config">Configure Wi-Fi profiles</label>
-      </div>
-
-      <div class="wifi-settings" id="wifi-settings" style="display: none">
-        <div class="wifi-profiles" id="wifi-profiles">
-          <div class="wifi-profile">
-            <div class="form-row">
-              <div class="form-group">
-                <label>Network Name (SSID):</label>
-                <input
-                  type="text"
-                  class="wifi-ssid"
-                  placeholder="MyWiFiNetwork"
-                  data-tooltip="The name of the Wi-Fi network to connect to."
-                />
-              </div>
-              <div class="form-group">
-                <label>Security Type:</label>
-                <select class="wifi-security" data-tooltip="Security protocol used by the Wi-Fi network.">
-                  <option value="WPA2PSK" selected>WPA2-Personal</option>
-                  <option value="WPA3PSK">WPA3-Personal</option>
-                  <option value="WPA2">WPA2-Enterprise</option>
-                  <option value="WEP">WEP (Not Recommended)</option>
-                  <option value="open">Open (No Security)</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Password:</label>
-                <input
-                  type="password"
-                  class="wifi-password"
-                  placeholder="Wi-Fi password"
-                  data-tooltip="Password for the Wi-Fi network. Leave empty for open networks."
-                />
-              </div>
-              <div class="form-group">
-                <button type="button" class="remove-command-btn" onclick="removeWifiProfile(this)">
-                  <i class="fas fa-trash"></i> Remove
-                </button>
-              </div>
+                <div class="form-group">
+                    <label for="user-username">Standard User Username:</label>
+                    <input type="text" id="user-username" placeholder="User" value="User"
+                           data-tooltip="Username for the standard user account. This account has limited privileges for daily use.">
+                </div>
+                <div class="form-group">
+                    <label for="user-password">Standard User Password:</label>
+                    <input type="password" id="user-password" placeholder="Enter user password" value="User123"
+                           data-tooltip="Password for the standard user account. Can be simpler than admin password.">
+                </div>
             </div>
             <div class="checkbox-row">
-              <div class="form-group checkbox-group">
-                <input
-                  type="checkbox"
-                  class="wifi-auto-connect"
-                  checked
-                  data-tooltip="Automatically connect to this network when in range."
-                />
-                <label>Auto-connect</label>
-              </div>
-              <div class="form-group checkbox-group">
-                <input
-                  type="checkbox"
-                  class="wifi-hidden"
-                  data-tooltip="Check if this is a hidden network that doesn't broadcast its SSID."
-                />
-                <label>Hidden network</label>
-              </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="auto-logon" checked
+                           data-tooltip="Automatically log in the standard user after Windows starts, skipping the login screen.">
+                    <label for="auto-logon">Enable automatic logon for standard user</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="hide-admin" checked
+                           data-tooltip="Hide the administrator account from the Windows login screen for security.">
+                    <label for="hide-admin">Hide administrator account from login screen</label>
+                </div>
             </div>
-          </div>
         </div>
-
-        <button type="button" class="add-command-btn" onclick="addWifiProfile()">
-          <i class="fas fa-plus"></i> Add Wi-Fi Profile
-        </button>
-      </div>
-
-      <h4>Proxy Configuration</h4>
-      <div class="form-group checkbox-group">
-        <input
-          type="checkbox"
-          id="enable-proxy-config"
-          data-tooltip="Configure proxy server settings for internet access."
-        />
-        <label for="enable-proxy-config">Configure proxy settings</label>
-      </div>
-
-      <div class="proxy-settings" id="proxy-settings" style="display: none">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="proxy-server">Proxy Server:</label>
-            <input
-              type="text"
-              id="proxy-server"
-              placeholder="proxy.company.com:8080"
-              data-tooltip="Proxy server address and port (e.g., proxy.company.com:8080)."
-            />
-          </div>
-          <div class="form-group">
-            <label for="proxy-bypass">Bypass List:</label>
-            <input
-              type="text"
-              id="proxy-bypass"
-              placeholder="localhost;127.0.0.1;*.local"
-              data-tooltip="Semicolon-separated list of addresses that bypass the proxy."
-            />
-          </div>
-        </div>
-        <div class="checkbox-row">
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="proxy-auto-detect"
-              data-tooltip="Automatically detect proxy settings using WPAD."
-            />
-            <label for="proxy-auto-detect">Auto-detect proxy</label>
-          </div>
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="proxy-bypass-local"
-              checked
-              data-tooltip="Bypass proxy server for local addresses."
-            />
-            <label for="proxy-bypass-local">Bypass for local addresses</label>
-          </div>
-        </div>
-      </div>
-
-      <h4>Domain Join Configuration</h4>
-      <div class="form-group checkbox-group">
-        <input
-          type="checkbox"
-          id="join-domain"
-          data-tooltip="Automatically join this computer to a Windows domain after installation."
-        />
-        <label for="join-domain">Join domain after installation</label>
-      </div>
-
-      <div class="domain-settings" id="domain-settings" style="display: none">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="domain-name">Domain Name:</label>
-            <input
-              type="text"
-              id="domain-name"
-              placeholder="company.local"
-              data-tooltip="The fully qualified domain name (FQDN) to join, e.g., 'company.local'."
-            />
-          </div>
-          <div class="form-group">
-            <label for="domain-username">Domain Join Username:</label>
-            <input
-              type="text"
-              id="domain-username"
-              placeholder="domain\admin"
-              data-tooltip="Username with domain join privileges, in format 'domain\username' or 'username@domain.com'."
-            />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="domain-password">Domain Join Password:</label>
-            <input
-              type="password"
-              id="domain-password"
-              placeholder="Domain admin password"
-              data-tooltip="Password for the domain join account. This will be stored in the unattend file."
-            />
-          </div>
-          <div class="form-group">
-            <label for="domain-ou">Organizational Unit (Optional):</label>
-            <input
-              type="text"
-              id="domain-ou"
-              placeholder="OU=Computers,DC=company,DC=local"
-              data-tooltip="Specific OU where the computer account should be created."
-            />
-          </div>
-        </div>
-
-        <h5>Advanced Domain Options</h5>
-        <div class="checkbox-row">
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="domain-create-account"
-              checked
-              data-tooltip="Create a computer account in the domain if it doesn't exist."
-            />
-            <label for="domain-create-account">Create computer account</label>
-          </div>
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="domain-restart-required"
-              checked
-              data-tooltip="Restart the computer after domain join to complete the process."
-            />
-            <label for="domain-restart-required">Restart after join</label>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="domain-dns-suffix">DNS Suffix:</label>
-            <input
-              type="text"
-              id="domain-dns-suffix"
-              placeholder="company.local"
-              data-tooltip="Primary DNS suffix for the computer."
-            />
-          </div>
-          <div class="form-group">
-            <label for="domain-netbios">NetBIOS Domain Name:</label>
-            <input
-              type="text"
-              id="domain-netbios"
-              placeholder="COMPANY"
-              data-tooltip="NetBIOS name of the domain (usually uppercase)."
-            />
-          </div>
-        </div>
-      </div>
-
-      <div class="network-warning">
-        <i class="fas fa-exclamation-triangle"></i>
-        <strong>Security Note:</strong> Network credentials and Wi-Fi passwords will be stored in the unattend.xml file.
-        Ensure proper file security and consider using temporary accounts for domain joining.
-      </div>
     </div>
-  </div>
 
-  <!-- Windows Features & Privacy Section -->
-  <div class="unattend-section">
-    <h3><i class="fas fa-puzzle-piece"></i> Windows Features & Privacy</h3>
-    <div class="section-content">
-      <h4>Security Features</h4>
-      <div class="features-grid">
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="feature-defender"
-            checked
-            data-tooltip="Enable Windows Defender Antivirus for real-time protection against malware."
-          />
-          <label for="feature-defender">Enable Windows Defender</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="feature-firewall"
-            checked
-            data-tooltip="Enable Windows Firewall to block unauthorized network connections."
-          />
-          <label for="feature-firewall">Enable Windows Firewall</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="feature-uac"
-            checked
-            data-tooltip="Enable User Account Control to prompt for administrator approval on system changes."
-          />
-          <label for="feature-uac">Enable User Account Control</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="feature-smartscreen"
-            checked
-            data-tooltip="Enable SmartScreen to protect against malicious websites and downloads."
-          />
-          <label for="feature-smartscreen">Enable SmartScreen</label>
-        </div>
-      </div>
-
-      <h4>Privacy & Telemetry</h4>
-      <div class="features-grid">
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="feature-telemetry"
-            checked
-            data-tooltip="Disable Windows telemetry and diagnostic data collection for privacy."
-          />
-          <label for="feature-telemetry">Disable telemetry & data collection</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="feature-cortana"
-            checked
-            data-tooltip="Disable Cortana voice assistant and related data collection."
-          />
-          <label for="feature-cortana">Disable Cortana</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="feature-location"
-            checked
-            data-tooltip="Disable location services to prevent apps from accessing your location."
-          />
-          <label for="feature-location">Disable location services</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="feature-ads"
-            checked
-            data-tooltip="Disable advertising ID to prevent personalized ads based on your activity."
-          />
-          <label for="feature-ads">Disable advertising ID</label>
-        </div>
-      </div>
-
-      <h4>System Features</h4>
-      <div class="features-grid">
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="feature-updates"
-            checked
-            data-tooltip="Enable automatic Windows updates to keep the system secure and up-to-date."
-          />
-          <label for="feature-updates">Enable automatic updates</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="feature-hibernation"
-            data-tooltip="Enable hibernation mode to save system state to disk for faster startup."
-          />
-          <label for="feature-hibernation">Enable hibernation</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="feature-remote-desktop"
-            data-tooltip="Enable Remote Desktop to allow remote connections to this computer."
-          />
-          <label for="feature-remote-desktop">Enable Remote Desktop</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="feature-powershell"
-            checked
-            data-tooltip="Enable PowerShell script execution for system administration and automation."
-          />
-          <label for="feature-powershell">Enable PowerShell execution</label>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Privacy & Debloating Section -->
-  <div class="unattend-section">
-    <h3><i class="fas fa-user-shield"></i> Privacy & Debloating Options</h3>
-    <div class="section-content">
-      <h4>Telemetry & Data Collection</h4>
-      <div class="features-grid">
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="disable-telemetry"
-            checked
-            data-tooltip="Disable Windows telemetry and diagnostic data collection to enhance privacy."
-          />
-          <label for="disable-telemetry">Disable telemetry completely</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="disable-error-reporting"
-            checked
-            data-tooltip="Disable Windows Error Reporting to prevent sending crash data to Microsoft."
-          />
-          <label for="disable-error-reporting">Disable error reporting</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="disable-customer-experience"
-            checked
-            data-tooltip="Disable Customer Experience Improvement Program data collection."
-          />
-          <label for="disable-customer-experience">Disable CEIP</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="disable-app-diagnostics"
-            checked
-            data-tooltip="Disable app diagnostic data collection and usage tracking."
-          />
-          <label for="disable-app-diagnostics">Disable app diagnostics</label>
-        </div>
-      </div>
-
-      <h4>Microsoft Edge Configuration</h4>
-      <div class="features-grid">
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="disable-edge-telemetry"
-            checked
-            data-tooltip="Disable Microsoft Edge telemetry and data collection features."
-          />
-          <label for="disable-edge-telemetry">Disable Edge telemetry</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="disable-edge-sync"
-            checked
-            data-tooltip="Disable Microsoft Edge sync features to prevent data sharing across devices."
-          />
-          <label for="disable-edge-sync">Disable Edge sync</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="disable-edge-shopping"
-            checked
-            data-tooltip="Disable Edge shopping assistant and price comparison features."
-          />
-          <label for="disable-edge-shopping">Disable Edge shopping assistant</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="set-edge-privacy"
-            checked
-            data-tooltip="Configure Edge with enhanced privacy settings and disable tracking."
-          />
-          <label for="set-edge-privacy">Enhanced Edge privacy</label>
-        </div>
-      </div>
-
-      <h4>Windows Apps & Features Removal</h4>
-      <div class="form-group checkbox-group">
-        <input
-          type="checkbox"
-          id="enable-app-removal"
-          data-tooltip="Enable removal of built-in Windows apps and bloatware during installation."
-        />
-        <label for="enable-app-removal">Enable app removal</label>
-      </div>
-
-      <div class="app-removal-settings" id="app-removal-settings" style="display: none">
-        <div class="features-grid">
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="remove-cortana"
-              checked
-              data-tooltip="Remove Cortana voice assistant completely from the system."
-            />
-            <label for="remove-cortana">Remove Cortana</label>
-          </div>
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="remove-onedrive"
-              checked
-              data-tooltip="Remove OneDrive cloud storage integration from Windows."
-            />
-            <label for="remove-onedrive">Remove OneDrive</label>
-          </div>
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="remove-xbox-apps"
-              checked
-              data-tooltip="Remove Xbox-related apps and gaming features."
-            />
-            <label for="remove-xbox-apps">Remove Xbox apps</label>
-          </div>
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="remove-office-apps"
-              checked
-              data-tooltip="Remove pre-installed Office apps and web versions."
-            />
-            <label for="remove-office-apps">Remove Office web apps</label>
-          </div>
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="remove-media-apps"
-              checked
-              data-tooltip="Remove Windows Media Player, Movies & TV, and related media apps."
-            />
-            <label for="remove-media-apps">Remove media apps</label>
-          </div>
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="remove-communication-apps"
-              checked
-              data-tooltip="Remove Mail, Calendar, People, and other communication apps."
-            />
-            <label for="remove-communication-apps">Remove communication apps</label>
-          </div>
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="remove-store-apps"
-              checked
-              data-tooltip="Remove Microsoft Store and related shopping apps."
-            />
-            <label for="remove-store-apps">Remove Store apps</label>
-          </div>
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="remove-news-weather"
-              checked
-              data-tooltip="Remove News, Weather, and other information apps."
-            />
-            <label for="remove-news-weather">Remove News & Weather</label>
-          </div>
-        </div>
-      </div>
-
-      <h4>System Privacy Settings</h4>
-      <div class="features-grid">
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="disable-activity-history"
-            checked
-            data-tooltip="Disable Windows activity history and timeline features."
-          />
-          <label for="disable-activity-history">Disable activity history</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="disable-clipboard-sync"
-            checked
-            data-tooltip="Disable clipboard synchronization across devices."
-          />
-          <label for="disable-clipboard-sync">Disable clipboard sync</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="disable-wifi-sense"
-            checked
-            data-tooltip="Disable Wi-Fi Sense automatic connection sharing."
-          />
-          <label for="disable-wifi-sense">Disable Wi-Fi Sense</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="disable-feedback-notifications"
-            checked
-            data-tooltip="Disable Windows feedback notifications and prompts."
-          />
-          <label for="disable-feedback-notifications">Disable feedback notifications</label>
-        </div>
-      </div>
-
-      <h4>Start Menu & Taskbar Customization</h4>
-      <div class="features-grid">
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="disable-web-search"
-            checked
-            data-tooltip="Disable web search in Start menu to prevent Bing integration."
-          />
-          <label for="disable-web-search">Disable web search in Start</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="disable-suggested-apps"
-            checked
-            data-tooltip="Disable suggested apps and recommendations in Start menu."
-          />
-          <label for="disable-suggested-apps">Disable suggested apps</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="disable-taskbar-widgets"
-            checked
-            data-tooltip="Disable Windows 11 taskbar widgets and news feed."
-          />
-          <label for="disable-taskbar-widgets">Disable taskbar widgets</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="disable-chat-taskbar"
-            checked
-            data-tooltip="Disable Microsoft Teams chat integration in taskbar."
-          />
-          <label for="disable-chat-taskbar">Disable Teams chat</label>
-        </div>
-      </div>
-
-      <div class="privacy-warning">
-        <i class="fas fa-info-circle"></i>
-        <strong>Note:</strong> Privacy and debloating options will be applied through registry modifications and
-        PowerShell scripts during installation. Some changes may require system restart to take full effect.
-      </div>
-    </div>
-  </div>
-
-  <!-- Modern Security Features Section -->
-  <div class="unattend-section">
-    <h3><i class="fas fa-shield-alt"></i> Modern Security Features</h3>
-    <div class="section-content">
-      <h4>Windows 11 Requirements Bypass</h4>
-      <div class="features-grid">
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="bypass-tpm-check"
-            data-tooltip="Bypass TPM 2.0 requirement for Windows 11 installation. Use with caution on unsupported hardware."
-          />
-          <label for="bypass-tpm-check">Bypass TPM 2.0 requirement</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="bypass-secure-boot"
-            data-tooltip="Bypass Secure Boot requirement for Windows 11 installation."
-          />
-          <label for="bypass-secure-boot">Bypass Secure Boot requirement</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="bypass-cpu-check"
-            data-tooltip="Bypass CPU compatibility check for Windows 11 installation."
-          />
-          <label for="bypass-cpu-check">Bypass CPU compatibility check</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="bypass-ram-check"
-            data-tooltip="Bypass minimum RAM requirement check for Windows 11 installation."
-          />
-          <label for="bypass-ram-check">Bypass RAM requirement (4GB)</label>
-        </div>
-      </div>
-
-      <h4>BitLocker Configuration</h4>
-      <div class="form-group checkbox-group">
-        <input
-          type="checkbox"
-          id="enable-bitlocker-config"
-          data-tooltip="Configure BitLocker drive encryption settings during installation."
-        />
-        <label for="enable-bitlocker-config">Configure BitLocker settings</label>
-      </div>
-
-      <div class="bitlocker-settings" id="bitlocker-settings" style="display: none">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="bitlocker-mode">BitLocker Mode:</label>
-            <select id="bitlocker-mode" data-tooltip="Choose how BitLocker should be configured.">
-              <option value="disabled" selected>Disabled (Default)</option>
-              <option value="enabled">Enable BitLocker</option>
-              <option value="suspend">Suspend BitLocker</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="bitlocker-method">Encryption Method:</label>
-            <select id="bitlocker-method" data-tooltip="Encryption algorithm to use for BitLocker.">
-              <option value="AES128" selected>AES 128-bit</option>
-              <option value="AES256">AES 256-bit</option>
-              <option value="XTS_AES128">XTS-AES 128-bit</option>
-              <option value="XTS_AES256">XTS-AES 256-bit</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="bitlocker-skip-hardware-test"
-              data-tooltip="Skip hardware compatibility test for BitLocker."
-            />
-            <label for="bitlocker-skip-hardware-test">Skip hardware test</label>
-          </div>
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="bitlocker-use-tpm"
-              data-tooltip="Use TPM (Trusted Platform Module) for BitLocker key protection."
-            />
-            <label for="bitlocker-use-tpm">Use TPM for key protection</label>
-          </div>
-        </div>
-      </div>
-
-      <h4>Windows Hello & Biometrics</h4>
-      <div class="features-grid">
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="enable-windows-hello"
-            data-tooltip="Enable Windows Hello for biometric authentication (fingerprint, face, iris)."
-          />
-          <label for="enable-windows-hello">Enable Windows Hello</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="enable-biometric-service"
-            data-tooltip="Enable Windows Biometric Service for fingerprint and other biometric authentication."
-          />
-          <label for="enable-biometric-service">Enable Biometric Service</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="disable-password-reveal"
-            data-tooltip="Disable the password reveal button in password fields for enhanced security."
-          />
-          <label for="disable-password-reveal">Disable password reveal button</label>
-        </div>
-      </div>
-
-      <h4>Advanced Security Settings</h4>
-      <div class="features-grid">
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="enable-credential-guard"
-            data-tooltip="Enable Windows Defender Credential Guard to protect credentials using virtualization-based security."
-          />
-          <label for="enable-credential-guard">Enable Credential Guard</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="enable-device-guard"
-            data-tooltip="Enable Windows Defender Device Guard for application control and code integrity."
-          />
-          <label for="enable-device-guard">Enable Device Guard</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="enable-hvci"
-            data-tooltip="Enable Hypervisor-protected Code Integrity (HVCI) for enhanced kernel protection."
-          />
-          <label for="enable-hvci">Enable HVCI</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="disable-admin-shares"
-            data-tooltip="Disable administrative shares (C$, ADMIN$) for enhanced security."
-          />
-          <label for="disable-admin-shares">Disable administrative shares</label>
-        </div>
-      </div>
-
-      <div class="security-warning">
-        <i class="fas fa-exclamation-triangle"></i>
-        <strong>Warning:</strong> Bypassing Windows 11 security requirements may result in reduced system security and
-        stability. Advanced security features require compatible hardware and may affect system performance.
-      </div>
-    </div>
-  </div>
-
-  <!-- OOBE Settings Section -->
-  <div class="unattend-section">
-    <h3><i class="fas fa-magic"></i> Out-of-Box Experience (OOBE)</h3>
-    <div class="section-content">
-      <div class="features-grid">
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="oobe-skip-machine-oobe"
-            checked
-            data-tooltip="Skip the machine-level Out-of-Box Experience setup screens."
-          />
-          <label for="oobe-skip-machine-oobe">Skip machine OOBE</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="oobe-skip-user-oobe"
-            checked
-            data-tooltip="Skip the user-level Out-of-Box Experience setup screens."
-          />
-          <label for="oobe-skip-user-oobe">Skip user OOBE</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="oobe-hide-eula"
-            checked
-            data-tooltip="Hide the End User License Agreement page during first boot."
-          />
-          <label for="oobe-hide-eula">Hide EULA page</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="oobe-hide-wireless"
-            checked
-            data-tooltip="Hide the wireless network setup page during first boot."
-          />
-          <label for="oobe-hide-wireless">Hide wireless setup</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="oobe-protect-pc"
-            checked
-            data-tooltip="Automatically enable recommended security and privacy settings."
-          />
-          <label for="oobe-protect-pc">Enable recommended security settings</label>
-        </div>
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="oobe-hide-online-account"
-            checked
-            data-tooltip="Hide Microsoft account and online account setup screens."
-          />
-          <label for="oobe-hide-online-account">Hide online account screens</label>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Configuration Pass Management Section -->
-  <div class="unattend-section">
-    <h3><i class="fas fa-cogs"></i> Configuration Pass Management</h3>
-    <div class="section-content">
-      <p class="section-description">
-        Windows installation uses seven configuration passes. Each pass runs at a different stage of installation and
-        supports specific components and settings. Advanced users can customize which passes are included.
-      </p>
-
-      <h4>Configuration Passes</h4>
-      <div class="pass-grid">
-        <div class="pass-item">
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="pass-windowspe"
-              checked
-              disabled
-              data-tooltip="Windows PE pass - Required for basic installation settings and disk configuration."
-            />
-            <label for="pass-windowspe">
-              <strong>windowsPE</strong><br />
-              <small>Boot from installation media</small>
-            </label>
-          </div>
-          <div class="pass-components">
-            <small>Components: Setup, DiskConfiguration, ImageInstall</small>
-          </div>
-        </div>
-
-        <div class="pass-item">
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="pass-offlineservicing"
-              data-tooltip="Offline Servicing pass - Apply updates, drivers, and packages to the Windows image."
-            />
-            <label for="pass-offlineservicing">
-              <strong>offlineServicing</strong><br />
-              <small>Apply updates to offline image</small>
-            </label>
-          </div>
-          <div class="pass-components">
-            <small>Components: Packages, Drivers, Updates</small>
-          </div>
-        </div>
-
-        <div class="pass-item">
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="pass-generalize"
-              data-tooltip="Generalize pass - Remove system-specific information for image deployment."
-            />
-            <label for="pass-generalize">
-              <strong>generalize</strong><br />
-              <small>Prepare image for deployment</small>
-            </label>
-          </div>
-          <div class="pass-components">
-            <small>Components: Sysprep settings, cleanup</small>
-          </div>
-        </div>
-
-        <div class="pass-item">
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="pass-specialize"
-              checked
-              disabled
-              data-tooltip="Specialize pass - Required for system configuration, domain join, and hardware setup."
-            />
-            <label for="pass-specialize">
-              <strong>specialize</strong><br />
-              <small>Configure system settings</small>
-            </label>
-          </div>
-          <div class="pass-components">
-            <small>Components: Shell-Setup, UnattendedJoin, Network</small>
-          </div>
-        </div>
-
-        <div class="pass-item">
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="pass-auditsystem"
-              data-tooltip="Audit System pass - System-level audit mode for testing and validation."
-            />
-            <label for="pass-auditsystem">
-              <strong>auditSystem</strong><br />
-              <small>System audit mode</small>
-            </label>
-          </div>
-          <div class="pass-components">
-            <small>Components: System audit settings</small>
-          </div>
-        </div>
-
-        <div class="pass-item">
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="pass-audituser"
-              data-tooltip="Audit User pass - User-level audit mode for application testing."
-            />
-            <label for="pass-audituser">
-              <strong>auditUser</strong><br />
-              <small>User audit mode</small>
-            </label>
-          </div>
-          <div class="pass-components">
-            <small>Components: User audit settings</small>
-          </div>
-        </div>
-
-        <div class="pass-item">
-          <div class="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="pass-oobesystem"
-              checked
-              disabled
-              data-tooltip="OOBE System pass - Required for Out-of-Box Experience and user account setup."
-            />
-            <label for="pass-oobesystem">
-              <strong>oobeSystem</strong><br />
-              <small>First boot experience</small>
-            </label>
-          </div>
-          <div class="pass-components">
-            <small>Components: OOBE, UserAccounts, AutoLogon</small>
-          </div>
-        </div>
-      </div>
-
-      <h4>Advanced Pass Configuration</h4>
-      <div class="form-group checkbox-group">
-        <input
-          type="checkbox"
-          id="enable-advanced-passes"
-          data-tooltip="Enable advanced configuration pass options for expert users."
-        />
-        <label for="enable-advanced-passes">Enable advanced pass configuration</label>
-      </div>
-
-      <div class="advanced-pass-settings" id="advanced-pass-settings" style="display: none">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="pass-order">Pass Execution Order:</label>
-            <select id="pass-order" data-tooltip="Choose the order in which configuration passes are executed.">
-              <option value="standard" selected>Standard Order (Recommended)</option>
-              <option value="audit">Audit Mode (auditSystem → auditUser → oobeSystem)</option>
-              <option value="custom">Custom Order</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="restart-behavior">Restart Behavior:</label>
-            <select id="restart-behavior" data-tooltip="Control when the system restarts during installation.">
-              <option value="auto" selected>Automatic (Default)</option>
-              <option value="never">Never Restart</option>
-              <option value="always">Always Restart</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-group checkbox-group">
-          <input
-            type="checkbox"
-            id="enable-pass-validation"
-            data-tooltip="Validate that components are placed in the correct configuration passes."
-          />
-          <label for="enable-pass-validation">Enable pass validation</label>
-        </div>
-      </div>
-
-      <div class="pass-info">
-        <i class="fas fa-info-circle"></i>
-        <strong>Information:</strong> Configuration passes run in a specific order during Windows installation. Some
-        passes are required and cannot be disabled. Advanced pass configuration should only be used by experienced users
-        who understand Windows deployment.
-      </div>
-    </div>
-  </div>
-
-  <!-- Script Execution Section -->
-  <div class="unattend-section">
-    <h3><i class="fas fa-terminal"></i> Script Execution & Commands</h3>
-    <div class="section-content">
-      <div class="form-group checkbox-group">
-        <input
-          type="checkbox"
-          id="enable-scripts"
-          data-tooltip="Enable custom script execution during Windows installation and first logon."
-        />
-        <label for="enable-scripts">Enable custom script execution</label>
-      </div>
-
-      <div class="script-settings" id="script-settings" style="display: none">
-        <h4>RunSynchronous Commands (During Installation)</h4>
-        <p class="section-description">
-          Commands that run synchronously during the Windows PE and Specialize configuration passes. These run before
-          Windows fully boots and are useful for driver installation, registry modifications, and system preparation.
-        </p>
-
-        <div class="script-commands" id="runsync-commands">
-          <div class="command-item">
+    <!-- Regional Settings Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-globe"></i> Regional & Language Settings</h3>
+        <div class="section-content">
             <div class="form-row">
-              <div class="form-group">
-                <label>Command:</label>
-                <input
-                  type="text"
-                  class="runsync-command"
-                  placeholder="cmd.exe /c echo Installing drivers..."
-                  data-tooltip="Command to execute. Use full paths and proper escaping."
-                />
-              </div>
-              <div class="form-group">
-                <label>Description:</label>
-                <input
-                  type="text"
-                  class="runsync-description"
-                  placeholder="Install hardware drivers"
-                  data-tooltip="Description of what this command does."
-                />
-              </div>
+                <div class="form-group">
+                    <label for="timezone">Time Zone:</label>
+                    <select id="timezone" data-tooltip="Sets the system time zone. Choose the time zone where the computer will be used.">
+                        <option value="Eastern Standard Time" selected>Eastern Time (US & Canada)</option>
+                        <option value="Central Standard Time">Central Time (US & Canada)</option>
+                        <option value="Mountain Standard Time">Mountain Time (US & Canada)</option>
+                        <option value="Pacific Standard Time">Pacific Time (US & Canada)</option>
+                        <option value="UTC">UTC</option>
+                        <option value="GMT Standard Time">GMT (London)</option>
+                        <option value="Central European Standard Time">Central European Time</option>
+                        <option value="W. Europe Standard Time">Western European Time</option>
+                        <option value="Tokyo Standard Time">Tokyo Time</option>
+                        <option value="China Standard Time">China Standard Time</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="language">System Language:</label>
+                    <select id="language" data-tooltip="Sets the default display language for Windows interface, menus, and dialogs.">
+                        <option value="en-US" selected>English (United States)</option>
+                        <option value="en-GB">English (United Kingdom)</option>
+                        <option value="en-CA">English (Canada)</option>
+                        <option value="es-ES">Spanish (Spain)</option>
+                        <option value="es-MX">Spanish (Mexico)</option>
+                        <option value="fr-FR">French (France)</option>
+                        <option value="fr-CA">French (Canada)</option>
+                        <option value="de-DE">German (Germany)</option>
+                        <option value="it-IT">Italian (Italy)</option>
+                        <option value="pt-BR">Portuguese (Brazil)</option>
+                        <option value="ja-JP">Japanese (Japan)</option>
+                        <option value="ko-KR">Korean (Korea)</option>
+                        <option value="zh-CN">Chinese (Simplified)</option>
+                        <option value="zh-TW">Chinese (Traditional)</option>
+                    </select>
+                </div>
             </div>
             <div class="form-row">
-              <div class="form-group">
-                <label>Configuration Pass:</label>
-                <select class="runsync-pass" data-tooltip="When to execute this command during installation.">
-                  <option value="windowsPE">Windows PE (Early Installation)</option>
-                  <option value="specialize" selected>Specialize (System Configuration)</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <button type="button" class="remove-command-btn" onclick="removeCommand(this, 'runsync')">
-                  <i class="fas fa-trash"></i> Remove
+                <div class="form-group">
+                    <label for="keyboard">Keyboard Layout:</label>
+                    <select id="keyboard" data-tooltip="Sets the keyboard layout and input method. Choose based on your physical keyboard.">
+                        <option value="0409:00000409" selected>US English (QWERTY)</option>
+                        <option value="0809:00000809">UK English (QWERTY)</option>
+                        <option value="1009:00000409">Canadian English</option>
+                        <option value="040c:0000040c">French (AZERTY)</option>
+                        <option value="0407:00000407">German (QWERTZ)</option>
+                        <option value="0410:00000410">Italian (QWERTY)</option>
+                        <option value="040a:0000040a">Spanish (QWERTY)</option>
+                        <option value="0416:00000416">Portuguese (Brazil)</option>
+                        <option value="0411:00000411">Japanese</option>
+                        <option value="0412:00000412">Korean</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="locale">Regional Format:</label>
+                    <select id="locale" data-tooltip="Sets number, currency, date, and time formats based on regional conventions.">
+                        <option value="en-US" selected>English (United States)</option>
+                        <option value="en-GB">English (United Kingdom)</option>
+                        <option value="en-CA">English (Canada)</option>
+                        <option value="fr-FR">French (France)</option>
+                        <option value="de-DE">German (Germany)</option>
+                        <option value="es-ES">Spanish (Spain)</option>
+                        <option value="it-IT">Italian (Italy)</option>
+                        <option value="ja-JP">Japanese (Japan)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Computer Settings Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-desktop"></i> Computer & Organization Settings</h3>
+        <div class="section-content">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="computer-name">Computer Name:</label>
+                    <input type="text" id="computer-name" placeholder="WIN-PC" value="WIN-DESKTOP"
+                           data-tooltip="The name that identifies this computer on the network. Must be unique on the network.">
+                    <small>Leave empty to generate random name</small>
+                </div>
+                <div class="form-group">
+                    <label for="workgroup">Workgroup:</label>
+                    <input type="text" id="workgroup" placeholder="WORKGROUP" value="WORKGROUP"
+                           data-tooltip="The workgroup name for peer-to-peer networking. Default is 'WORKGROUP'.">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="organization">Organization:</label>
+                    <input type="text" id="organization" placeholder="Your Organization" value="My Company"
+                           data-tooltip="The organization name displayed in Windows system properties and about dialogs.">
+                </div>
+                <div class="form-group">
+                    <label for="owner">Registered Owner:</label>
+                    <input type="text" id="owner" placeholder="User" value="System Administrator"
+                           data-tooltip="The registered owner name displayed in Windows system properties.">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="description">Computer Description:</label>
+                <input type="text" id="description" placeholder="Windows workstation" value="Windows 11 Workstation"
+                       data-tooltip="A description of this computer's purpose or role, visible in network browsing.">
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Key & Edition Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-key"></i> Product Key & Windows Edition</h3>
+        <div class="section-content">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="windows-edition">Windows Edition:</label>
+                    <select id="windows-edition" data-tooltip="Select the Windows edition to install. Must match your installation media and license.">
+                        <option value="Windows 11 Pro" selected>Windows 11 Pro</option>
+                        <option value="Windows 11 Home">Windows 11 Home</option>
+                        <option value="Windows 11 Enterprise">Windows 11 Enterprise</option>
+                        <option value="Windows 11 Education">Windows 11 Education</option>
+                        <option value="Windows 10 Pro">Windows 10 Pro</option>
+                        <option value="Windows 10 Home">Windows 10 Home</option>
+                        <option value="Windows 10 Enterprise">Windows 10 Enterprise</option>
+                        <option value="Windows 10 Education">Windows 10 Education</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="architecture">Architecture:</label>
+                    <select id="architecture" data-tooltip="Select the processor architecture. 64-bit (x64) is recommended for modern systems.">
+                        <option value="amd64" selected>64-bit (x64)</option>
+                        <option value="x86">32-bit (x86)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="product-key">Windows Product Key:</label>
+                <input type="text" id="product-key" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+                       data-tooltip="25-character Windows product key. Leave empty to enter key after installation.">
+                <small>Leave empty to skip product key during installation (will prompt later)</small>
+            </div>
+            <div class="checkbox-row">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="accept-eula" checked
+                           data-tooltip="Automatically accept the End User License Agreement during installation.">
+                    <label for="accept-eula">Automatically accept EULA</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="skip-oem" checked
+                           data-tooltip="Skip manufacturer registration and setup screens during installation.">
+                    <label for="skip-oem">Skip OEM registration screens</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disk Partitioning Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-hdd"></i> Disk Partitioning Configuration</h3>
+        <div class="section-content">
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="enable-disk-config"
+                       data-tooltip="Enable automatic disk partitioning during installation. WARNING: This will erase all data on the target disk.">
+                <label for="enable-disk-config">Enable automatic disk partitioning</label>
+            </div>
+
+            <div class="disk-config-settings" id="disk-config-settings" style="display: none;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="disk-id">Target Disk ID:</label>
+                        <select id="disk-id" data-tooltip="Select which disk to partition. Disk 0 is typically the primary drive.">
+                            <option value="0" selected>Disk 0 (Primary)</option>
+                            <option value="1">Disk 1 (Secondary)</option>
+                            <option value="2">Disk 2</option>
+                            <option value="3">Disk 3</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="partition-style">Partition Style:</label>
+                        <select id="partition-style" data-tooltip="GPT is recommended for UEFI systems and drives larger than 2TB. MBR is for legacy BIOS systems.">
+                            <option value="GPT" selected>GPT (UEFI - Recommended)</option>
+                            <option value="MBR">MBR (Legacy BIOS)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h4>Partition Configuration</h4>
+                <div class="partition-presets">
+                    <div class="preset-buttons">
+                        <button type="button" class="preset-btn" onclick="loadPartitionPreset('standard')"
+                                data-tooltip="Standard Windows partition layout with system, recovery, and OS partitions">
+                            <i class="fas fa-desktop"></i> Standard Layout
+                        </button>
+                        <button type="button" class="preset-btn" onclick="loadPartitionPreset('minimal')"
+                                data-tooltip="Minimal partition layout with only system and OS partitions">
+                            <i class="fas fa-compress"></i> Minimal Layout
+                        </button>
+                        <button type="button" class="preset-btn" onclick="loadPartitionPreset('custom')"
+                                data-tooltip="Custom partition layout for advanced users">
+                            <i class="fas fa-cogs"></i> Custom Layout
+                        </button>
+                    </div>
+                </div>
+
+                <div class="partition-details" id="partition-details">
+                    <div class="partition-item">
+                        <h5><i class="fas fa-shield-alt"></i> System Partition (EFI/Boot)</h5>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="system-partition-size">Size (MB):</label>
+                                <input type="number" id="system-partition-size" value="100" min="100" max="1024"
+                                       data-tooltip="Size of the system partition. 100MB for BIOS, 260MB+ for UEFI recommended.">
+                            </div>
+                            <div class="form-group">
+                                <label for="system-partition-type">Type:</label>
+                                <select id="system-partition-type" data-tooltip="Partition type depends on firmware type (BIOS/UEFI).">
+                                    <option value="EFI">EFI System Partition (UEFI)</option>
+                                    <option value="Primary">Primary (BIOS)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="partition-item">
+                        <h5><i class="fas fa-database"></i> Main OS Partition</h5>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="os-partition-size">Size:</label>
+                                <select id="os-partition-size" data-tooltip="Size of the main Windows partition.">
+                                    <option value="remaining" selected>Use Remaining Space</option>
+                                    <option value="custom">Custom Size (GB)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="os-custom-size-group" style="display: none;">
+                                <label for="os-custom-size">Custom Size (GB):</label>
+                                <input type="number" id="os-custom-size" value="100" min="50" max="2000"
+                                       data-tooltip="Custom size for the OS partition in GB. Minimum 50GB recommended.">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="os-partition-label">Label:</label>
+                                <input type="text" id="os-partition-label" value="Windows" maxlength="32"
+                                       data-tooltip="Volume label for the main Windows partition.">
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <input type="checkbox" id="os-partition-active" checked
+                                       data-tooltip="Mark this partition as active (bootable). Required for BIOS systems.">
+                                <label for="os-partition-active">Set as Active</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="partition-item">
+                        <h5><i class="fas fa-life-ring"></i> Recovery Partition</h5>
+                        <div class="form-row">
+                            <div class="form-group checkbox-group">
+                                <input type="checkbox" id="enable-recovery-partition" checked
+                                       data-tooltip="Create a Windows Recovery Environment (WinRE) partition for system recovery.">
+                                <label for="enable-recovery-partition">Create Recovery Partition</label>
+                            </div>
+                            <div class="form-group">
+                                <label for="recovery-partition-size">Size (MB):</label>
+                                <input type="number" id="recovery-partition-size" value="1000" min="500" max="5000"
+                                       data-tooltip="Size of the recovery partition. 1000MB is recommended for Windows 11.">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="disk-config-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning:</strong> Enabling disk partitioning will completely erase the target disk and create new partitions.
+                    All existing data will be lost. Make sure to backup important data before proceeding.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Network & Domain Settings Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-network-wired"></i> Advanced Network & Domain Configuration</h3>
+        <div class="section-content">
+            <h4>Basic Network Settings</h4>
+            <div class="checkbox-row">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="enable-network" checked
+                           data-tooltip="Enable network connectivity during Windows installation for updates and drivers.">
+                    <label for="enable-network">Enable network during installation</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="skip-network-setup" checked
+                           data-tooltip="Skip the network setup wizard during the Out-of-Box Experience.">
+                    <label for="skip-network-setup">Skip network setup in OOBE</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="enable-network-discovery" checked
+                           data-tooltip="Enable network discovery to find other computers and devices on the network.">
+                    <label for="enable-network-discovery">Enable network discovery</label>
+                </div>
+            </div>
+
+            <h4>Wi-Fi Configuration</h4>
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="enable-wifi-config"
+                       data-tooltip="Configure Wi-Fi profiles during installation for automatic connection.">
+                <label for="enable-wifi-config">Configure Wi-Fi profiles</label>
+            </div>
+
+            <div class="wifi-settings" id="wifi-settings" style="display: none;">
+                <div class="wifi-profiles" id="wifi-profiles">
+                    <div class="wifi-profile">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Network Name (SSID):</label>
+                                <input type="text" class="wifi-ssid" placeholder="MyWiFiNetwork"
+                                       data-tooltip="The name of the Wi-Fi network to connect to.">
+                            </div>
+                            <div class="form-group">
+                                <label>Security Type:</label>
+                                <select class="wifi-security" data-tooltip="Security protocol used by the Wi-Fi network.">
+                                    <option value="WPA2PSK" selected>WPA2-Personal</option>
+                                    <option value="WPA3PSK">WPA3-Personal</option>
+                                    <option value="WPA2">WPA2-Enterprise</option>
+                                    <option value="WEP">WEP (Not Recommended)</option>
+                                    <option value="open">Open (No Security)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Password:</label>
+                                <input type="password" class="wifi-password" placeholder="Wi-Fi password"
+                                       data-tooltip="Password for the Wi-Fi network. Leave empty for open networks.">
+                            </div>
+                            <div class="form-group">
+                                <button type="button" class="remove-command-btn" onclick="removeWifiProfile(this)">
+                                    <i class="fas fa-trash"></i> Remove
+                                </button>
+                            </div>
+                        </div>
+                        <div class="checkbox-row">
+                            <div class="form-group checkbox-group">
+                                <input type="checkbox" class="wifi-auto-connect" checked
+                                       data-tooltip="Automatically connect to this network when in range.">
+                                <label>Auto-connect</label>
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <input type="checkbox" class="wifi-hidden"
+                                       data-tooltip="Check if this is a hidden network that doesn't broadcast its SSID.">
+                                <label>Hidden network</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="add-command-btn" onclick="addWifiProfile()">
+                    <i class="fas fa-plus"></i> Add Wi-Fi Profile
                 </button>
-              </div>
             </div>
-          </div>
-        </div>
 
-        <button type="button" class="add-command-btn" onclick="addCommand('runsync')">
-          <i class="fas fa-plus"></i> Add RunSynchronous Command
-        </button>
-
-        <h4>FirstLogonCommands (After First Boot)</h4>
-        <p class="section-description">
-          Commands that run asynchronously after the first user logon. These are useful for software installation, user
-          profile configuration, and post-installation setup tasks.
-        </p>
-
-        <div class="wintool-auto-install-notice">
-          <i class="fas fa-info-circle"></i>
-          <strong>Automatic WinTool Installation:</strong> WinTool will be automatically installed on first logon for
-          all unattend.xml files. This provides immediate access to professional Windows system management tools after
-          deployment.
-        </div>
-
-        <div class="script-commands" id="firstlogon-commands">
-          <div class="command-item">
-            <div class="form-row">
-              <div class="form-group">
-                <label>Command:</label>
-                <input
-                  type="text"
-                  class="firstlogon-command"
-                  placeholder="powershell.exe -ExecutionPolicy Bypass -File C:\Setup\configure.ps1"
-                  data-tooltip="Command to execute after first logon. PowerShell scripts are recommended."
-                />
-              </div>
-              <div class="form-group">
-                <label>Description:</label>
-                <input
-                  type="text"
-                  class="firstlogon-description"
-                  placeholder="Configure user settings"
-                  data-tooltip="Description of what this command does."
-                />
-              </div>
-            </div>
-            <div class="form-group">
-              <button type="button" class="remove-command-btn" onclick="removeCommand(this, 'firstlogon')">
-                <i class="fas fa-trash"></i> Remove
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <button type="button" class="add-command-btn" onclick="addCommand('firstlogon')">
-          <i class="fas fa-plus"></i> Add FirstLogon Command
-        </button>
-
-        <h4>Registry Modifications</h4>
-        <p class="section-description">
-          Registry entries to modify during installation. These are applied during the specialize pass.
-        </p>
-
-        <div class="registry-entries" id="registry-entries">
-          <div class="registry-item">
-            <div class="form-row">
-              <div class="form-group">
-                <label>Registry Path:</label>
-                <input
-                  type="text"
-                  class="registry-path"
-                  placeholder="HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
-                  data-tooltip="Full registry path including the hive."
-                />
-              </div>
-              <div class="form-group">
-                <label>Value Name:</label>
-                <input
-                  type="text"
-                  class="registry-name"
-                  placeholder="EnableLUA"
-                  data-tooltip="Name of the registry value to set."
-                />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Value Type:</label>
-                <select class="registry-type" data-tooltip="Type of registry value.">
-                  <option value="REG_DWORD" selected>DWORD (32-bit)</option>
-                  <option value="REG_SZ">String</option>
-                  <option value="REG_EXPAND_SZ">Expandable String</option>
-                  <option value="REG_BINARY">Binary</option>
-                  <option value="REG_MULTI_SZ">Multi-String</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Value Data:</label>
-                <input
-                  type="text"
-                  class="registry-value"
-                  placeholder="0"
-                  data-tooltip="Value data. For DWORD, use decimal numbers."
-                />
-              </div>
-            </div>
-            <div class="form-group">
-              <button type="button" class="remove-command-btn" onclick="removeCommand(this, 'registry')">
-                <i class="fas fa-trash"></i> Remove
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <button type="button" class="add-command-btn" onclick="addCommand('registry')">
-          <i class="fas fa-plus"></i> Add Registry Entry
-        </button>
-
-        <div class="script-warning">
-          <i class="fas fa-exclamation-triangle"></i>
-          <strong>Warning:</strong> Custom scripts and registry modifications can affect system stability and security.
-          Test thoroughly before using in production environments. Commands run with SYSTEM privileges.
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- XML Preview Modal -->
-  <div id="xml-preview-modal" class="modal" style="display: none">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3><i class="fas fa-code"></i> XML Preview</h3>
-        <button class="modal-close" onclick="closeXMLPreview()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <pre id="xml-preview-content"></pre>
-      </div>
-      <div class="modal-footer">
-        <button onclick="copyXMLToClipboard()" class="copy-btn"><i class="fas fa-copy"></i> Copy to Clipboard</button>
-        <button onclick="closeXMLPreview()" class="close-btn">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- XML Import Modal -->
-  <div id="import-modal" class="modal" style="display: none">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3><i class="fas fa-upload"></i> Import Unattend.xml</h3>
-        <button class="modal-close" onclick="closeImportModal()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="import-options">
-          <div class="import-method">
-            <h4>Import Method</h4>
-            <div class="form-group">
-              <label>
-                <input type="radio" name="import-method" value="file" checked />
-                Upload XML File
-              </label>
-            </div>
-            <div class="form-group">
-              <label>
-                <input type="radio" name="import-method" value="text" />
-                Paste XML Content
-              </label>
-            </div>
-          </div>
-
-          <div class="import-file-section" id="import-file-section">
-            <div class="form-group">
-              <label for="xml-file-input">Select unattend.xml file:</label>
-              <input
-                type="file"
-                id="xml-file-input"
-                accept=".xml"
-                data-tooltip="Select an existing unattend.xml file to import its settings."
-              />
-            </div>
-          </div>
-
-          <div class="import-text-section" id="import-text-section" style="display: none">
-            <div class="form-group">
-              <label for="xml-text-input">Paste XML content:</label>
-              <textarea
-                id="xml-text-input"
-                rows="10"
-                placeholder="Paste your unattend.xml content here..."
-                data-tooltip="Paste the complete XML content of an unattend.xml file."
-              ></textarea>
-            </div>
-          </div>
-
-          <div class="import-options-section">
-            <h4>Import Options</h4>
+            <h4>Proxy Configuration</h4>
             <div class="form-group checkbox-group">
-              <input
-                type="checkbox"
-                id="import-merge-settings"
-                checked
-                data-tooltip="Merge imported settings with current form values instead of replacing them completely."
-              />
-              <label for="import-merge-settings">Merge with current settings</label>
+                <input type="checkbox" id="enable-proxy-config"
+                       data-tooltip="Configure proxy server settings for internet access.">
+                <label for="enable-proxy-config">Configure proxy settings</label>
             </div>
+
+            <div class="proxy-settings" id="proxy-settings" style="display: none;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="proxy-server">Proxy Server:</label>
+                        <input type="text" id="proxy-server" placeholder="proxy.company.com:8080"
+                               data-tooltip="Proxy server address and port (e.g., proxy.company.com:8080).">
+                    </div>
+                    <div class="form-group">
+                        <label for="proxy-bypass">Bypass List:</label>
+                        <input type="text" id="proxy-bypass" placeholder="localhost;127.0.0.1;*.local"
+                               data-tooltip="Semicolon-separated list of addresses that bypass the proxy.">
+                    </div>
+                </div>
+                <div class="checkbox-row">
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="proxy-auto-detect"
+                               data-tooltip="Automatically detect proxy settings using WPAD.">
+                        <label for="proxy-auto-detect">Auto-detect proxy</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="proxy-bypass-local" checked
+                               data-tooltip="Bypass proxy server for local addresses.">
+                        <label for="proxy-bypass-local">Bypass for local addresses</label>
+                    </div>
+                </div>
+            </div>
+
+            <h4>Domain Join Configuration</h4>
             <div class="form-group checkbox-group">
-              <input
-                type="checkbox"
-                id="import-validate-xml"
-                checked
-                data-tooltip="Validate the XML structure and content before importing."
-              />
-              <label for="import-validate-xml">Validate XML before import</label>
+                <input type="checkbox" id="join-domain"
+                       data-tooltip="Automatically join this computer to a Windows domain after installation.">
+                <label for="join-domain">Join domain after installation</label>
             </div>
-          </div>
 
-          <div class="import-status" id="import-status"></div>
+            <div class="domain-settings" id="domain-settings" style="display: none;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="domain-name">Domain Name:</label>
+                        <input type="text" id="domain-name" placeholder="company.local"
+                               data-tooltip="The fully qualified domain name (FQDN) to join, e.g., 'company.local'.">
+                    </div>
+                    <div class="form-group">
+                        <label for="domain-username">Domain Join Username:</label>
+                        <input type="text" id="domain-username" placeholder="domain\admin"
+                               data-tooltip="Username with domain join privileges, in format 'domain\username' or 'username@domain.com'.">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="domain-password">Domain Join Password:</label>
+                        <input type="password" id="domain-password" placeholder="Domain admin password"
+                               data-tooltip="Password for the domain join account. This will be stored in the unattend file.">
+                    </div>
+                    <div class="form-group">
+                        <label for="domain-ou">Organizational Unit (Optional):</label>
+                        <input type="text" id="domain-ou" placeholder="OU=Computers,DC=company,DC=local"
+                               data-tooltip="Specific OU where the computer account should be created.">
+                    </div>
+                </div>
+
+                <h5>Advanced Domain Options</h5>
+                <div class="checkbox-row">
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="domain-create-account" checked
+                               data-tooltip="Create a computer account in the domain if it doesn't exist.">
+                        <label for="domain-create-account">Create computer account</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="domain-restart-required" checked
+                               data-tooltip="Restart the computer after domain join to complete the process.">
+                        <label for="domain-restart-required">Restart after join</label>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="domain-dns-suffix">DNS Suffix:</label>
+                        <input type="text" id="domain-dns-suffix" placeholder="company.local"
+                               data-tooltip="Primary DNS suffix for the computer.">
+                    </div>
+                    <div class="form-group">
+                        <label for="domain-netbios">NetBIOS Domain Name:</label>
+                        <input type="text" id="domain-netbios" placeholder="COMPANY"
+                               data-tooltip="NetBIOS name of the domain (usually uppercase).">
+                    </div>
+                </div>
+            </div>
+
+            <div class="network-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Security Note:</strong> Network credentials and Wi-Fi passwords will be stored in the unattend.xml file.
+                Ensure proper file security and consider using temporary accounts for domain joining.
+            </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-primary" onclick="processXMLImport()"><i class="fas fa-upload"></i> Import XML</button>
-        <button class="btn btn-secondary" onclick="closeImportModal()"><i class="fas fa-times"></i> Cancel</button>
-      </div>
     </div>
-  </div>
 
-  <!-- Validation Results Modal -->
-  <div id="validation-modal" class="modal" style="display: none">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3><i class="fas fa-check-circle"></i> Configuration Validation</h3>
-        <button class="modal-close" onclick="closeValidationModal()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div id="validation-results">
-          <!-- Validation results will be populated here -->
+    <!-- Windows Features & Privacy Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-puzzle-piece"></i> Windows Features & Privacy</h3>
+        <div class="section-content">
+            <h4>Security Features</h4>
+            <div class="features-grid">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-defender" checked
+                           data-tooltip="Enable Windows Defender Antivirus for real-time protection against malware.">
+                    <label for="feature-defender">Enable Windows Defender</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-firewall" checked
+                           data-tooltip="Enable Windows Firewall to block unauthorized network connections.">
+                    <label for="feature-firewall">Enable Windows Firewall</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-uac" checked
+                           data-tooltip="Enable User Account Control to prompt for administrator approval on system changes.">
+                    <label for="feature-uac">Enable User Account Control</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-smartscreen" checked
+                           data-tooltip="Enable SmartScreen to protect against malicious websites and downloads.">
+                    <label for="feature-smartscreen">Enable SmartScreen</label>
+                </div>
+            </div>
+
+            <h4>Privacy & Telemetry</h4>
+            <div class="features-grid">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-telemetry" checked
+                           data-tooltip="Disable Windows telemetry and diagnostic data collection for privacy.">
+                    <label for="feature-telemetry">Disable telemetry & data collection</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-cortana" checked
+                           data-tooltip="Disable Cortana voice assistant and related data collection.">
+                    <label for="feature-cortana">Disable Cortana</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-location" checked
+                           data-tooltip="Disable location services to prevent apps from accessing your location.">
+                    <label for="feature-location">Disable location services</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-ads" checked
+                           data-tooltip="Disable advertising ID to prevent personalized ads based on your activity.">
+                    <label for="feature-ads">Disable advertising ID</label>
+                </div>
+            </div>
+
+            <h4>System Features</h4>
+            <div class="features-grid">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-updates" checked
+                           data-tooltip="Enable automatic Windows updates to keep the system secure and up-to-date.">
+                    <label for="feature-updates">Enable automatic updates</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-hibernation"
+                           data-tooltip="Enable hibernation mode to save system state to disk for faster startup.">
+                    <label for="feature-hibernation">Enable hibernation</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-remote-desktop"
+                           data-tooltip="Enable Remote Desktop to allow remote connections to this computer.">
+                    <label for="feature-remote-desktop">Enable Remote Desktop</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="feature-powershell" checked
+                           data-tooltip="Enable PowerShell script execution for system administration and automation.">
+                    <label for="feature-powershell">Enable PowerShell execution</label>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeValidationModal()"><i class="fas fa-times"></i> Close</button>
-      </div>
     </div>
-  </div>
 
-  <!-- Help & Documentation Modal -->
-  <div id="help-modal" class="modal" style="display: none">
-    <div class="modal-content large-modal">
-      <div class="modal-header">
-        <h3><i class="fas fa-question-circle"></i> Help & Documentation</h3>
-        <button class="modal-close" onclick="closeHelpModal()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="help-content">
-          <div class="help-section">
-            <h4><i class="fas fa-info-circle"></i> What is Windows Unattend Generator?</h4>
-            <p>
-              The Windows Unattend Generator creates unattend.xml files for automated Windows installations. These files
-              allow you to pre-configure Windows settings, user accounts, network configuration, and more, enabling
-              hands-free deployments.
+    <!-- Privacy & Debloating Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-user-shield"></i> Privacy & Debloating Options</h3>
+        <div class="section-content">
+            <h4>Telemetry & Data Collection</h4>
+            <div class="features-grid">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="disable-telemetry" checked
+                           data-tooltip="Disable Windows telemetry and diagnostic data collection to enhance privacy.">
+                    <label for="disable-telemetry">Disable telemetry completely</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="disable-error-reporting" checked
+                           data-tooltip="Disable Windows Error Reporting to prevent sending crash data to Microsoft.">
+                    <label for="disable-error-reporting">Disable error reporting</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="disable-customer-experience" checked
+                           data-tooltip="Disable Customer Experience Improvement Program data collection.">
+                    <label for="disable-customer-experience">Disable CEIP</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="disable-app-diagnostics" checked
+                           data-tooltip="Disable app diagnostic data collection and usage tracking.">
+                    <label for="disable-app-diagnostics">Disable app diagnostics</label>
+                </div>
+            </div>
+
+            <h4>Microsoft Edge Configuration</h4>
+            <div class="features-grid">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="disable-edge-telemetry" checked
+                           data-tooltip="Disable Microsoft Edge telemetry and data collection features.">
+                    <label for="disable-edge-telemetry">Disable Edge telemetry</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="disable-edge-sync" checked
+                           data-tooltip="Disable Microsoft Edge sync features to prevent data sharing across devices.">
+                    <label for="disable-edge-sync">Disable Edge sync</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="disable-edge-shopping" checked
+                           data-tooltip="Disable Edge shopping assistant and price comparison features.">
+                    <label for="disable-edge-shopping">Disable Edge shopping assistant</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="set-edge-privacy" checked
+                           data-tooltip="Configure Edge with enhanced privacy settings and disable tracking.">
+                    <label for="set-edge-privacy">Enhanced Edge privacy</label>
+                </div>
+            </div>
+
+            <h4>Windows Apps & Features Removal</h4>
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="enable-app-removal"
+                       data-tooltip="Enable removal of built-in Windows apps and bloatware during installation.">
+                <label for="enable-app-removal">Enable app removal</label>
+            </div>
+
+            <div class="app-removal-settings" id="app-removal-settings" style="display: none;">
+                <div class="features-grid">
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="remove-cortana" checked
+                               data-tooltip="Remove Cortana voice assistant completely from the system.">
+                        <label for="remove-cortana">Remove Cortana</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="remove-onedrive" checked
+                               data-tooltip="Remove OneDrive cloud storage integration from Windows.">
+                        <label for="remove-onedrive">Remove OneDrive</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="remove-xbox-apps" checked
+                               data-tooltip="Remove Xbox-related apps and gaming features.">
+                        <label for="remove-xbox-apps">Remove Xbox apps</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="remove-office-apps" checked
+                               data-tooltip="Remove pre-installed Office apps and web versions.">
+                        <label for="remove-office-apps">Remove Office web apps</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="remove-media-apps" checked
+                               data-tooltip="Remove Windows Media Player, Movies & TV, and related media apps.">
+                        <label for="remove-media-apps">Remove media apps</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="remove-communication-apps" checked
+                               data-tooltip="Remove Mail, Calendar, People, and other communication apps.">
+                        <label for="remove-communication-apps">Remove communication apps</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="remove-store-apps" checked
+                               data-tooltip="Remove Microsoft Store and related shopping apps.">
+                        <label for="remove-store-apps">Remove Store apps</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="remove-news-weather" checked
+                               data-tooltip="Remove News, Weather, and other information apps.">
+                        <label for="remove-news-weather">Remove News & Weather</label>
+                    </div>
+                </div>
+            </div>
+
+            <h4>System Privacy Settings</h4>
+            <div class="features-grid">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="disable-activity-history" checked
+                           data-tooltip="Disable Windows activity history and timeline features.">
+                    <label for="disable-activity-history">Disable activity history</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="disable-clipboard-sync" checked
+                           data-tooltip="Disable clipboard synchronization across devices.">
+                    <label for="disable-clipboard-sync">Disable clipboard sync</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="disable-wifi-sense" checked
+                           data-tooltip="Disable Wi-Fi Sense automatic connection sharing.">
+                    <label for="disable-wifi-sense">Disable Wi-Fi Sense</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="disable-feedback-notifications" checked
+                           data-tooltip="Disable Windows feedback notifications and prompts.">
+                    <label for="disable-feedback-notifications">Disable feedback notifications</label>
+                </div>
+            </div>
+
+            <h4>Start Menu & Taskbar Customization</h4>
+            <div class="features-grid">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="disable-web-search" checked
+                           data-tooltip="Disable web search in Start menu to prevent Bing integration.">
+                    <label for="disable-web-search">Disable web search in Start</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="disable-suggested-apps" checked
+                           data-tooltip="Disable suggested apps and recommendations in Start menu.">
+                    <label for="disable-suggested-apps">Disable suggested apps</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="disable-taskbar-widgets" checked
+                           data-tooltip="Disable Windows 11 taskbar widgets and news feed.">
+                    <label for="disable-taskbar-widgets">Disable taskbar widgets</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="disable-chat-taskbar" checked
+                           data-tooltip="Disable Microsoft Teams chat integration in taskbar.">
+                    <label for="disable-chat-taskbar">Disable Teams chat</label>
+                </div>
+            </div>
+
+            <div class="privacy-warning">
+                <i class="fas fa-info-circle"></i>
+                <strong>Note:</strong> Privacy and debloating options will be applied through registry modifications and
+                PowerShell scripts during installation. Some changes may require system restart to take full effect.
+            </div>
+        </div>
+    </div>
+
+    <!-- Modern Security Features Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-shield-alt"></i> Modern Security Features</h3>
+        <div class="section-content">
+            <h4>Windows 11 Requirements Bypass</h4>
+            <div class="features-grid">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="bypass-tpm-check"
+                           data-tooltip="Bypass TPM 2.0 requirement for Windows 11 installation. Use with caution on unsupported hardware.">
+                    <label for="bypass-tpm-check">Bypass TPM 2.0 requirement</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="bypass-secure-boot"
+                           data-tooltip="Bypass Secure Boot requirement for Windows 11 installation.">
+                    <label for="bypass-secure-boot">Bypass Secure Boot requirement</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="bypass-cpu-check"
+                           data-tooltip="Bypass CPU compatibility check for Windows 11 installation.">
+                    <label for="bypass-cpu-check">Bypass CPU compatibility check</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="bypass-ram-check"
+                           data-tooltip="Bypass minimum RAM requirement check for Windows 11 installation.">
+                    <label for="bypass-ram-check">Bypass RAM requirement (4GB)</label>
+                </div>
+            </div>
+
+            <h4>BitLocker Configuration</h4>
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="enable-bitlocker-config"
+                       data-tooltip="Configure BitLocker drive encryption settings during installation.">
+                <label for="enable-bitlocker-config">Configure BitLocker settings</label>
+            </div>
+
+            <div class="bitlocker-settings" id="bitlocker-settings" style="display: none;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="bitlocker-mode">BitLocker Mode:</label>
+                        <select id="bitlocker-mode" data-tooltip="Choose how BitLocker should be configured.">
+                            <option value="disabled" selected>Disabled (Default)</option>
+                            <option value="enabled">Enable BitLocker</option>
+                            <option value="suspend">Suspend BitLocker</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bitlocker-method">Encryption Method:</label>
+                        <select id="bitlocker-method" data-tooltip="Encryption algorithm to use for BitLocker.">
+                            <option value="AES128" selected>AES 128-bit</option>
+                            <option value="AES256">AES 256-bit</option>
+                            <option value="XTS_AES128">XTS-AES 128-bit</option>
+                            <option value="XTS_AES256">XTS-AES 256-bit</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="bitlocker-skip-hardware-test"
+                               data-tooltip="Skip hardware compatibility test for BitLocker.">
+                        <label for="bitlocker-skip-hardware-test">Skip hardware test</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="bitlocker-use-tpm"
+                               data-tooltip="Use TPM (Trusted Platform Module) for BitLocker key protection.">
+                        <label for="bitlocker-use-tpm">Use TPM for key protection</label>
+                    </div>
+                </div>
+            </div>
+
+            <h4>Windows Hello & Biometrics</h4>
+            <div class="features-grid">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="enable-windows-hello"
+                           data-tooltip="Enable Windows Hello for biometric authentication (fingerprint, face, iris).">
+                    <label for="enable-windows-hello">Enable Windows Hello</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="enable-biometric-service"
+                           data-tooltip="Enable Windows Biometric Service for fingerprint and other biometric authentication.">
+                    <label for="enable-biometric-service">Enable Biometric Service</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="disable-password-reveal"
+                           data-tooltip="Disable the password reveal button in password fields for enhanced security.">
+                    <label for="disable-password-reveal">Disable password reveal button</label>
+                </div>
+            </div>
+
+            <h4>Advanced Security Settings</h4>
+            <div class="features-grid">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="enable-credential-guard"
+                           data-tooltip="Enable Windows Defender Credential Guard to protect credentials using virtualization-based security.">
+                    <label for="enable-credential-guard">Enable Credential Guard</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="enable-device-guard"
+                           data-tooltip="Enable Windows Defender Device Guard for application control and code integrity.">
+                    <label for="enable-device-guard">Enable Device Guard</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="enable-hvci"
+                           data-tooltip="Enable Hypervisor-protected Code Integrity (HVCI) for enhanced kernel protection.">
+                    <label for="enable-hvci">Enable HVCI</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="disable-admin-shares"
+                           data-tooltip="Disable administrative shares (C$, ADMIN$) for enhanced security.">
+                    <label for="disable-admin-shares">Disable administrative shares</label>
+                </div>
+            </div>
+
+            <div class="security-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Warning:</strong> Bypassing Windows 11 security requirements may result in reduced system security
+                and stability. Advanced security features require compatible hardware and may affect system performance.
+            </div>
+        </div>
+    </div>
+
+    <!-- OOBE Settings Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-magic"></i> Out-of-Box Experience (OOBE)</h3>
+        <div class="section-content">
+            <div class="features-grid">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="oobe-skip-machine-oobe" checked
+                           data-tooltip="Skip the machine-level Out-of-Box Experience setup screens.">
+                    <label for="oobe-skip-machine-oobe">Skip machine OOBE</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="oobe-skip-user-oobe" checked
+                           data-tooltip="Skip the user-level Out-of-Box Experience setup screens.">
+                    <label for="oobe-skip-user-oobe">Skip user OOBE</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="oobe-hide-eula" checked
+                           data-tooltip="Hide the End User License Agreement page during first boot.">
+                    <label for="oobe-hide-eula">Hide EULA page</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="oobe-hide-wireless" checked
+                           data-tooltip="Hide the wireless network setup page during first boot.">
+                    <label for="oobe-hide-wireless">Hide wireless setup</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="oobe-protect-pc" checked
+                           data-tooltip="Automatically enable recommended security and privacy settings.">
+                    <label for="oobe-protect-pc">Enable recommended security settings</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="oobe-hide-online-account" checked
+                           data-tooltip="Hide Microsoft account and online account setup screens.">
+                    <label for="oobe-hide-online-account">Hide online account screens</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration Pass Management Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-cogs"></i> Configuration Pass Management</h3>
+        <div class="section-content">
+            <p class="section-description">
+                Windows installation uses seven configuration passes. Each pass runs at a different stage of installation
+                and supports specific components and settings. Advanced users can customize which passes are included.
             </p>
-          </div>
 
-          <div class="help-section">
-            <h4><i class="fas fa-rocket"></i> Quick Start Guide</h4>
-            <ol>
-              <li><strong>Choose a Preset:</strong> Start with Basic, Enterprise, or Secure preset</li>
-              <li><strong>Configure Settings:</strong> Customize user accounts, regional settings, and features</li>
-              <li><strong>Advanced Options:</strong> Configure disk partitioning, scripts, and security features</li>
-              <li><strong>Validate:</strong> Use the validation tool to check for errors</li>
-              <li><strong>Export:</strong> Generate and download your unattend.xml file</li>
-              <li><strong>Automatic WinTool:</strong> WinTool will be automatically installed on first logon</li>
-            </ol>
-          </div>
+            <h4>Configuration Passes</h4>
+            <div class="pass-grid">
+                <div class="pass-item">
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="pass-windowspe" checked disabled
+                               data-tooltip="Windows PE pass - Required for basic installation settings and disk configuration.">
+                        <label for="pass-windowspe">
+                            <strong>windowsPE</strong><br>
+                            <small>Boot from installation media</small>
+                        </label>
+                    </div>
+                    <div class="pass-components">
+                        <small>Components: Setup, DiskConfiguration, ImageInstall</small>
+                    </div>
+                </div>
 
-          <div class="help-section">
-            <h4><i class="fas fa-cogs"></i> Configuration Sections</h4>
-            <div class="help-grid">
-              <div class="help-item">
-                <h5><i class="fas fa-users"></i> User Accounts</h5>
-                <p>Configure administrator and standard user accounts with passwords and auto-logon settings.</p>
-              </div>
-              <div class="help-item">
-                <h5><i class="fas fa-hdd"></i> Disk Partitioning</h5>
-                <p>
-                  Automatic disk partitioning with UEFI/GPT and BIOS/MBR support. <strong>Warning:</strong> Erases all
-                  data.
+                <div class="pass-item">
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="pass-offlineservicing"
+                               data-tooltip="Offline Servicing pass - Apply updates, drivers, and packages to the Windows image.">
+                        <label for="pass-offlineservicing">
+                            <strong>offlineServicing</strong><br>
+                            <small>Apply updates to offline image</small>
+                        </label>
+                    </div>
+                    <div class="pass-components">
+                        <small>Components: Packages, Drivers, Updates</small>
+                    </div>
+                </div>
+
+                <div class="pass-item">
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="pass-generalize"
+                               data-tooltip="Generalize pass - Remove system-specific information for image deployment.">
+                        <label for="pass-generalize">
+                            <strong>generalize</strong><br>
+                            <small>Prepare image for deployment</small>
+                        </label>
+                    </div>
+                    <div class="pass-components">
+                        <small>Components: Sysprep settings, cleanup</small>
+                    </div>
+                </div>
+
+                <div class="pass-item">
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="pass-specialize" checked disabled
+                               data-tooltip="Specialize pass - Required for system configuration, domain join, and hardware setup.">
+                        <label for="pass-specialize">
+                            <strong>specialize</strong><br>
+                            <small>Configure system settings</small>
+                        </label>
+                    </div>
+                    <div class="pass-components">
+                        <small>Components: Shell-Setup, UnattendedJoin, Network</small>
+                    </div>
+                </div>
+
+                <div class="pass-item">
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="pass-auditsystem"
+                               data-tooltip="Audit System pass - System-level audit mode for testing and validation.">
+                        <label for="pass-auditsystem">
+                            <strong>auditSystem</strong><br>
+                            <small>System audit mode</small>
+                        </label>
+                    </div>
+                    <div class="pass-components">
+                        <small>Components: System audit settings</small>
+                    </div>
+                </div>
+
+                <div class="pass-item">
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="pass-audituser"
+                               data-tooltip="Audit User pass - User-level audit mode for application testing.">
+                        <label for="pass-audituser">
+                            <strong>auditUser</strong><br>
+                            <small>User audit mode</small>
+                        </label>
+                    </div>
+                    <div class="pass-components">
+                        <small>Components: User audit settings</small>
+                    </div>
+                </div>
+
+                <div class="pass-item">
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="pass-oobesystem" checked disabled
+                               data-tooltip="OOBE System pass - Required for Out-of-Box Experience and user account setup.">
+                        <label for="pass-oobesystem">
+                            <strong>oobeSystem</strong><br>
+                            <small>First boot experience</small>
+                        </label>
+                    </div>
+                    <div class="pass-components">
+                        <small>Components: OOBE, UserAccounts, AutoLogon</small>
+                    </div>
+                </div>
+            </div>
+
+            <h4>Advanced Pass Configuration</h4>
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="enable-advanced-passes"
+                       data-tooltip="Enable advanced configuration pass options for expert users.">
+                <label for="enable-advanced-passes">Enable advanced pass configuration</label>
+            </div>
+
+            <div class="advanced-pass-settings" id="advanced-pass-settings" style="display: none;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="pass-order">Pass Execution Order:</label>
+                        <select id="pass-order" data-tooltip="Choose the order in which configuration passes are executed.">
+                            <option value="standard" selected>Standard Order (Recommended)</option>
+                            <option value="audit">Audit Mode (auditSystem → auditUser → oobeSystem)</option>
+                            <option value="custom">Custom Order</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="restart-behavior">Restart Behavior:</label>
+                        <select id="restart-behavior" data-tooltip="Control when the system restarts during installation.">
+                            <option value="auto" selected>Automatic (Default)</option>
+                            <option value="never">Never Restart</option>
+                            <option value="always">Always Restart</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="enable-pass-validation"
+                           data-tooltip="Validate that components are placed in the correct configuration passes.">
+                    <label for="enable-pass-validation">Enable pass validation</label>
+                </div>
+            </div>
+
+            <div class="pass-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>Information:</strong> Configuration passes run in a specific order during Windows installation.
+                Some passes are required and cannot be disabled. Advanced pass configuration should only be used by
+                experienced users who understand Windows deployment.
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Execution Section -->
+    <div class="unattend-section">
+        <h3><i class="fas fa-terminal"></i> Script Execution & Commands</h3>
+        <div class="section-content">
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="enable-scripts"
+                       data-tooltip="Enable custom script execution during Windows installation and first logon.">
+                <label for="enable-scripts">Enable custom script execution</label>
+            </div>
+
+            <div class="script-settings" id="script-settings" style="display: none;">
+                <h4>RunSynchronous Commands (During Installation)</h4>
+                <p class="section-description">
+                    Commands that run synchronously during the Windows PE and Specialize configuration passes.
+                    These run before Windows fully boots and are useful for driver installation, registry modifications, and system preparation.
                 </p>
-              </div>
-              <div class="help-item">
-                <h5><i class="fas fa-network-wired"></i> Network & Domain</h5>
-                <p>Wi-Fi profiles, proxy settings, and domain join configuration for enterprise environments.</p>
-              </div>
-              <div class="help-item">
-                <h5><i class="fas fa-shield-alt"></i> Security Features</h5>
-                <p>Windows 11 requirement bypasses, BitLocker, Windows Hello, and advanced security settings.</p>
-              </div>
-              <div class="help-item">
-                <h5><i class="fas fa-user-shield"></i> Privacy & Debloating</h5>
-                <p>Disable telemetry, remove bloatware, and configure privacy settings for enhanced security.</p>
-              </div>
-              <div class="help-item">
-                <h5><i class="fas fa-terminal"></i> Script Execution</h5>
-                <p>Run custom PowerShell scripts and commands during installation and first logon.</p>
-              </div>
-            </div>
-          </div>
 
-          <div class="help-section">
-            <h4><i class="fas fa-exclamation-triangle"></i> Important Warnings</h4>
-            <div class="warning-list">
-              <div class="warning-item">
-                <strong>Disk Partitioning:</strong> Enabling automatic disk partitioning will completely erase the
-                target disk.
-              </div>
-              <div class="warning-item">
-                <strong>Security Bypasses:</strong> Bypassing Windows 11 requirements may reduce system security.
-              </div>
-              <div class="warning-item">
-                <strong>Credentials:</strong> Passwords and domain credentials are stored in plain text in the XML file.
-              </div>
-              <div class="warning-item">
-                <strong>Testing:</strong> Always test unattend files in a virtual machine before production use.
-              </div>
-            </div>
-          </div>
+                <div class="script-commands" id="runsync-commands">
+                    <div class="command-item">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Command:</label>
+                                <input type="text" class="runsync-command" placeholder="cmd.exe /c echo Installing drivers..."
+                                       data-tooltip="Command to execute. Use full paths and proper escaping.">
+                            </div>
+                            <div class="form-group">
+                                <label>Description:</label>
+                                <input type="text" class="runsync-description" placeholder="Install hardware drivers"
+                                       data-tooltip="Description of what this command does.">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Configuration Pass:</label>
+                                <select class="runsync-pass" data-tooltip="When to execute this command during installation.">
+                                    <option value="windowsPE">Windows PE (Early Installation)</option>
+                                    <option value="specialize" selected>Specialize (System Configuration)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <button type="button" class="remove-command-btn" onclick="removeCommand(this, 'runsync')">
+                                    <i class="fas fa-trash"></i> Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-          <div class="help-section">
-            <h4><i class="fas fa-tools"></i> WinTool Integration</h4>
-            <p>
-              <strong>Automatic Installation:</strong> Every unattend.xml file generated includes automatic WinTool
-              installation on first logon. This provides immediate access to professional Windows system management
-              tools after deployment.
-            </p>
-            <div class="help-item">
-              <h5><i class="fas fa-download"></i> What is WinTool?</h5>
-              <p>
-                WinTool is a comprehensive Windows system management suite that provides advanced tools for system
-                optimization, maintenance, and configuration. It's automatically installed to enhance your Windows
-                deployment experience.
-              </p>
-            </div>
-            <div class="help-item">
-              <h5><i class="fas fa-cog"></i> Installation Details</h5>
-              <p>
-                WinTool installs via PowerShell command during first user logon, ensuring immediate availability of
-                professional system management tools without manual intervention.
-              </p>
-            </div>
-          </div>
+                <button type="button" class="add-command-btn" onclick="addCommand('runsync')">
+                    <i class="fas fa-plus"></i> Add RunSynchronous Command
+                </button>
 
-          <div class="help-section">
-            <h4><i class="fas fa-lightbulb"></i> Best Practices</h4>
-            <ul>
-              <li>Use strong passwords for administrator accounts</li>
-              <li>Test configurations in virtual machines first</li>
-              <li>Keep unattend.xml files secure due to embedded credentials</li>
-              <li>Use temporary domain accounts for joining domains</li>
-              <li>Validate configurations before deployment</li>
-              <li>Document your configurations for future reference</li>
-            </ul>
-          </div>
+                <h4>FirstLogonCommands (After First Boot)</h4>
+                <p class="section-description">
+                    Commands that run asynchronously after the first user logon. These are useful for software installation,
+                    user profile configuration, and post-installation setup tasks.
+                </p>
 
-          <div class="help-section">
-            <h4><i class="fas fa-book"></i> Additional Resources</h4>
-            <ul>
-              <li>
-                <a
-                  href="https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/update-windows-settings-and-scripts-create-your-own-answer-file-sxs"
-                  target="_blank"
-                  >Microsoft Unattend Documentation</a
-                >
-              </li>
-              <li>
-                <a href="https://docs.microsoft.com/en-us/windows-hardware/customize/desktop/unattend/" target="_blank"
-                  >Windows Unattend Reference</a
-                >
-              </li>
-              <li>
-                <a
-                  href="https://www.windowscentral.com/how-create-unattended-media-do-automated-installation-windows-10"
-                  target="_blank"
-                  >Windows 10/11 Deployment Guide</a
-                >
-              </li>
-            </ul>
-          </div>
+                <div class="wintool-auto-install-notice">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Automatic WinTool Installation:</strong> WinTool will be automatically installed on first logon for all unattend.xml files.
+                    This provides immediate access to professional Windows system management tools after deployment.
+                </div>
+
+                <div class="script-commands" id="firstlogon-commands">
+                    <div class="command-item">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Command:</label>
+                                <input type="text" class="firstlogon-command" placeholder="powershell.exe -ExecutionPolicy Bypass -File C:\Setup\configure.ps1"
+                                       data-tooltip="Command to execute after first logon. PowerShell scripts are recommended.">
+                            </div>
+                            <div class="form-group">
+                                <label>Description:</label>
+                                <input type="text" class="firstlogon-description" placeholder="Configure user settings"
+                                       data-tooltip="Description of what this command does.">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <button type="button" class="remove-command-btn" onclick="removeCommand(this, 'firstlogon')">
+                                <i class="fas fa-trash"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="add-command-btn" onclick="addCommand('firstlogon')">
+                    <i class="fas fa-plus"></i> Add FirstLogon Command
+                </button>
+
+                <h4>Registry Modifications</h4>
+                <p class="section-description">
+                    Registry entries to modify during installation. These are applied during the specialize pass.
+                </p>
+
+                <div class="registry-entries" id="registry-entries">
+                    <div class="registry-item">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Registry Path:</label>
+                                <input type="text" class="registry-path" placeholder="HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+                                       data-tooltip="Full registry path including the hive.">
+                            </div>
+                            <div class="form-group">
+                                <label>Value Name:</label>
+                                <input type="text" class="registry-name" placeholder="EnableLUA"
+                                       data-tooltip="Name of the registry value to set.">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Value Type:</label>
+                                <select class="registry-type" data-tooltip="Type of registry value.">
+                                    <option value="REG_DWORD" selected>DWORD (32-bit)</option>
+                                    <option value="REG_SZ">String</option>
+                                    <option value="REG_EXPAND_SZ">Expandable String</option>
+                                    <option value="REG_BINARY">Binary</option>
+                                    <option value="REG_MULTI_SZ">Multi-String</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Value Data:</label>
+                                <input type="text" class="registry-value" placeholder="0"
+                                       data-tooltip="Value data. For DWORD, use decimal numbers.">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <button type="button" class="remove-command-btn" onclick="removeCommand(this, 'registry')">
+                                <i class="fas fa-trash"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="add-command-btn" onclick="addCommand('registry')">
+                    <i class="fas fa-plus"></i> Add Registry Entry
+                </button>
+
+                <div class="script-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning:</strong> Custom scripts and registry modifications can affect system stability and security.
+                    Test thoroughly before using in production environments. Commands run with SYSTEM privileges.
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeHelpModal()"><i class="fas fa-times"></i> Close</button>
-      </div>
     </div>
-  </div>
 
-  <!-- Status Messages -->
-  <div id="status-message" class="status-message" style="display: none"></div>
+    <!-- XML Preview Modal -->
+    <div id="xml-preview-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-code"></i> XML Preview</h3>
+                <button class="modal-close" onclick="closeXMLPreview()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <pre id="xml-preview-content"></pre>
+            </div>
+            <div class="modal-footer">
+                <button onclick="copyXMLToClipboard()" class="copy-btn">
+                    <i class="fas fa-copy"></i> Copy to Clipboard
+                </button>
+                <button onclick="closeXMLPreview()" class="close-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- XML Import Modal -->
+    <div id="import-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-upload"></i> Import Unattend.xml</h3>
+                <button class="modal-close" onclick="closeImportModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="import-options">
+                    <div class="import-method">
+                        <h4>Import Method</h4>
+                        <div class="form-group">
+                            <label>
+                                <input type="radio" name="import-method" value="file" checked>
+                                Upload XML File
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="radio" name="import-method" value="text">
+                                Paste XML Content
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="import-file-section" id="import-file-section">
+                        <div class="form-group">
+                            <label for="xml-file-input">Select unattend.xml file:</label>
+                            <input type="file" id="xml-file-input" accept=".xml"
+                                   data-tooltip="Select an existing unattend.xml file to import its settings.">
+                        </div>
+                    </div>
+
+                    <div class="import-text-section" id="import-text-section" style="display: none;">
+                        <div class="form-group">
+                            <label for="xml-text-input">Paste XML content:</label>
+                            <textarea id="xml-text-input" rows="10" placeholder="Paste your unattend.xml content here..."
+                                      data-tooltip="Paste the complete XML content of an unattend.xml file."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="import-options-section">
+                        <h4>Import Options</h4>
+                        <div class="form-group checkbox-group">
+                            <input type="checkbox" id="import-merge-settings" checked
+                                   data-tooltip="Merge imported settings with current form values instead of replacing them completely.">
+                            <label for="import-merge-settings">Merge with current settings</label>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <input type="checkbox" id="import-validate-xml" checked
+                                   data-tooltip="Validate the XML structure and content before importing.">
+                            <label for="import-validate-xml">Validate XML before import</label>
+                        </div>
+                    </div>
+
+                    <div class="import-status" id="import-status"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="processXMLImport()">
+                    <i class="fas fa-upload"></i> Import XML
+                </button>
+                <button class="btn btn-secondary" onclick="closeImportModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Validation Results Modal -->
+    <div id="validation-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-check-circle"></i> Configuration Validation</h3>
+                <button class="modal-close" onclick="closeValidationModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="validation-results">
+                    <!-- Validation results will be populated here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeValidationModal()">
+                    <i class="fas fa-times"></i> Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help & Documentation Modal -->
+    <div id="help-modal" class="modal" style="display: none;">
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-question-circle"></i> Help & Documentation</h3>
+                <button class="modal-close" onclick="closeHelpModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="help-content">
+                    <div class="help-section">
+                        <h4><i class="fas fa-info-circle"></i> What is Windows Unattend Generator?</h4>
+                        <p>
+                            The Windows Unattend Generator creates unattend.xml files for automated Windows installations.
+                            These files allow you to pre-configure Windows settings, user accounts, network configuration,
+                            and more, enabling hands-free deployments.
+                        </p>
+                    </div>
+
+                    <div class="help-section">
+                        <h4><i class="fas fa-rocket"></i> Quick Start Guide</h4>
+                        <ol>
+                            <li><strong>Choose a Preset:</strong> Start with Basic, Enterprise, or Secure preset</li>
+                            <li><strong>Configure Settings:</strong> Customize user accounts, regional settings, and features</li>
+                            <li><strong>Advanced Options:</strong> Configure disk partitioning, scripts, and security features</li>
+                            <li><strong>Validate:</strong> Use the validation tool to check for errors</li>
+                            <li><strong>Export:</strong> Generate and download your unattend.xml file</li>
+                            <li><strong>Automatic WinTool:</strong> WinTool will be automatically installed on first logon</li>
+                        </ol>
+                    </div>
+
+                    <div class="help-section">
+                        <h4><i class="fas fa-cogs"></i> Configuration Sections</h4>
+                        <div class="help-grid">
+                            <div class="help-item">
+                                <h5><i class="fas fa-users"></i> User Accounts</h5>
+                                <p>Configure administrator and standard user accounts with passwords and auto-logon settings.</p>
+                            </div>
+                            <div class="help-item">
+                                <h5><i class="fas fa-hdd"></i> Disk Partitioning</h5>
+                                <p>Automatic disk partitioning with UEFI/GPT and BIOS/MBR support. <strong>Warning:</strong> Erases all data.</p>
+                            </div>
+                            <div class="help-item">
+                                <h5><i class="fas fa-network-wired"></i> Network & Domain</h5>
+                                <p>Wi-Fi profiles, proxy settings, and domain join configuration for enterprise environments.</p>
+                            </div>
+                            <div class="help-item">
+                                <h5><i class="fas fa-shield-alt"></i> Security Features</h5>
+                                <p>Windows 11 requirement bypasses, BitLocker, Windows Hello, and advanced security settings.</p>
+                            </div>
+                            <div class="help-item">
+                                <h5><i class="fas fa-user-shield"></i> Privacy & Debloating</h5>
+                                <p>Disable telemetry, remove bloatware, and configure privacy settings for enhanced security.</p>
+                            </div>
+                            <div class="help-item">
+                                <h5><i class="fas fa-terminal"></i> Script Execution</h5>
+                                <p>Run custom PowerShell scripts and commands during installation and first logon.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="help-section">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Important Warnings</h4>
+                        <div class="warning-list">
+                            <div class="warning-item">
+                                <strong>Disk Partitioning:</strong> Enabling automatic disk partitioning will completely erase the target disk.
+                            </div>
+                            <div class="warning-item">
+                                <strong>Security Bypasses:</strong> Bypassing Windows 11 requirements may reduce system security.
+                            </div>
+                            <div class="warning-item">
+                                <strong>Credentials:</strong> Passwords and domain credentials are stored in plain text in the XML file.
+                            </div>
+                            <div class="warning-item">
+                                <strong>Testing:</strong> Always test unattend files in a virtual machine before production use.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="help-section">
+                        <h4><i class="fas fa-tools"></i> WinTool Integration</h4>
+                        <p>
+                            <strong>Automatic Installation:</strong> Every unattend.xml file generated includes automatic WinTool installation
+                            on first logon. This provides immediate access to professional Windows system management tools after deployment.
+                        </p>
+                        <div class="help-item">
+                            <h5><i class="fas fa-download"></i> What is WinTool?</h5>
+                            <p>WinTool is a comprehensive Windows system management suite that provides advanced tools for system optimization,
+                            maintenance, and configuration. It's automatically installed to enhance your Windows deployment experience.</p>
+                        </div>
+                        <div class="help-item">
+                            <h5><i class="fas fa-cog"></i> Installation Details</h5>
+                            <p>WinTool installs via PowerShell command during first user logon, ensuring immediate availability of
+                            professional system management tools without manual intervention.</p>
+                        </div>
+                    </div>
+
+                    <div class="help-section">
+                        <h4><i class="fas fa-lightbulb"></i> Best Practices</h4>
+                        <ul>
+                            <li>Use strong passwords for administrator accounts</li>
+                            <li>Test configurations in virtual machines first</li>
+                            <li>Keep unattend.xml files secure due to embedded credentials</li>
+                            <li>Use temporary domain accounts for joining domains</li>
+                            <li>Validate configurations before deployment</li>
+                            <li>Document your configurations for future reference</li>
+                        </ul>
+                    </div>
+
+                    <div class="help-section">
+                        <h4><i class="fas fa-book"></i> Additional Resources</h4>
+                        <ul>
+                            <li><a href="https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/update-windows-settings-and-scripts-create-your-own-answer-file-sxs" target="_blank">Microsoft Unattend Documentation</a></li>
+                            <li><a href="https://docs.microsoft.com/en-us/windows-hardware/customize/desktop/unattend/" target="_blank">Windows Unattend Reference</a></li>
+                            <li><a href="https://www.windowscentral.com/how-create-unattended-media-do-automated-installation-windows-10" target="_blank">Windows 10/11 Deployment Guide</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeHelpModal()">
+                    <i class="fas fa-times"></i> Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Messages -->
+    <div id="status-message" class="status-message" style="display: none;"></div>
 </div>

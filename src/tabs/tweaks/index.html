@@ -1,231 +1,186 @@
 <!-- c:\Users\userv\OneDrive - Southeast Community College\wintool-MAIN\src\tabs\tweaks\index.html -->
 <div class="tab-header">
-  <h1><i class="fas fa-broom"></i> Windows Debloat & Tweaks</h1>
-  <p>Comprehensive Windows 11 debloating and system optimization tool.</p>
+    <h1><i class="fas fa-broom"></i> Windows Debloat & Tweaks</h1>
+    <p>Comprehensive Windows 11 debloating and system optimization tool.</p>
 </div>
 
 <div class="plugin-warning">
-  <i class="fas fa-exclamation-triangle"></i>
-  <span
-    ><strong>Disclaimer:</strong> Applying tweaks or disabling services can have unintended consequences. For changes to
-    take full effect, a system <strong>restart is highly recommended</strong>. Always create a system restore point
-    before making significant changes.</span
-  >
-</div>
-
-<!-- Preset Controls -->
-<div class="preset-controls">
-  <div class="preset-header">
-    <h3><i class="fas fa-magic"></i> Quick Presets</h3>
-    <div class="preset-toggle-controls">
-      <button class="btn btn-secondary" id="toggle-all-presets" onclick="toggleAllPresets()">
-        <i class="fas fa-eye-slash"></i> Hide All
-      </button>
-    </div>
-  </div>
+    <i class="fas fa-exclamation-triangle"></i>
+    <span><strong>Disclaimer:</strong> Applying tweaks or disabling services can have unintended consequences. For changes to take full effect, a system <strong>restart is highly recommended</strong>. Always create a system restore point before making significant changes.</span>
 </div>
 
 <!-- Enhanced Preset Quick Actions -->
-<div class="preset-quick-actions" id="preset-container">
-  <div class="preset-card" onclick="loadTweakPreset('beginner')" id="preset-beginner">
-    <i class="fas fa-seedling"></i>
-    <h4>Beginner Safe <span class="tweak-count" id="beginner-count"></span></h4>
-    <p>Perfect first step - completely safe tweaks for new users</p>
-    <div class="preset-tooltip">
-      <h5>Included Tweaks:</h5>
-      <ul id="beginner-tweaks-list">
-        <!-- Will be populated by JavaScript -->
-      </ul>
+<div class="preset-quick-actions">
+    <div class="preset-card" onclick="loadTweakPreset('beginner')" id="preset-beginner">
+        <i class="fas fa-seedling"></i>
+        <h4>Beginner Safe <span class="tweak-count" id="beginner-count"></span></h4>
+        <p>Perfect first step - completely safe tweaks for new users</p>
+        <div class="preset-tooltip">
+            <h5>Included Tweaks:</h5>
+            <ul id="beginner-tweaks-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </div>
     </div>
-  </div>
-  <div class="preset-card" onclick="loadTweakPreset('privacy')" id="preset-privacy">
-    <i class="fas fa-user-shield"></i>
-    <h4>Privacy Shield <span class="tweak-count" id="privacy-count"></span></h4>
-    <p>Complete privacy protection - stops all tracking and data collection</p>
-    <div class="preset-tooltip">
-      <h5>Included Tweaks:</h5>
-      <ul id="privacy-tweaks-list">
-        <!-- Will be populated by JavaScript -->
-      </ul>
+    <div class="preset-card" onclick="loadTweakPreset('privacy')" id="preset-privacy">
+        <i class="fas fa-user-shield"></i>
+        <h4>Privacy Shield <span class="tweak-count" id="privacy-count"></span></h4>
+        <p>Complete privacy protection - stops all tracking and data collection</p>
+        <div class="preset-tooltip">
+            <h5>Included Tweaks:</h5>
+            <ul id="privacy-tweaks-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </div>
     </div>
-  </div>
-  <div class="preset-card" onclick="loadTweakPreset('debloat')" id="preset-debloat">
-    <i class="fas fa-broom"></i>
-    <h4>Ultimate Debloat <span class="tweak-count" id="debloat-count"></span></h4>
-    <p>Removes all Windows bloatware and unnecessary features</p>
-    <div class="preset-tooltip">
-      <h5>Included Tweaks:</h5>
-      <ul id="debloat-tweaks-list">
-        <!-- Will be populated by JavaScript -->
-      </ul>
+    <div class="preset-card" onclick="loadTweakPreset('debloat')" id="preset-debloat">
+        <i class="fas fa-broom"></i>
+        <h4>Ultimate Debloat <span class="tweak-count" id="debloat-count"></span></h4>
+        <p>Removes all Windows bloatware and unnecessary features</p>
+        <div class="preset-tooltip">
+            <h5>Included Tweaks:</h5>
+            <ul id="debloat-tweaks-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </div>
     </div>
-  </div>
-  <div class="preset-card" onclick="loadTweakPreset('performance')" id="preset-performance">
-    <i class="fas fa-rocket"></i>
-    <h4>Performance Beast <span class="tweak-count" id="performance-count"></span></h4>
-    <p>Maximum system performance and responsiveness</p>
-    <div class="preset-tooltip">
-      <h5>Included Tweaks:</h5>
-      <ul id="performance-tweaks-list">
-        <!-- Will be populated by JavaScript -->
-      </ul>
+    <div class="preset-card" onclick="loadTweakPreset('performance')" id="preset-performance">
+        <i class="fas fa-rocket"></i>
+        <h4>Performance Beast <span class="tweak-count" id="performance-count"></span></h4>
+        <p>Maximum system performance and responsiveness</p>
+        <div class="preset-tooltip">
+            <h5>Included Tweaks:</h5>
+            <ul id="performance-tweaks-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </div>
     </div>
-  </div>
-  <div class="preset-card" onclick="loadTweakPreset('gaming')" id="preset-gaming">
-    <i class="fas fa-gamepad"></i>
-    <h4>Gaming Powerhouse <span class="tweak-count" id="gaming-count"></span></h4>
-    <p>Optimized specifically for gaming performance and low latency</p>
-    <div class="preset-tooltip">
-      <h5>Included Tweaks:</h5>
-      <ul id="gaming-tweaks-list">
-        <!-- Will be populated by JavaScript -->
-      </ul>
+    <div class="preset-card" onclick="loadTweakPreset('gaming')" id="preset-gaming">
+        <i class="fas fa-gamepad"></i>
+        <h4>Gaming Powerhouse <span class="tweak-count" id="gaming-count"></span></h4>
+        <p>Optimized specifically for gaming performance and low latency</p>
+        <div class="preset-tooltip">
+            <h5>Included Tweaks:</h5>
+            <ul id="gaming-tweaks-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </div>
     </div>
-  </div>
-  <div class="preset-card" onclick="loadTweakPreset('windows11')" id="preset-windows11">
-    <i class="fas fa-desktop"></i>
-    <h4>Windows 11 Makeover <span class="tweak-count" id="windows11-count"></span></h4>
-    <p>Transforms Windows 11 back to a cleaner, Windows 10-like experience</p>
-    <div class="preset-tooltip">
-      <h5>Included Tweaks:</h5>
-      <ul id="windows11-tweaks-list">
-        <!-- Will be populated by JavaScript -->
-      </ul>
+    <div class="preset-card" onclick="loadTweakPreset('windows11')" id="preset-windows11">
+        <i class="fas fa-desktop"></i>
+        <h4>Windows 11 Makeover <span class="tweak-count" id="windows11-count"></span></h4>
+        <p>Transforms Windows 11 back to a cleaner, Windows 10-like experience</p>
+        <div class="preset-tooltip">
+            <h5>Included Tweaks:</h5>
+            <ul id="windows11-tweaks-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </div>
     </div>
-  </div>
-  <div class="preset-card" onclick="loadTweakPreset('enterprise')" id="preset-enterprise">
-    <i class="fas fa-building"></i>
-    <h4>Enterprise Clean <span class="tweak-count" id="enterprise-count"></span></h4>
-    <p>Professional setup for business environments and power users</p>
-    <div class="preset-tooltip">
-      <h5>Included Tweaks:</h5>
-      <ul id="enterprise-tweaks-list">
-        <!-- Will be populated by JavaScript -->
-      </ul>
+    <div class="preset-card" onclick="loadTweakPreset('enterprise')" id="preset-enterprise">
+        <i class="fas fa-building"></i>
+        <h4>Enterprise Clean <span class="tweak-count" id="enterprise-count"></span></h4>
+        <p>Professional setup for business environments and power users</p>
+        <div class="preset-tooltip">
+            <h5>Included Tweaks:</h5>
+            <ul id="enterprise-tweaks-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </div>
     </div>
-  </div>
-  <div class="preset-card" onclick="loadTweakPreset('extreme')" id="preset-extreme">
-    <i class="fas fa-radiation"></i>
-    <h4>Nuclear Option <span class="tweak-count" id="extreme-count"></span></h4>
-    <p>⚠️ EXTREME - Maximum debloating with system modifications (EXPERTS ONLY)</p>
-    <div class="preset-tooltip">
-      <h5>Included Tweaks:</h5>
-      <ul id="extreme-tweaks-list">
-        <!-- Will be populated by JavaScript -->
-      </ul>
+    <div class="preset-card" onclick="loadTweakPreset('extreme')" id="preset-extreme">
+        <i class="fas fa-radiation"></i>
+        <h4>Nuclear Option <span class="tweak-count" id="extreme-count"></span></h4>
+        <p>⚠️ EXTREME - Maximum debloating with system modifications (EXPERTS ONLY)</p>
+        <div class="preset-tooltip">
+            <h5>Included Tweaks:</h5>
+            <ul id="extreme-tweaks-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </div>
     </div>
-  </div>
-  <div class="preset-card" onclick="loadTweakPreset('laptop')" id="preset-laptop">
-    <i class="fas fa-laptop"></i>
-    <h4>Laptop Optimizer <span class="tweak-count" id="laptop-count"></span></h4>
-    <p>Optimized for laptops - balances performance with battery life</p>
-    <div class="preset-tooltip">
-      <h5>Included Tweaks:</h5>
-      <ul id="laptop-tweaks-list">
-        <!-- Will be populated by JavaScript -->
-      </ul>
-    </div>
-  </div>
-  <div class="preset-card" onclick="loadTweakPreset('security')" id="preset-security">
-    <i class="fas fa-shield-alt"></i>
-    <h4>Security Hardening <span class="tweak-count" id="security-count"></span></h4>
-    <p>Enhanced security configuration for sensitive environments</p>
-    <div class="preset-tooltip">
-      <h5>Included Tweaks:</h5>
-      <ul id="security-tweaks-list">
-        <!-- Will be populated by JavaScript -->
-      </ul>
-    </div>
-  </div>
-  <div class="preset-card" onclick="loadTweakPreset('minimal')" id="preset-minimal">
-    <i class="fas fa-minimize"></i>
-    <h4>Minimal Windows <span class="tweak-count" id="minimal-count"></span></h4>
-    <p>Strips Windows down to essentials - maximum simplicity</p>
-    <div class="preset-tooltip">
-      <h5>Included Tweaks:</h5>
-      <ul id="minimal-tweaks-list">
-        <!-- Will be populated by JavaScript -->
-      </ul>
-    </div>
-  </div>
-  <div class="preset-card" onclick="loadTweakPreset('developer')" id="preset-developer">
-    <i class="fas fa-code"></i>
-    <h4>Developer Setup <span class="tweak-count" id="developer-count"></span></h4>
-    <p>Optimized for developers and power users</p>
-    <div class="preset-tooltip">
-      <h5>Included Tweaks:</h5>
-      <ul id="developer-tweaks-list">
-        <!-- Will be populated by JavaScript -->
-      </ul>
-    </div>
-  </div>
 </div>
 
-
 <div id="tweaks-content-area">
-  <div class="tweaks-header-controls">
-    <div class="search-container">
-      <input type="text" id="tweak-search" placeholder="Search tweaks and services..." class="search-input" />
-      <i class="fas fa-search search-icon"></i>
+    <div class="tweaks-header-controls">
+        <div class="search-container">
+            <input type="text" id="tweak-search" placeholder="Search tweaks and services..." class="search-input">
+            <i class="fas fa-search search-icon"></i>
+        </div>
+        <div class="tweak-actions">
+            <button id="import-tweaks-btn" class="btn btn-secondary"><i class="fas fa-file-import"></i> Import</button>
+            <button id="export-tweaks-btn" class="btn btn-secondary"><i class="fas fa-file-export"></i> Export</button>
+        </div>
     </div>
-    <div class="view-controls">
-      <div class="view-toggle">
-        <button id="view-categories" class="btn btn-secondary active" onclick="switchView('categories')">
-          <i class="fas fa-th-large"></i> Categories
+
+    <!-- Category Filter Buttons -->
+    <div class="category-filters">
+        <button class="category-filter-btn active" data-category="all">
+            <i class="fas fa-th-large"></i> All Categories
         </button>
-        <button id="view-list" class="btn btn-secondary" onclick="switchView('list')">
-          <i class="fas fa-list"></i> All Tweaks
+        <button class="category-filter-btn" data-category="🛡️ Privacy & Security">
+            <i class="fas fa-shield-alt"></i> Privacy & Security
         </button>
-      </div>
-      <div class="tweak-actions">
-        <button id="import-tweaks-btn" class="btn btn-secondary"><i class="fas fa-file-import"></i> Import</button>
-        <button id="export-tweaks-btn" class="btn btn-secondary"><i class="fas fa-file-export"></i> Export</button>
-      </div>
+        <button class="category-filter-btn" data-category="🎨 Interface & Appearance">
+            <i class="fas fa-palette"></i> Interface & Appearance
+        </button>
+        <button class="category-filter-btn" data-category="⚡ Performance & Startup">
+            <i class="fas fa-bolt"></i> Performance & Startup
+        </button>
+        <button class="category-filter-btn" data-category="🧹 Cleanup & Maintenance">
+            <i class="fas fa-broom"></i> Cleanup & Maintenance
+        </button>
+        <button class="category-filter-btn" data-category="🔧 System Services">
+            <i class="fas fa-cogs"></i> System Services
+        </button>
+        <button class="category-filter-btn" data-category="🎮 Gaming & Media">
+            <i class="fas fa-gamepad"></i> Gaming & Media
+        </button>
+        <button class="category-filter-btn" data-category="📱 Apps & Features">
+            <i class="fas fa-mobile-alt"></i> Apps & Features
+        </button>
+        <button class="category-filter-btn" data-category="⚠️ Advanced & Risky">
+            <i class="fas fa-exclamation-triangle"></i> Advanced & Risky
+        </button>
     </div>
-  </div>
-
-  <!-- Category View -->
-  <div id="categories-view" class="categories-container">
-    <!-- Categories will be dynamically inserted here -->
-  </div>
-
-  <!-- List View -->
-  <div id="list-view" class="tweaks-list-container" style="display: none;">
     <div id="tweaks-grid" class="plugins-grid">
-      <!-- Tweak cards will be dynamically inserted here -->
+        <!-- Tweak cards will be dynamically inserted here -->
     </div>
-  </div>
 </div>
 
 <!-- Preset Preview Modal -->
 <div id="preset-preview-modal" class="preset-modal">
-  <div class="preset-modal-content">
-    <div class="preset-modal-header">
-      <h2 id="preset-modal-title"></h2>
-      <button class="preset-modal-close" onclick="closePresetModal()">&times;</button>
-    </div>
-    <div class="preset-modal-body">
-      <p id="preset-modal-description"></p>
-      <div class="preset-modal-stats">
-        <div class="preset-stat">
-          <i class="fas fa-list"></i>
-          <span id="preset-tweak-count">0 tweaks</span>
+    <div class="preset-modal-content">
+        <div class="preset-modal-header">
+            <h2 id="preset-modal-title"></h2>
+            <button class="preset-modal-close" onclick="closePresetModal()">&times;</button>
         </div>
-        <div class="preset-stat">
-          <i class="fas fa-shield-alt"></i>
-          <span id="preset-safety-level">Safety Level</span>
+        <div class="preset-modal-body">
+            <p id="preset-modal-description"></p>
+            <div class="preset-modal-stats">
+                <div class="preset-stat">
+                    <i class="fas fa-list"></i>
+                    <span id="preset-tweak-count">0 tweaks</span>
+                </div>
+                <div class="preset-stat">
+                    <i class="fas fa-shield-alt"></i>
+                    <span id="preset-safety-level">Safety Level</span>
+                </div>
+            </div>
+            <div class="preset-tweaks-preview">
+                <h3>Included Tweaks:</h3>
+                <div id="preset-tweaks-list" class="preset-tweaks-grid">
+                    <!-- Tweak preview cards will be inserted here -->
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="preset-tweaks-preview">
-        <h3>Included Tweaks:</h3>
-        <div id="preset-tweaks-list" class="preset-tweaks-grid">
-          <!-- Tweak preview cards will be inserted here -->
+        <div class="preset-modal-footer">
+            <button class="btn btn-secondary" onclick="closePresetModal()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="btn btn-primary" id="apply-preset-btn">
+                <i class="fas fa-play"></i> Apply Preset
+            </button>
         </div>
-      </div>
     </div>
-    <div class="preset-modal-footer">
-      <button class="btn btn-secondary" onclick="closePresetModal()"><i class="fas fa-times"></i> Cancel</button>
-      <button class="btn btn-primary" id="apply-preset-btn"><i class="fas fa-play"></i> Apply Preset</button>
-    </div>
-  </div>
 </div>

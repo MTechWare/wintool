@@ -11,101 +11,90 @@ console.log('System Utilities tab script loaded');
  * @param {string} utilityCommand - The command or utility to launch
  */
 async function launchUtility(utilityCommand) {
-  try {
-    // Add loading state to the clicked card
-    const clickedCard = event.target.closest('.utility-card');
-    if (clickedCard) {
-      clickedCard.classList.add('loading');
-    }
-
-    if (window.electronAPI && window.electronAPI.launchSystemUtility) {
-      // Use real system utility launcher
-      const result = await window.electronAPI.launchSystemUtility(utilityCommand);
-      if (result.success) {
-        // Special message for Windows 11 Settings app
-        if (utilityCommand.startsWith('ms-settings:')) {
-          showStatusMessage('success', `Opened Windows Settings: ${utilityCommand.replace('ms-settings:', '')}`);
-        } else {
-          showStatusMessage('success', result.message);
+    try {
+        // Add loading state to the clicked card
+        const clickedCard = event.target.closest('.utility-card');
+        if (clickedCard) {
+            clickedCard.classList.add('loading');
         }
-      }
-    } else {
-      // Fallback for browser testing
-      if (utilityCommand.startsWith('ms-settings:')) {
-        showStatusMessage(
-          'warning',
-          `This would open Windows Settings: ${utilityCommand.replace('ms-settings:', '')}\n\nIn the full implementation, this would open the actual Windows Settings page.`
-        );
-      } else {
-        showStatusMessage(
-          'warning',
-          `This would launch: ${utilityCommand}\n\nIn the full implementation, this would open the actual Windows utility.`
-        );
-      }
+
+        if (window.electronAPI && window.electronAPI.launchSystemUtility) {
+            // Use real system utility launcher
+            const result = await window.electronAPI.launchSystemUtility(utilityCommand);
+            if (result.success) {
+                // Special message for Windows 11 Settings app
+                if (utilityCommand.startsWith('ms-settings:')) {
+                    showStatusMessage('success', `Opened Windows Settings: ${utilityCommand.replace('ms-settings:', '')}`);
+                } else {
+                    showStatusMessage('success', result.message);
+                }
+            }
+        } else {
+            // Fallback for browser testing
+            if (utilityCommand.startsWith('ms-settings:')) {
+                showStatusMessage('warning', `This would open Windows Settings: ${utilityCommand.replace('ms-settings:', '')}\n\nIn the full implementation, this would open the actual Windows Settings page.`);
+            } else {
+                showStatusMessage('warning', `This would launch: ${utilityCommand}\n\nIn the full implementation, this would open the actual Windows utility.`);
+            }
+        }
+
+    } catch (error) {
+        console.error('Error launching utility:', error);
+        showStatusMessage('error', `Failed to launch ${utilityCommand}: ${error.message}`);
+    } finally {
+        // Remove loading state
+        const clickedCard = event.target.closest('.utility-card');
+        if (clickedCard) {
+            clickedCard.classList.remove('loading');
+        }
     }
-  } catch (error) {
-    console.error('Error launching utility:', error);
-    showStatusMessage('error', `Failed to launch ${utilityCommand}: ${error.message}`);
-  } finally {
-    // Remove loading state
-    const clickedCard = event.target.closest('.utility-card');
-    if (clickedCard) {
-      clickedCard.classList.remove('loading');
-    }
-  }
 }
 
 /**
  * Launch disk check utility with drive selection
  */
 async function launchDiskCheck() {
-  try {
-    const clickedCard = event.target.closest('.utility-card');
-    if (clickedCard) {
-      clickedCard.classList.add('loading');
-    }
+    try {
+        const clickedCard = event.target.closest('.utility-card');
+        if (clickedCard) {
+            clickedCard.classList.add('loading');
+        }
 
-    // For disk check, we'll open command prompt with chkdsk command
-    // Users can then specify the drive they want to check
-    if (window.electronAPI && window.electronAPI.launchSystemUtility) {
-      const result = await window.electronAPI.launchSystemUtility('cmd');
-      if (result.success) {
-        showStatusMessage(
-          'success',
-          'Command Prompt opened. Use "chkdsk C: /f" to check C: drive (requires admin privileges)'
-        );
-      }
-    } else {
-      showStatusMessage(
-        'warning',
-        'This would open Command Prompt for disk checking.\n\nUse "chkdsk C: /f" to check C: drive.'
-      );
-    }
+        // For disk check, we'll open command prompt with chkdsk command
+        // Users can then specify the drive they want to check
+        if (window.electronAPI && window.electronAPI.launchSystemUtility) {
+            const result = await window.electronAPI.launchSystemUtility('cmd');
+            if (result.success) {
+                showStatusMessage('success', 'Command Prompt opened. Use "chkdsk C: /f" to check C: drive (requires admin privileges)');
+            }
+        } else {
+            showStatusMessage('warning', 'This would open Command Prompt for disk checking.\n\nUse "chkdsk C: /f" to check C: drive.');
+        }
 
-    // Also suggest Windows 11 alternative
-    if (window.electronAPI && window.electronAPI.getSystemInfo) {
-      const sysInfo = await window.electronAPI.getSystemInfo();
-      const isWindows11 =
-        sysInfo.osInfo && (sysInfo.osInfo.distro.includes('Windows 11') || sysInfo.osInfo.build >= 22000);
+        // Also suggest Windows 11 alternative
+        if (window.electronAPI && window.electronAPI.getSystemInfo) {
+            const sysInfo = await window.electronAPI.getSystemInfo();
+            const isWindows11 = sysInfo.osInfo && (
+                sysInfo.osInfo.distro.includes('Windows 11') ||
+                sysInfo.osInfo.build >= 22000
+            );
 
-      if (isWindows11) {
-        setTimeout(() => {
-          showStatusMessage(
-            'info',
-            'Tip: On Windows 11, you can also use Settings > System > Storage > Advanced storage settings > Disks & volumes for disk management.'
-          );
-        }, 3000);
-      }
+            if (isWindows11) {
+                setTimeout(() => {
+                    showStatusMessage('info', 'Tip: On Windows 11, you can also use Settings > System > Storage > Advanced storage settings > Disks & volumes for disk management.');
+                }, 3000);
+            }
+        }
+
+    } catch (error) {
+        console.error('Error launching disk check:', error);
+        showStatusMessage('error', `Failed to launch disk check: ${error.message}`);
+    } finally {
+        const clickedCard = event.target.closest('.utility-card');
+        if (clickedCard) {
+            clickedCard.classList.remove('loading');
+        }
     }
-  } catch (error) {
-    console.error('Error launching disk check:', error);
-    showStatusMessage('error', `Failed to launch disk check: ${error.message}`);
-  } finally {
-    const clickedCard = event.target.closest('.utility-card');
-    if (clickedCard) {
-      clickedCard.classList.remove('loading');
-    }
-  }
 }
 
 /**
@@ -114,19 +103,19 @@ async function launchDiskCheck() {
  * @param {string} message - Message to display
  */
 function showStatusMessage(type, message) {
-  const statusElement = document.getElementById('status-message');
-  if (!statusElement) return;
+    const statusElement = document.getElementById('status-message');
+    if (!statusElement) return;
 
-  // Clear existing classes and content
-  statusElement.className = 'status-message';
-  statusElement.classList.add(type);
-  statusElement.textContent = message;
-  statusElement.style.display = 'block';
+    // Clear existing classes and content
+    statusElement.className = 'status-message';
+    statusElement.classList.add(type);
+    statusElement.textContent = message;
+    statusElement.style.display = 'block';
 
-  // Auto-hide after 5 seconds
-  setTimeout(() => {
-    statusElement.style.display = 'none';
-  }, 5000);
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        statusElement.style.display = 'none';
+    }, 5000);
 }
 
 /**
@@ -134,48 +123,50 @@ function showStatusMessage(type, message) {
  * @param {string} searchTerm - The search term to filter utilities
  */
 function searchUtilities(searchTerm) {
-  const term = searchTerm.toLowerCase().trim();
-  const sections = document.querySelectorAll('.utilities-section');
-  const noResultsElement = document.getElementById('no-results');
-  let visibleUtilities = 0;
-  let visibleSections = 0;
+    const term = searchTerm.toLowerCase().trim();
+    const sections = document.querySelectorAll('.utilities-section');
+    const noResultsElement = document.getElementById('no-results');
+    let visibleUtilities = 0;
+    let visibleSections = 0;
 
-  sections.forEach(section => {
-    const cards = section.querySelectorAll('.utility-card');
-    let sectionHasVisibleCards = false;
+    sections.forEach(section => {
+        const cards = section.querySelectorAll('.utility-card');
+        let sectionHasVisibleCards = false;
 
-    cards.forEach(card => {
-      const utilityName = card.querySelector('h4').textContent.toLowerCase();
-      const utilityDescription = card.querySelector('p').textContent.toLowerCase();
-      const isMatch = term === '' || utilityName.includes(term) || utilityDescription.includes(term);
+        cards.forEach(card => {
+            const utilityName = card.querySelector('h4').textContent.toLowerCase();
+            const utilityDescription = card.querySelector('p').textContent.toLowerCase();
+            const isMatch = term === '' ||
+                           utilityName.includes(term) ||
+                           utilityDescription.includes(term);
 
-      if (isMatch) {
-        card.classList.remove('hidden');
-        sectionHasVisibleCards = true;
-        visibleUtilities++;
-      } else {
-        card.classList.add('hidden');
-      }
+            if (isMatch) {
+                card.classList.remove('hidden');
+                sectionHasVisibleCards = true;
+                visibleUtilities++;
+            } else {
+                card.classList.add('hidden');
+            }
+        });
+
+        // Hide section if no cards are visible
+        if (sectionHasVisibleCards) {
+            section.classList.remove('hidden');
+            visibleSections++;
+        } else {
+            section.classList.add('hidden');
+        }
     });
 
-    // Hide section if no cards are visible
-    if (sectionHasVisibleCards) {
-      section.classList.remove('hidden');
-      visibleSections++;
+    // Update utility count
+    updateUtilityCount(visibleUtilities, term);
+
+    // Show/hide no results message
+    if (visibleUtilities === 0 && term !== '') {
+        noResultsElement.style.display = 'block';
     } else {
-      section.classList.add('hidden');
+        noResultsElement.style.display = 'none';
     }
-  });
-
-  // Update utility count
-  updateUtilityCount(visibleUtilities, term);
-
-  // Show/hide no results message
-  if (visibleUtilities === 0 && term !== '') {
-    noResultsElement.style.display = 'block';
-  } else {
-    noResultsElement.style.display = 'none';
-  }
 }
 
 /**
@@ -184,149 +175,151 @@ function searchUtilities(searchTerm) {
  * @param {string} searchTerm - Current search term
  */
 function updateUtilityCount(visibleCount, searchTerm) {
-  const totalCountElement = document.getElementById('total-utilities-count');
-  const filteredCountElement = document.getElementById('filtered-utilities-count');
+    const totalCountElement = document.getElementById('total-utilities-count');
+    const filteredCountElement = document.getElementById('filtered-utilities-count');
 
-  if (searchTerm && searchTerm.trim() !== '') {
-    filteredCountElement.textContent = `${visibleCount} utilities found`;
-    filteredCountElement.style.display = 'inline';
-  } else {
-    filteredCountElement.textContent = '';
-    filteredCountElement.style.display = 'none';
-  }
+    if (searchTerm && searchTerm.trim() !== '') {
+        filteredCountElement.textContent = `${visibleCount} utilities found`;
+        filteredCountElement.style.display = 'inline';
+    } else {
+        filteredCountElement.textContent = '';
+        filteredCountElement.style.display = 'none';
+    }
 }
 
 /**
  * Initialize the System Utilities tab
  */
 function initSystemUtilities() {
-  console.log('Initializing System Utilities tab');
+    console.log('Initializing System Utilities tab');
 
-  // Setup search functionality
-  const searchInput = document.getElementById('utilities-search');
-  if (searchInput) {
-    searchInput.addEventListener('input', e => {
-      searchUtilities(e.target.value);
+    // Setup search functionality
+    const searchInput = document.getElementById('utilities-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            searchUtilities(e.target.value);
+        });
+
+        // Clear search on Escape key
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                searchInput.value = '';
+                searchUtilities('');
+                searchInput.blur();
+            }
+        });
+    }
+
+    // Add keyboard shortcuts for common utilities
+    document.addEventListener('keydown', (event) => {
+        // Only handle shortcuts when this tab is active
+        const activeTab = document.querySelector('.tab-content.active[data-tab*="system-utilities"]');
+        if (!activeTab) return;
+
+        // Ctrl+Shift+T for Task Manager
+        if (event.ctrlKey && event.shiftKey && event.key === 'T') {
+            event.preventDefault();
+            launchUtility('taskmgr');
+        }
+
+        // Ctrl+Shift+R for Registry Editor
+        if (event.ctrlKey && event.shiftKey && event.key === 'R') {
+            event.preventDefault();
+            launchUtility('regedit');
+        }
+
+        // Ctrl+Shift+D for Device Manager
+        if (event.ctrlKey && event.shiftKey && event.key === 'D') {
+            event.preventDefault();
+            launchUtility('devmgmt.msc');
+        }
+
+        // Ctrl+Shift+S for Services
+        if (event.ctrlKey && event.shiftKey && event.key === 'S') {
+            event.preventDefault();
+            launchUtility('services.msc');
+        }
+
+        // Ctrl+F to focus search
+        if (event.ctrlKey && event.key === 'f') {
+            event.preventDefault();
+            const searchInput = document.getElementById('utilities-search');
+            if (searchInput) {
+                searchInput.focus();
+                searchInput.select();
+            }
+        }
     });
 
-    // Clear search on Escape key
-    searchInput.addEventListener('keydown', e => {
-      if (e.key === 'Escape') {
-        searchInput.value = '';
-        searchUtilities('');
-        searchInput.blur();
-      }
+    // Add tooltips enhancement
+    const utilityCards = document.querySelectorAll('.utility-card');
+    utilityCards.forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            // Add subtle animation on hover
+            card.style.transition = 'all 0.3s ease';
+        });
     });
-  }
 
-  // Add keyboard shortcuts for common utilities
-  document.addEventListener('keydown', event => {
-    // Only handle shortcuts when this tab is active
-    const activeTab = document.querySelector('.tab-content.active[data-tab*="system-utilities"]');
-    if (!activeTab) return;
+    // Check Windows version for appropriate utilities
+    checkWindowsVersion();
 
-    // Ctrl+Shift+T for Task Manager
-    if (event.ctrlKey && event.shiftKey && event.key === 'T') {
-      event.preventDefault();
-      launchUtility('taskmgr');
+    console.log('System Utilities tab initialized successfully');
+
+    // Signal that this tab is ready
+    if (window.markTabAsReady && typeof tabId !== 'undefined') {
+        console.log('Marking system-utilities tab as ready');
+        window.markTabAsReady(tabId);
     }
-
-    // Ctrl+Shift+R for Registry Editor
-    if (event.ctrlKey && event.shiftKey && event.key === 'R') {
-      event.preventDefault();
-      launchUtility('regedit');
-    }
-
-    // Ctrl+Shift+D for Device Manager
-    if (event.ctrlKey && event.shiftKey && event.key === 'D') {
-      event.preventDefault();
-      launchUtility('devmgmt.msc');
-    }
-
-    // Ctrl+Shift+S for Services
-    if (event.ctrlKey && event.shiftKey && event.key === 'S') {
-      event.preventDefault();
-      launchUtility('services.msc');
-    }
-
-    // Ctrl+F to focus search
-    if (event.ctrlKey && event.key === 'f') {
-      event.preventDefault();
-      const searchInput = document.getElementById('utilities-search');
-      if (searchInput) {
-        searchInput.focus();
-        searchInput.select();
-      }
-    }
-  });
-
-  // Add tooltips enhancement
-  const utilityCards = document.querySelectorAll('.utility-card');
-  utilityCards.forEach(card => {
-    card.addEventListener('mouseenter', () => {
-      // Add subtle animation on hover
-      card.style.transition = 'all 0.3s ease';
-    });
-  });
-
-  // Check Windows version for appropriate utilities
-  checkWindowsVersion();
-
-  console.log('System Utilities tab initialized successfully');
-
-  // Signal that this tab is ready
-  if (window.markTabAsReady && typeof tabId !== 'undefined') {
-    console.log('Marking system-utilities tab as ready');
-    window.markTabAsReady(tabId);
-  }
 }
 
 /**
  * Check Windows version and show/hide appropriate utilities
  */
 async function checkWindowsVersion() {
-  try {
-    if (window.electronAPI && window.electronAPI.getSystemInfo) {
-      const sysInfo = await window.electronAPI.getSystemInfo();
-      const isWindows11 =
-        sysInfo.osInfo && (sysInfo.osInfo.distro.includes('Windows 11') || sysInfo.osInfo.build >= 22000);
+    try {
+        if (window.electronAPI && window.electronAPI.getSystemInfo) {
+            const sysInfo = await window.electronAPI.getSystemInfo();
+            const isWindows11 = sysInfo.osInfo && (
+                sysInfo.osInfo.distro.includes('Windows 11') ||
+                sysInfo.osInfo.build >= 22000
+            );
 
-      // Find Windows 11 Settings section
-      const sections = document.querySelectorAll('.utilities-section');
-      let win11Section = null;
-      sections.forEach(section => {
-        const heading = section.querySelector('h3');
-        if (heading && heading.textContent.includes('Windows 11 Settings')) {
-          win11Section = section;
+            // Find Windows 11 Settings section
+            const sections = document.querySelectorAll('.utilities-section');
+            let win11Section = null;
+            sections.forEach(section => {
+                const heading = section.querySelector('h3');
+                if (heading && heading.textContent.includes('Windows 11 Settings')) {
+                    win11Section = section;
+                }
+            });
+
+            // Show/hide Windows 11 specific sections
+            if (win11Section) {
+                win11Section.style.display = isWindows11 ? 'block' : 'none';
+            }
+
+            // Update utility count based on Windows version
+            const totalCount = isWindows11 ? 35 : 29;
+            const countElement = document.getElementById('total-utilities-count');
+            if (countElement) {
+                countElement.textContent = `${totalCount} utilities available`;
+            }
+
+            console.log(`Windows version detected: ${isWindows11 ? 'Windows 11' : 'Windows 10 or earlier'}`);
         }
-      });
-
-      // Show/hide Windows 11 specific sections
-      if (win11Section) {
-        win11Section.style.display = isWindows11 ? 'block' : 'none';
-      }
-
-      // Update utility count based on Windows version
-      const totalCount = isWindows11 ? 35 : 29;
-      const countElement = document.getElementById('total-utilities-count');
-      if (countElement) {
-        countElement.textContent = `${totalCount} utilities available`;
-      }
-
-      console.log(`Windows version detected: ${isWindows11 ? 'Windows 11' : 'Windows 10 or earlier'}`);
+    } catch (error) {
+        console.log('Could not detect Windows version, showing all utilities');
     }
-  } catch (error) {
-    console.log('Could not detect Windows version, showing all utilities');
-  }
 }
 
 /**
  * Handle utility card click events
  */
 function handleUtilityClick(utilityCommand, event) {
-  event.preventDefault();
-  event.stopPropagation();
-  launchUtility(utilityCommand);
+    event.preventDefault();
+    event.stopPropagation();
+    launchUtility(utilityCommand);
 }
 
 // Make functions globally available for onclick handlers
@@ -341,7 +334,7 @@ window.checkWindowsVersion = checkWindowsVersion;
 
 // Initialize when the tab is loaded
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initSystemUtilities);
+    document.addEventListener('DOMContentLoaded', initSystemUtilities);
 } else {
-  initSystemUtilities();
+    initSystemUtilities();
 }

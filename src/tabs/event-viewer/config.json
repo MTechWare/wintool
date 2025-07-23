@@ -1,7 +1,7 @@
 {
-  "name": "Event Viewer",
-  "icon": "fas fa-clipboard-list",
-  "description": "View, search, and filter Windows Event Logs",
-  "version": "1.0.0",
-  "author": "WinTool"
+    "name": "Event Viewer",
+    "icon": "fas fa-clipboard-list",
+    "description": "View, search, and filter Windows Event Logs",
+    "version": "1.0.0",
+    "author": "WinTool"
 }

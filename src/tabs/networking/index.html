@@ -1,96 +1,94 @@
 <div class="tab-header">
-  <div>
-    <h1><i class="fas fa-network-wired"></i> Network Information</h1>
-    <p>Network interfaces and connectivity details</p>
-  </div>
-  <button id="refresh-networking-btn" class="action-btn" title="Refresh Network Information">
-    <i class="fas fa-sync-alt"></i>
-  </button>
+    <div>
+        <h1><i class="fas fa-network-wired"></i> Network Information</h1>
+        <p>Network interfaces and connectivity details</p>
+    </div>
+    <button id="refresh-networking-btn" class="action-btn" title="Refresh Network Information"><i class="fas fa-sync-alt"></i></button>
 </div>
 
 <div class="networking-content">
-  <!-- Network Actions -->
-  <div class="network-actions-section">
-    <h3>Network Actions</h3>
-    <div class="actions-grid">
-      <button id="flush-dns-btn" class="action-btn"><i class="fas fa-redo"></i> Flush DNS Cache</button>
-      <button id="reset-tcp-ip-btn" class="action-btn"><i class="fas fa-undo"></i> Reset TCP/IP Stack</button>
-      <button id="renew-dhcp-btn" class="action-btn"><i class="fas fa-sync-alt"></i> Renew DHCP Lease</button>
-    </div>
-  </div>
-
-  <!-- Network Overview -->
-  <div class="network-overview">
-    <h3>Network Overview</h3>
-    <div class="overview-grid">
-      <div class="overview-card" id="total-interfaces-card">
-        <i class="fas fa-ethernet"></i>
-        <h4>Total Interfaces</h4>
-        <p id="total-interfaces">Loading...</p>
-      </div>
-      <div class="overview-card" id="active-interfaces-card">
-        <i class="fas fa-link"></i>
-        <h4>Active Interfaces</h4>
-        <p id="active-interfaces">Loading...</p>
-      </div>
-      <div class="overview-card" id="primary-interface-card">
-        <i class="fas fa-star"></i>
-        <h4>Primary Interface</h4>
-        <p id="primary-interface">Loading...</p>
-      </div>
-      <div class="overview-card" id="connection-status-card">
-        <i class="fas fa-signal"></i>
-        <h4>Connection Status</h4>
-        <p id="connection-status">Loading...</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Network Interfaces -->
-  <div class="network-interfaces-section">
-    <h3>Network Interfaces</h3>
-    <div id="network-interfaces-container" class="interfaces-container">
-      <!-- Network interfaces will be loaded here -->
-    </div>
-  </div>
-
-  <div class="network-stats-section">
-    <h3>Network Statistics</h3>
-    <div class="stats-grid">
-      <div class="stats-card">
-        <h4><i class="fas fa-download"></i> Data Received</h4>
-        <div class="stats-content">
-          <div class="stat-item">
-            <span class="stat-label">Total Bytes:</span>
-            <span id="total-rx-bytes" class="stat-value">Loading...</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Packets:</span>
-            <span id="total-rx-packets" class="stat-value">Loading...</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Errors:</span>
-            <span id="total-rx-errors" class="stat-value">Loading...</span>
-          </div>
+    <!-- Network Actions -->
+    <div class="network-actions-section">
+        <h3>Network Actions</h3>
+        <div class="actions-grid">
+            <button id="flush-dns-btn" class="action-btn"><i class="fas fa-redo"></i> Flush DNS Cache</button>
+            <button id="reset-tcp-ip-btn" class="action-btn"><i class="fas fa-undo"></i> Reset TCP/IP Stack</button>
+            <button id="renew-dhcp-btn" class="action-btn"><i class="fas fa-sync-alt"></i> Renew DHCP Lease</button>
         </div>
-      </div>
-      <div class="stats-card">
-        <h4><i class="fas fa-upload"></i> Data Transmitted</h4>
-        <div class="stats-content">
-          <div class="stat-item">
-            <span class="stat-label">Total Bytes:</span>
-            <span id="total-tx-bytes" class="stat-value">Loading...</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Packets:</span>
-            <span id="total-tx-packets" class="stat-value">Loading...</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Errors:</span>
-            <span id="total-tx-errors" class="stat-value">Loading...</span>
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
+
+    <!-- Network Overview -->
+    <div class="network-overview">
+        <h3>Network Overview</h3>
+        <div class="overview-grid">
+            <div class="overview-card" id="total-interfaces-card">
+                <i class="fas fa-ethernet"></i>
+                <h4>Total Interfaces</h4>
+                <p id="total-interfaces">Loading...</p>
+            </div>
+            <div class="overview-card" id="active-interfaces-card">
+                <i class="fas fa-link"></i>
+                <h4>Active Interfaces</h4>
+                <p id="active-interfaces">Loading...</p>
+            </div>
+            <div class="overview-card" id="primary-interface-card">
+                <i class="fas fa-star"></i>
+                <h4>Primary Interface</h4>
+                <p id="primary-interface">Loading...</p>
+            </div>
+            <div class="overview-card" id="connection-status-card">
+                <i class="fas fa-signal"></i>
+                <h4>Connection Status</h4>
+                <p id="connection-status">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Network Interfaces -->
+    <div class="network-interfaces-section">
+        <h3>Network Interfaces</h3>
+        <div id="network-interfaces-container" class="interfaces-container">
+            <!-- Network interfaces will be loaded here -->
+        </div>
+    </div>
+
+    <div class="network-stats-section">
+        <h3>Network Statistics</h3>
+        <div class="stats-grid">
+            <div class="stats-card">
+                <h4><i class="fas fa-download"></i> Data Received</h4>
+                <div class="stats-content">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Bytes:</span>
+                        <span id="total-rx-bytes" class="stat-value">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Packets:</span>
+                        <span id="total-rx-packets" class="stat-value">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Errors:</span>
+                        <span id="total-rx-errors" class="stat-value">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="stats-card">
+                <h4><i class="fas fa-upload"></i> Data Transmitted</h4>
+                <div class="stats-content">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Bytes:</span>
+                        <span id="total-tx-bytes" class="stat-value">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Packets:</span>
+                        <span id="total-tx-packets" class="stat-value">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Errors:</span>
+                        <span id="total-tx-errors" class="stat-value">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

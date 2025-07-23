@@ -1,7 +1,7 @@
 {
-  "name": "Windows Unattend",
-  "icon": "fas fa-robot",
-  "description": "Create and export Windows unattend.xml files for automated installations",
-  "version": "1.0.0",
-  "author": "WinTool"
+    "name": "Windows Unattend",
+    "icon": "fas fa-robot",
+    "description": "Create and export Windows unattend.xml files for automated installations",
+    "version": "1.0.0",
+    "author": "WinTool"
 }

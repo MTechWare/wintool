@@ -1,902 +1,851 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WinTool</title>
-    <link rel="stylesheet" href="assets/fontawesome/all.min.css" />
-    <link rel="icon" type="image/x-icon" href="assets/icon.ico" />
-    <link rel="stylesheet" href="css/styles.css" />
-    <link rel="stylesheet" href="assets/codemirror/css/codemirror.min.css" />
-    <link rel="stylesheet" href="assets/codemirror/addons/dialog.min.css" />
-    <link rel="stylesheet" href="assets/codemirror/addons/matchesonscrollbar.min.css" />
-    <link rel="stylesheet" href="assets/codemirror/addons/foldgutter.min.css" />
-    <link rel="stylesheet" href="assets/codemirror/addons/show-hint.min.css" />
-    <link rel="stylesheet" href="assets/codemirror/themes/dracula.min.css" />
-    <link rel="stylesheet" href="assets/codemirror/themes/material.min.css" />
-    <link rel="stylesheet" href="assets/codemirror/themes/material-darker.min.css" />
-    <link rel="stylesheet" href="assets/codemirror/themes/material-palenight.min.css" />
-    <link rel="stylesheet" href="assets/codemirror/themes/monokai.min.css" />
-    <link rel="stylesheet" href="assets/codemirror/themes/eclipse.min.css" />
-    <link rel="stylesheet" href="assets/codemirror/themes/solarized.min.css" />
-    <link rel="stylesheet" href="assets/codemirror/themes/tomorrow-night-bright.min.css" />
-    <link rel="stylesheet" href="assets/codemirror/themes/vs.min.css" />
-    <link rel="stylesheet" href="assets/codemirror/themes/vs-dark.min.css" />
-  </head>
-  <body>
+    <link rel="stylesheet" href="assets/fontawesome/all.min.css">
+    <link rel="icon" type="image/x-icon" href="assets/icon.ico">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="assets/codemirror/css/codemirror.min.css">
+    <link rel="stylesheet" href="assets/codemirror/addons/dialog.min.css">
+    <link rel="stylesheet" href="assets/codemirror/addons/matchesonscrollbar.min.css">
+    <link rel="stylesheet" href="assets/codemirror/addons/foldgutter.min.css">
+    <link rel="stylesheet" href="assets/codemirror/addons/show-hint.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/dracula.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/material.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/material-darker.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/material-palenight.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/monokai.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/eclipse.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/solarized.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/tomorrow-night-bright.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/vs.min.css">
+    <link rel="stylesheet" href="assets/codemirror/themes/vs-dark.min.css">
+</head>
+<body>
     <!-- Custom Title Bar -->
     <div class="title-bar">
-      <div class="title-bar-text">
-        <i class="fas fa-tools"></i>
-        WinTool
-      </div>
-      <div class="title-bar-controls">
-        <button id="minimize-btn" class="title-bar-btn" title="Minimize">
-          <i class="fas fa-window-minimize"></i>
-        </button>
-        <button id="maximize-btn" class="title-bar-btn" title="Maximize">
-          <i class="fas fa-window-maximize"></i>
-        </button>
-        <button id="close-btn" class="title-bar-btn close-btn" title="Close">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
+        <div class="title-bar-text">
+            <i class="fas fa-tools"></i>
+            WinTool
+        </div>
+        <div class="title-bar-controls">
+            <button id="minimize-btn" class="title-bar-btn" title="Minimize">
+                <i class="fas fa-window-minimize"></i>
+            </button>
+            <button id="maximize-btn" class="title-bar-btn" title="Maximize">
+                <i class="fas fa-window-maximize"></i>
+            </button>
+            <button id="close-btn" class="title-bar-btn close-btn" title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
     </div>
 
     <!-- Splash Screen -->
     <div id="splash-screen" class="splash-screen">
-      <div class="splash-content">
-        <div class="splash-logo">
-          <div class="splash-icon">
-            <i class="fas fa-tools"></i>
-          </div>
-          <div class="splash-glow"></div>
-        </div>
-        <h1 class="splash-title">WinTool</h1>
-        <p class="splash-subtitle">Loading system tools...</p>
+        <div class="splash-content">
+            <div class="splash-logo">
+                <div class="splash-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="splash-glow"></div>
+            </div>
+            <h1 class="splash-title">WinTool</h1>
+            <p class="splash-subtitle">Loading system tools...</p>
 
-        <div class="splash-progress">
-          <div class="progress-bar">
-            <div id="progress-fill" class="progress-fill"></div>
-          </div>
-          <div id="progress-text" class="progress-text">Initializing...</div>
-        </div>
+            <div class="splash-progress">
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <div id="progress-text" class="progress-text">Initializing...</div>
+            </div>
 
-        <div class="splash-dots">
-          <div class="dot"></div>
-          <div class="dot"></div>
-          <div class="dot"></div>
+            <div class="splash-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
         </div>
-      </div>
     </div>
 
     <!-- Main Application Container -->
     <div class="app-container">
-      <!-- Sidebar -->
-      <div class="sidebar">
-        <div class="sidebar-header">
-          <h2 class="app-title">WinTool</h2>
-          <!-- Tab Search -->
-          <div class="tab-search-container">
-            <input type="text" id="tab-search" placeholder="Search tabs..." class="tab-search-input" />
-            <i class="fas fa-search tab-search-icon"></i>
-          </div>
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2 class="app-title">
+                    WinTool
+                </h2>
+                <!-- Tab Search -->
+                <div class="tab-search-container">
+                    <input type="text" id="tab-search" placeholder="Search tabs..." class="tab-search-input">
+                    <i class="fas fa-search tab-search-icon"></i>
+                </div>
+            </div>
+
+            <!-- Tab List -->
+            <ul class="tab-list" id="tab-list">
+                <li class="tab-item active" data-tab="welcome">
+                    <i class="fas fa-home"></i>
+                    <span>Welcome</span>
+                </li>
+                <li class="tab-item" data-tab="plugins">
+                    <i class="fas fa-puzzle-piece"></i>
+                    <span>Plugins</span>
+                </li>
+            </ul>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <button class="settings-btn" onclick="showSettings()">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </button>
+            </div>
         </div>
 
-        <!-- Tab List -->
-        <ul class="tab-list" id="tab-list">
-          <li class="tab-item active" data-tab="welcome">
-            <i class="fas fa-home"></i>
-            <span>Welcome</span>
-          </li>
-          <li class="tab-item" data-tab="plugins">
-            <i class="fas fa-puzzle-piece"></i>
-            <span>Plugins</span>
-          </li>
-        </ul>
+        <!-- Main Content Area -->
+        <div class="content-area">
+            <!-- Welcome Tab Content -->
+            <div id="tab-welcome" class="tab-content active">
+                <div class="tab-header">
+                    <h1><i class="fas fa-home"></i> Welcome to WinTool</h1>
+                    <p>Professional Windows System Management Suite</p>
+                </div>
 
-        <!-- Sidebar Footer -->
-        <div class="sidebar-footer">
-          <button class="settings-btn" onclick="showSettings()">
-            <i class="fas fa-cog"></i>
-            Settings
-          </button>
+                <div class="welcome-content">
+                    <!-- Hero Section -->
+                    <div class="hero-section">
+                        <div class="hero-background"></div>
+                        <div class="hero-content">
+                            <div class="hero-icon-wrapper">
+                                <div class="hero-icon">
+                                    <i class="fas fa-rocket"></i>
+                                </div>
+                                <div class="hero-icon-glow"></div>
+                            </div>
+                            <h2>Comprehensive. Intuitive. Professional.</h2>
+                            <p>Complete Windows system management toolkit with real-time data, powerful utilities, and seamless administration.</p>
+
+                            <div class="hero-stats">
+                                <div class="stat-item">
+                                    <span class="stat-number">15+</span>
+                                    <span class="stat-label">Management Tools</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-number">24+</span>
+                                    <span class="stat-label">System Utilities</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-number">Real-time</span>
+                                    <span class="stat-label">System Data</span>
+                                </div>
+                            </div>
+
+                            <div class="hero-buttons">
+                                <button class="btn btn-primary hero-btn" onclick="switchToTab('folder-system-info')">
+                                    <i class="fas fa-desktop"></i> View System Info
+                                </button>
+                                <button class="btn btn-secondary hero-btn" onclick="switchToTab('folder-system-utilities')">
+                                    <i class="fas fa-tools"></i> System Utilities
+                                </button>
+                                <button class="btn btn-secondary hero-btn" onclick="window.open('https://discord.gg/GSTEfkxhmD', '_blank')">
+                                    <i class="fab fa-discord"></i> Join the Discord
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Features -->
+                    <div class="features-section">
+                        <h3>Available Tools & Features</h3>
+                        <div class="features-grid">
+                            <div class="feature-card">
+                                <i class="fas fa-desktop"></i>
+                                <h4>System Information</h4>
+                                <p>Real-time system data, hardware details, and performance metrics</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-tools"></i>
+                                <h4>System Utilities</h4>
+                                <p>Quick access to 24 Windows administrative tools and utilities</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-cogs"></i>
+                                <h4>Services Manager</h4>
+                                <p>Start, stop, restart Windows services with customizable quick access</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-box"></i>
+                                <h4>Package Manager</h4>
+                                <p>Install and manage Windows packages using winget</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-network-wired"></i>
+                                <h4>Network Tools</h4>
+                                <p>View network interfaces and connectivity information</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-broom"></i>
+                                <h4>System Cleanup</h4>
+                                <p>Clean temporary files and optimize Windows performance</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-code"></i>
+                                <h4>Environment Variables</h4>
+                                <p>Manage system and user environment variables</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-cogs"></i>
+                                <h4>Windows Unattend</h4>
+                                <p>Create and export Windows unattend.xml files for automated installations</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-edit"></i>
+                                <h4>Script Editor</h4>
+                                <p>A powerful and lightweight code editor with syntax highlighting for various languages.</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-list-alt"></i>
+                                <h4>Event Viewer</h4>
+                                <p>Browse and search Windows Event Logs to diagnose system problems and errors.</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-tasks"></i>
+                                <h4>Process Manager</h4>
+                                <p>View, search, and terminate running processes with real-time CPU and memory usage.</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-magic"></i>
+                                <h4>Windows Tweaks</h4>
+                                <p>Apply various tweaks to customize the Windows 10/11 experience.</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-cube"></i>
+                                <h4>AppX Package Manager</h4>
+                                <p>Install and uninstall Microsoft apps and AppX packages with smart categorization and safety filters</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-heartbeat"></i>
+                                <h4>System Health Dashboard</h4>
+                                <p>Real-time monitoring of system performance and health with interactive charts and diagnostics</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Key Features -->
+                    <div class="features-section">
+                        <h3>Key Features</h3>
+                        <div class="features-grid">
+                            <div class="feature-card">
+                                <i class="fas fa-terminal"></i>
+                                <h4>Command Palette</h4>
+                                <p>Press Ctrl+K to open a powerful command launcher</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-search"></i>
+                                <h4>Tab Search</h4>
+                                <p>Quickly find and navigate to any tab or feature</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-arrows-alt"></i>
+                                <h4>Draggable Tabs</h4>
+                                <p>Organize tabs in your preferred order with saved layout</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-keyboard"></i>
+                                <h4>Keyboard Shortcuts</h4>
+                                <p>Customizable hotkeys for quick access to all features</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-palette"></i>
+                                <h4>Customizable</h4>
+                                <p>Personalize appearance, behavior, and advanced settings</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <h4>Real-time Data</h4>
+                                <p>Live system monitoring with automatic data refresh</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-eye-slash"></i>
+                                <h4>Hide/Show Tabs</h4>
+                                <p>Customize your sidebar by hiding or showing tabs to declutter your workspace.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Getting Started -->
+                    <div class="getting-started">
+                        <h3>Getting Started</h3>
+                        <div class="steps">
+                            <div class="step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <h4>Explore the Tabs</h4>
+                                    <p>Navigate through the available tools using the sidebar or tab search functionality</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <h4>Customize Your Experience</h4>
+                                    <p>Access Settings to personalize colors and behavior preferences</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <h4>Organize Your Workspace</h4>
+                                    <p>Drag tabs to reorder them and use quick access features for frequently used tools </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="quick-actions-section">
+                        <h3>Quick Actions</h3>
+                        <div class="quick-actions-grid">
+                            <button class="quick-action-btn" onclick="switchToTab('folder-services')" title="Manage Windows Services">
+                                <i class="fas fa-cogs"></i>
+                                <span>Services</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="switchToTab('folder-packages')" title="Install/Manage Packages">
+                                <i class="fas fa-box"></i>
+                                <span>Packages</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="switchToTab('folder-cleanup')" title="Clean System Files">
+                                <i class="fas fa-broom"></i>
+                                <span>Cleanup</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="switchToTab('folder-networking')" title="Network Information">
+                                <i class="fas fa-network-wired"></i>
+                                <span>Network</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="switchToTab('folder-environment-variables')" title="Manage Environment Variables">
+                                <i class="fas fa-code"></i>
+                                <span>Environment</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="switchToTab('folder-windows-unattend')" title="Create Windows Unattend Files">
+                                <i class="fas fa-cogs"></i>
+                                <span>Unattend</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="switchToTab('folder-processes')" title="Manage Running Processes">
+                                <i class="fas fa-tasks"></i>
+                                <span>Processes</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="showSettings()" title="Application Settings">
+                                <i class="fas fa-cog"></i>
+                                <span>Settings</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Plugins Tab Content -->
+            <div id="tab-plugins" class="tab-content">
+                <div class="tab-header">
+                    <h1><i class="fas fa-puzzle-piece"></i> Plugin Management | BETA</h1>
+                    <p>Install, manage, and discover new plugins for WinTool.</p>
+                </div>
+                <div class="plugin-actions">
+                    <button id="install-plugin-btn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Install Plugin from File
+                    </button>
+                    <button id="open-plugins-dir-btn" class="btn btn-secondary">
+                        <i class="fas fa-folder-open"></i> Open Plugin Directory
+                    </button>
+                    <button id="refresh-verified-plugins-btn" class="btn btn-secondary">
+                        <i class="fas fa-shield-alt"></i> Refresh Verification
+                    </button>
+                </div>
+                <div class="plugin-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span><strong>Security Notice:</strong> For your protection, only install plugins from developers you trust. Verified plugins are automatically checked against the official MTechWare repository. Unverified plugins should be used with caution.</span>
+                </div>
+                <div class="tab-search-container">
+                    <input type="text" id="plugin-search" placeholder="Search plugins..." class="tab-search-input">
+                    <i class="fas fa-search tab-search-icon"></i>
+                </div>
+                <div id="plugins-content-area">
+                    <h3 class="plugin-section-header">Active Plugins</h3>
+                    <div id="active-plugins-grid" class="plugins-grid">
+                        <!-- Active plugin cards will be dynamically inserted here -->
+                    </div>
+                    <h3 class="plugin-section-header">Disabled Plugins</h3>
+                    <div id="disabled-plugins-grid" class="plugins-grid">
+                        <!-- Disabled plugin cards will be dynamically inserted here -->
+                    </div>
+                </div>
+            </div>
+
         </div>
-      </div>
-
-      <!-- Main Content Area -->
-      <div class="content-area">
-        <!-- Welcome Tab Content -->
-        <div id="tab-welcome" class="tab-content active">
-          <div class="tab-header">
-            <h1><i class="fas fa-home"></i> Welcome to WinTool</h1>
-            <p>Professional Windows System Management Suite</p>
-          </div>
-
-          <div class="welcome-content">
-            <!-- Hero Section -->
-            <div class="hero-section">
-              <div class="hero-background"></div>
-              <div class="hero-content">
-                <div class="hero-icon-wrapper">
-                  <div class="hero-icon">
-                    <i class="fas fa-rocket"></i>
-                  </div>
-                  <div class="hero-icon-glow"></div>
-                </div>
-                <h2>Comprehensive. Intuitive. Professional.</h2>
-                <p>
-                  Complete Windows system management toolkit with real-time data, powerful utilities, and seamless
-                  administration.
-                </p>
-
-                <div class="hero-stats">
-                  <div class="stat-item">
-                    <span class="stat-number">15+</span>
-                    <span class="stat-label">Management Tools</span>
-                  </div>
-                  <div class="stat-item">
-                    <span class="stat-number">24+</span>
-                    <span class="stat-label">System Utilities</span>
-                  </div>
-                  <div class="stat-item">
-                    <span class="stat-number">Real-time</span>
-                    <span class="stat-label">System Data</span>
-                  </div>
-                </div>
-
-                <div class="hero-buttons">
-                  <button class="btn btn-primary hero-btn" onclick="switchToTab('folder-system-info')">
-                    <i class="fas fa-desktop"></i> View System Info
-                  </button>
-                  <button class="btn btn-secondary hero-btn" onclick="switchToTab('folder-system-utilities')">
-                    <i class="fas fa-tools"></i> System Utilities
-                  </button>
-                  <button
-                    class="btn btn-secondary hero-btn"
-                    onclick="window.open('https://discord.gg/GSTEfkxhmD', '_blank')"
-                  >
-                    <i class="fab fa-discord"></i> Join the Discord
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Current Features -->
-            <div class="features-section">
-              <h3>Available Tools & Features</h3>
-              <div class="features-grid">
-                <div class="feature-card">
-                  <i class="fas fa-desktop"></i>
-                  <h4>System Information</h4>
-                  <p>Real-time system data, hardware details, and performance metrics</p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-tools"></i>
-                  <h4>System Utilities</h4>
-                  <p>Quick access to 24 Windows administrative tools and utilities</p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-cogs"></i>
-                  <h4>Services Manager</h4>
-                  <p>Start, stop, restart Windows services with customizable quick access</p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-box"></i>
-                  <h4>Package Manager</h4>
-                  <p>Install and manage Windows packages using winget</p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-network-wired"></i>
-                  <h4>Network Tools</h4>
-                  <p>View network interfaces and connectivity information</p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-broom"></i>
-                  <h4>System Cleanup</h4>
-                  <p>Clean temporary files and optimize Windows performance</p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-code"></i>
-                  <h4>Environment Variables</h4>
-                  <p>Manage system and user environment variables</p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-cogs"></i>
-                  <h4>Windows Unattend</h4>
-                  <p>Create and export Windows unattend.xml files for automated installations</p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-edit"></i>
-                  <h4>Script Editor</h4>
-                  <p>A powerful and lightweight code editor with syntax highlighting for various languages.</p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-list-alt"></i>
-                  <h4>Event Viewer</h4>
-                  <p>Browse and search Windows Event Logs to diagnose system problems and errors.</p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-tasks"></i>
-                  <h4>Process Manager</h4>
-                  <p>View, search, and terminate running processes with real-time CPU and memory usage.</p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-magic"></i>
-                  <h4>Windows Tweaks</h4>
-                  <p>Apply various tweaks to customize the Windows 10/11 experience.</p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-cube"></i>
-                  <h4>AppX Package Manager</h4>
-                  <p>
-                    Install and uninstall Microsoft apps and AppX packages with smart categorization and safety filters
-                  </p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-heartbeat"></i>
-                  <h4>System Health Dashboard</h4>
-                  <p>Real-time monitoring of system performance and health with interactive charts and diagnostics</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Key Features -->
-            <div class="features-section">
-              <h3>Key Features</h3>
-              <div class="features-grid">
-                <div class="feature-card">
-                  <i class="fas fa-terminal"></i>
-                  <h4>Command Palette</h4>
-                  <p>Press Ctrl+K to open a powerful command launcher</p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-search"></i>
-                  <h4>Tab Search</h4>
-                  <p>Quickly find and navigate to any tab or feature</p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-arrows-alt"></i>
-                  <h4>Draggable Tabs</h4>
-                  <p>Organize tabs in your preferred order with saved layout</p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-keyboard"></i>
-                  <h4>Keyboard Shortcuts</h4>
-                  <p>Customizable hotkeys for quick access to all features</p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-palette"></i>
-                  <h4>Customizable</h4>
-                  <p>Personalize appearance, behavior, and advanced settings</p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-tachometer-alt"></i>
-                  <h4>Real-time Data</h4>
-                  <p>Live system monitoring with automatic data refresh</p>
-                </div>
-                <div class="feature-card">
-                  <i class="fas fa-eye-slash"></i>
-                  <h4>Hide/Show Tabs</h4>
-                  <p>Customize your sidebar by hiding or showing tabs to declutter your workspace.</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Getting Started -->
-            <div class="getting-started">
-              <h3>Getting Started</h3>
-              <div class="steps">
-                <div class="step">
-                  <div class="step-number">1</div>
-                  <div class="step-content">
-                    <h4>Explore the Tabs</h4>
-                    <p>Navigate through the available tools using the sidebar or tab search functionality</p>
-                  </div>
-                </div>
-                <div class="step">
-                  <div class="step-number">2</div>
-                  <div class="step-content">
-                    <h4>Customize Your Experience</h4>
-                    <p>Access Settings to personalize colors and behavior preferences</p>
-                  </div>
-                </div>
-                <div class="step">
-                  <div class="step-number">3</div>
-                  <div class="step-content">
-                    <h4>Organize Your Workspace</h4>
-                    <p>Drag tabs to reorder them and use quick access features for frequently used tools</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="quick-actions-section">
-              <h3>Quick Actions</h3>
-              <div class="quick-actions-grid">
-                <button
-                  class="quick-action-btn"
-                  onclick="switchToTab('folder-services')"
-                  title="Manage Windows Services"
-                >
-                  <i class="fas fa-cogs"></i>
-                  <span>Services</span>
-                </button>
-                <button
-                  class="quick-action-btn"
-                  onclick="switchToTab('folder-packages')"
-                  title="Install/Manage Packages"
-                >
-                  <i class="fas fa-box"></i>
-                  <span>Packages</span>
-                </button>
-                <button class="quick-action-btn" onclick="switchToTab('folder-cleanup')" title="Clean System Files">
-                  <i class="fas fa-broom"></i>
-                  <span>Cleanup</span>
-                </button>
-                <button class="quick-action-btn" onclick="switchToTab('folder-networking')" title="Network Information">
-                  <i class="fas fa-network-wired"></i>
-                  <span>Network</span>
-                </button>
-                <button
-                  class="quick-action-btn"
-                  onclick="switchToTab('folder-environment-variables')"
-                  title="Manage Environment Variables"
-                >
-                  <i class="fas fa-code"></i>
-                  <span>Environment</span>
-                </button>
-                <button
-                  class="quick-action-btn"
-                  onclick="switchToTab('folder-windows-unattend')"
-                  title="Create Windows Unattend Files"
-                >
-                  <i class="fas fa-cogs"></i>
-                  <span>Unattend</span>
-                </button>
-                <button
-                  class="quick-action-btn"
-                  onclick="switchToTab('folder-processes')"
-                  title="Manage Running Processes"
-                >
-                  <i class="fas fa-tasks"></i>
-                  <span>Processes</span>
-                </button>
-                <button class="quick-action-btn" onclick="showSettings()" title="Application Settings">
-                  <i class="fas fa-cog"></i>
-                  <span>Settings</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Plugins Tab Content -->
-        <div id="tab-plugins" class="tab-content">
-          <div class="tab-header">
-            <h1><i class="fas fa-puzzle-piece"></i> Plugin Management | BETA</h1>
-            <p>Install, manage, and discover new plugins for WinTool.</p>
-          </div>
-          <div class="plugin-actions">
-            <button id="install-plugin-btn" class="btn btn-primary">
-              <i class="fas fa-plus"></i> Install Plugin from File
-            </button>
-            <button id="open-plugins-dir-btn" class="btn btn-secondary">
-              <i class="fas fa-folder-open"></i> Open Plugin Directory
-            </button>
-            <button id="refresh-verified-plugins-btn" class="btn btn-secondary">
-              <i class="fas fa-shield-alt"></i> Refresh Verification
-            </button>
-          </div>
-          <div class="plugin-warning">
-            <i class="fas fa-exclamation-triangle"></i>
-            <span
-              ><strong>Security Notice:</strong> For your protection, only install plugins from developers you trust.
-              Verified plugins are automatically checked against the official MTechWare repository. Unverified plugins
-              should be used with caution.</span
-            >
-          </div>
-          <div class="tab-search-container">
-            <input type="text" id="plugin-search" placeholder="Search plugins..." class="tab-search-input" />
-            <i class="fas fa-search tab-search-icon"></i>
-          </div>
-          <div id="plugins-content-area">
-            <h3 class="plugin-section-header">Active Plugins</h3>
-            <div id="active-plugins-grid" class="plugins-grid">
-              <!-- Active plugin cards will be dynamically inserted here -->
-            </div>
-            <h3 class="plugin-section-header">Disabled Plugins</h3>
-            <div id="disabled-plugins-grid" class="plugins-grid">
-              <!-- Disabled plugin cards will be dynamically inserted here -->
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
+
+
 
     <!-- Help Modal -->
     <div id="help-modal-container"></div>
 
     <!-- System Info Modal -->
-    <div id="system-info-modal" class="modal" style="display: none">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>System Information</h3>
-          <button class="modal-close" onclick="closeModal('system-info-modal')">&times;</button>
+    <div id="system-info-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>System Information</h3>
+                <button class="modal-close" onclick="closeModal('system-info-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="system-info-content">
+                    <p>Loading system information...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeModal('system-info-modal')">Close</button>
+            </div>
         </div>
-        <div class="modal-body">
-          <div id="system-info-content">
-            <p>Loading system information...</p>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-primary" onclick="closeModal('system-info-modal')">Close</button>
-        </div>
-      </div>
     </div>
 
     <!-- Settings Modal -->
-    <div id="settings-modal" class="modal" style="display: none">
-      <div class="modal-content settings-modal-content">
-        <div class="modal-header">
-          <h3><i class="fas fa-cog"></i> Settings</h3>
-          <button class="modal-close close-btn" onclick="closeModal('settings-modal')">&times;</button>
-        </div>
-        <div class="modal-body settings-modal-body">
-          <div class="settings-sidebar">
-            <div class="settings-nav">
-              <div class="settings-nav-item active" data-settings-tab="appearance">
-                <i class="fas fa-palette"></i>
-                <span>Appearance</span>
-              </div>
-              <div class="settings-nav-item" data-settings-tab="behavior">
-                <i class="fas fa-cogs"></i>
-                <span>Behavior</span>
-              </div>
-              <div class="settings-nav-item" data-settings-tab="performance">
-                <i class="fas fa-tachometer-alt"></i>
-                <span>Performance</span>
-              </div>
-              <div class="settings-nav-item" data-settings-tab="shortcuts">
-                <i class="fas fa-keyboard"></i>
-                <span>Keyboard Shortcuts</span>
-              </div>
-              <div class="settings-nav-item" data-settings-tab="advanced">
-                <i class="fas fa-sliders-h"></i>
-                <span>Advanced</span>
-              </div>
+    <div id="settings-modal" class="modal" style="display: none;">
+        <div class="modal-content settings-modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-cog"></i> Settings</h3>
+                <button class="modal-close close-btn" onclick="closeModal('settings-modal')">&times;</button>
             </div>
-          </div>
-          <div class="settings-content">
-            <!-- Appearance Settings -->
-            <div id="settings-appearance" class="settings-panel active">
-              <h4>Appearance Settings</h4>
-              <div class="settings-group">
-                <label class="settings-label">Theme</label>
-                <select id="theme-selector" class="settings-select">
-                  <option value="modern-gray">Modern Gray</option>
-                  <option value="classic-dark">Classic Dark</option>
-                  <option value="custom">Custom</option>
-                </select>
-                <p class="settings-description">Choose the application's color scheme</p>
-              </div>
-              <div class="settings-group" id="custom-theme-creator" style="display: none">
-                <label class="settings-label">Custom Theme</label>
-                <div class="custom-theme-actions">
-                  <button class="btn btn-secondary" onclick="openThemeCreator()">
-                    <i class="fas fa-palette"></i> Create/Edit Custom Theme
-                  </button>
-                </div>
-              </div>
-              <div class="settings-group">
-                <label class="settings-label">Primary Color</label>
-                <div class="color-picker-group">
-                  <input type="color" id="primary-color-picker" class="color-picker" value="#ff9800" />
-                  <span class="color-preview" id="primary-color-preview">#ff9800</span>
-                </div>
-                <p class="settings-description">Choose the primary accent color for the application</p>
-              </div>
-              <div class="settings-group">
-                <label class="settings-label">
-                  <input type="checkbox" id="rainbow-mode-checkbox" class="settings-checkbox" />
-                  Rainbow Mode
-                </label>
-                <p class="settings-description">Enable a cycling rainbow effect for the primary color</p>
-              </div>
-              <div class="settings-group" id="rainbow-speed-container" style="display: none">
-                <label class="settings-label">Rainbow Speed</label>
-                <div class="slider-group">
-                  <input type="range" id="rainbow-speed-slider" min="1" max="10" step="1" value="5" class="slider" />
-                  <span class="slider-value" id="rainbow-speed-value">5s</span>
-                </div>
-                <p class="settings-description">Set the speed of the rainbow color cycle (in seconds)</p>
-              </div>
-              <div class="settings-group">
-                <label class="settings-label">App Transparency</label>
-                <div class="slider-group">
-                  <input type="range" id="transparency-slider" min="0.1" max="1" step="0.05" value="1" class="slider" />
-                  <span class="slider-value" id="transparency-value">100%</span>
-                </div>
-                <p class="settings-description">Adjust the transparency of the application window</p>
-              </div>
-              <div class="settings-group">
-                <label class="settings-label">
-                  <input type="checkbox" id="disable-animations-checkbox" class="settings-checkbox" />
-                  Disable Animations
-                </label>
-                <p class="settings-description">
-                  Disable all animations for a more responsive experience on low-end systems.
-                </p>
-              </div>
-              <div class="settings-group">
-                <label class="settings-label">Theme Actions</label>
-                <div class="shortcut-actions">
-                  <button class="btn btn-secondary" onclick="importTheme()">
-                    <i class="fas fa-upload"></i> Import Theme
-                  </button>
-                  <button class="btn btn-secondary" onclick="exportTheme()">
-                    <i class="fas fa-download"></i> Export Theme
-                  </button>
-                </div>
-                <p class="settings-description">Import or export your theme settings</p>
-              </div>
-            </div>
-
-            <!-- Behavior Settings -->
-            <div id="settings-behavior" class="settings-panel">
-              <h4>Behavior Settings</h4>
-              <div class="settings-group">
-                <label class="settings-label">
-                  <input type="checkbox" id="remember-last-tab" class="settings-checkbox" />
-                  Remember Last Active Tab
-                </label>
-                <p class="settings-description">Restore the last active tab when opening the application</p>
-              </div>
-              <div class="settings-group">
-                <label class="settings-label">
-                  <input type="checkbox" id="auto-refresh-data" class="settings-checkbox" />
-                  Auto-refresh System Data
-                </label>
-                <p class="settings-description">Automatically refresh system information every 30 seconds</p>
-              </div>
-
-              <div class="settings-group">
-                <label class="settings-label" for="elevation-preference">Administrator Privileges</label>
-                <select id="elevation-preference" class="settings-select">
-                  <option value="ask">Always ask</option>
-                  <option value="yes">Always elevate</option>
-                  <option value="no">Never elevate</option>
-                </select>
-                <p class="settings-description">
-                  Choose how the application should handle administrator privileges on startup.
-                </p>
-              </div>
-
-              <div class="settings-group">
-                <label class="settings-label">
-                  <input type="checkbox" id="top-most-checkbox" class="settings-checkbox" />
-                  Always on Top
-                </label>
-                <p class="settings-description">Keep the application window always on top of other windows.</p>
-              </div>
-
-
-            </div>
-
-            <!-- Keyboard Shortcuts Settings -->
-            <div id="settings-shortcuts" class="settings-panel">
-              <h4>Keyboard Shortcuts</h4>
-              <p class="settings-description">
-                Customize keyboard shortcuts for quick access to features. Click on a shortcut field and press the
-                desired key combination.
-              </p>
-
-              <div class="shortcuts-section">
-                <h5>Navigation & Search</h5>
-                <div class="shortcut-item">
-                  <label class="shortcut-label">Open Command Palette</label>
-                  <input
-                    type="text"
-                    id="shortcut-command-palette"
-                    class="shortcut-input"
-                    readonly
-                    placeholder="Ctrl+K"
-                  />
-                  <button class="btn btn-small btn-secondary" onclick="resetShortcut('command-palette')">
-                    <i class="fas fa-undo"></i>
-                  </button>
-                  <p class="shortcut-description">Open the command palette for quick actions</p>
-                </div>
-                <div class="shortcut-item">
-                  <label class="shortcut-label">Focus Tab Search</label>
-                  <input type="text" id="shortcut-focus-search" class="shortcut-input" readonly placeholder="Ctrl+F" />
-                  <button class="btn btn-small btn-secondary" onclick="resetShortcut('focus-search')">
-                    <i class="fas fa-undo"></i>
-                  </button>
-                  <p class="shortcut-description">Quickly search for and navigate to specific tabs</p>
-                </div>
-              </div>
-
-              <div class="shortcuts-section">
-                <h5>Data Refresh</h5>
-                <div class="shortcut-item">
-                  <label class="shortcut-label">Refresh Current Tab</label>
-                  <input type="text" id="shortcut-refresh-tab" class="shortcut-input" readonly placeholder="Ctrl+R" />
-                  <button class="btn btn-small btn-secondary" onclick="resetShortcut('refresh-tab')">
-                    <i class="fas fa-undo"></i>
-                  </button>
-                  <p class="shortcut-description">Refresh data in the currently active tab</p>
-                </div>
-                <div class="shortcut-item">
-                  <label class="shortcut-label">Refresh System Info</label>
-                  <input type="text" id="shortcut-refresh-system" class="shortcut-input" readonly placeholder="F5" />
-                  <button class="btn btn-small btn-secondary" onclick="resetShortcut('refresh-system')">
-                    <i class="fas fa-undo"></i>
-                  </button>
-                  <p class="shortcut-description">Globally refresh system information across all tabs</p>
-                </div>
-              </div>
-
-              <div class="shortcuts-section">
-                <h5>Settings & Dialogs</h5>
-                <div class="shortcut-item">
-                  <label class="shortcut-label">Show Help</label>
-                  <input type="text" id="shortcut-show-help" class="shortcut-input" readonly placeholder="F1" />
-                  <button class="btn btn-small btn-secondary" onclick="resetShortcut('show-help')">
-                    <i class="fas fa-undo"></i>
-                  </button>
-                  <p class="shortcut-description">Open the command palette help window</p>
-                </div>
-                <div class="shortcut-item">
-                  <label class="shortcut-label">Open Settings</label>
-                  <input type="text" id="shortcut-open-settings" class="shortcut-input" readonly placeholder="Ctrl+S" />
-                  <button class="btn btn-small btn-secondary" onclick="resetShortcut('open-settings')">
-                    <i class="fas fa-undo"></i>
-                  </button>
-                  <p class="shortcut-description">Open the settings panel</p>
-                </div>
-                <div class="shortcut-item">
-                  <label class="shortcut-label">Close Modals</label>
-                  <input type="text" id="shortcut-close-modal" class="shortcut-input" readonly placeholder="Escape" />
-                  <button class="btn btn-small btn-secondary" onclick="resetShortcut('close-modal')">
-                    <i class="fas fa-undo"></i>
-                  </button>
-                  <p class="shortcut-description">Close any open modal dialog or popup</p>
-                </div>
-                <div class="shortcut-item">
-                  <label class="shortcut-label">Quit App</label>
-                  <input type="text" id="shortcut-quit-app" class="shortcut-input" readonly placeholder="Ctrl+Q" />
-                  <button class="btn btn-small btn-secondary" onclick="resetShortcut('quit-app')">
-                    <i class="fas fa-undo"></i>
-                  </button>
-                  <p class="shortcut-description">Quit the application</p>
-                </div>
-              </div>
-
-              <div class="shortcuts-section">
-                <h5>Actions</h5>
-                <div class="shortcut-actions">
-                  <button class="btn btn-secondary" onclick="resetAllShortcuts()">
-                    <i class="fas fa-undo"></i>
-                    Reset All to Defaults
-                  </button>
-                  <button class="btn btn-secondary" onclick="exportShortcuts()">
-                    <i class="fas fa-download"></i>
-                    Export Shortcuts
-                  </button>
-                  <button class="btn btn-secondary" onclick="importShortcuts()">
-                    <i class="fas fa-upload"></i>
-                    Import Shortcuts
-                  </button>
-                </div>
-                <p class="settings-description">Manage your keyboard shortcut configurations</p>
-              </div>
-            </div>
-
-            <!-- Performance Settings -->
-            <div id="settings-performance" class="settings-panel">
-              <h4>Performance Settings</h4>
-
-              <div class="settings-group">
-                <label class="settings-label">Performance Mode</label>
-                <p class="settings-description">
-                  Choose how WinTool should balance features and performance based on your system capabilities.
-                </p>
-
-                <div class="performance-mode-grid">
-                  <div class="mode-card" data-mode="low-end">
-                    <div class="mode-title">🐌 Low-End Mode</div>
-                    <div class="mode-description">
-                      Optimized for systems with limited resources. Reduces background operations, enables caching, and
-                      disables non-essential features for maximum performance.
+            <div class="modal-body settings-modal-body">
+                <div class="settings-sidebar">
+                    <div class="settings-nav">
+                        <div class="settings-nav-item active" data-settings-tab="appearance">
+                            <i class="fas fa-palette"></i>
+                            <span>Appearance</span>
+                        </div>
+                        <div class="settings-nav-item" data-settings-tab="behavior">
+                            <i class="fas fa-cogs"></i>
+                            <span>Behavior</span>
+                        </div>
+                        <div class="settings-nav-item" data-settings-tab="performance">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Performance</span>
+                        </div>
+                        <div class="settings-nav-item" data-settings-tab="shortcuts">
+                            <i class="fas fa-keyboard"></i>
+                            <span>Keyboard Shortcuts</span>
+                        </div>
+                        <div class="settings-nav-item" data-settings-tab="advanced">
+                            <i class="fas fa-sliders-h"></i>
+                            <span>Advanced</span>
+                        </div>
                     </div>
-                  </div>
-
-                  <div class="mode-card" data-mode="auto">
-                    <div class="mode-title">⚡ Auto Mode</div>
-                    <div class="mode-description">
-                      Automatically adjusts performance based on detected system capabilities. Recommended for most
-                      users.
+                </div>
+                <div class="settings-content">
+                    <!-- Appearance Settings -->
+                    <div id="settings-appearance" class="settings-panel active">
+                        <h4>Appearance Settings</h4>
+                        <div class="settings-group">
+                            <label class="settings-label">Theme</label>
+                            <select id="theme-selector" class="settings-select">
+                                <option value="modern-gray">Modern Gray</option>
+                                <option value="classic-dark">Classic Dark</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                            <p class="settings-description">Choose the application's color scheme</p>
+                        </div>
+                        <div class="settings-group" id="custom-theme-creator" style="display: none;">
+                            <label class="settings-label">Custom Theme</label>
+                            <div class="custom-theme-actions">
+                                <button class="btn btn-secondary" onclick="openThemeCreator()">
+                                    <i class="fas fa-palette"></i> Create/Edit Custom Theme
+                                </button>
+                            </div>
+                        </div>
+                        <div class="settings-group">
+                            <label class="settings-label">Primary Color</label>
+                            <div class="color-picker-group">
+                                <input type="color" id="primary-color-picker" class="color-picker" value="#ff9800">
+                                <span class="color-preview" id="primary-color-preview">#ff9800</span>
+                            </div>
+                            <p class="settings-description">Choose the primary accent color for the application</p>
+                        </div>
+                        <div class="settings-group">
+                            <label class="settings-label">
+                                <input type="checkbox" id="rainbow-mode-checkbox" class="settings-checkbox">
+                                Rainbow Mode
+                            </label>
+                            <p class="settings-description">Enable a cycling rainbow effect for the primary color</p>
+                        </div>
+                        <div class="settings-group" id="rainbow-speed-container" style="display: none;">
+                            <label class="settings-label">Rainbow Speed</label>
+                            <div class="slider-group">
+                                <input type="range" id="rainbow-speed-slider" min="1" max="10" step="1" value="5" class="slider">
+                                <span class="slider-value" id="rainbow-speed-value">5s</span>
+                            </div>
+                            <p class="settings-description">Set the speed of the rainbow color cycle (in seconds)</p>
+                        </div>
+                        <div class="settings-group">
+                            <label class="settings-label">App Transparency</label>
+                            <div class="slider-group">
+                                <input type="range" id="transparency-slider" min="0.1" max="1" step="0.05" value="1" class="slider">
+                                <span class="slider-value" id="transparency-value">100%</span>
+                            </div>
+                            <p class="settings-description">Adjust the transparency of the application window</p>
+                        </div>
+                        <div class="settings-group">
+                            <label class="settings-label">
+                                <input type="checkbox" id="disable-animations-checkbox" class="settings-checkbox">
+                                Disable Animations
+                            </label>
+                            <p class="settings-description">Disable all animations for a more responsive experience on low-end systems.</p>
+                        </div>
+                        <div class="settings-group">
+                            <label class="settings-label">Theme Actions</label>
+                            <div class="shortcut-actions">
+                                <button class="btn btn-secondary" onclick="importTheme()">
+                                    <i class="fas fa-upload"></i> Import Theme
+                                </button>
+                                <button class="btn btn-secondary" onclick="exportTheme()">
+                                    <i class="fas fa-download"></i> Export Theme
+                                </button>
+                            </div>
+                            <p class="settings-description">Import or export your theme settings</p>
+                        </div>
                     </div>
-                  </div>
 
-                  <div class="mode-card" data-mode="high-end">
-                    <div class="mode-title">🚀 High-End Mode</div>
-                    <div class="mode-description">
-                      Enables all features and faster update intervals. Best for powerful systems with plenty of RAM and
-                      CPU cores.
+                    <!-- Behavior Settings -->
+                    <div id="settings-behavior" class="settings-panel">
+                        <h4>Behavior Settings</h4>
+                        <div class="settings-group">
+                            <label class="settings-label">
+                                <input type="checkbox" id="remember-last-tab" class="settings-checkbox">
+                                Remember Last Active Tab
+                            </label>
+                            <p class="settings-description">Restore the last active tab when opening the application</p>
+                        </div>
+
+
+                        <div class="settings-group">
+                            <label class="settings-label" for="elevation-preference">Administrator Privileges</label>
+                            <select id="elevation-preference" class="settings-select">
+                                <option value="ask">Always ask</option>
+                                <option value="yes">Always elevate</option>
+                                <option value="no">Never elevate</option>
+                            </select>
+                            <p class="settings-description">Choose how the application should handle administrator privileges on startup.</p>
+                        </div>
+
+                        <div class="settings-group">
+                            <label class="settings-label">
+                                <input type="checkbox" id="top-most-checkbox" class="settings-checkbox">
+                                Always on Top
+                            </label>
+                            <p class="settings-description">Keep the application window always on top of other windows.</p>
+                        </div>
+
                     </div>
-                  </div>
+
+                    <!-- Keyboard Shortcuts Settings -->
+                    <div id="settings-shortcuts" class="settings-panel">
+                        <h4>Keyboard Shortcuts</h4>
+                        <p class="settings-description">Customize keyboard shortcuts for quick access to features. Click on a shortcut field and press the desired key combination.</p>
+
+                        <div class="shortcuts-section">
+                            <h5>Navigation & Search</h5>
+                            <div class="shortcut-item">
+                                <label class="shortcut-label">Open Command Palette</label>
+                                <input type="text" id="shortcut-command-palette" class="shortcut-input" readonly placeholder="Ctrl+K">
+                                <button class="btn btn-small btn-secondary" onclick="resetShortcut('command-palette')">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <p class="shortcut-description">Open the command palette for quick actions</p>
+                            </div>
+                            <div class="shortcut-item">
+                                <label class="shortcut-label">Focus Tab Search</label>
+                                <input type="text" id="shortcut-focus-search" class="shortcut-input" readonly placeholder="Ctrl+F">
+                                <button class="btn btn-small btn-secondary" onclick="resetShortcut('focus-search')">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <p class="shortcut-description">Quickly search for and navigate to specific tabs</p>
+                            </div>
+                        </div>
+
+                        <div class="shortcuts-section">
+                            <h5>Data Refresh</h5>
+                            <div class="shortcut-item">
+                                <label class="shortcut-label">Refresh Current Tab</label>
+                                <input type="text" id="shortcut-refresh-tab" class="shortcut-input" readonly placeholder="Ctrl+R">
+                                <button class="btn btn-small btn-secondary" onclick="resetShortcut('refresh-tab')">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <p class="shortcut-description">Refresh data in the currently active tab</p>
+                            </div>
+                            <div class="shortcut-item">
+                                <label class="shortcut-label">Refresh System Info</label>
+                                <input type="text" id="shortcut-refresh-system" class="shortcut-input" readonly placeholder="F5">
+                                <button class="btn btn-small btn-secondary" onclick="resetShortcut('refresh-system')">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <p class="shortcut-description">Globally refresh system information across all tabs</p>
+                            </div>
+                        </div>
+
+                        <div class="shortcuts-section">
+                            <h5>Settings & Dialogs</h5>
+                            <div class="shortcut-item">
+                                <label class="shortcut-label">Show Help</label>
+                                <input type="text" id="shortcut-show-help" class="shortcut-input" readonly placeholder="F1">
+                                <button class="btn btn-small btn-secondary" onclick="resetShortcut('show-help')">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <p class="shortcut-description">Open the command palette help window</p>
+                            </div>
+                            <div class="shortcut-item">
+                                <label class="shortcut-label">Open Settings</label>
+                                <input type="text" id="shortcut-open-settings" class="shortcut-input" readonly placeholder="Ctrl+S">
+                                <button class="btn btn-small btn-secondary" onclick="resetShortcut('open-settings')">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <p class="shortcut-description">Open the settings panel</p>
+                            </div>
+                            <div class="shortcut-item">
+                                <label class="shortcut-label">Close Modals</label>
+                                <input type="text" id="shortcut-close-modal" class="shortcut-input" readonly placeholder="Escape">
+                                <button class="btn btn-small btn-secondary" onclick="resetShortcut('close-modal')">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <p class="shortcut-description">Close any open modal dialog or popup</p>
+                            </div>
+                            <div class="shortcut-item">
+                                <label class="shortcut-label">Quit App</label>
+                                <input type="text" id="shortcut-quit-app" class="shortcut-input" readonly placeholder="Ctrl+Q">
+                                <button class="btn btn-small btn-secondary" onclick="resetShortcut('quit-app')">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <p class="shortcut-description">Quit the application</p>
+                            </div>
+                        </div>
+
+                        <div class="shortcuts-section">
+                            <h5>Actions</h5>
+                            <div class="shortcut-actions">
+                                <button class="btn btn-secondary" onclick="resetAllShortcuts()">
+                                    <i class="fas fa-undo"></i>
+                                    Reset All to Defaults
+                                </button>
+                                <button class="btn btn-secondary" onclick="exportShortcuts()">
+                                    <i class="fas fa-download"></i>
+                                    Export Shortcuts
+                                </button>
+                                <button class="btn btn-secondary" onclick="importShortcuts()">
+                                    <i class="fas fa-upload"></i>
+                                    Import Shortcuts
+                                </button>
+                            </div>
+                            <p class="settings-description">Manage your keyboard shortcut configurations</p>
+                        </div>
+                    </div>
+
+                    <!-- Performance Settings -->
+                    <div id="settings-performance" class="settings-panel">
+                        <h4>Performance Settings</h4>
+
+                        <div class="settings-group">
+                            <label class="settings-label">Performance Mode</label>
+                            <p class="settings-description">Choose how WinTool should balance features and performance based on your system capabilities.</p>
+
+                            <div class="performance-mode-grid">
+                                <div class="mode-card" data-mode="low-end">
+                                    <div class="mode-title">🐌 Low-End Mode</div>
+                                    <div class="mode-description">
+                                        Optimized for systems with limited resources. Reduces background operations,
+                                        enables caching, and disables non-essential features for maximum performance.
+                                    </div>
+                                </div>
+
+                                <div class="mode-card" data-mode="auto">
+                                    <div class="mode-title">⚡ Auto Mode</div>
+                                    <div class="mode-description">
+                                        Automatically adjusts performance based on detected system capabilities.
+                                        Recommended for most users.
+                                    </div>
+                                </div>
+
+                                <div class="mode-card" data-mode="high-end">
+                                    <div class="mode-title">🚀 High-End Mode</div>
+                                    <div class="mode-description">
+                                        Enables all features and faster update intervals. Best for powerful systems
+                                        with plenty of RAM and CPU cores.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="recommendation" id="performance-recommendation" style="display: none;">
+                                <h5>💡 Recommendation</h5>
+                                <p id="performance-recommendation-text"></p>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <label class="settings-label">Advanced Performance Options</label>
+
+                            <div class="settings-group">
+                                <label class="settings-label">
+                                    <input type="checkbox" id="fast-system-info" class="settings-checkbox">
+                                    Fast System Information
+                                </label>
+                                <p class="settings-description">Use basic system information instead of detailed hardware scanning for faster loading.</p>
+                            </div>
+
+                            <div class="settings-group">
+                                <label class="settings-label">
+                                    <input type="checkbox" id="cache-system-info" class="settings-checkbox">
+                                    Cache System Information
+                                </label>
+                                <p class="settings-description">Cache system information for 5 minutes to reduce repeated hardware queries.</p>
+                            </div>
+
+                            <div class="settings-group">
+                                <label class="settings-label">
+                                    <input type="checkbox" id="enable-discord-rpc" class="settings-checkbox">
+                                    Discord Rich Presence
+                                </label>
+                                <p class="settings-description">Show WinTool activity in Discord. Disable to save system resources.</p>
+                            </div>
+
+                            <div class="settings-group">
+                                <label class="settings-label">
+                                    <input type="checkbox" id="enable-lazy-loading" class="settings-checkbox">
+                                    Enable Lazy Loading
+                                </label>
+                                <p class="settings-description">Load tab content only when accessed for faster startup. Disabling this will load all tabs immediately, which may slow startup but ensures all content is ready instantly.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Settings -->
+                    <div id="settings-advanced" class="settings-panel">
+                        <h4>Advanced Settings</h4>
+
+                        <div class="settings-group">
+                            <label class="settings-label">
+                                <input type="checkbox" id="enable-dev-tools" class="settings-checkbox">
+                                Enable Developer Tools
+                            </label>
+                            <p class="settings-description">Allow access to developer tools (requires restart)</p>
+                        </div>
+                        <div class="settings-group">
+                            <label class="settings-label">
+                                <input type="checkbox" id="clear-plugin-cache" class="settings-checkbox">
+                                Clear Plugin Cache on Load
+                            </label>
+                            <p class="settings-description">When enabled, this clears the cache for plugin backend scripts every time the application starts. This is useful for plugin development but may slightly increase load times.</p>
+                        </div>
+                        <div class="settings-group">
+                            <button class="btn btn-danger" onclick="resetSettings()">
+                                <i class="fas fa-bomb"></i>
+                                Reset All Application Settings
+                            </button>
+                            <p class="settings-description">This will erase all your settings, including custom themes and shortcuts, and restart the application. This action cannot be undone.</p>
+                        </div>
+                    </div>
+
                 </div>
-              </div>
-
-              <div class="settings-group">
-                <label class="settings-label">
-                  <input type="checkbox" id="enable-lazy-loading" class="settings-checkbox" />
-                  Lazy Loading
-                </label>
-                <p class="settings-description">
-                  Load tab content only when accessed for faster startup. Disabling this will load all tabs immediately,
-                  which may slow startup but ensures all content is ready instantly.
-                </p>
-              </div>
-
-              <div class="settings-group">
-
-
-                <div class="settings-group">
-                  <label class="settings-label">
-                    <input type="checkbox" id="cache-system-info" class="settings-checkbox" />
-                    Cache System Information
-                  </label>
-                  <p class="settings-description">
-                    Cache system information for 5 minutes to reduce repeated hardware queries.
-                  </p>
-                </div>
-
-                <div class="settings-group">
-                  <label class="settings-label">
-                    <input type="checkbox" id="enable-discord-rpc" class="settings-checkbox" />
-                    Discord Rich Presence
-                  </label>
-                  <p class="settings-description">
-                    Show WinTool activity in Discord. Disable to save system resources.
-                  </p>
-                </div>
-              </div>
             </div>
-
-            <!-- Advanced Settings -->
-            <div id="settings-advanced" class="settings-panel">
-              <h4>Advanced Settings</h4>
-
-              <div class="settings-group">
-                <label class="settings-label">
-                  <input type="checkbox" id="enable-dev-tools" class="settings-checkbox" />
-                  Enable Developer Tools
-                </label>
-                <p class="settings-description">Allow access to developer tools (requires restart)</p>
-              </div>
-              <div class="settings-group">
-                <label class="settings-label">
-                  <input type="checkbox" id="clear-plugin-cache" class="settings-checkbox" />
-                  Clear Plugin Cache on Load
-                </label>
-                <p class="settings-description">
-                  When enabled, this clears the cache for plugin backend scripts every time the application starts. This
-                  is useful for plugin development but may slightly increase load times.
-                </p>
-              </div>
-              <div class="settings-group">
-                <button class="btn btn-danger" onclick="resetSettings()">
-                  <i class="fas fa-bomb"></i>
-                  Reset All Application Settings
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cancelSettings()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveSettings()">
+                    <i class="fas fa-save"></i>
+                    Save Settings
                 </button>
-                <p class="settings-description">
-                  This will erase all your settings, including custom themes and shortcuts, and restart the application.
-                  This action cannot be undone.
-                </p>
-              </div>
             </div>
-          </div>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" onclick="cancelSettings()">Cancel</button>
-          <button class="btn btn-primary" onclick="saveSettings()">
-            <i class="fas fa-save"></i>
-            Save Settings
-          </button>
-        </div>
-      </div>
     </div>
 
     <!-- Command Palette Modal -->
-    <div id="command-palette-modal" class="modal command-palette-modal" style="display: none">
-      <div class="modal-content command-palette-content">
-        <div class="command-palette-search-container">
-          <i class="fas fa-search command-palette-search-icon"></i>
-          <input
-            type="text"
-            id="command-palette-input"
-            placeholder="Type a command or search..."
-            class="command-palette-input"
-          />
+    <div id="command-palette-modal" class="modal command-palette-modal" style="display: none;">
+        <div class="modal-content command-palette-content">
+            <div class="command-palette-search-container">
+                <i class="fas fa-search command-palette-search-icon"></i>
+                <input type="text" id="command-palette-input" placeholder="Type a command or search..." class="command-palette-input">
+            </div>
+            <div class="command-palette-results-container">
+                <ul id="command-palette-results" class="command-palette-results-list">
+                    <!-- Command results will be dynamically inserted here -->
+                </ul>
+            </div>
         </div>
-        <div class="command-palette-results-container">
-          <ul id="command-palette-results" class="command-palette-results-list">
-            <!-- Command results will be dynamically inserted here -->
-          </ul>
-        </div>
-      </div>
     </div>
 
     <!-- Theme Creator Modal -->
-    <div id="theme-creator-modal" class="modal" style="display: none">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>Create Custom Theme</h3>
-          <button class="modal-close" onclick="closeModal('theme-creator-modal')">&times;</button>
+    <div id="theme-creator-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create Custom Theme</h3>
+                <button class="modal-close" onclick="closeModal('theme-creator-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Theme Name</label>
+                    <input type="text" id="theme-name-input" class="form-input" placeholder="My Custom Theme">
+                </div>
+                <div class="form-group">
+                    <label>Primary Color</label>
+                    <input type="color" id="theme-primary-color" class="color-picker" value="#ff9800">
+                </div>
+                <div class="form-group">
+                    <label>Background Dark</label>
+                    <input type="color" id="theme-background-dark" class="color-picker" value="#1c1c1e">
+                </div>
+                <div class="form-group">
+                    <label>Background Light</label>
+                    <input type="color" id="theme-background-light" class="color-picker" value="#2c2c2e">
+                </div>
+                <div class="form-group">
+                    <label>Background Card</label>
+                    <input type="color" id="theme-background-card" class="color-picker" value="#3a3a3c">
+                </div>
+                <div class="form-group">
+                    <label>Border Color</label>
+                    <input type="color" id="theme-border-color" class="color-picker" value="#444444">
+                </div>
+                <div class="form-group">
+                    <label>Hover Color</label>
+                    <input type="color" id="theme-hover-color" class="color-picker" value="#4f4f52">
+                </div>
+                <div class="form-group">
+                    <label>Content Background</label>
+                    <input type="color" id="theme-background-content" class="color-picker" value="#1c1c1e">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('theme-creator-modal')">Cancel</button>
+                <button class="btn btn-secondary" onclick="resetCustomTheme()">Reset Colors</button>
+                <button class="btn btn-primary" onclick="saveCustomTheme()">Save Theme</button>
+            </div>
         </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label>Theme Name</label>
-            <input type="text" id="theme-name-input" class="form-input" placeholder="My Custom Theme" />
-          </div>
-          <div class="form-group">
-            <label>Primary Color</label>
-            <input type="color" id="theme-primary-color" class="color-picker" value="#ff9800" />
-          </div>
-          <div class="form-group">
-            <label>Background Dark</label>
-            <input type="color" id="theme-background-dark" class="color-picker" value="#1c1c1e" />
-          </div>
-          <div class="form-group">
-            <label>Background Light</label>
-            <input type="color" id="theme-background-light" class="color-picker" value="#2c2c2e" />
-          </div>
-          <div class="form-group">
-            <label>Background Card</label>
-            <input type="color" id="theme-background-card" class="color-picker" value="#3a3a3c" />
-          </div>
-          <div class="form-group">
-            <label>Border Color</label>
-            <input type="color" id="theme-border-color" class="color-picker" value="#444444" />
-          </div>
-          <div class="form-group">
-            <label>Hover Color</label>
-            <input type="color" id="theme-hover-color" class="color-picker" value="#4f4f52" />
-          </div>
-          <div class="form-group">
-            <label>Content Background</label>
-            <input type="color" id="theme-background-content" class="color-picker" value="#1c1c1e" />
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" onclick="closeModal('theme-creator-modal')">Cancel</button>
-          <button class="btn btn-secondary" onclick="resetCustomTheme()">Reset Colors</button>
-          <button class="btn btn-primary" onclick="saveCustomTheme()">Save Theme</button>
-        </div>
-      </div>
     </div>
 
     <!-- Tab Context Menu -->
-    <div id="tab-context-menu" class="context-menu" style="display: none">
-      <ul class="context-menu-items">
-        <li class="context-menu-item" id="context-menu-hide-tab"><i class="fas fa-eye-slash"></i> Hide Tab</li>
-      </ul>
+    <div id="tab-context-menu" class="context-menu" style="display: none;">
+        <ul class="context-menu-items">
+            <li class="context-menu-item" id="context-menu-hide-tab">
+                <i class="fas fa-eye-slash"></i> Hide Tab
+            </li>
+        </ul>
     </div>
 
     <!-- Sidebar Context Menu -->
-    <div id="sidebar-context-menu" class="context-menu" style="display: none">
-      <ul class="context-menu-items">
-        <li class="context-menu-item context-menu-submenu" id="context-menu-show-tabs">
-          <i class="fas fa-eye"></i> Show Hidden Tabs
-          <ul class="context-submenu" id="hidden-tabs-list">
-            <!-- Hidden tabs will be populated here -->
-          </ul>
-        </li>
-      </ul>
+    <div id="sidebar-context-menu" class="context-menu" style="display: none;">
+        <ul class="context-menu-items">
+            <li class="context-menu-item context-menu-submenu" id="context-menu-show-tabs">
+                <i class="fas fa-eye"></i> Show Hidden Tabs
+                <ul class="context-submenu" id="hidden-tabs-list">
+                    <!-- Hidden tabs will be populated here -->
+                </ul>
+            </li>
+        </ul>
     </div>
     <!-- JavaScript -->
     <script src="assets/codemirror/js/codemirror.min.js"></script>
@@ -934,5 +883,5 @@
     <script src="assets/codemirror/addons/autorefresh.min.js"></script>
     <script src="js/tab-loader.js"></script>
     <script type="module" src="js/app.js"></script>
-  </body>
+</body>
 </html>

@@ -1,8 +1,8 @@
 {
-  "name": "System Health",
-  "icon": "fas fa-heartbeat",
-  "description": "Real-time monitoring of system performance and health",
-  "version": "1.0.0",
-  "author": "WinTool",
-  "category": "monitoring"
+    "name": "System Health",
+    "icon": "fas fa-heartbeat",
+    "description": "Real-time monitoring of system performance and health",
+    "version": "1.0.0",
+    "author": "WinTool",
+    "category": "monitoring"
 }

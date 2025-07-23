@@ -1,186 +1,190 @@
 <div class="tab-header">
-  <h1><i class="fas fa-code"></i> Environment Variables</h1>
-  <p>Manage system and user environment variables</p>
+    <h1><i class="fas fa-code"></i> Environment Variables</h1>
+    <p>Manage system and user environment variables</p>
 </div>
 
 <div class="env-vars-container">
-  <!-- Controls Section -->
-  <div class="env-vars-controls">
-    <div class="controls-left">
-      <button class="btn btn-primary" onclick="window.refreshEnvironmentVariables()">
-        <i class="fas fa-sync-alt"></i> Refresh
-      </button>
-      <button class="btn btn-success" onclick="window.showAddVariableModal()">
-        <i class="fas fa-plus"></i> Add Variable
-      </button>
-      <button class="btn btn-secondary" onclick="window.exportEnvironmentVariables()">
-        <i class="fas fa-download"></i> Export
-      </button>
-    </div>
-    <div class="controls-right">
-      <div class="search-container">
-        <input type="text" id="env-search" placeholder="Search variables..." class="search-input" />
-        <i class="fas fa-search search-icon"></i>
-      </div>
-      <div class="filter-container">
-        <select id="env-filter" class="filter-select">
-          <option value="all">All Variables</option>
-          <option value="user">User Variables</option>
-          <option value="system">System Variables</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <!-- Loading Indicator -->
-  <div id="env-loading" class="loading-container" style="display: none">
-    <div class="loading-spinner"></div>
-    <p>Loading environment variables...</p>
-  </div>
-
-  <!-- Environment Variables Tables -->
-  <div id="env-content" class="env-content">
-    <!-- User Variables Section -->
-    <div class="env-section" id="user-section">
-      <div class="section-header">
-        <h3><i class="fas fa-user"></i> User Variables</h3>
-        <span class="variable-count" id="user-count">0 variables</span>
-      </div>
-      <div class="env-table-container">
-        <table class="env-table" id="user-env-table">
-          <thead>
-            <tr>
-              <th>Variable Name</th>
-              <th>Value</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="user-env-tbody">
-            <!-- User variables will be populated here -->
-          </tbody>
-        </table>
-      </div>
+    <!-- Controls Section -->
+    <div class="env-vars-controls">
+        <div class="controls-left">
+            <button class="btn btn-primary" onclick="window.refreshEnvironmentVariables()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+            <button class="btn btn-success" onclick="window.showAddVariableModal()">
+                <i class="fas fa-plus"></i> Add Variable
+            </button>
+            <button class="btn btn-secondary" onclick="window.exportEnvironmentVariables()">
+                <i class="fas fa-download"></i> Export
+            </button>
+        </div>
+        <div class="controls-right">
+            <div class="search-container">
+                <input type="text" id="env-search" placeholder="Search variables..." class="search-input">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+            <div class="filter-container">
+                <select id="env-filter" class="filter-select">
+                    <option value="all">All Variables</option>
+                    <option value="user">User Variables</option>
+                    <option value="system">System Variables</option>
+                </select>
+            </div>
+        </div>
     </div>
 
-    <!-- System Variables Section -->
-    <div class="env-section" id="system-section">
-      <div class="section-header">
-        <h3><i class="fas fa-cogs"></i> System Variables</h3>
-        <span class="variable-count" id="system-count">0 variables</span>
-      </div>
-      <div class="env-table-container">
-        <table class="env-table" id="system-env-table">
-          <thead>
-            <tr>
-              <th>Variable Name</th>
-              <th>Value</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="system-env-tbody">
-            <!-- System variables will be populated here -->
-          </tbody>
-        </table>
-      </div>
+    <!-- Loading Indicator -->
+    <div id="env-loading" class="loading-container" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p>Loading environment variables...</p>
     </div>
-  </div>
 
-  <!-- Error Display -->
-  <div id="env-error" class="error-container" style="display: none">
-    <div class="error-content">
-      <i class="fas fa-exclamation-triangle"></i>
-      <h3>Error Loading Environment Variables</h3>
-      <p id="env-error-message">An error occurred while loading environment variables.</p>
-      <button class="btn btn-primary" onclick="window.refreshEnvironmentVariables()">
-        <i class="fas fa-retry"></i> Try Again
-      </button>
+    <!-- Environment Variables Tables -->
+    <div id="env-content" class="env-content">
+        <!-- User Variables Section -->
+        <div class="env-section" id="user-section">
+            <div class="section-header">
+                <h3><i class="fas fa-user"></i> User Variables</h3>
+                <span class="variable-count" id="user-count">0 variables</span>
+            </div>
+            <div class="env-table-container">
+                <table class="env-table" id="user-env-table">
+                    <thead>
+                        <tr>
+                            <th>Variable Name</th>
+                            <th>Value</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-env-tbody">
+                        <!-- User variables will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- System Variables Section -->
+        <div class="env-section" id="system-section">
+            <div class="section-header">
+                <h3><i class="fas fa-cogs"></i> System Variables</h3>
+                <span class="variable-count" id="system-count">0 variables</span>
+            </div>
+            <div class="env-table-container">
+                <table class="env-table" id="system-env-table">
+                    <thead>
+                        <tr>
+                            <th>Variable Name</th>
+                            <th>Value</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="system-env-tbody">
+                        <!-- System variables will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-  </div>
+
+    <!-- Error Display -->
+    <div id="env-error" class="error-container" style="display: none;">
+        <div class="error-content">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Error Loading Environment Variables</h3>
+            <p id="env-error-message">An error occurred while loading environment variables.</p>
+            <button class="btn btn-primary" onclick="window.refreshEnvironmentVariables()">
+                <i class="fas fa-retry"></i> Try Again
+            </button>
+        </div>
+    </div>
 </div>
 
 <!-- Add/Edit Variable Modal -->
-<div id="env-var-modal" class="modal" style="display: none">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3 id="env-modal-title"><i class="fas fa-plus"></i> Add Environment Variable</h3>
-      <button class="modal-close" onclick="window.closeEnvVarModal()">&times;</button>
-    </div>
-    <div class="modal-body">
-      <form id="env-var-form">
-        <div class="form-group">
-          <label for="env-var-name">Variable Name:</label>
-          <input type="text" id="env-var-name" class="form-input" required />
-          <small class="form-help">Only letters, numbers, and underscores allowed</small>
+<div id="env-var-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="env-modal-title"><i class="fas fa-plus"></i> Add Environment Variable</h3>
+            <button class="modal-close" onclick="window.closeEnvVarModal()">&times;</button>
         </div>
-        <div class="form-group">
-          <label for="env-var-value">Variable Value:</label>
-          <textarea id="env-var-value" class="form-textarea" rows="3" required></textarea>
-          <small class="form-help">The value for this environment variable</small>
+        <div class="modal-body">
+            <form id="env-var-form">
+                <div class="form-group">
+                    <label for="env-var-name">Variable Name:</label>
+                    <input type="text" id="env-var-name" class="form-input" required>
+                    <small class="form-help">Only letters, numbers, and underscores allowed</small>
+                </div>
+                <div class="form-group">
+                    <label for="env-var-value">Variable Value:</label>
+                    <textarea id="env-var-value" class="form-textarea" rows="3" required></textarea>
+                    <small class="form-help">The value for this environment variable</small>
+                </div>
+                <div class="form-group">
+                    <label for="env-var-target">Target:</label>
+                    <select id="env-var-target" class="form-select" required>
+                        <option value="User">User Variables</option>
+                        <option value="Machine">System Variables (requires admin)</option>
+                    </select>
+                    <small class="form-help">Choose whether to set as user or system variable</small>
+                </div>
+            </form>
         </div>
-        <div class="form-group">
-          <label for="env-var-target">Target:</label>
-          <select id="env-var-target" class="form-select" required>
-            <option value="User">User Variables</option>
-            <option value="Machine">System Variables (requires admin)</option>
-          </select>
-          <small class="form-help">Choose whether to set as user or system variable</small>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="window.closeEnvVarModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="window.saveEnvironmentVariable()">
+                <i class="fas fa-save"></i> Save Variable
+            </button>
         </div>
-      </form>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="window.closeEnvVarModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="window.saveEnvironmentVariable()">
-        <i class="fas fa-save"></i> Save Variable
-      </button>
-    </div>
-  </div>
 </div>
 
 <!-- PATH Editor Modal -->
-<div id="path-editor-modal" class="modal" style="display: none">
-  <div class="modal-content path-editor-content">
-    <div class="modal-header">
-      <h3 id="path-modal-title"><i class="fas fa-route"></i> PATH Editor</h3>
-      <button class="modal-close" onclick="window.closePathEditorModal()">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="path-editor-container">
-        <div class="path-list-container">
-          <h4>PATH Entries:</h4>
-          <div class="path-list" id="path-list">
-            <!-- PATH entries will be populated here -->
-          </div>
+<div id="path-editor-modal" class="modal" style="display: none;">
+    <div class="modal-content path-editor-content">
+        <div class="modal-header">
+            <h3 id="path-modal-title"><i class="fas fa-route"></i> PATH Editor</h3>
+            <button class="modal-close" onclick="window.closePathEditorModal()">&times;</button>
         </div>
-        <div class="path-controls">
-          <button class="btn btn-success" onclick="window.addPathEntry()"><i class="fas fa-plus"></i> Add Entry</button>
-          <button class="btn btn-warning" onclick="window.validatePathEntries()">
-            <i class="fas fa-check"></i> Validate All
-          </button>
+        <div class="modal-body">
+            <div class="path-editor-container">
+                <div class="path-list-container">
+                    <h4>PATH Entries:</h4>
+                    <div class="path-list" id="path-list">
+                        <!-- PATH entries will be populated here -->
+                    </div>
+                </div>
+                <div class="path-controls">
+                    <button class="btn btn-success" onclick="window.addPathEntry()">
+                        <i class="fas fa-plus"></i> Add Entry
+                    </button>
+                    <button class="btn btn-warning" onclick="window.validatePathEntries()">
+                        <i class="fas fa-check"></i> Validate All
+                    </button>
+                </div>
+            </div>
         </div>
-      </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="window.closePathEditorModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="window.savePathVariable()">
+                <i class="fas fa-save"></i> Save PATH
+            </button>
+        </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="window.closePathEditorModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="window.savePathVariable()"><i class="fas fa-save"></i> Save PATH</button>
-    </div>
-  </div>
 </div>
 
 <!-- Confirmation Modal -->
-<div id="env-confirm-modal" class="modal" style="display: none">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3><i class="fas fa-exclamation-triangle"></i> Confirm Action</h3>
-      <button class="modal-close" onclick="window.closeConfirmModal()">&times;</button>
+<div id="env-confirm-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-exclamation-triangle"></i> Confirm Action</h3>
+            <button class="modal-close" onclick="window.closeConfirmModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="confirm-message">Are you sure you want to perform this action?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="window.closeConfirmModal()">Cancel</button>
+            <button class="btn btn-danger" id="confirm-action-btn" onclick="window.confirmAction()">
+                <i class="fas fa-check"></i> Confirm
+            </button>
+        </div>
     </div>
-    <div class="modal-body">
-      <p id="confirm-message">Are you sure you want to perform this action?</p>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="window.closeConfirmModal()">Cancel</button>
-      <button class="btn btn-danger" id="confirm-action-btn" onclick="window.confirmAction()">
-        <i class="fas fa-check"></i> Confirm
-      </button>
-    </div>
-  </div>
 </div>
