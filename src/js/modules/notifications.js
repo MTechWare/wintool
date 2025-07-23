@@ -1,47 +1,43 @@
-
 export function showNotification(message, type = 'info') {
-    
-    let container = document.querySelector('.notification-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.className = 'notification-container';
-        container.style.cssText = `
+  let container = document.querySelector('.notification-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'notification-container';
+    container.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 10000;
             pointer-events: none;
         `;
-        document.body.appendChild(container);
-    }
+    document.body.appendChild(container);
+  }
 
-    
-    const notification = document.createElement('div');
-    notification.className = 'notification';
-    
-    
-    let icon = 'fas fa-info-circle';
-    let bgColor = 'var(--primary-color)';
-    
-    switch (type) {
-        case 'success':
-            icon = 'fas fa-check-circle';
-            bgColor = '#10b981';
-            break;
-        case 'error':
-            icon = 'fas fa-exclamation-circle';
-            bgColor = '#ef4444';
-            break;
-        case 'warning':
-            icon = 'fas fa-exclamation-triangle';
-            bgColor = '#f59e0b';
-            break;
-        default:
-            icon = 'fas fa-info-circle';
-            bgColor = 'var(--primary-color)';
-    }
+  const notification = document.createElement('div');
+  notification.className = 'notification';
 
-    notification.style.cssText = `
+  let icon = 'fas fa-info-circle';
+  let bgColor = 'var(--primary-color)';
+
+  switch (type) {
+    case 'success':
+      icon = 'fas fa-check-circle';
+      bgColor = '#10b981';
+      break;
+    case 'error':
+      icon = 'fas fa-exclamation-circle';
+      bgColor = '#ef4444';
+      break;
+    case 'warning':
+      icon = 'fas fa-exclamation-triangle';
+      bgColor = '#f59e0b';
+      break;
+    default:
+      icon = 'fas fa-info-circle';
+      bgColor = 'var(--primary-color)';
+  }
+
+  notification.style.cssText = `
         background: ${bgColor};
         color: white;
         padding: 12px 16px;
@@ -58,25 +54,23 @@ export function showNotification(message, type = 'info') {
         transition: transform 0.3s ease-out;
     `;
 
-    notification.innerHTML = `
+  notification.innerHTML = `
         <i class="${icon}"></i>
         <span>${message}</span>
     `;
 
-    container.appendChild(notification);
+  container.appendChild(notification);
 
-    
-    setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
-    }, 100);
+  setTimeout(() => {
+    notification.style.transform = 'translateX(0)';
+  }, 100);
 
-    
+  setTimeout(() => {
+    notification.style.transform = 'translateX(100%)';
     setTimeout(() => {
-        notification.style.transform = 'translateX(100%)';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 300);
-    }, 4000);
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 300);
+  }, 4000);
 }
