@@ -1,46 +1,48 @@
 {
   "name": "wintool",
-  "version": "0.2.2-wb",
+  "version": "0.2.3w",
   "main": "src/main.js",
   "description": "WinTool - Windows System Management Tool",
-  "author": "MTechWare",
+  "author": "MTech",
   "license": "GPL-3.0-or-later",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/MTechWare/wintool"
-  },
-  "bugs": {
-    "url": "https://github.com/MTechWare/wintool/issues"
-  },
-  "homepage": "https://mtechware.github.io/wintool.html",
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
     "build": "electron-builder",
-    "dist": "electron-builder --win --x64",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dist": "electron-builder --win --x64"
   },
   "build": {
-    "appId": "io.github.mtechware.wintool",
+    "appId": "io.github.mtechware",
     "productName": "WinTool",
     "icon": "src/assets/images/icon.ico",
     "copyright": "Copyright © 2025 MTechWare",
     "fileAssociations": [],
-
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "WinTool"
+    },
     "win": {
       "target": [
-        {
-          "target": "portable",
-          "arch": ["x64"]
-        }
+        "portable"
       ],
+      "icon": "src/assets/images/icon.ico",
       "artifactName": "${productName}.${ext}",
+      "requestedExecutionLevel": "asInvoker",
       "legalTrademarks": "MTechWare"
     },
     "directories": {
       "output": "dist",
       "buildResources": "src/assets"
     },
+    "files": [
+      "src/**/*",
+      "!src/**/*.md",
+      "!src/**/test/**/*",
+      "LICENSE.txt"
+    ],
     "extraResources": [
       {
         "from": "src/security/security-manifest.json",
@@ -52,57 +54,27 @@
       }
     ],
     "asar": true,
-    "asarUnpack": [
-      "src/scripts/**/*"
-    ],
-    "compression": "maximum",
+    "compression": "normal",
     "portable": {
       "artifactName": "${productName}.${ext}"
-    },
-    "electronLanguages": ["en-US"],
-    "files": [
-      "src/**/*",
-      "!src/**/*.md",
-      "!src/**/test/**/*",
-      "!src/**/dev/**/*",
-      "!src/**/*.log",
-      "LICENSE.txt",
-      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
-      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
-      "!**/node_modules/*.d.ts",
-      "!**/node_modules/.bin",
-      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
-      "!.editorconfig",
-      "!**/._*",
-      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
-      "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
-      "!**/{appveyor.yml,.travis.yml,circle.yml}",
-      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}",
-      "!**/node_modules/**/man/**/*",
-      "!**/node_modules/**/docs/**/*",
-      "!**/node_modules/**/*.map",
-      "!**/node_modules/**/*.ts",
-      "!**/node_modules/**/NOTICE*",
-      "!**/node_modules/**/HISTORY*",
-      "!**/node_modules/**/CHANGES*",
-      "!**/node_modules/**/benchmark/**/*",
-      "!**/node_modules/**/coverage/**/*"
-    ]
+    }
   },
   "devDependencies": {
     "electron": "^37.2.0",
     "electron-builder": "^26.0.12",
     "eslint": "^9.30.1",
-    "prettier": "^3.6.2",
-    "@types/node": "^22.0.0"
+    "prettier": "^3.6.2"
   },
   "dependencies": {
+    "axios": "^1.10.0",
+    "bindings": "^1.5.0",
+    "cors": "^2.8.5",
     "discord-rpc": "^4.0.1",
     "electron-store": "^10.1.0",
+    "express": "^5.1.0",
     "extract-zip": "^2.0.1",
-    "is-elevated": "^4.0.0"
-  },
-  "workspaces": [
-    "CLI"
-  ]
+    "is-elevated": "^4.0.0",
+    "register-scheme": "^0.0.2",
+    "systeminformation": "^5.27.7"
+  }
 }

@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![WinTool Version](https://img.shields.io/badge/WinTool-v0.2.2-orange?style=for-the-badge&logo=windows&logoColor=white)
+![WinTool Version](https://img.shields.io/badge/WinTool-v0.2.3-orange?style=for-the-badge&logo=windows&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows_11-blue?style=for-the-badge&logo=windows)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=for-the-badge)
 
@@ -172,7 +172,7 @@ You can customize:
 - **[Electron](https://electronjs.org/)** - Cross-platform desktop framework
 - **[Node.js](https://nodejs.org/)** - JavaScript runtime
 - **[Font Awesome](https://fontawesome.com/)** - Icon library
-- **PowerShell** - Windows system information collection
+- **[Systeminformation](https://systeminformation.io/)** - System data collection
 
 ---
 
