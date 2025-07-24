@@ -2696,11 +2696,16 @@ tweaks.forEach(tweak => {
     tweakDisplayNames[tweak.id] = tweak.title;
 });
 
+// Initialize lazy loading helper
+const lazyHelper = new LazyLoadingHelper('tweaks');
+
 // Track if tweaks have been initialized to prevent duplicate loading
 let tweaksInitialized = false;
 
-// Main initialization - check if tweaksGrid exists
-if (tweaksGrid) {
+// Main initialization - check if tweaksGrid exists and should initialize
+if (tweaksGrid && lazyHelper.shouldInitialize()) {
+    // Mark script as executed to prevent duplicate execution
+    lazyHelper.markScriptExecuted();
 
     const renderTweaks = async (filteredTweaks) => {
         // Prevent duplicate initialization
@@ -2971,6 +2976,7 @@ if (tweaksGrid) {
     // Global function to reset tweaks initialization (for manual refresh)
     window.resetTweaksInitialization = () => {
         tweaksInitialized = false;
+        lazyHelper.resetScriptExecution();
         clearAllCache();
         console.log('Tweaks initialization reset - next render will reload everything');
     };
@@ -3180,15 +3186,15 @@ if (tweaksGrid) {
     }, 200);
 
     // Notify tab loader that this tab is ready
-    if (window.tabLoader) {
-        window.tabLoader.markTabAsReady('tweaks');
-    }
-} else {
+    lazyHelper.markTabReady();
+} else if (!tweaksGrid) {
     console.error('Could not find the tweaks-grid element.');
     // Still mark as ready to not block app loading
-    if (window.tabLoader) {
-        window.tabLoader.markTabAsReady('tweaks');
-    }
+    lazyHelper.markTabReady();
+} else {
+    console.log('Tweaks script already executed, skipping duplicate initialization');
+    // Still mark as ready to not block app loading
+    lazyHelper.markTabReady();
 }
 
 /**

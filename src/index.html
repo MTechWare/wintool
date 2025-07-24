@@ -27,8 +27,13 @@
     <!-- Custom Title Bar -->
     <div class="title-bar">
         <div class="title-bar-text">
-            <i class="fas fa-tools"></i>
-            WinTool
+            <div class="title-bar-brand">
+                <div class="brand-dot"></div>
+                <div class="brand-text">
+                    <span class="brand-main">WinTool</span>
+                    <span class="brand-subtitle">Comprehensive. Intuitive. Professional.</span>
+                </div>
+            </div>
         </div>
         <div class="title-bar-controls">
             <button id="minimize-btn" class="title-bar-btn" title="Minimize">
@@ -75,14 +80,16 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h2 class="app-title">
-                    WinTool
-                </h2>
                 <!-- Tab Search -->
                 <div class="tab-search-container">
                     <input type="text" id="tab-search" placeholder="Search tabs..." class="tab-search-input">
                     <i class="fas fa-search tab-search-icon"></i>
                 </div>
+            </div>
+
+            <!-- Navigation Header -->
+            <div class="navigation-header">
+                NAVIGATION
             </div>
 
             <!-- Tab List -->
@@ -337,6 +344,18 @@
                                 <i class="fas fa-tasks"></i>
                                 <span>Processes</span>
                             </button>
+                            <button class="quick-action-btn" onclick="togglePerformanceMode()" title="Toggle Performance Mode (Disable Animations)" id="performance-toggle-btn">
+                                <i class="fas fa-rocket"></i>
+                                <span>Performance</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="window.electronAPI.openLogViewer()" title="Open Enhanced Log Viewer">
+                                <i class="fas fa-list-alt"></i>
+                                <span>Logs</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="window.demonstrateEnhancedLogging && window.demonstrateEnhancedLogging()" title="Generate Sample Logs for Testing">
+                                <i class="fas fa-play-circle"></i>
+                                <span>Demo Logs</span>
+                            </button>
                             <button class="quick-action-btn" onclick="showSettings()" title="Application Settings">
                                 <i class="fas fa-cog"></i>
                                 <span>Settings</span>
@@ -418,6 +437,9 @@
             </div>
             <div class="modal-body settings-modal-body">
                 <div class="settings-sidebar">
+                    <div class="settings-navigation-header">
+                        SETTINGS
+                    </div>
                     <div class="settings-nav">
                         <div class="settings-nav-item active" data-settings-tab="appearance">
                             <i class="fas fa-palette"></i>
@@ -433,7 +455,7 @@
                         </div>
                         <div class="settings-nav-item" data-settings-tab="shortcuts">
                             <i class="fas fa-keyboard"></i>
-                            <span>Keyboard Shortcuts</span>
+                            <span>Shortcuts</span>
                         </div>
                         <div class="settings-nav-item" data-settings-tab="advanced">
                             <i class="fas fa-sliders-h"></i>
@@ -493,13 +515,7 @@
                             </div>
                             <p class="settings-description">Adjust the transparency of the application window</p>
                         </div>
-                        <div class="settings-group">
-                            <label class="settings-label">
-                                <input type="checkbox" id="disable-animations-checkbox" class="settings-checkbox">
-                                Disable Animations
-                            </label>
-                            <p class="settings-description">Disable all animations for a more responsive experience on low-end systems.</p>
-                        </div>
+
                         <div class="settings-group">
                             <label class="settings-label">Theme Actions</label>
                             <div class="shortcut-actions">
@@ -546,9 +562,9 @@
 
                     </div>
 
-                    <!-- Keyboard Shortcuts Settings -->
+                    <!-- Shortcuts Settings -->
                     <div id="settings-shortcuts" class="settings-panel">
-                        <h4>Keyboard Shortcuts</h4>
+                        <h4>Shortcuts</h4>
                         <p class="settings-description">Customize keyboard shortcuts for quick access to features. Click on a shortcut field and press the desired key combination.</p>
 
                         <div class="shortcuts-section">
@@ -664,11 +680,11 @@
                                     </div>
                                 </div>
 
-                                <div class="mode-card" data-mode="auto">
-                                    <div class="mode-title">⚡ Auto Mode</div>
+                                <div class="mode-card" data-mode="balanced">
+                                    <div class="mode-title">⚖️ Balanced Mode</div>
                                     <div class="mode-description">
-                                        Automatically adjusts performance based on detected system capabilities.
-                                        Recommended for most users.
+                                        Optimized for mid-range systems. Balances performance and features with
+                                        moderate resource usage and reasonable update intervals.
                                     </div>
                                 </div>
 
@@ -680,15 +696,18 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="recommendation" id="performance-recommendation" style="display: none;">
-                                <h5>💡 Recommendation</h5>
-                                <p id="performance-recommendation-text"></p>
-                            </div>
                         </div>
 
                         <div class="settings-group">
                             <label class="settings-label">Advanced Performance Options</label>
+
+                            <div class="settings-group">
+                                <label class="settings-label">
+                                    <input type="checkbox" id="disable-animations-checkbox" class="settings-checkbox">
+                                    Disable Animations
+                                </label>
+                                <p class="settings-description">Disable all animations and transitions for maximum UI responsiveness and speed. Recommended for optimal performance.</p>
+                            </div>
 
                             <div class="settings-group">
                                 <label class="settings-label">
@@ -717,7 +736,7 @@
                             <div class="settings-group">
                                 <label class="settings-label">
                                     <input type="checkbox" id="enable-lazy-loading" class="settings-checkbox">
-                                    Enable Lazy Loading
+                                    Lazy Loading
                                 </label>
                                 <p class="settings-description">Load tab content only when accessed for faster startup. Disabling this will load all tabs immediately, which may slow startup but ensures all content is ready instantly.</p>
                             </div>
@@ -881,6 +900,7 @@
     <script src="assets/codemirror/addons/active-line.min.js"></script>
     <script src="assets/codemirror/addons/comment.min.js"></script>
     <script src="assets/codemirror/addons/autorefresh.min.js"></script>
+    <script src="js/utils/lazy-loading-helper.js"></script>
     <script src="js/tab-loader.js"></script>
     <script type="module" src="js/app.js"></script>
 </body>

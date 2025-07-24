@@ -266,9 +266,9 @@ function initSystemUtilities() {
     console.log('System Utilities tab initialized successfully');
 
     // Signal that this tab is ready
-    if (window.markTabAsReady && typeof tabId !== 'undefined') {
+    if (window.markTabAsReady) {
         console.log('Marking system-utilities tab as ready');
-        window.markTabAsReady(tabId);
+        window.markTabAsReady('system-utilities');
     }
 }
 

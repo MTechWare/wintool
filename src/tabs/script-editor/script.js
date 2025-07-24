@@ -593,9 +593,9 @@ function initializeScriptEditor(container) {
     console.log('Script Editor initialized successfully');
 
     // Signal that this tab is ready
-    if (window.markTabAsReady && typeof tabId !== 'undefined') {
+    if (window.markTabAsReady) {
         console.log('Marking script-editor tab as ready');
-        window.markTabAsReady(tabId);
+        window.markTabAsReady('script-editor');
     }
 }
 

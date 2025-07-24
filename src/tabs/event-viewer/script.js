@@ -422,8 +422,33 @@ if (window.tabEventManager) {
 
 window.refreshEvents = refreshEvents;
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initEventViewerTab);
-} else {
+// Initialize lazy loading helper
+const lazyHelper = new LazyLoadingHelper('event-viewer');
+
+// Wrap initEventViewerTab with lazy loading support
+function initEventViewerTabWithLazyLoading() {
+    // Check if should initialize (lazy loading support)
+    if (!lazyHelper.shouldInitialize()) {
+        console.log('Event Viewer script already executed, skipping initialization');
+        lazyHelper.markTabReady();
+        return;
+    }
+
+    // Mark script as executed
+    lazyHelper.markScriptExecuted();
+
+    // Call original initialization
     initEventViewerTab();
+
+    // Mark tab as ready
+    lazyHelper.markTabReady();
 }
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initEventViewerTabWithLazyLoading);
+} else {
+    initEventViewerTabWithLazyLoading();
+}
+
+// Create global reset function for refresh functionality
+lazyHelper.createGlobalResetFunction();

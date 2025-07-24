@@ -542,7 +542,7 @@ async function applyPerformanceOptimizations() {
             console.log('Applying balanced optimizations for mid-range system...');
 
             // Balanced settings for mid-range systems
-            settingsStore.set('performanceMode', 'auto');
+            settingsStore.set('performanceMode', 'balanced');
             settingsStore.set('cacheSystemInfo', true);
         }
 
@@ -737,36 +737,111 @@ function checkRateLimit(operation) {
 // Set app name
 app.setName('WinTool');
 
-// Security logging
+// Security logging using enhanced logger
 function logSecurityEvent(event, details) {
-    const timestamp = new Date().toISOString();
-    console.log(`[SECURITY] ${timestamp}: ${event} - ${JSON.stringify(details)}`);
+    if (global.logger) {
+        global.logger.logSecurity(event, details);
+    } else {
+        // Fallback if logger not initialized yet
+        const timestamp = new Date().toISOString();
+        console.log(`[SECURITY] ${timestamp}: ${event} - ${JSON.stringify(details)}`);
+    }
 }
 
-// Redirect console.log to the log viewer
-const originalLog = console.log;
-console.log = function(...args) {
-    originalLog.apply(console, args);
-    if (logViewerWindow) {
-        logViewerWindow.webContents.send('log-message', 'info', args.join(' '));
-    }
-};
+// Enhanced logging system for the log viewer
+class EnhancedLogger {
+    constructor() {
+        this.originalLog = console.log;
+        this.originalWarn = console.warn;
+        this.originalError = console.error;
+        this.originalDebug = console.debug;
+        this.originalTrace = console.trace;
 
-const originalWarn = console.warn;
-console.warn = function(...args) {
-    originalWarn.apply(console, args);
-    if (logViewerWindow) {
-        logViewerWindow.webContents.send('log-message', 'warn', args.join(' '));
+        this.setupConsoleOverrides();
     }
-};
 
-const originalError = console.error;
-console.error = function(...args) {
-    originalError.apply(console, args);
-    if (logViewerWindow) {
-        logViewerWindow.webContents.send('log-message', 'error', args.join(' '));
+    setupConsoleOverrides() {
+        // Override console.log
+        console.log = (...args) => {
+            this.originalLog.apply(console, args);
+            this.sendToLogViewer('info', args.join(' '), 'System');
+        };
+
+        // Override console.warn
+        console.warn = (...args) => {
+            this.originalWarn.apply(console, args);
+            this.sendToLogViewer('warn', args.join(' '), 'System');
+        };
+
+        // Override console.error
+        console.error = (...args) => {
+            this.originalError.apply(console, args);
+            this.sendToLogViewer('error', args.join(' '), 'System');
+        };
+
+        // Override console.debug
+        console.debug = (...args) => {
+            this.originalDebug.apply(console, args);
+            this.sendToLogViewer('debug', args.join(' '), 'System');
+        };
+
+        // Override console.trace
+        console.trace = (...args) => {
+            this.originalTrace.apply(console, args);
+            this.sendToLogViewer('trace', args.join(' '), 'System');
+        };
     }
-};
+
+    sendToLogViewer(level, message, source = 'System') {
+        if (logViewerWindow && !logViewerWindow.isDestroyed()) {
+            logViewerWindow.webContents.send('log-message', level, message, source);
+        }
+    }
+
+    // Custom logging methods with source tracking
+    logInfo(message, source = 'System') {
+        this.originalLog(`[INFO] ${source}: ${message}`);
+        this.sendToLogViewer('info', message, source);
+    }
+
+    logWarn(message, source = 'System') {
+        this.originalWarn(`[WARN] ${source}: ${message}`);
+        this.sendToLogViewer('warn', message, source);
+    }
+
+    logError(message, source = 'System') {
+        this.originalError(`[ERROR] ${source}: ${message}`);
+        this.sendToLogViewer('error', message, source);
+    }
+
+    logDebug(message, source = 'System') {
+        this.originalDebug(`[DEBUG] ${source}: ${message}`);
+        this.sendToLogViewer('debug', message, source);
+    }
+
+    logSuccess(message, source = 'System') {
+        this.originalLog(`[SUCCESS] ${source}: ${message}`);
+        this.sendToLogViewer('success', message, source);
+    }
+
+    logTrace(message, source = 'System') {
+        this.originalTrace(`[TRACE] ${source}: ${message}`);
+        this.sendToLogViewer('trace', message, source);
+    }
+
+    logSecurity(event, details, source = 'Security') {
+        const timestamp = new Date().toISOString();
+        const message = `${event} - ${JSON.stringify(details)}`;
+        this.originalLog(`[SECURITY] ${timestamp}: ${message}`);
+        this.sendToLogViewer('warn', message, source);
+    }
+}
+
+// Initialize the enhanced logger
+const enhancedLogger = new EnhancedLogger();
+
+// Export logger functions for use throughout the application
+global.logger = enhancedLogger;
 
 // Timeout wrapper for operations
 function withTimeout(promise, timeoutMs = 30000, operation = 'Operation') {
@@ -1883,6 +1958,35 @@ ipcMain.handle('open-log-viewer', () => {
     createLogViewerWindow();
 });
 
+// Handle custom log messages from renderer processes
+ipcMain.handle('log-custom-message', (event, level, message, source) => {
+    if (global.logger) {
+        switch(level) {
+            case 'info':
+                global.logger.logInfo(message, source);
+                break;
+            case 'warn':
+                global.logger.logWarn(message, source);
+                break;
+            case 'error':
+                global.logger.logError(message, source);
+                break;
+            case 'debug':
+                global.logger.logDebug(message, source);
+                break;
+            case 'success':
+                global.logger.logSuccess(message, source);
+                break;
+            case 'trace':
+                global.logger.logTrace(message, source);
+                break;
+            default:
+                global.logger.logInfo(message, source);
+        }
+    }
+    return { success: true };
+});
+
 // Open performance settings handler
 ipcMain.handle('open-performance-settings', () => {
     createPerformanceSettingsWindow();
@@ -1937,18 +2041,17 @@ let performanceCacheTime = 0;
 // Adaptive performance monitoring based on system load
 async function getAdaptiveInterval() {
     const settingsStore = await getStore();
-    const performanceMode = settingsStore ? settingsStore.get('performanceMode', 'auto') : 'auto';
+    const performanceMode = settingsStore ? settingsStore.get('performanceMode', 'balanced') : 'balanced';
 
     if (performanceMode === 'low-end') {
         return 5000; // 5 seconds for low-end systems
     } else if (performanceMode === 'high-end') {
         return 1000; // 1 second for high-end systems
+    } else if (performanceMode === 'balanced') {
+        return 2500; // 2.5 seconds for balanced systems
     } else {
-        // Auto mode: adapt based on memory usage
-        if (performanceCache && performanceCache.mem > 80) {
-            return 4000; // Slower updates when memory is high
-        }
-        return 2000; // Default 2 seconds
+        // Fallback to balanced mode
+        return 2500; // Default 2.5 seconds
     }
 }
 
@@ -2080,7 +2183,7 @@ ipcMain.handle('stop-performance-updates', () => {
 // Performance settings handlers
 ipcMain.handle('get-performance-mode', async () => {
     const settingsStore = await getStore();
-    return settingsStore ? settingsStore.get('performanceMode', 'auto') : 'auto';
+    return settingsStore ? settingsStore.get('performanceMode', 'balanced') : 'balanced';
 });
 
 ipcMain.handle('set-performance-mode', async (event, mode) => {
@@ -2095,10 +2198,17 @@ ipcMain.handle('set-performance-mode', async (event, mode) => {
             settingsStore.set('fastSystemInfo', true);
             settingsStore.set('cacheSystemInfo', true);
             settingsStore.set('enableDiscordRpc', false);
+            settingsStore.set('enableLazyLoading', true);
         } else if (mode === 'high-end') {
             settingsStore.set('fastSystemInfo', false);
+            settingsStore.set('cacheSystemInfo', false); // Disable caching for real-time data
+            settingsStore.set('enableDiscordRpc', true);
+            settingsStore.set('enableLazyLoading', false); // Disable lazy loading for instant access
+        } else if (mode === 'balanced') {
+            settingsStore.set('fastSystemInfo', true);
             settingsStore.set('cacheSystemInfo', true);
             settingsStore.set('enableDiscordRpc', true);
+            settingsStore.set('enableLazyLoading', true);
         }
 
         console.log(`Performance mode set to: ${mode}`);
@@ -2306,7 +2416,10 @@ ipcMain.handle('get-system-info', async (event, type) => {
         const settingsStore = await getStore();
         // Default to fast mode during startup phase for better performance
         const isStartupPhase = processPool && processPool.isStartupPhase;
-        const fastMode = settingsStore ? settingsStore.get('fastSystemInfo', isStartupPhase) : isStartupPhase;
+        // Also enable fast mode if we've had recent timeout errors
+        const hasRecentTimeoutError = systemInfoCache && systemInfoCache.error && systemInfoCache.error.includes('timed out');
+        const shouldUseFastMode = isStartupPhase || hasRecentTimeoutError;
+        const fastMode = settingsStore ? settingsStore.get('fastSystemInfo', shouldUseFastMode) : shouldUseFastMode;
         const useCache = settingsStore ? settingsStore.get('cacheSystemInfo', true) : true;
 
         // Check cache first if enabled and no specific type requested
@@ -2317,20 +2430,24 @@ ipcMain.handle('get-system-info', async (event, type) => {
 
         // Fast mode for basic info only
         if (!type && fastMode) {
-            console.log('🚀 Using fast mode for system information (startup optimization)');
+            const reason = isStartupPhase ? 'startup optimization' : hasRecentTimeoutError ? 'recent timeout error' : 'user setting';
+            console.log(`🚀 Using fast mode for system information (${reason})`);
+
             const basicInfo = {
                 platform: os.platform(),
                 arch: os.arch(),
                 hostname: os.hostname(),
-
                 cpuCores: os.cpus().length + ' cores',
                 uptime: Math.round(os.uptime() / 3600) + ' hours',
-                fastMode: true
+                fastMode: true,
+                fastModeReason: reason,
+                timestamp: new Date().toISOString()
             };
 
             if (useCache) {
                 systemInfoCache = basicInfo;
                 systemInfoCacheTime = Date.now();
+                console.log('Fast mode system info cached');
             }
 
             return basicInfo;
@@ -2358,21 +2475,56 @@ ipcMain.handle('get-system-info', async (event, type) => {
         console.log('🔍 Gathering full system information...');
 
         // Use timeout wrapper for system information gathering to prevent hanging on slow systems
-        const systemInfoPromise = Promise.all([
-            si.system(),
-            si.bios(),
-            si.baseboard(),
-            si.cpu(),
-            si.cpuTemperature().catch(() => ({ main: null, cores: [], max: null })),
-            si.cpuCurrentSpeed(),
-            si.osInfo(),
-            si.diskLayout(),
-            si.fsSize(),
-            si.networkInterfaces(),
-            si.graphics()
-        ]);
+        // Create individual promises with their own timeouts for better resilience
+        const systemInfoPromises = {
+            system: withTimeout(si.system(), 3000, 'System info').catch(() => ({})),
+            bios: withTimeout(si.bios(), 3000, 'BIOS info').catch(() => ({})),
+            baseboard: withTimeout(si.baseboard(), 3000, 'Baseboard info').catch(() => ({})),
+            cpu: withTimeout(si.cpu(), 5000, 'CPU info').catch(() => ({})),
+            cpuTemperature: withTimeout(si.cpuTemperature(), 2000, 'CPU temperature').catch(() => ({ main: null, cores: [], max: null })),
+            cpuCurrentSpeed: withTimeout(si.cpuCurrentSpeed(), 2000, 'CPU speed').catch(() => ({})),
+            osInfo: withTimeout(si.osInfo(), 3000, 'OS info').catch(() => ({})),
+            diskLayout: withTimeout(si.diskLayout(), 5000, 'Disk layout').catch(() => []),
+            fsSize: withTimeout(si.fsSize(), 4000, 'Filesystem size').catch(() => []),
+            networkInterfaces: withTimeout(si.networkInterfaces(), 4000, 'Network interfaces').catch(async (error) => {
+                console.warn('systeminformation networkInterfaces failed, using fallback:', error.message);
+                // Fallback to Node.js built-in os.networkInterfaces()
+                try {
+                    const osInterfaces = os.networkInterfaces();
+                    const fallbackInterfaces = [];
 
-        // Reduced timeout from 15 to 10 seconds for faster startup
+                    for (const [name, addresses] of Object.entries(osInterfaces)) {
+                        // Skip loopback and internal interfaces for the main list
+                        const nonInternalAddresses = addresses.filter(addr => !addr.internal);
+                        if (nonInternalAddresses.length > 0) {
+                            const primaryAddr = nonInternalAddresses.find(addr => addr.family === 'IPv4') || nonInternalAddresses[0];
+                            fallbackInterfaces.push({
+                                iface: name,
+                                ifaceName: name,
+                                ip4: primaryAddr.family === 'IPv4' ? primaryAddr.address : '',
+                                ip6: primaryAddr.family === 'IPv6' ? primaryAddr.address : '',
+                                mac: primaryAddr.mac || '',
+                                internal: false,
+                                operstate: 'unknown',
+                                type: 'unknown',
+                                speed: null
+                            });
+                        }
+                    }
+
+                    console.log(`Fallback network interfaces found: ${fallbackInterfaces.length}`);
+                    return fallbackInterfaces;
+                } catch (fallbackError) {
+                    console.error('Fallback network interface detection also failed:', fallbackError);
+                    return [];
+                }
+            }),
+            graphics: withTimeout(si.graphics(), 5000, 'Graphics info').catch(() => ({}))
+        };
+
+        // Execute all promises with an overall timeout of 15 seconds (increased from 10)
+        const systemInfoPromise = Promise.all(Object.values(systemInfoPromises));
+
         const [
             system,
             bios,
@@ -2385,7 +2537,7 @@ ipcMain.handle('get-system-info', async (event, type) => {
             fsSize,
             networkInterfaces,
             graphics
-        ] = await withTimeout(systemInfoPromise, 10000, 'System information gathering');
+        ] = await withTimeout(systemInfoPromise, 15000, 'System information gathering');
 
         // Format uptime
         const uptimeSeconds = os.uptime();
@@ -2465,7 +2617,7 @@ ipcMain.handle('get-system-info', async (event, type) => {
 
 
             // Storage information
-            storageDevices: diskLayout.map(disk => ({
+            storageDevices: (diskLayout || []).map(disk => ({
                 device: disk.device || 'Unknown',
                 type: disk.type || 'Unknown',
                 name: disk.name || 'Unknown',
@@ -2477,7 +2629,7 @@ ipcMain.handle('get-system-info', async (event, type) => {
             })),
 
             // File system information
-            filesystems: fsSize.map(fs => ({
+            filesystems: (fsSize || []).map(fs => ({
                 fs: fs.fs,
                 type: fs.type,
                 size: formatBytes(fs.size),
@@ -2499,14 +2651,14 @@ ipcMain.handle('get-system-info', async (event, type) => {
             })),
 
             // Graphics information
-            graphicsControllers: graphics.controllers.map(gpu => ({
+            graphicsControllers: (graphics.controllers || []).map(gpu => ({
                 vendor: gpu.vendor || 'Unknown',
                 model: gpu.model || 'Unknown',
                 vram: gpu.vram ? gpu.vram + ' MB' : 'Unknown',
                 bus: gpu.bus || 'Unknown'
             })),
 
-            graphicsDisplays: graphics.displays.map(display => ({
+            graphicsDisplays: (graphics.displays || []).map(display => ({
                 vendor: display.vendor || 'Unknown',
                 model: display.model || 'Unknown',
                 main: display.main || false,
@@ -2534,16 +2686,27 @@ ipcMain.handle('get-system-info', async (event, type) => {
 
     } catch (error) {
         console.error('Error getting system information:', error);
-        // Fallback to basic os module info
-        return {
+
+        // Create fallback info with basic os module data
+        const fallbackInfo = {
             platform: os.platform(),
             arch: os.arch(),
             hostname: os.hostname(),
-
             cpuCores: os.cpus().length + ' cores',
             uptime: Math.round(os.uptime() / 3600) + ' hours',
-            error: 'Failed to get detailed system information'
+            error: error.message || 'Failed to get detailed system information',
+            fallbackMode: true,
+            timestamp: new Date().toISOString()
         };
+
+        // Cache the fallback info to enable fast mode on next call if this was a timeout
+        if (useCache && error.message && error.message.includes('timed out')) {
+            systemInfoCache = fallbackInfo;
+            systemInfoCacheTime = Date.now();
+            console.log('Cached fallback system info due to timeout - will use fast mode on next call');
+        }
+
+        return fallbackInfo;
     }
 });
 

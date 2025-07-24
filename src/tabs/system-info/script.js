@@ -1,26 +1,40 @@
 // System Info Tab JavaScript - Final Clean Version
 console.log('=== System Info tab JavaScript loaded! ===');
 
+// Initialize lazy loading helper
+const lazyHelper = new LazyLoadingHelper('system-info');
+
 // Simple initialization
 console.log('Looking for tab container...');
 
-// Find the container
-let container = null;
-if (typeof tabContainer !== 'undefined') {
-    container = tabContainer;
-    console.log('Using provided tabContainer');
-}
-if (!container) {
-    container = document.querySelector('[data-tab="folder-system-info"]');
-    console.log('Found container via data-tab selector');
-}
-
-if (container) {
-    loadSystemInfo(container);
-    setupRefreshButton(container);
-    setupExportButton(container);
+// Check if should initialize (lazy loading support)
+if (!lazyHelper.shouldInitialize()) {
+    console.log('System Info script already executed, skipping initialization');
+    lazyHelper.markTabReady();
 } else {
-    console.error('No container found for system info tab, cannot load data.');
+    // Mark script as executed
+    lazyHelper.markScriptExecuted();
+
+    // Find the container
+    let container = null;
+    if (typeof tabContainer !== 'undefined') {
+        container = tabContainer;
+        console.log('Using provided tabContainer');
+    }
+    if (!container) {
+        container = document.querySelector('[data-tab="system-info"]');
+        console.log('Found container via data-tab selector');
+    }
+
+    if (container) {
+        loadSystemInfo(container);
+        setupRefreshButton(container);
+        setupExportButton(container);
+    } else {
+        console.error('No container found for system info tab, cannot load data.');
+        // Still mark as ready to prevent blocking
+        lazyHelper.markTabReady();
+    }
 }
 
 function setupRefreshButton(container) {
@@ -139,18 +153,12 @@ async function loadSystemInfo(container) {
         }
 
         // Signal that this tab is ready
-        if (window.markTabAsReady && typeof tabId !== 'undefined') {
-            console.log('Marking system-info tab as ready');
-            window.markTabAsReady(tabId);
-        }
+        lazyHelper.markTabReady();
 
     } catch (error) {
         console.error('Error loading system info:', error);
         // Still signal ready even if there was an error
-        if (window.markTabAsReady && typeof tabId !== 'undefined') {
-            console.log('Marking system-info tab as ready (after error)');
-            window.markTabAsReady(tabId);
-        }
+        lazyHelper.markTabReady();
     }
 }
 
@@ -177,3 +185,6 @@ function updateElement(container, id, value) {
         console.error('Error updating element', id, ':', error);
     }
 }
+
+// Create global reset function for refresh functionality
+lazyHelper.createGlobalResetFunction();

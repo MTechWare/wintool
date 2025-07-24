@@ -86,16 +86,29 @@ const defaultCommonServiceNames = [
     'PlugPlay'       // Plug and Play
 ];
 
+// Initialize lazy loading helper
+const lazyHelper = new LazyLoadingHelper('services');
+
 function initServicesTab() {
     console.log('Services Manager tab initializing...');
-    
+
+    // Check if should initialize (lazy loading support)
+    if (!lazyHelper.shouldInitialize()) {
+        console.log('Services script already executed, skipping initialization');
+        lazyHelper.markTabReady();
+        return;
+    }
+
+    // Mark script as executed
+    lazyHelper.markScriptExecuted();
+
     // Find the container for this tab
     const container = document.querySelector('[data-tab="folder-services"]') ||
                      document.querySelector('.services-container') ||
                      document;
-    
+
     console.log('Found container:', container);
-    
+
     if (container) {
         initializeServicesManager(container);
     } else {
@@ -113,6 +126,9 @@ if (document.readyState === 'loading') {
     initServicesTab();
 }
 
+// Create global reset function for refresh functionality
+lazyHelper.createGlobalResetFunction();
+
 async function initializeServicesManager(container) {
     try {
         console.log('initializeServicesManager called with container:', container);
@@ -126,19 +142,13 @@ async function initializeServicesManager(container) {
         console.log('Services Manager initialized successfully');
 
         // Signal that this tab is ready
-        if (window.markTabAsReady && typeof tabId !== 'undefined') {
-            console.log('Marking services tab as ready');
-            window.markTabAsReady(tabId);
-        }
+        lazyHelper.markTabReady();
 
     } catch (error) {
         console.error('Error initializing Services Manager:', error);
         showError(container, 'Failed to initialize Services Manager: ' + error.message);
         // Still signal ready even if there was an error
-        if (window.markTabAsReady && typeof tabId !== 'undefined') {
-            console.log('Marking services tab as ready (after error)');
-            window.markTabAsReady(tabId);
-        }
+        lazyHelper.markTabReady();
     }
 }
 

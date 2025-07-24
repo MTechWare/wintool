@@ -4,6 +4,9 @@
  * Enhanced with advanced features, security validations, and modern UI
  */
 
+// Initialize lazy loading helper
+const lazyHelper = new LazyLoadingHelper('cleanup');
+
 // Enhanced cleanup state management
 let cleanupState = {
     isRunning: false,
@@ -123,6 +126,16 @@ if (typeof tabContainer !== 'undefined' && tabContainer) {
 function initAdvancedCleanupTab() {
     console.log('Initializing advanced cleanup tab...');
 
+    // Check if should initialize (lazy loading support)
+    if (!lazyHelper.shouldInitialize()) {
+        console.log('Cleanup script already executed, skipping initialization');
+        lazyHelper.markTabReady();
+        return;
+    }
+
+    // Mark script as executed
+    lazyHelper.markScriptExecuted();
+
     // Check if we're in the cleanup tab
     const cleanupContent = document.querySelector('.cleanup-content');
     if (!cleanupContent) {
@@ -139,6 +152,9 @@ function initAdvancedCleanupTab() {
     loadCleanupSettings();
     setupEventListeners();
     startInitialScan();
+
+    // Signal that this tab is ready
+    lazyHelper.markTabReady();
 }
 
 /**
@@ -1661,8 +1677,6 @@ document.addEventListener('DOMContentLoaded', function() {
         used: 600000000000,   // 600GB
         free: 400000000000    // 400GB
     });
-
-
 
     // Load cleanup history
     loadCleanupHistory();

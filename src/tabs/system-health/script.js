@@ -6,7 +6,7 @@ let isHealthDashboardActive = false; // Track if dashboard is currently active
 
 // Cache for reducing redundant API calls
 let lastHealthDataFetch = 0;
-const HEALTH_DATA_CACHE_DURATION = 8000; // Cache for 8 seconds
+const HEALTH_DATA_CACHE_DURATION = 20000; // Cache for 20 seconds
 let cachedHealthData = null;
 
 // Debounce for refresh button
@@ -29,7 +29,8 @@ let alertSettings = {
     enableDesktopNotifications: true,
     autoDismissInfo: true,
     enableNativeNotifications: true,
-    persistentCriticalAlerts: true
+    persistentCriticalAlerts: true,
+    refreshInterval: 15 // Default refresh interval in seconds
 };
 
 // Alert severity levels
@@ -50,7 +51,7 @@ async function loadSystemHealth(container) {
     console.log('Loading system health dashboard...');
 
     try {
-        // Initialize alert system
+        // Initialize alert system (this loads settings including refresh interval)
         initializeAlertSystem();
 
         // Initialize charts
@@ -63,7 +64,7 @@ async function loadSystemHealth(container) {
         console.log('Loading initial health metrics...');
         await updateHealthMetrics();
 
-        // Start real-time updates
+        // Start real-time updates (now uses loaded refresh interval setting)
         startHealthUpdates();
 
         console.log('System health dashboard loaded successfully');
@@ -162,17 +163,34 @@ function startHealthUpdates() {
     console.log('Starting System Health monitoring...');
     isHealthDashboardActive = true;
 
-    // Start performance monitoring
+    // Start performance monitoring with user-configured interval
     if (window.electronAPI) {
+        // Stop any existing performance updates first
+        window.electronAPI.stopPerformanceUpdates();
+
+        // Start performance updates
         window.electronAPI.startPerformanceUpdates();
 
+        // Set up throttled performance updates based on user's refresh rate
+        let lastPerformanceUpdate = 0;
+        const performanceThrottleMs = (alertSettings.refreshInterval || 15) * 1000;
+
+        console.log(`Throttling performance updates to ${alertSettings.refreshInterval || 15} seconds`);
+
         window.electronAPI.onPerformanceUpdate((metrics) => {
-            updateRealTimeMetrics(metrics);
+            const now = Date.now();
+            if (now - lastPerformanceUpdate >= performanceThrottleMs) {
+                updateRealTimeMetrics(metrics);
+                lastPerformanceUpdate = now;
+            }
         });
     }
 
-    // Update other metrics every 10 seconds (reduced frequency to lower CPU usage)
-    healthUpdateInterval = setInterval(updateHealthMetrics, 10000);
+    // Update other metrics based on user-configured refresh interval
+    const refreshIntervalMs = (alertSettings.refreshInterval || 15) * 1000;
+    console.log(`Setting health update interval to ${alertSettings.refreshInterval || 15} seconds (${refreshIntervalMs}ms)`);
+    console.log('Current alertSettings:', alertSettings);
+    healthUpdateInterval = setInterval(updateHealthMetrics, refreshIntervalMs);
 }
 
 function updateRealTimeMetrics(metrics) {
@@ -618,8 +636,10 @@ function loadAlertSettings() {
             const settings = JSON.parse(savedSettings);
             alertSettings = { ...alertSettings, ...settings };
             console.log('Loaded alert settings:', alertSettings);
+            console.log('Refresh interval from settings:', alertSettings.refreshInterval);
         } else {
             console.log('No saved alert settings found, using defaults');
+            console.log('Default refresh interval:', alertSettings.refreshInterval);
         }
 
         const savedThresholds = localStorage.getItem('healthDashboard_thresholds');
@@ -954,6 +974,7 @@ function openAlertSettings() {
     document.getElementById('auto-dismiss-info').checked = alertSettings.autoDismissInfo;
     document.getElementById('enable-native-notifications').checked = alertSettings.enableNativeNotifications;
     document.getElementById('persistent-critical-alerts').checked = alertSettings.persistentCriticalAlerts;
+    document.getElementById('refresh-interval').value = alertSettings.refreshInterval || 15;
 
     modal.style.display = 'flex';
 }
@@ -1114,6 +1135,11 @@ function setupModalEventListeners() {
                 alertSettings.enableNativeNotifications = document.getElementById('enable-native-notifications').checked;
                 alertSettings.persistentCriticalAlerts = document.getElementById('persistent-critical-alerts').checked;
 
+                // Save refresh interval and restart monitoring if changed
+                const newRefreshInterval = parseInt(document.getElementById('refresh-interval').value);
+                const intervalChanged = alertSettings.refreshInterval !== newRefreshInterval;
+                alertSettings.refreshInterval = newRefreshInterval;
+
                 console.log('Settings to save:', {
                     thresholds: HEALTH_THRESHOLDS,
                     alertSettings: alertSettings
@@ -1121,6 +1147,43 @@ function setupModalEventListeners() {
 
                 // Persist settings
                 saveAlertSettingsToStorage();
+
+                // Restart monitoring with new interval if it changed
+                if (intervalChanged && isHealthDashboardActive) {
+                    console.log(`Refresh interval changed to ${newRefreshInterval} seconds, restarting monitoring...`);
+
+                    // Clear existing interval
+                    if (healthUpdateInterval) {
+                        clearInterval(healthUpdateInterval);
+                        healthUpdateInterval = null;
+                    }
+
+                    // Start with new interval
+                    const refreshIntervalMs = newRefreshInterval * 1000;
+                    healthUpdateInterval = setInterval(updateHealthMetrics, refreshIntervalMs);
+
+                    // Restart performance monitoring to apply new throttling
+                    if (window.electronAPI) {
+                        window.electronAPI.stopPerformanceUpdates();
+                        window.electronAPI.startPerformanceUpdates();
+
+                        // Set up new throttled performance updates
+                        let lastPerformanceUpdate = 0;
+                        const performanceThrottleMs = newRefreshInterval * 1000;
+
+                        console.log(`Restarting performance updates with ${newRefreshInterval}s throttling`);
+
+                        window.electronAPI.onPerformanceUpdate((metrics) => {
+                            const now = Date.now();
+                            if (now - lastPerformanceUpdate >= performanceThrottleMs) {
+                                updateRealTimeMetrics(metrics);
+                                lastPerformanceUpdate = now;
+                            }
+                        });
+                    }
+
+                    console.log(`All monitoring restarted with ${newRefreshInterval}s interval`);
+                }
 
                 alertSettingsModal.style.display = 'none';
 
@@ -1152,6 +1215,7 @@ function setupModalEventListeners() {
             alertSettings.autoDismissInfo = true;
             alertSettings.enableNativeNotifications = true;
             alertSettings.persistentCriticalAlerts = true;
+            alertSettings.refreshInterval = 15;
 
             // Update UI
             document.getElementById('memory-warning').value = 80;
@@ -1166,6 +1230,7 @@ function setupModalEventListeners() {
             document.getElementById('auto-dismiss-info').checked = true;
             document.getElementById('enable-native-notifications').checked = true;
             document.getElementById('persistent-critical-alerts').checked = true;
+            document.getElementById('refresh-interval').value = 15;
         });
     }
 
@@ -1237,6 +1302,8 @@ if (window.tabEventManager) {
             console.log('System Health tab activated');
             if (!isHealthDashboardActive) {
                 console.log('Starting System Health monitoring...');
+                // Ensure settings are loaded before starting
+                loadAlertSettings();
                 startHealthUpdates();
             }
         } else if (isHealthDashboardActive) {

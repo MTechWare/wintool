@@ -133,17 +133,17 @@ async function loadNetworkingInfo(container) {
         }
 
         // Signal that this tab is ready
-        if (window.markTabAsReady && typeof tabId !== 'undefined') {
+        if (window.markTabAsReady) {
             console.log('Marking networking tab as ready');
-            window.markTabAsReady(tabId);
+            window.markTabAsReady('networking');
         }
 
     } catch (error) {
         console.error('Error loading networking info:', error);
         // Still signal ready even if there was an error
-        if (window.markTabAsReady && typeof tabId !== 'undefined') {
+        if (window.markTabAsReady) {
             console.log('Marking networking tab as ready (after error)');
-            window.markTabAsReady(tabId);
+            window.markTabAsReady('networking');
         }
     }
 }

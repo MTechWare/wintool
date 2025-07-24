@@ -37,6 +37,9 @@ class PackageManager {
             ]
         };
 
+        // Initialize lazy loading helper
+        this.lazyHelper = new LazyLoadingHelper('packages');
+
         this.init();
     }
 
@@ -77,8 +80,65 @@ class PackageManager {
         return this.securityConfig.trustedPublishers.includes(publisher);
     }
 
+    ensureAllCategoryActive() {
+        // Ensure the "All" category is selected and active when packages are loaded
+        this.currentCategory = 'all';
+        
+        // Update the UI to reflect the active state
+        const categoryButtons = document.querySelectorAll('.category-btn');
+        categoryButtons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.category === 'all') {
+                btn.classList.add('active');
+            }
+        });
+        
+        // Update the total package count to reflect all packages
+        const totalPackages = Object.keys(this.packages).length;
+        this.updateTotalPackageCount(totalPackages);
+        
+        console.log(`Ensured "All" category is active with ${totalPackages} total packages`);
+    }
+
+    setupTabActivationListener() {
+        // Listen for custom tab-switched events (if available)
+        if (window.electronAPI && window.electronAPI.addTabListener) {
+            window.electronAPI.addTabListener('tab-switched', (event) => {
+                const { tabId } = event.detail;
+                if (tabId === 'packages' || tabId === 'folder-packages') {
+                    console.log('Packages tab activated, ensuring All category is loaded');
+                    this.ensureAllCategoryActive();
+                    this.filterPackages();
+                }
+            });
+        }
+
+        // Also listen for visibility changes as a fallback
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                // Check if packages tab is currently active
+                const packagesTab = document.querySelector('.tab-content.active[id*="packages"]');
+                if (packagesTab) {
+                    console.log('Packages tab is visible, ensuring All category is loaded');
+                    this.ensureAllCategoryActive();
+                    this.filterPackages();
+                }
+            }
+        });
+    }
+
     async init() {
         console.log('Initializing Package Manager...');
+
+        // Check if should initialize (lazy loading support)
+        if (!this.lazyHelper.shouldInitialize()) {
+            console.log('Package Manager script already executed, skipping initialization');
+            this.lazyHelper.markTabReady();
+            return;
+        }
+
+        // Mark script as executed
+        this.lazyHelper.markScriptExecuted();
 
         try {
             // Check Chocolatey availability
@@ -99,21 +159,21 @@ class PackageManager {
             // Automatically check for updates
             await this.checkForUpdates();
 
-            // Render initial package list
-            this.renderPackages();
+            // Apply filters and render initial package list (ensures "All" category is properly loaded)
+            this.ensureAllCategoryActive();
+            this.filterPackages();
+
+            // Listen for tab activation events to ensure All category is loaded
+            this.setupTabActivationListener();
 
             console.log('Package Manager initialized');
 
             // Signal that this tab is ready
-            if (window.markTabAsReady && typeof tabId !== 'undefined') {
-                window.markTabAsReady(tabId);
-            }
+            this.lazyHelper.markTabReady();
         } catch (error) {
             console.error('Error initializing Package Manager:', error);
             // Still signal ready even if there was an error
-            if (window.markTabAsReady && typeof tabId !== 'undefined') {
-                window.markTabAsReady(tabId);
-            }
+            this.lazyHelper.markTabReady();
         }
     }
 
@@ -252,11 +312,12 @@ class PackageManager {
             if (window.electronAPI && window.electronAPI.getApplicationsData) {
                 console.log('Loading packages from Electron API...');
                 this.packages = await window.electronAPI.getApplicationsData();
-                this.filteredPackages = { ...this.packages };
                 const packageCount = Object.keys(this.packages).length;
                 console.log('Loaded packages from Electron API:', packageCount);
                 this.showStatus(`Successfully loaded ${packageCount} packages from applications.json`, 'success');
-                this.updateTotalPackageCount(packageCount);
+                
+                // Refresh installed packages and updates after loading
+                await this.refreshPackageData();
                 return;
             }
 
@@ -276,11 +337,12 @@ class PackageManager {
                     if (response.ok) {
                         console.log(`Successfully loaded packages from: ${path}`);
                         this.packages = await response.json();
-                        this.filteredPackages = { ...this.packages };
                         const packageCount = Object.keys(this.packages).length;
                         console.log('Loaded packages via fetch:', packageCount);
                         this.showStatus(`Successfully loaded ${packageCount} packages from applications.json`, 'success');
-                        this.updateTotalPackageCount(packageCount);
+                        
+                        // Refresh installed packages and updates after loading
+                        await this.refreshPackageData();
                         return;
                     }
                 } catch (e) {
@@ -298,6 +360,27 @@ class PackageManager {
             this.packages = {};
             this.filteredPackages = {};
             this.updateTotalPackageCount(0);
+        }
+    }
+
+    async refreshPackageData() {
+        try {
+            // Get installed packages
+            await this.getInstalledPackages();
+            
+            // Check for updates
+            await this.checkForUpdates();
+            
+            // Apply current filters (including "All" category) after refreshing
+            this.ensureAllCategoryActive();
+            this.filterPackages();
+            
+            console.log('Package data refreshed successfully');
+        } catch (error) {
+            console.error('Error refreshing package data:', error);
+            // Still apply filters even if refresh fails
+            this.ensureAllCategoryActive();
+            this.filterPackages();
         }
     }
 
@@ -419,8 +502,9 @@ class PackageManager {
         // Automatically check for updates with the new package manager
         await this.checkForUpdates();
 
-        // Re-render packages to show appropriate package IDs and installation status
-        this.renderPackages();
+        // Ensure All category is active and re-render packages to show appropriate package IDs and installation status
+        this.ensureAllCategoryActive();
+        this.filterPackages();
 
         // Show status message
         const managerName = packageManager === 'choco' ? 'Chocolatey' : 'Windows Package Manager';
@@ -429,6 +513,9 @@ class PackageManager {
 
     filterPackages() {
         this.filteredPackages = {};
+
+        // Log current filter state for debugging
+        console.log(`Filtering packages with category: ${this.currentCategory}, search: "${this.searchTerm}", status: ${this.currentStatusFilter}`);
 
         Object.keys(this.packages).forEach(key => {
             const pkg = this.packages[key];
@@ -460,6 +547,8 @@ class PackageManager {
             }
         });
 
+        console.log(`Filtered ${Object.keys(this.filteredPackages).length} packages out of ${Object.keys(this.packages).length} total packages`);
+        
         this.renderPackages();
         this.updateTotalPackageCount(Object.keys(this.filteredPackages).length);
     }
@@ -468,9 +557,7 @@ class PackageManager {
         this.showStatus('Refreshing installed packages and checking for updates...', 'info');
 
         try {
-            await this.getInstalledPackages();
-            await this.checkForUpdates();
-            this.filterPackages();
+            await this.refreshPackageData();
 
             const updateCount = this.packagesWithUpdates.size;
             const installedCount = this.installedPackages.size;
@@ -1833,9 +1920,17 @@ let packageManager;
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         packageManager = new PackageManager();
+        // Create global reset function for refresh functionality
+        if (packageManager && packageManager.lazyHelper) {
+            packageManager.lazyHelper.createGlobalResetFunction();
+        }
     });
 } else {
     packageManager = new PackageManager();
+    // Create global reset function for refresh functionality
+    if (packageManager && packageManager.lazyHelper) {
+        packageManager.lazyHelper.createGlobalResetFunction();
+    }
 }
 
 // Expose package manager methods to the command palette
@@ -1850,5 +1945,20 @@ window.uninstallPackage = (packageName) => {
         packageManager.uninstallPackage(packageName);
     }
 };
+
+// Ensure All category is active when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Small delay to ensure all elements are rendered
+    setTimeout(() => {
+        const allCategoryBtn = document.querySelector('.category-btn[data-category="all"]');
+        if (allCategoryBtn && !allCategoryBtn.classList.contains('active')) {
+            // Remove active from all buttons first
+            document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
+            // Add active to All button
+            allCategoryBtn.classList.add('active');
+            console.log('Ensured "All" category button is active on DOM ready');
+        }
+    }, 100);
+});
 
 console.log('Packages tab script loaded');

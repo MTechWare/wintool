@@ -248,6 +248,22 @@
                     </div>
                 </div>
             </div>
+
+            <div class="settings-section">
+                <h4>Dashboard Settings</h4>
+                <div class="preference-group">
+                    <div class="preference-item refresh-interval-item">
+                        <label for="refresh-interval">Dashboard Refresh Rate</label>
+                        <select id="refresh-interval">
+                            <option value="5">5 seconds</option>
+                            <option value="10">10 seconds</option>
+                            <option value="15" selected>15 seconds (Default)</option>
+                            <option value="20">20 seconds</option>
+                        </select>
+                        <small>Lower values provide more frequent updates but use more system resources</small>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="modal-footer">
             <button id="reset-alert-settings" class="btn-secondary">Reset to Defaults</button>

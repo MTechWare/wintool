@@ -44,6 +44,18 @@
     border-radius: 12px;
     border: 1px solid var(--border-color);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.preset-quick-actions::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary-color), var(--primary-dark, #ff5722), var(--primary-color));
 }
 
 .preset-card {
@@ -62,7 +74,8 @@
 .preset-card:hover {
     border-color: var(--primary-color);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 20px rgba(var(--primary-rgb, 255, 152, 0), 0.25);
+    background: rgba(var(--primary-rgb, 255, 152, 0), 0.05);
 }
 
 .preset-card i {
@@ -70,6 +83,12 @@
     color: var(--primary-color);
     margin-bottom: 8px;
     display: block;
+    transition: all 0.3s ease;
+}
+
+.preset-card:hover i {
+    color: var(--primary-color);
+    text-shadow: 0 0 10px rgba(var(--primary-rgb, 255, 152, 0), 0.5);
 }
 
 .preset-card h4 {
@@ -77,6 +96,11 @@
     font-weight: 600;
     margin: 0 0 4px 0;
     color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.preset-card:hover h4 {
+    color: var(--primary-color);
 }
 
 .preset-card p {
@@ -92,8 +116,8 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 2px;
-    background: var(--primary-color);
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), var(--primary-dark, #ff5722));
     transform: scaleX(0);
     transition: transform 0.3s ease;
 }
@@ -109,10 +133,10 @@
     left: 50%;
     transform: translateX(-50%);
     background: var(--background-main);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--primary-color);
     border-radius: 6px;
     padding: 12px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 8px 20px rgba(var(--primary-rgb, 255, 152, 0), 0.25);
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
@@ -121,6 +145,7 @@
     pointer-events: none;
     max-height: 250px;
     overflow-y: auto;
+    backdrop-filter: blur(10px);
 }
 
 .preset-tooltip::after {
@@ -130,7 +155,7 @@
     left: 50%;
     transform: translateX(-50%);
     border: 6px solid transparent;
-    border-top-color: var(--border-color);
+    border-top-color: var(--primary-color);
 }
 
 .preset-tooltip::before {
@@ -153,8 +178,8 @@
     margin: 0 0 8px 0;
     font-size: 0.9em;
     font-weight: 600;
-    color: var(--text-color);
-    border-bottom: 1px solid var(--border-color);
+    color: var(--primary-color);
+    border-bottom: 1px solid var(--primary-color);
     padding-bottom: 4px;
 }
 
@@ -627,118 +652,19 @@ input:checked + .slider:before {
     color: #dc3545;
 }
 
-/* Enhanced styling for all preset cards */
-#preset-beginner {
-    border: 2px solid #28a745;
-    background: linear-gradient(135deg, var(--background-main) 0%, rgba(40, 167, 69, 0.1) 100%);
+/* Enhanced styling for all preset cards - Using Primary Color Theme */
+.preset-card {
+    border: 2px solid var(--primary-color) !important;
+    background: linear-gradient(135deg, var(--background-main) 0%, rgba(var(--primary-rgb, 255, 152, 0), 0.1) 100%) !important;
 }
 
-#preset-beginner i {
-    color: #28a745;
+.preset-card i {
+    color: var(--primary-color) !important;
 }
 
-#preset-beginner:hover {
-    border-color: #28a745;
-    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
-}
-
-#preset-privacy {
-    border: 2px solid #6f42c1;
-    background: linear-gradient(135deg, var(--background-main) 0%, rgba(111, 66, 193, 0.1) 100%);
-}
-
-#preset-privacy i {
-    color: #6f42c1;
-}
-
-#preset-privacy:hover {
-    border-color: #6f42c1;
-    box-shadow: 0 6px 20px rgba(111, 66, 193, 0.3);
-}
-
-#preset-debloat {
-    border: 2px solid #17a2b8;
-    background: linear-gradient(135deg, var(--background-main) 0%, rgba(23, 162, 184, 0.1) 100%);
-}
-
-#preset-debloat i {
-    color: #17a2b8;
-}
-
-#preset-debloat:hover {
-    border-color: #17a2b8;
-    box-shadow: 0 6px 20px rgba(23, 162, 184, 0.3);
-}
-
-#preset-performance {
-    border: 2px solid #fd7e14;
-    background: linear-gradient(135deg, var(--background-main) 0%, rgba(253, 126, 20, 0.1) 100%);
-}
-
-#preset-performance i {
-    color: #fd7e14;
-}
-
-#preset-performance:hover {
-    border-color: #fd7e14;
-    box-shadow: 0 6px 20px rgba(253, 126, 20, 0.3);
-}
-
-#preset-gaming {
-    border: 2px solid #e83e8c;
-    background: linear-gradient(135deg, var(--background-main) 0%, rgba(232, 62, 140, 0.1) 100%);
-}
-
-#preset-gaming i {
-    color: #e83e8c;
-}
-
-#preset-gaming:hover {
-    border-color: #e83e8c;
-    box-shadow: 0 6px 20px rgba(232, 62, 140, 0.3);
-}
-
-#preset-windows11 {
-    border: 2px solid #007bff;
-    background: linear-gradient(135deg, var(--background-main) 0%, rgba(0, 123, 255, 0.1) 100%);
-}
-
-#preset-windows11 i {
-    color: #007bff;
-}
-
-#preset-windows11:hover {
-    border-color: #007bff;
-    box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
-}
-
-#preset-enterprise {
-    border: 2px solid #6c757d;
-    background: linear-gradient(135deg, var(--background-main) 0%, rgba(108, 117, 125, 0.1) 100%);
-}
-
-#preset-enterprise i {
-    color: #6c757d;
-}
-
-#preset-enterprise:hover {
-    border-color: #6c757d;
-    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.3);
-}
-
-#preset-extreme {
-    border: 2px solid #dc3545;
-    background: linear-gradient(135deg, var(--background-main) 0%, rgba(220, 53, 69, 0.1) 100%);
-    position: relative;
-}
-
-#preset-extreme i {
-    color: #dc3545;
-}
-
-#preset-extreme:hover {
-    border-color: #dc3545;
-    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.3);
+.preset-card:hover {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 6px 20px rgba(var(--primary-rgb, 255, 152, 0), 0.3) !important;
 }
 
 #preset-extreme::after {
@@ -1014,36 +940,12 @@ input:checked + .slider:before {
     border-radius: 10px;
     margin-left: 4px;
     font-weight: 500;
+    box-shadow: 0 2px 4px rgba(var(--primary-rgb, 255, 152, 0), 0.3);
 }
 
-#preset-beginner .tweak-count {
-    background: #28a745;
-}
-
-#preset-privacy .tweak-count {
-    background: #6f42c1;
-}
-
-#preset-debloat .tweak-count {
-    background: #17a2b8;
-}
-
-#preset-performance .tweak-count {
-    background: #fd7e14;
-}
-
-#preset-gaming .tweak-count {
-    background: #e83e8c;
-}
-
-#preset-windows11 .tweak-count {
-    background: #007bff;
-}
-
-#preset-enterprise .tweak-count {
-    background: #6c757d;
-}
-
-#preset-extreme .tweak-count {
-    background: #dc3545;
+/* All tweak count badges use primary color theme */
+.preset-card .tweak-count {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark, #ff5722)) !important;
+    color: white !important;
+    box-shadow: 0 2px 4px rgba(var(--primary-rgb, 255, 152, 0), 0.3) !important;
 }

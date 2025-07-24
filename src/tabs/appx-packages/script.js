@@ -81,16 +81,16 @@ class AppXPackageManager {
             console.log('AppX Package Manager initialized');
 
             // Signal that this tab is ready
-            if (window.markTabAsReady && typeof tabId !== 'undefined') {
-                window.markTabAsReady(tabId);
+            if (window.markTabAsReady) {
+                window.markTabAsReady('appx-packages');
             }
         } catch (error) {
             console.error('Error initializing AppX Package Manager:', error);
             this.showStatus('Error initializing AppX Package Manager: ' + error.message, 'error');
             
             // Still signal ready even if there was an error
-            if (window.markTabAsReady && typeof tabId !== 'undefined') {
-                window.markTabAsReady(tabId);
+            if (window.markTabAsReady) {
+                window.markTabAsReady('appx-packages');
             }
         }
     }

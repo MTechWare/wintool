@@ -3141,9 +3141,9 @@ function initWindowsUnattend() {
     console.log('Windows Unattend tab initialized successfully');
 
     // Signal that this tab is ready
-    if (window.markTabAsReady && typeof tabId !== 'undefined') {
+    if (window.markTabAsReady) {
         console.log('Marking windows-unattend tab as ready');
-        window.markTabAsReady(tabId);
+        window.markTabAsReady('windows-unattend');
     }
 }
 

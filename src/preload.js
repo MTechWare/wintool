@@ -26,10 +26,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setWindowOpacity: (opacity) => ipcRenderer.invoke('set-window-opacity', opacity),
     setStartupBehavior: (shouldStartOnBoot) => ipcRenderer.invoke('set-startup-behavior', shouldStartOnBoot),
 
-    // Log Viewer
+    // Enhanced Log Viewer
     openLogViewer: () => ipcRenderer.invoke('open-log-viewer'),
-    onLogMessage: (callback) => ipcRenderer.on('log-message', (event, level, message) => callback(level, message)),
+    onLogMessage: (callback) => ipcRenderer.on('log-message', (event, level, message, source) => callback(level, message, source)),
     onThemeData: (callback) => ipcRenderer.on('theme-data', (event, themeData) => callback(themeData)),
+
+    // Custom logging methods for plugins and tabs
+    logInfo: (message, source) => ipcRenderer.invoke('log-custom-message', 'info', message, source),
+    logWarn: (message, source) => ipcRenderer.invoke('log-custom-message', 'warn', message, source),
+    logError: (message, source) => ipcRenderer.invoke('log-custom-message', 'error', message, source),
+    logDebug: (message, source) => ipcRenderer.invoke('log-custom-message', 'debug', message, source),
+    logSuccess: (message, source) => ipcRenderer.invoke('log-custom-message', 'success', message, source),
 
     // Window visibility debugging
     reportVisibilityIssue: (details) => ipcRenderer.invoke('report-visibility-issue', details),
