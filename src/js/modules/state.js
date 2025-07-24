@@ -63,28 +63,28 @@ export function setCurrentShortcuts(newShortcuts) {
 
 export const THEMES = {
     'classic-dark': {
-        '--primary-color': '#ff9800',
-        '--primary-dark': '#f57c00',
-        '--primary-darker': '#e65100',
-        '--primary-rgb': '255, 152, 0',
-        '--background-dark': '#0a0a0c',
-        '--background-light': '#111113',
-        '--background-card': '#1a1a1c',
+        '--primary-color': '#ff6b35',
+        '--primary-dark': '#e55a2b',
+        '--primary-darker': '#cc4a1f',
+        '--primary-rgb': '255, 107, 53',
+        '--background-dark': '#0f0f0f',
+        '--background-light': '#1a1a1a',
+        '--background-card': '#252525',
         '--border-color': '#333333',
-        '--hover-color': '#23232a',
-        '--background-content': '#0a0a0c'
+        '--hover-color': '#2a2a2a',
+        '--background-content': '#1a1a1a'
     },
     'modern-gray': {
-        '--primary-color': '#3498db',
-        '--primary-dark': '#2980b9',
-        '--primary-darker': '#2c3e50',
-        '--primary-rgb': '52, 152, 219',
+        '--primary-color': '#ff6b35',
+        '--primary-dark': '#e55a2b',
+        '--primary-darker': '#cc4a1f',
+        '--primary-rgb': '255, 107, 53',
         '--background-dark': '#1c1c1e',
         '--background-light': '#2c2c2e',
         '--background-card': '#3a3a3c',
         '--border-color': '#444444',
         '--hover-color': '#4f4f52',
-        '--background-content': '#1c1c1e'
+        '--background-content': '#2c2c2e'
     },
     'custom': {}
 };

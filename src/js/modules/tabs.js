@@ -429,7 +429,13 @@ export async function refreshCurrentTab() {
             // Reset tweaks initialization to force reload
             if (window.resetTweaksInitialization && typeof window.resetTweaksInitialization === 'function') {
                 window.resetTweaksInitialization();
-                // Trigger re-render by switching away and back
+
+                // Reset the jsExecuted flag in tab loader to allow re-execution
+                if (window.tabLoader && typeof window.tabLoader.resetTabJSExecution === 'function') {
+                    window.tabLoader.resetTabJSExecution(currentTab);
+                }
+
+                // Trigger re-render by re-executing the JavaScript
                 setTimeout(() => {
                     if (window.tabLoader && typeof window.tabLoader.executeTabJSOnDemand === 'function') {
                         window.tabLoader.executeTabJSOnDemand(currentTab);
@@ -437,14 +443,34 @@ export async function refreshCurrentTab() {
                 }, 100);
             }
         } else {
+            // Try to use standardized reset functions for other tabs
+            const resetFunctionName = `reset${currentTab.charAt(0).toUpperCase() + currentTab.slice(1)}Initialization`;
+            if (window[resetFunctionName] && typeof window[resetFunctionName] === 'function') {
+                console.log(`Using standardized reset function: ${resetFunctionName}`);
+                window[resetFunctionName]();
 
-            const refreshBtn = activeTabContent.querySelector('button[id*="refresh"], .refresh-btn, [data-action="refresh"]');
-            if (refreshBtn) {
-                refreshBtn.click();
+                // Reset the jsExecuted flag in tab loader to allow re-execution
+                if (window.tabLoader && typeof window.tabLoader.resetTabJSExecution === 'function') {
+                    window.tabLoader.resetTabJSExecution(currentTab);
+                }
+
+                // Trigger re-render by re-executing the JavaScript
+                setTimeout(() => {
+                    if (window.tabLoader && typeof window.tabLoader.executeTabJSOnDemand === 'function') {
+                        window.tabLoader.executeTabJSOnDemand(currentTab);
+                    }
+                }, 100);
             } else {
-                console.log(`No specific refresh handler found for tab: ${currentTab}`);
+                // Fallback to looking for refresh buttons
+                const refreshBtn = activeTabContent.querySelector('button[id*="refresh"], .refresh-btn, [data-action="refresh"]');
+                if (refreshBtn) {
+                    refreshBtn.click();
+                } else {
+                    console.log(`No specific refresh handler found for tab: ${currentTab}`);
+                }
             }
         }
+
 
         console.log(`Tab ${currentTab} refreshed successfully`);
     } catch (error) {
@@ -461,6 +487,8 @@ export async function refreshSystemInformation() {
         const refreshIndicator = document.createElement('div');
         refreshIndicator.className = 'global-refresh-indicator';
         refreshIndicator.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Refreshing System Information...';
+        const animationStyle = document.body.classList.contains('no-animations') ? '' : 'animation: slideDown 0.3s ease-out;';
+
         refreshIndicator.style.cssText = `
             position: fixed;
             top: 20px;
@@ -473,11 +501,12 @@ export async function refreshSystemInformation() {
             font-size: 14px;
             z-index: 10000;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            animation: slideDown 0.3s ease-out;
+            ${animationStyle}
         `;
 
 
-        if (!document.querySelector('#refresh-animations')) {
+        // Only add animations if not in no-animations mode
+        if (!document.body.classList.contains('no-animations') && !document.querySelector('#refresh-animations')) {
             const style = document.createElement('style');
             style.id = 'refresh-animations';
             style.textContent = `

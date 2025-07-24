@@ -74,35 +74,26 @@ export class StartupOptimizer {
      */
     async applySystemSpecificOptimizations(systemInfo) {
         // First check if user has set a specific performance mode
-        let userPerformanceMode = 'auto';
+        let userPerformanceMode = 'balanced';
         try {
             if (window.electronAPI) {
-                userPerformanceMode = await window.electronAPI.getSetting('performanceMode', 'auto');
+                userPerformanceMode = await window.electronAPI.getSetting('performanceMode', 'balanced');
                 console.log('🎯 User performance mode preference:', userPerformanceMode);
             }
         } catch (error) {
-            console.warn('Could not get user performance mode, using auto detection');
+            console.warn('Could not get user performance mode, using balanced mode');
         }
 
-        // Apply optimizations based on user preference or auto-detection
+        // Apply optimizations based on user preference
         if (userPerformanceMode === 'low-end') {
             console.log('🔧 Applying low-end optimizations (user preference)...');
             await this.applyLowEndOptimizations();
         } else if (userPerformanceMode === 'high-end') {
             console.log('🚀 Applying high-end optimizations (user preference)...');
             await this.applyHighEndOptimizations();
-        } else if (userPerformanceMode === 'auto') {
-            // Auto mode: use system detection
-            if (systemInfo.isLowEnd) {
-                console.log('🔧 Applying low-end system optimizations (auto-detected)...');
-                await this.applyLowEndOptimizations();
-            } else if (systemInfo.isHighEnd) {
-                console.log('🚀 Applying high-end system optimizations (auto-detected)...');
-                await this.applyHighEndOptimizations();
-            } else {
-                console.log('⚖️ Applying balanced system optimizations (auto-detected)...');
-                await this.applyBalancedOptimizations();
-            }
+        } else if (userPerformanceMode === 'balanced') {
+            console.log('⚖️ Applying balanced optimizations (user preference)...');
+            await this.applyBalancedOptimizations();
         } else {
             // Fallback to balanced if unknown mode
             console.log('⚖️ Applying balanced system optimizations (fallback)...');
@@ -118,8 +109,10 @@ export class StartupOptimizer {
             fastSystemInfo: true,
             cacheSystemInfo: true,
             enableDiscordRpc: false,
+            enableLazyLoading: true, // Enable lazy loading for better performance on low-end systems
             sequentialLoadDelay: 15,
-            performanceMode: 'low-end'
+            performanceMode: 'low-end',
+            disableAnimations: true
         };
 
         await this.applySettings(optimizations);
@@ -132,10 +125,12 @@ export class StartupOptimizer {
     async applyHighEndOptimizations() {
         const optimizations = {
             fastSystemInfo: false, // Can handle full system info
-            cacheSystemInfo: true,
+            cacheSystemInfo: false, // Disable caching for real-time data on high-end systems
             enableDiscordRpc: true,
+            enableLazyLoading: false, // Disable lazy loading for instant access on high-end systems
             sequentialLoadDelay: 2,
-            performanceMode: 'high-end'
+            performanceMode: 'high-end',
+            disableAnimations: true
         };
 
         await this.applySettings(optimizations);
@@ -150,8 +145,10 @@ export class StartupOptimizer {
             fastSystemInfo: true, // Use fast mode for startup
             cacheSystemInfo: true,
             enableDiscordRpc: true,
+            enableLazyLoading: true, // Enable lazy loading for balanced approach
             sequentialLoadDelay: 5,
-            performanceMode: 'auto'
+            performanceMode: 'balanced', // Save the detected balanced mode instead of keeping 'auto'
+            disableAnimations: true
         };
 
         await this.applySettings(optimizations);
@@ -180,19 +177,79 @@ export class StartupOptimizer {
     }
 
     /**
-     * Apply settings to the application
+     * Apply settings to the application only if they haven't been customized by the user
      */
     async applySettings(settings) {
         if (!window.electronAPI) return;
 
+        // Check if user has a custom performance mode or has manually configured settings
+        const hasCustomSettings = await this.checkForUserCustomizations();
+        
+        if (hasCustomSettings) {
+            console.log('🎯 User has custom performance settings - skipping automatic optimizations');
+            return;
+        }
+
         for (const [key, value] of Object.entries(settings)) {
             try {
-                await window.electronAPI.setSetting(key, value);
-                console.log(`⚙️ Applied setting: ${key} = ${value}`);
+                // Only apply non-performance settings or if this is the first run
+                if (!this.isPerformanceSetting(key) || await this.isFirstRun()) {
+                    await window.electronAPI.setSetting(key, value);
+                    console.log(`⚙️ Applied setting: ${key} = ${value}`);
+                }
             } catch (error) {
                 console.warn(`⚠️ Failed to apply setting ${key}:`, error);
             }
         }
+    }
+
+    /**
+     * Check if user has customized performance settings
+     */
+    async checkForUserCustomizations() {
+        try {
+            // Check if user has explicitly set performance mode to something other than default
+            const performanceMode = await window.electronAPI.getSetting('performanceMode', 'balanced');
+            
+            // Check if user has a flag indicating they've customized settings
+            const hasCustomizedSettings = await window.electronAPI.getSetting('hasCustomizedPerformanceSettings', false);
+            
+            return hasCustomizedSettings;
+        } catch (error) {
+            console.warn('Could not check for user customizations:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Check if this is the first run of the application
+     */
+    async isFirstRun() {
+        try {
+            const hasRunBefore = await window.electronAPI.getSetting('hasRunBefore', false);
+            if (!hasRunBefore) {
+                await window.electronAPI.setSetting('hasRunBefore', true);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.warn('Could not check first run status:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Check if a setting key is related to performance
+     */
+    isPerformanceSetting(key) {
+        const performanceSettings = [
+            'fastSystemInfo',
+            'cacheSystemInfo', 
+            'enableDiscordRpc',
+            'enableLazyLoading',
+            'disableAnimations'
+        ];
+        return performanceSettings.includes(key);
     }
 
     /**

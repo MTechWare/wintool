@@ -208,15 +208,38 @@ export function registerDefaultCommands(loadedTabs) {
         action: () => window.electronAPI.toggleDevTools()
     });
 
+    // Enhanced Log Viewer - Always available
+    registerCommand({
+        id: 'open-log-viewer',
+        title: 'Open Enhanced Log Viewer',
+        category: 'Application',
+        icon: 'fas fa-list-alt',
+        action: () => window.electronAPI.openLogViewer()
+    });
+
+    // Log demonstration command
+    registerCommand({
+        id: 'demo-enhanced-logging',
+        title: 'Demonstrate Enhanced Logging',
+        category: 'Application',
+        icon: 'fas fa-play-circle',
+        action: () => {
+            if (window.demonstrateEnhancedLogging) {
+                window.demonstrateEnhancedLogging();
+                showNotification('Enhanced logging demonstration started! Open the Log Viewer to see the results.', 'info');
+            }
+        }
+    });
+
     // Conditionally register dev-only commands
     window.electronAPI.getSetting('enableDevTools', false).then(devToolsEnabled => {
         if (devToolsEnabled) {
             registerCommand({
-                id: 'open-log-viewer',
-                title: 'Open Log Viewer',
+                id: 'toggle-dev-tools',
+                title: 'Toggle Developer Tools',
                 category: 'Developer',
-                icon: 'fas fa-bug',
-                action: () => window.electronAPI.openLogViewer()
+                icon: 'fas fa-code',
+                action: () => window.electronAPI.toggleDevTools()
             });
         }
     });

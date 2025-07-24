@@ -131,11 +131,11 @@ class TabLoader {
 
             // Update progress for initialization phase (50-100%)
             const initProgress = 50 + ((this.initializedTabsCount / this.totalTabs) * 50);
-            this.updateProgress(`${tabId} ready`, initProgress);
+            this.updateProgress(`${tabId} configured`, initProgress);
 
             // Check if all tabs are initialized
             if (this.initializedTabsCount >= this.totalTabs) {
-                this.updateProgress('All tabs ready!', 100);
+                this.updateProgress('Setup complete', 100);
                 if (this.onCompleteCallback) {
                     // Reduced timeout for faster completion
                     setTimeout(() => this.onCompleteCallback(this.loadedTabs), 100);
@@ -189,7 +189,7 @@ class TabLoader {
             this.initializedTabsCount = 0;
 
             if (this.totalTabs === 0) {
-                this.updateProgress('No tabs to load', 100);
+                this.updateProgress('Application ready', 100);
                 if (this.onCompleteCallback) {
                     // Reduced timeout for faster completion
                     setTimeout(() => this.onCompleteCallback(this.loadedTabs), 100);
@@ -197,16 +197,16 @@ class TabLoader {
                 return;
             }
 
-            this.updateProgress('Loading tabs...', 0);
+            this.updateProgress('Loading modules...', 0);
 
             // Load tabs one at a time to prevent resource spikes
-            this.updateProgress('Loading tabs sequentially...', 10);
+            this.updateProgress('Preparing tools...', 10);
             const sequentialStart = performance.now();
 
             for (let i = 0; i < allItems.length; i++) {
                 const item = allItems[i];
                 try {
-                    this.updateProgress(`Loading ${item.name}...`, 10 + (i / this.totalTabs) * 40);
+                    this.updateProgress(`Setting up ${item.name}...`, 10 + (i / this.totalTabs) * 40);
                     const tabStart = performance.now();
                     await this.loadTab(item.name);
                     console.log(`📂 Tab '${item.name}' loaded in ${(performance.now() - tabStart).toFixed(2)}ms`);
@@ -224,7 +224,7 @@ class TabLoader {
 
             console.log(`📊 Sequential tab loading completed in ${(performance.now() - sequentialStart).toFixed(2)}ms`);
 
-            this.updateProgress('Waiting for tabs to initialize...', 50);
+            this.updateProgress('Finalizing setup...', 50);
             console.log(`Loaded ${allItems.length} folder-based tabs, waiting for initialization...`);
 
             // Set a timeout for all tabs to initialize
@@ -232,7 +232,7 @@ class TabLoader {
 
         } catch (error) {
             console.error('Error initializing tab loader:', error);
-            this.updateProgress('Error loading tabs', 100);
+            this.updateProgress('Setup encountered an issue', 100);
             if (this.onCompleteCallback) {
                 setTimeout(() => this.onCompleteCallback(), 1000);
             }
@@ -530,6 +530,21 @@ class TabLoader {
             console.warn(`No tab data found for: ${tabId}`);
         } else if (!tabData.js) {
             console.log(`No JavaScript to execute for tab: ${tabId}`);
+        }
+    }
+
+    /**
+     * Reset the JavaScript execution flag for a tab to allow re-execution
+     */
+    resetTabJSExecution(tabId) {
+        const tabData = this.loadedTabs.get(tabId);
+        if (tabData) {
+            tabData.jsExecuted = false;
+            console.log(`Reset JavaScript execution flag for tab: ${tabId}`);
+            return true;
+        } else {
+            console.warn(`No tab data found for: ${tabId}`);
+            return false;
         }
     }
 
