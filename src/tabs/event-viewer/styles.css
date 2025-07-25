@@ -1,3 +1,6 @@
+/* Event Viewer Tab Styles - System Health Dashboard Theme */
+@import url('../../css/universal-tab-header.css');
+
 .event-viewer-container {
     padding: 20px;
     color: var(--text-primary);

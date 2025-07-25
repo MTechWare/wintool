@@ -38,8 +38,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     logDebug: (message, source) => ipcRenderer.invoke('log-custom-message', 'debug', message, source),
     logSuccess: (message, source) => ipcRenderer.invoke('log-custom-message', 'success', message, source),
 
-    // Window visibility debugging
-    reportVisibilityIssue: (details) => ipcRenderer.invoke('report-visibility-issue', details),
+
 
     // Performance Monitoring
     startPerformanceUpdates: () => ipcRenderer.invoke('start-performance-updates'),

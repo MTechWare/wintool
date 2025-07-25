@@ -1,4 +1,5 @@
-/* System Utilities Tab Styles */
+/* System Utilities Tab Styles - System Health Dashboard Theme */
+@import url('../../css/universal-tab-header.css');
 
 .system-utilities-content {
     max-width: 1200px;

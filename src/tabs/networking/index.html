@@ -3,7 +3,19 @@
         <h1><i class="fas fa-network-wired"></i> Network Information</h1>
         <p>Network interfaces and connectivity details</p>
     </div>
-    <button id="refresh-networking-btn" class="action-btn" title="Refresh Network Information"><i class="fas fa-sync-alt"></i></button>
+    <div>
+        <button id="refresh-networking-btn" class="action-btn" title="Refresh Networking">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+        <button id="export-networking-summary-btn" class="action-btn" title="Export Summary">
+            <i class="fas fa-file-export"></i>
+        </button>
+    </div>
+</div>
+
+<div class="plugin-warning">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span><strong>Disclaimer:</strong> Network operations may require <strong>administrator privileges</strong>. Some actions like resetting TCP/IP stack will require a system restart to take full effect.</span>
 </div>
 
 <div class="networking-content">
@@ -49,46 +61,6 @@
         <h3>Network Interfaces</h3>
         <div id="network-interfaces-container" class="interfaces-container">
             <!-- Network interfaces will be loaded here -->
-        </div>
-    </div>
-
-    <div class="network-stats-section">
-        <h3>Network Statistics</h3>
-        <div class="stats-grid">
-            <div class="stats-card">
-                <h4><i class="fas fa-download"></i> Data Received</h4>
-                <div class="stats-content">
-                    <div class="stat-item">
-                        <span class="stat-label">Total Bytes:</span>
-                        <span id="total-rx-bytes" class="stat-value">Loading...</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Packets:</span>
-                        <span id="total-rx-packets" class="stat-value">Loading...</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Errors:</span>
-                        <span id="total-rx-errors" class="stat-value">Loading...</span>
-                    </div>
-                </div>
-            </div>
-            <div class="stats-card">
-                <h4><i class="fas fa-upload"></i> Data Transmitted</h4>
-                <div class="stats-content">
-                    <div class="stat-item">
-                        <span class="stat-label">Total Bytes:</span>
-                        <span id="total-tx-bytes" class="stat-value">Loading...</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Packets:</span>
-                        <span id="total-tx-packets" class="stat-value">Loading...</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Errors:</span>
-                        <span id="total-tx-errors" class="stat-value">Loading...</span>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>

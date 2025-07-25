@@ -1,4 +1,5 @@
-/* Environment Variables Tab Styles */
+/* Environment Variables Tab Styles - System Health Dashboard Theme */
+@import url('../../css/universal-tab-header.css');
 
 .env-vars-container {
     padding: 30px;

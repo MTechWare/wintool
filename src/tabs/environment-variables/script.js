@@ -14,7 +14,6 @@ let confirmCallback = null;
 
 // Initialize the environment variables tab
 function initEnvironmentVariablesTab() {
-    console.log('Initializing Environment Variables tab...');
     
     // Set up event listeners
     setupEventListeners();
@@ -71,11 +70,9 @@ async function refreshEnvironmentVariables() {
     if (errorEl) errorEl.style.display = 'none';
     
     try {
-        console.log('Fetching environment variables...');
         const envVars = await window.electronAPI.getEnvironmentVariables();
-        
+
         environmentVariables = envVars;
-        console.log('Environment variables loaded:', envVars);
         
         // Populate the tables
         populateEnvironmentVariables();
@@ -378,12 +375,9 @@ async function saveEnvironmentVariable() {
     }
 
     try {
-        console.log(`Saving environment variable: ${name} = ${value} (${target})`);
-
         const result = await window.electronAPI.setEnvironmentVariable(name, value, target);
 
         if (result.success) {
-            console.log('Environment variable saved successfully');
             closeEnvVarModal();
 
             // Refresh the variables
@@ -404,12 +398,9 @@ function deleteEnvironmentVariable(name, target) {
 
     showConfirmModal(message, async () => {
         try {
-            console.log(`Deleting environment variable: ${name} (${target})`);
-
             const result = await window.electronAPI.deleteEnvironmentVariable(name, target);
 
             if (result.success) {
-                console.log('Environment variable deleted successfully');
 
                 // Refresh the variables
                 await refreshEnvironmentVariables();
@@ -628,12 +619,9 @@ async function savePathVariable() {
     const newPathValue = paths.join(';');
 
     try {
-        console.log(`Saving PATH variable: ${newPathValue} (${currentPathTarget})`);
-
         const result = await window.electronAPI.setEnvironmentVariable('PATH', newPathValue, currentPathTarget);
 
         if (result.success) {
-            console.log('PATH variable saved successfully');
             closePathEditorModal();
 
             // Refresh the variables

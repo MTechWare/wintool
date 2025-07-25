@@ -1,7 +1,10 @@
-<!-- c:\Users\userv\OneDrive - Southeast Community College\wintool-MAIN\src\tabs\tweaks\index.html -->
 <div class="tab-header">
-    <h1><i class="fas fa-broom"></i> Windows Debloat & Tweaks</h1>
-    <p>Comprehensive Windows 11 debloating and system optimization tool.</p>
+    <div>
+        <h1><i class="fas fa-broom"></i> Windows Debloat & Tweaks</h1>
+        <p>Comprehensive Windows 11 debloating and system optimization tool. Based on Win11Debloat by Raphire, Optimizer by hellzerg, and W11Boost by felikcat.</p>
+    </div>
+    <div>
+    </div>
 </div>
 
 <div class="plugin-warning">
@@ -11,21 +14,21 @@
 
 <!-- Enhanced Preset Quick Actions -->
 <div class="preset-quick-actions">
-    <div class="preset-card" onclick="loadTweakPreset('beginner')" id="preset-beginner">
-        <i class="fas fa-seedling"></i>
-        <h4>Beginner Safe <span class="tweak-count" id="beginner-count"></span></h4>
-        <p>Perfect first step - completely safe tweaks for new users</p>
+    <div class="preset-card" onclick="loadTweakPreset('essential')" id="preset-essential">
+        <i class="fas fa-star"></i>
+        <h4>Essential Basics <span class="tweak-count" id="essential-count"></span></h4>
+        <p>Safe and essential tweaks that every user should consider</p>
         <div class="preset-tooltip">
             <h5>Included Tweaks:</h5>
-            <ul id="beginner-tweaks-list">
+            <ul id="essential-tweaks-list">
                 <!-- Will be populated by JavaScript -->
             </ul>
         </div>
     </div>
     <div class="preset-card" onclick="loadTweakPreset('privacy')" id="preset-privacy">
         <i class="fas fa-user-shield"></i>
-        <h4>Privacy Shield <span class="tweak-count" id="privacy-count"></span></h4>
-        <p>Complete privacy protection - stops all tracking and data collection</p>
+        <h4>Privacy Protection <span class="tweak-count" id="privacy-count"></span></h4>
+        <p>Comprehensive privacy protection - stops tracking and data collection</p>
         <div class="preset-tooltip">
             <h5>Included Tweaks:</h5>
             <ul id="privacy-tweaks-list">
@@ -33,21 +36,10 @@
             </ul>
         </div>
     </div>
-    <div class="preset-card" onclick="loadTweakPreset('debloat')" id="preset-debloat">
-        <i class="fas fa-broom"></i>
-        <h4>Ultimate Debloat <span class="tweak-count" id="debloat-count"></span></h4>
-        <p>Removes all Windows bloatware and unnecessary features</p>
-        <div class="preset-tooltip">
-            <h5>Included Tweaks:</h5>
-            <ul id="debloat-tweaks-list">
-                <!-- Will be populated by JavaScript -->
-            </ul>
-        </div>
-    </div>
     <div class="preset-card" onclick="loadTweakPreset('performance')" id="preset-performance">
         <i class="fas fa-rocket"></i>
-        <h4>Performance Beast <span class="tweak-count" id="performance-count"></span></h4>
-        <p>Maximum system performance and responsiveness</p>
+        <h4>Performance Boost <span class="tweak-count" id="performance-count"></span></h4>
+        <p>Maximum system performance and responsiveness optimizations</p>
         <div class="preset-tooltip">
             <h5>Included Tweaks:</h5>
             <ul id="performance-tweaks-list">
@@ -55,10 +47,32 @@
             </ul>
         </div>
     </div>
+    <div class="preset-card" onclick="loadTweakPreset('interface')" id="preset-interface">
+        <i class="fas fa-desktop"></i>
+        <h4>Interface Cleanup <span class="tweak-count" id="interface-count"></span></h4>
+        <p>Clean up Windows 11 interface and remove clutter</p>
+        <div class="preset-tooltip">
+            <h5>Included Tweaks:</h5>
+            <ul id="interface-tweaks-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </div>
+    </div>
+    <div class="preset-card" onclick="loadTweakPreset('debloat')" id="preset-debloat">
+        <i class="fas fa-broom"></i>
+        <h4>App Debloat <span class="tweak-count" id="debloat-count"></span></h4>
+        <p>Remove bloatware apps and unnecessary Windows features</p>
+        <div class="preset-tooltip">
+            <h5>Included Tweaks:</h5>
+            <ul id="debloat-tweaks-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </div>
+    </div>
     <div class="preset-card" onclick="loadTweakPreset('gaming')" id="preset-gaming">
         <i class="fas fa-gamepad"></i>
-        <h4>Gaming Powerhouse <span class="tweak-count" id="gaming-count"></span></h4>
-        <p>Optimized specifically for gaming performance and low latency</p>
+        <h4>Gaming Optimization <span class="tweak-count" id="gaming-count"></span></h4>
+        <p>Optimized for gaming performance and reduced input lag</p>
         <div class="preset-tooltip">
             <h5>Included Tweaks:</h5>
             <ul id="gaming-tweaks-list">
@@ -66,35 +80,24 @@
             </ul>
         </div>
     </div>
-    <div class="preset-card" onclick="loadTweakPreset('windows11')" id="preset-windows11">
-        <i class="fas fa-desktop"></i>
-        <h4>Windows 11 Makeover <span class="tweak-count" id="windows11-count"></span></h4>
-        <p>Transforms Windows 11 back to a cleaner, Windows 10-like experience</p>
+    <div class="preset-card" onclick="loadTweakPreset('fileexplorer')" id="preset-fileexplorer">
+        <i class="fas fa-folder-open"></i>
+        <h4>File Explorer Enhancement <span class="tweak-count" id="fileexplorer-count"></span></h4>
+        <p>Improve File Explorer functionality and clean up navigation</p>
         <div class="preset-tooltip">
             <h5>Included Tweaks:</h5>
-            <ul id="windows11-tweaks-list">
+            <ul id="fileexplorer-tweaks-list">
                 <!-- Will be populated by JavaScript -->
             </ul>
         </div>
     </div>
     <div class="preset-card" onclick="loadTweakPreset('enterprise')" id="preset-enterprise">
         <i class="fas fa-building"></i>
-        <h4>Enterprise Clean <span class="tweak-count" id="enterprise-count"></span></h4>
-        <p>Professional setup for business environments and power users</p>
+        <h4>Enterprise/Business <span class="tweak-count" id="enterprise-count"></span></h4>
+        <p>Professional setup optimized for business environments</p>
         <div class="preset-tooltip">
             <h5>Included Tweaks:</h5>
             <ul id="enterprise-tweaks-list">
-                <!-- Will be populated by JavaScript -->
-            </ul>
-        </div>
-    </div>
-    <div class="preset-card" onclick="loadTweakPreset('extreme')" id="preset-extreme">
-        <i class="fas fa-radiation"></i>
-        <h4>Nuclear Option <span class="tweak-count" id="extreme-count"></span></h4>
-        <p>⚠️ EXTREME - Maximum debloating with system modifications (EXPERTS ONLY)</p>
-        <div class="preset-tooltip">
-            <h5>Included Tweaks:</h5>
-            <ul id="extreme-tweaks-list">
                 <!-- Will be populated by JavaScript -->
             </ul>
         </div>
@@ -118,6 +121,9 @@
         <button class="category-filter-btn active" data-category="all">
             <i class="fas fa-th-large"></i> All Categories
         </button>
+        <button class="category-filter-btn wintool-exclusive-filter" data-category="⚡ WinTool Exclusive">
+            <i class="fas fa-star"></i> WinTool Exclusive
+        </button>
         <button class="category-filter-btn" data-category="🛡️ Privacy & Security">
             <i class="fas fa-shield-alt"></i> Privacy & Security
         </button>
@@ -127,20 +133,14 @@
         <button class="category-filter-btn" data-category="⚡ Performance & Startup">
             <i class="fas fa-bolt"></i> Performance & Startup
         </button>
-        <button class="category-filter-btn" data-category="🧹 Cleanup & Maintenance">
-            <i class="fas fa-broom"></i> Cleanup & Maintenance
-        </button>
-        <button class="category-filter-btn" data-category="🔧 System Services">
-            <i class="fas fa-cogs"></i> System Services
+        <button class="category-filter-btn" data-category="📁 File Explorer">
+            <i class="fas fa-folder-open"></i> File Explorer
         </button>
         <button class="category-filter-btn" data-category="🎮 Gaming & Media">
             <i class="fas fa-gamepad"></i> Gaming & Media
         </button>
         <button class="category-filter-btn" data-category="📱 Apps & Features">
             <i class="fas fa-mobile-alt"></i> Apps & Features
-        </button>
-        <button class="category-filter-btn" data-category="⚠️ Advanced & Risky">
-            <i class="fas fa-exclamation-triangle"></i> Advanced & Risky
         </button>
     </div>
     <div id="tweaks-grid" class="plugins-grid">

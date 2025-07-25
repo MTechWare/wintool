@@ -1,4 +1,5 @@
-/* Windows Unattend Tab Styles */
+/* Windows Unattend Tab Styles - System Health Dashboard Theme */
+@import url('../../css/universal-tab-header.css');
 
 .windows-unattend-content {
     max-width: 1400px;

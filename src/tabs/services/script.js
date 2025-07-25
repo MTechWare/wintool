@@ -1,5 +1,4 @@
 // Services Manager Tab Script
-console.log('Services Manager tab script loading...');
 
 // Global variables
 let allServices = [];
@@ -90,11 +89,11 @@ const defaultCommonServiceNames = [
 const lazyHelper = new LazyLoadingHelper('services');
 
 function initServicesTab() {
-    console.log('Services Manager tab initializing...');
-
+    console.log('=== Services Tab Initialization Started ===');
+    
     // Check if should initialize (lazy loading support)
     if (!lazyHelper.shouldInitialize()) {
-        console.log('Services script already executed, skipping initialization');
+        console.log('Services tab already initialized, skipping');
         lazyHelper.markTabReady();
         return;
     }
@@ -103,18 +102,19 @@ function initServicesTab() {
     lazyHelper.markScriptExecuted();
 
     // Find the container for this tab
-    const container = document.querySelector('[data-tab="folder-services"]') ||
+    const container = document.querySelector('[data-tab="services"]') ||
+                     document.querySelector('[data-tab="folder-services"]') ||
                      document.querySelector('.services-container') ||
                      document;
 
-    console.log('Found container:', container);
+    console.log('Services container found:', container);
 
     if (container) {
+        console.log('Initializing services manager with container');
         initializeServicesManager(container);
     } else {
-        console.error('No container found for services manager tab');
+        console.log('No specific container found, using document');
         // Try to initialize anyway using global selectors
-        console.log('Attempting to initialize services manager using global selectors...');
         initializeServicesManager(document);
     }
 }
@@ -131,15 +131,15 @@ lazyHelper.createGlobalResetFunction();
 
 async function initializeServicesManager(container) {
     try {
-        console.log('initializeServicesManager called with container:', container);
-
+        console.log('Setting up services manager with container:', container);
+        
         // Set up event listeners
+        console.log('Setting up event listeners...');
         setupEventListeners(container);
 
         // Load services
+        console.log('Loading services...');
         await loadServices(container);
-
-        console.log('Services Manager initialized successfully');
 
         // Signal that this tab is ready
         lazyHelper.markTabReady();
@@ -184,6 +184,14 @@ function setupEventListeners(container) {
     const refreshBtn = getElement(container, 'refresh-services');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', () => {
+            loadServices(container);
+        });
+    }
+
+    // Header refresh button
+    const refreshBtnHeader = getElement(container, 'refresh-services-header');
+    if (refreshBtnHeader) {
+        refreshBtnHeader.addEventListener('click', () => {
             loadServices(container);
         });
     }
@@ -271,9 +279,7 @@ async function loadServices(container) {
         showLoading(container, true);
         
         if (window && window.electronAPI) {
-            console.log('electronAPI available, calling getServices...');
             const services = await window.electronAPI.getServices();
-            console.log('Services received:', services.length, 'services');
             
             allServices = services;
             await loadQuickAccessPreferences();
@@ -282,7 +288,6 @@ async function loadServices(container) {
             renderQuickAccessServices(container);
             
         } else {
-            console.log('electronAPI not available, using fallback');
             showError(container, 'Services management requires the desktop application');
         }
         
@@ -810,7 +815,8 @@ function updateServiceCount(container) {
 function showModal(container, modalId) {
     const modal = getElement(container, modalId);
     if (modal) {
-        modal.style.display = 'block';
+        modal.style.display = 'flex';
+        modal.classList.add('show');
         document.body.style.overflow = 'hidden';
     }
 }
@@ -819,6 +825,7 @@ function hideModal(container, modalId) {
     const modal = getElement(container, modalId);
     if (modal) {
         modal.style.display = 'none';
+        modal.classList.remove('show');
         document.body.style.overflow = 'auto';
     }
 }

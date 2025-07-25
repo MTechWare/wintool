@@ -8,11 +8,9 @@ let isInitialized = false;
 async function initEventViewerTab() {
     // Prevent double initialization
     if (isInitialized) {
-        console.log('Event Viewer tab already initialized, skipping...');
         return;
     }
-    
-    console.log('Initializing Event Viewer tab...');
+
     isInitialized = true;
 
     setupEventViewerEventListeners();
@@ -33,6 +31,12 @@ function setupEventViewerEventListeners() {
         refreshBtn.addEventListener('click', refreshEvents);
     }
 
+    // Header refresh button
+    const refreshBtnHeader = document.getElementById('refresh-events-btn-header');
+    if (refreshBtnHeader) {
+        refreshBtnHeader.addEventListener('click', refreshEvents);
+    }
+
     const logNameSelect = document.getElementById('log-name-select');
     if (logNameSelect) {
         logNameSelect.addEventListener('change', refreshEvents);
@@ -46,6 +50,12 @@ function setupEventViewerEventListeners() {
     const exportBtn = document.getElementById('export-events-btn');
     if (exportBtn) {
         exportBtn.addEventListener('click', exportEvents);
+    }
+
+    // Header export button
+    const exportBtnHeader = document.getElementById('export-events-btn-header');
+    if (exportBtnHeader) {
+        exportBtnHeader.addEventListener('click', exportEvents);
     }
 
     // Live tail toggle
@@ -222,9 +232,7 @@ async function exportEvents() {
             ]
         });
         if (result.success) {
-            console.log('File saved successfully:', result.filePath);
-        } else {
-            console.log('File save was canceled.');
+            // File saved successfully
         }
     } catch (error) {
         console.error('Failed to save file:', error);
@@ -261,7 +269,7 @@ async function loadEventViewerSettings() {
                 notificationsToggle.addEventListener('change', toggleNotifications);
             }
 
-            console.log('Event Viewer settings loaded:', { liveTailEnabled, notificationsEnabled });
+
         }
     } catch (error) {
         console.error('Error loading Event Viewer settings:', error);
@@ -273,7 +281,7 @@ async function saveEventViewerSettings() {
         if (window.electronAPI) {
             await window.electronAPI.setSetting('eventViewer.liveTailEnabled', liveTailEnabled);
             await window.electronAPI.setSetting('eventViewer.notificationsEnabled', notificationsEnabled);
-            console.log('Event Viewer settings saved:', { liveTailEnabled, notificationsEnabled });
+
         }
     } catch (error) {
         console.error('Error saving Event Viewer settings:', error);
@@ -384,8 +392,6 @@ function showEventViewerNotification(message, type = 'info') {
     // Use the global notification system if available
     if (typeof window.showNotification === 'function') {
         window.showNotification(message, type);
-    } else {
-        console.log(`[${type.toUpperCase()}] ${message}`);
     }
 }
 
@@ -429,7 +435,6 @@ const lazyHelper = new LazyLoadingHelper('event-viewer');
 function initEventViewerTabWithLazyLoading() {
     // Check if should initialize (lazy loading support)
     if (!lazyHelper.shouldInitialize()) {
-        console.log('Event Viewer script already executed, skipping initialization');
         lazyHelper.markTabReady();
         return;
     }

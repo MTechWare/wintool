@@ -27,9 +27,10 @@ if (!lazyHelper.shouldInitialize()) {
     }
 
     if (container) {
-        loadSystemInfo(container);
+        console.log('Setting up System Info tab with container:', container);
         setupRefreshButton(container);
         setupExportButton(container);
+        loadSystemInfo(container);
     } else {
         console.error('No container found for system info tab, cannot load data.');
         // Still mark as ready to prevent blocking
@@ -38,34 +39,252 @@ if (!lazyHelper.shouldInitialize()) {
 }
 
 function setupRefreshButton(container) {
+    console.log('Setting up refresh button...');
     const refreshBtn = container.querySelector('#refresh-system-info-btn');
     if (refreshBtn) {
+        console.log('Refresh button found, adding click listener');
         refreshBtn.addEventListener('click', () => {
+            console.log('Refresh button clicked!');
             loadSystemInfo(container);
         });
+    } else {
+        console.warn('Refresh button not found in container');
+        // Try global search as fallback
+        const globalRefreshBtn = document.querySelector('#refresh-system-info-btn');
+        if (globalRefreshBtn) {
+            console.log('Found refresh button globally, adding click listener');
+            globalRefreshBtn.addEventListener('click', () => {
+                console.log('Global refresh button clicked!');
+                loadSystemInfo(container);
+            });
+        }
     }
 }
 
 function setupExportButton(container) {
-    const exportBtn = container.querySelector('#export-system-info-btn');
+    console.log('Setting up export button...');
+    const exportBtn = container.querySelector('#export-system-info-summary-btn');
     if (exportBtn) {
+        console.log('Export button found, adding click listener');
         exportBtn.addEventListener('click', async () => {
+            console.log('Export button clicked!');
             if (window && window.electronAPI) {
-                const sysInfo = await window.electronAPI.getSystemInfo();
-                const data = JSON.stringify(sysInfo, null, 2);
-                const blob = new Blob([data], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'system-info.json';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                try {
+                    // Get comprehensive system information
+                    const sysInfo = await window.electronAPI.getSystemInfo();
+
+                    // Create export data that matches exactly what we display in the UI
+                    const exportData = {
+                        exportInfo: {
+                            title: "WinTool System Information Export",
+                            exportDate: new Date().toISOString(),
+                            exportTime: new Date().toLocaleString(),
+                            version: "2.4"
+                        },
+
+                        // Kernel Information (as displayed in Kernel card)
+                        kernel: {
+                            buildNumber: sysInfo.kernelBuild || 'Unknown',
+                            version: sysInfo.kernelVersion || 'Unknown',
+                            architecture: sysInfo.kernelArch || 'Unknown'
+                        },
+
+                        // Operating System Information (as displayed in OS card)
+                        operatingSystem: {
+                            edition: sysInfo.osEdition || 'Unknown',
+                            installDate: sysInfo.osInstallDate || 'Unknown',
+                            currentUser: sysInfo.osCurrentUser || 'Unknown',
+                            computerName: sysInfo.osComputerName || 'Unknown'
+                        },
+
+                        // Motherboard Information (as displayed in Motherboard card)
+                        motherboard: {
+                            manufacturer: sysInfo.motherboardManufacturer || 'Unknown',
+                            model: sysInfo.motherboardModel || 'Unknown',
+                            version: sysInfo.motherboardVersion || 'Unknown',
+                            serial: sysInfo.motherboardSerial || 'Unknown'
+                        },
+
+                        // BIOS Information (as displayed in BIOS card)
+                        bios: {
+                            vendor: sysInfo.biosVendor || 'Unknown',
+                            version: sysInfo.biosVersion || 'Unknown',
+                            releaseDate: sysInfo.biosReleaseDate || 'Unknown'
+                        },
+
+                        // CPU Information (as displayed in CPU card)
+                        cpu: {
+                            brand: sysInfo.cpuBrand || 'Unknown',
+                            manufacturer: sysInfo.cpuManufacturer || 'Unknown',
+                            family: sysInfo.cpuFamily || 'Unknown',
+                            model: sysInfo.cpuModel || 'Unknown',
+                            speed: sysInfo.cpuSpeed || 'Unknown',
+                            cores: sysInfo.cpuCores || 'Unknown',
+                            physicalCores: sysInfo.cpuPhysicalCores || 'Unknown',
+                            processors: sysInfo.cpuProcessors || 'Unknown',
+                            socket: sysInfo.cpuSocket || 'Unknown',
+                            cache: {
+                                l1d: sysInfo.cpuCacheL1d || 'Unknown',
+                                l1i: sysInfo.cpuCacheL1i || 'Unknown',
+                                l2: sysInfo.cpuCacheL2 || 'Unknown',
+                                l3: sysInfo.cpuCacheL3 || 'Unknown'
+                            }
+                        },
+
+                        // Storage Information (as displayed in Storage card)
+                        storage: {
+                            primaryDrive: sysInfo.storagePrimary || 'Unknown',
+                            totalSpace: sysInfo.storageTotal || 'Unknown',
+                            freeSpace: sysInfo.storageFree || 'Unknown',
+                            usedSpace: sysInfo.storageUsed || 'Unknown'
+                        },
+
+                        // Graphics Information (as displayed in Graphics card - NO Video Memory)
+                        graphics: {
+                            primaryGpu: sysInfo.graphicsPrimaryGpu || 'Unknown',
+                            vendor: sysInfo.graphicsVendor || 'Unknown',
+                            driverVersion: sysInfo.graphicsDriverVersion || 'Unknown',
+                            resolution: sysInfo.graphicsResolution || 'Unknown'
+                        }
+                    };
+
+                    // Use the Electron save dialog for better UX
+                    if (window.electronAPI.saveFile) {
+                        const result = await window.electronAPI.saveFile(
+                            JSON.stringify(exportData, null, 2),
+                            {
+                                title: 'Export System Information',
+                                defaultPath: `system-info-${new Date().toISOString().split('T')[0]}.json`,
+                                filters: [
+                                    { name: 'JSON Files', extensions: ['json'] },
+                                    { name: 'All Files', extensions: ['*'] }
+                                ]
+                            }
+                        );
+
+                        if (result && result.filePath) {
+                            console.log('System information exported successfully to:', result.filePath);
+                            // Show success notification if available
+                            if (window.showNotification) {
+                                window.showNotification('System information exported successfully!', 'success');
+                            }
+                        }
+                    } else {
+                        // Fallback to browser download
+                        const data = JSON.stringify(exportData, null, 2);
+                        const blob = new Blob([data], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `system-info-${new Date().toISOString().split('T')[0]}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        console.log('System information downloaded successfully');
+                    }
+                } catch (error) {
+                    console.error('Error exporting system information:', error);
+                    if (window.showNotification) {
+                        window.showNotification('Failed to export system information', 'error');
+                    }
+                }
             } else {
                 console.error('electronAPI is not available to export data.');
+                if (window.showNotification) {
+                    window.showNotification('Export functionality not available', 'error');
+                }
             }
         });
+    } else {
+        console.warn('Export button not found in container');
+        // Try global search as fallback
+        const globalExportBtn = document.querySelector('#export-system-info-summary-btn');
+        if (globalExportBtn) {
+            console.log('Found export button globally, adding click listener');
+            globalExportBtn.addEventListener('click', async () => {
+                console.log('Global export button clicked!');
+                // Same export functionality as above
+                if (window && window.electronAPI) {
+                    try {
+                        const sysInfo = await window.electronAPI.getSystemInfo();
+                        const exportData = {
+                            exportInfo: {
+                                title: "WinTool System Information Export",
+                                exportDate: new Date().toISOString(),
+                                exportTime: new Date().toLocaleString(),
+                                version: "2.4"
+                            },
+                            kernel: {
+                                buildNumber: sysInfo.kernelBuild || 'Unknown',
+                                version: sysInfo.kernelVersion || 'Unknown',
+                                architecture: sysInfo.kernelArch || 'Unknown'
+                            },
+                            operatingSystem: {
+                                edition: sysInfo.osEdition || 'Unknown',
+                                installDate: sysInfo.osInstallDate || 'Unknown',
+                                currentUser: sysInfo.osCurrentUser || 'Unknown',
+                                computerName: sysInfo.osComputerName || 'Unknown'
+                            },
+                            motherboard: {
+                                manufacturer: sysInfo.motherboardManufacturer || 'Unknown',
+                                model: sysInfo.motherboardModel || 'Unknown',
+                                version: sysInfo.motherboardVersion || 'Unknown',
+                                serial: sysInfo.motherboardSerial || 'Unknown'
+                            },
+                            bios: {
+                                vendor: sysInfo.biosVendor || 'Unknown',
+                                version: sysInfo.biosVersion || 'Unknown',
+                                releaseDate: sysInfo.biosReleaseDate || 'Unknown'
+                            },
+                            cpu: {
+                                brand: sysInfo.cpuBrand || 'Unknown',
+                                manufacturer: sysInfo.cpuManufacturer || 'Unknown',
+                                speed: sysInfo.cpuSpeed || 'Unknown',
+                                cores: sysInfo.cpuCores || 'Unknown',
+                                physicalCores: sysInfo.cpuPhysicalCores || 'Unknown',
+                                processors: sysInfo.cpuProcessors || 'Unknown',
+                                socket: sysInfo.cpuSocket || 'Unknown'
+                            },
+                            storage: {
+                                primaryDrive: sysInfo.storagePrimary || 'Unknown',
+                                totalSpace: sysInfo.storageTotal || 'Unknown',
+                                freeSpace: sysInfo.storageFree || 'Unknown',
+                                usedSpace: sysInfo.storageUsed || 'Unknown'
+                            },
+                            graphics: {
+                                primaryGpu: sysInfo.graphicsPrimaryGpu || 'Unknown',
+                                vendor: sysInfo.graphicsVendor || 'Unknown',
+                                driverVersion: sysInfo.graphicsDriverVersion || 'Unknown',
+                                resolution: sysInfo.graphicsResolution || 'Unknown'
+                            }
+                        };
+
+                        if (window.electronAPI.saveFile) {
+                            const result = await window.electronAPI.saveFile(
+                                JSON.stringify(exportData, null, 2),
+                                {
+                                    title: 'Export System Information',
+                                    defaultPath: `system-info-${new Date().toISOString().split('T')[0]}.json`,
+                                    filters: [
+                                        { name: 'JSON Files', extensions: ['json'] },
+                                        { name: 'All Files', extensions: ['*'] }
+                                    ]
+                                }
+                            );
+                            if (result && result.filePath && window.showNotification) {
+                                window.showNotification('System information exported successfully!', 'success');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error exporting system information:', error);
+                        if (window.showNotification) {
+                            window.showNotification('Failed to export system information', 'error');
+                        }
+                    }
+                }
+            });
+        }
     }
 }
 
@@ -102,22 +321,18 @@ async function loadSystemInfo(container) {
             updateElement(container, 'cpu-processors', sysInfo.cpuProcessors || 'Unknown');
             updateElement(container, 'cpu-socket', sysInfo.cpuSocket || 'Unknown');
             
-            // Update CPU cache information
-            if (sysInfo.cpuCache) {
-                updateElement(container, 'cpu-cache-l1d', sysInfo.cpuCache.l1d || 'N/A');
-                updateElement(container, 'cpu-cache-l1i', sysInfo.cpuCache.l1i || 'N/A');
-                updateElement(container, 'cpu-cache-l2', sysInfo.cpuCache.l2 || 'N/A');
-                updateElement(container, 'cpu-cache-l3', sysInfo.cpuCache.l3 || 'N/A');
-            }
-            
 
             
-            // Update hardware information
-            updateElement(container, 'system-manufacturer', sysInfo.systemManufacturer || 'Unknown');
-            updateElement(container, 'system-model', sysInfo.systemModel || 'Unknown');
-            updateElement(container, 'system-version', sysInfo.systemVersion || 'Unknown');
-            updateElement(container, 'system-serial', sysInfo.systemSerial || 'Unknown');
-            updateElement(container, 'system-virtual', sysInfo.isVirtual ? 'Yes' : 'No');
+            // Update Kernel information
+            updateElement(container, 'kernel-build', sysInfo.kernelBuild || 'Unknown');
+            updateElement(container, 'kernel-version', sysInfo.kernelVersion || 'Unknown');
+            updateElement(container, 'kernel-arch', sysInfo.kernelArch || 'Unknown');
+
+            // Update Operating System information
+            updateElement(container, 'os-edition', sysInfo.osEdition || 'Unknown');
+            updateElement(container, 'os-install-date', sysInfo.osInstallDate || 'Unknown');
+            updateElement(container, 'os-current-user', sysInfo.osCurrentUser || 'Unknown');
+            updateElement(container, 'os-computer-name', sysInfo.osComputerName || 'Unknown');
             
             // Update motherboard information
             updateElement(container, 'motherboard-manufacturer', sysInfo.motherboardManufacturer || 'Unknown');
@@ -129,19 +344,21 @@ async function loadSystemInfo(container) {
             updateElement(container, 'bios-vendor', sysInfo.biosVendor || 'Unknown');
             updateElement(container, 'bios-version', sysInfo.biosVersion || 'Unknown');
             updateElement(container, 'bios-release-date', sysInfo.biosReleaseDate || 'Unknown');
-            
 
-            
-            // Update operating system information
-            updateElement(container, 'os-distro', sysInfo.osDistro || 'Unknown');
-            updateElement(container, 'os-release', sysInfo.osRelease || 'Unknown');
-            updateElement(container, 'os-codename', sysInfo.osCodename || 'Unknown');
-            updateElement(container, 'os-kernel', sysInfo.osKernel || 'Unknown');
-            updateElement(container, 'os-build', sysInfo.osBuild || 'Unknown');
-            updateElement(container, 'os-serial', sysInfo.osSerial || 'Unknown');
-            
 
-            
+
+            // Update Storage information
+            updateElement(container, 'storage-primary', sysInfo.storagePrimary || 'Unknown');
+            updateElement(container, 'storage-total', sysInfo.storageTotal || 'Unknown');
+            updateElement(container, 'storage-free', sysInfo.storageFree || 'Unknown');
+            updateElement(container, 'storage-used', sysInfo.storageUsed || 'Unknown');
+
+            // Update Graphics information
+            updateElement(container, 'graphics-primary-gpu', sysInfo.graphicsPrimaryGpu || 'Unknown');
+            updateElement(container, 'graphics-vendor', sysInfo.graphicsVendor || 'Unknown');
+            updateElement(container, 'graphics-driver', sysInfo.graphicsDriverVersion || 'Unknown');
+            updateElement(container, 'graphics-resolution', sysInfo.graphicsResolution || 'Unknown');
+
             console.log('System info updated successfully');
 
         } else {

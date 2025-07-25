@@ -1,24 +1,5 @@
-/* Networking Tab Styles */
-
-.tab-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-#refresh-networking-btn {
-    padding: 10px 12px;
-    font-size: 1rem;
-    background-color: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-}
-
-#refresh-networking-btn:hover {
-    color: var(--primary-color);
-    border-color: var(--primary-color);
-}
+/* Networking Tab Styles - System Health Dashboard Theme */
+@import url('../../css/universal-tab-header.css');
 
 /* Network Overview */
 .network-overview {
@@ -182,79 +163,7 @@
     font-size: 13px;
 }
 
-/* Network Statistics Section */
-.network-stats-section {
-    margin-bottom: 40px;
-}
 
-.network-stats-section h3 {
-    text-align: center;
-    font-size: 24px;
-    margin-bottom: 30px;
-    color: var(--text-primary);
-}
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-}
-
-.stats-card {
-    background: var(--background-card);
-    padding: 25px;
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    transition: all 0.3s ease;
-}
-
-.stats-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-}
-
-.stats-card h4 {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.stats-card h4 i {
-    color: var(--primary-color);
-}
-
-.stats-content {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.stat-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.stat-item:last-child {
-    border-bottom: none;
-}
-
-.stat-label {
-    font-weight: 500;
-    color: var(--text-secondary);
-}
-
-.stat-value {
-    color: var(--text-primary);
-    font-weight: 600;
-    font-family: 'Courier New', monospace;
-}
 
 /* Loading state */
 .loading {
@@ -328,9 +237,7 @@
         grid-template-columns: 1fr;
     }
 
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
+
 
     .interface-header {
         flex-direction: column;

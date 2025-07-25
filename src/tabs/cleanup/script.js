@@ -124,11 +124,8 @@ if (typeof tabContainer !== 'undefined' && tabContainer) {
  * Initialize the advanced cleanup tab
  */
 function initAdvancedCleanupTab() {
-    console.log('Initializing advanced cleanup tab...');
-
     // Check if should initialize (lazy loading support)
     if (!lazyHelper.shouldInitialize()) {
-        console.log('Cleanup script already executed, skipping initialization');
         lazyHelper.markTabReady();
         return;
     }
@@ -139,12 +136,9 @@ function initAdvancedCleanupTab() {
     // Check if we're in the cleanup tab
     const cleanupContent = document.querySelector('.cleanup-content');
     if (!cleanupContent) {
-        console.log('Cleanup content not found, waiting...');
         setTimeout(initAdvancedCleanupTab, 500);
         return;
     }
-
-    console.log('Advanced cleanup tab initialized successfully');
 
     // Initialize components
     loadDiskSpace();
@@ -222,7 +216,6 @@ function handleKeyboardShortcuts(e) {
  * Start initial scan of selected categories
  */
 function startInitialScan() {
-    console.log('Starting initial category scan...');
 
 
 }
@@ -614,9 +607,6 @@ async function performCleanupProcessSecure() {
     // Validate all categories before starting
     const validCategories = categories.filter(category => {
         const isValid = validateCleanupCategory(category.name);
-        if (!isValid) {
-            console.warn(`Invalid cleanup category detected: ${category.name}`);
-        }
         return isValid;
     });
 
@@ -677,7 +667,6 @@ async function performCleanupProcessSecure() {
             });
 
         } catch (error) {
-            console.warn(`Failed to clean ${category.name}:`, error);
             results.push({
                 category: category.name,
                 label: category.label,
@@ -720,7 +709,6 @@ async function performAdvancedCleanupProcess() {
     const validCategories = categories.filter(category => {
         const isValid = validateCleanupCategory(category.name);
         if (!isValid) {
-            console.warn(`Invalid cleanup category detected: ${category.name}`);
             addLogEntry(`Skipping invalid category: ${category.name}`, 'warning');
         }
         return isValid;
@@ -762,7 +750,6 @@ async function performAdvancedCleanupProcess() {
                 }
 
                 result = await window.electronAPI.executeCleanup(sanitizedCategory);
-                console.log(`Cleanup result for ${category.name}:`, result);
 
                 // Validate result structure
                 if (!result || typeof result !== 'object') {
@@ -772,8 +759,6 @@ async function performAdvancedCleanupProcess() {
                 // Sanitize numeric results
                 result.filesRemoved = Math.max(0, parseInt(result.filesRemoved) || 0);
                 result.sizeFreed = Math.max(0, parseInt(result.sizeFreed) || 0);
-
-                console.log(`Processed cleanup for ${category.name}: ${result.filesRemoved} files, ${formatBytes(result.sizeFreed)} freed`);
 
             } else {
                 // Simulate cleanup for browser testing
@@ -798,7 +783,6 @@ async function performAdvancedCleanupProcess() {
             addLogEntry(`${category.label}: ${result.filesRemoved || 0} files, ${formatBytes(result.sizeFreed || 0)} freed`, 'success');
 
         } catch (error) {
-            console.warn(`Failed to clean ${category.name}:`, error);
             addLogEntry(`Failed to clean ${category.label}: ${error.message}`, 'error');
 
             results.push({
@@ -822,8 +806,6 @@ async function performAdvancedCleanupProcess() {
     // Update final progress
     cleanupState.completedCategories = validCategories.length;
     updateAdvancedProgress(100, 'Cleanup completed', 'Finalizing results...');
-
-    console.log(`Cleanup Summary: ${formatBytes(totalSpaceFreed)} freed from ${cleanupState.selectedCategories.size} categories`);
 
     // Show results
     const timeTaken = Math.round((Date.now() - cleanupState.startTime) / 1000);
@@ -1120,15 +1102,10 @@ function showAdvancedResults(filesRemoved, spaceFreed, timeTaken, detailedResult
     const resultsSection = document.getElementById('results-section');
     if (!resultsSection) return;
 
-    // Debug logging
-    console.log('showAdvancedResults called with:', { filesRemoved, spaceFreed, timeTaken, detailedResults });
-
     // Validate and sanitize input values
     const safeFilesRemoved = Math.max(0, parseInt(filesRemoved) || 0);
     const safeSpaceFreed = Math.max(0, parseInt(spaceFreed) || 0);
     const safeTimeTaken = Math.max(0, parseInt(timeTaken) || 0);
-
-    console.log('Sanitized values:', { safeFilesRemoved, safeSpaceFreed, safeTimeTaken });
 
     // Add success class and timestamp
     resultsSection.classList.add('success');
@@ -1148,33 +1125,21 @@ function showAdvancedResults(filesRemoved, spaceFreed, timeTaken, detailedResult
     if (filesCleanedEl) {
         const value = safeFilesRemoved.toLocaleString();
         filesCleanedEl.textContent = value;
-        console.log('Updated files-cleaned to:', value);
-    } else {
-        console.error('files-cleaned element not found');
     }
 
     if (spaceFreedEl) {
         const value = formatBytes(safeSpaceFreed);
         spaceFreedEl.textContent = value;
-        console.log('Updated space-freed to:', value);
-    } else {
-        console.error('space-freed element not found');
     }
 
     if (timeTakenEl) {
         const value = `${safeTimeTaken}s`;
         timeTakenEl.textContent = value;
-        console.log('Updated time-taken to:', value);
-    } else {
-        console.error('time-taken element not found');
     }
 
     if (categoriesCleanedEl) {
         const value = detailedResults.length;
         categoriesCleanedEl.textContent = value;
-        console.log('Updated categories-cleaned to:', value);
-    } else {
-        console.error('categories-cleaned element not found');
     }
 
     // Show detailed results with enhanced information
@@ -1264,8 +1229,7 @@ function showError(message) {
     // Use notification system instead of alert
     showNotification(`Cleanup Error: ${sanitizedMessage}`, 'error', 10000);
 
-    // Also log to console for debugging
-    console.error('Cleanup error:', message);
+
 }
 
 /**
@@ -1279,7 +1243,6 @@ async function openDiskCleanup() {
             alert('Windows Disk Cleanup can only be opened in the desktop application.');
         }
     } catch (error) {
-        console.error('Failed to open disk cleanup:', error);
         showError('Failed to open Windows Disk Cleanup');
     }
 }
@@ -1418,7 +1381,7 @@ function saveCleanupSettings() {
     try {
         localStorage.setItem('cleanupSettings', JSON.stringify(cleanupState.settings));
     } catch (error) {
-        console.warn('Failed to save settings to localStorage:', error);
+        // Failed to save settings
     }
 
     showNotification('Settings saved successfully', 'success');
@@ -1453,7 +1416,7 @@ function loadCleanupSettings() {
             cleanupState.settings = { ...cleanupState.settings, ...JSON.parse(saved) };
         }
     } catch (error) {
-        console.warn('Failed to load settings from localStorage:', error);
+        // Failed to load settings
     }
 }
 
@@ -1488,7 +1451,7 @@ function loadCleanupHistory() {
             cleanupState.cleanupHistory = JSON.parse(saved);
         }
     } catch (error) {
-        console.warn('Failed to load cleanup history:', error);
+        // Failed to load cleanup history
     }
 
     displayCleanupHistory();
@@ -1553,7 +1516,7 @@ function addToCleanupHistory() {
     try {
         localStorage.setItem('cleanupHistory', JSON.stringify(cleanupState.cleanupHistory));
     } catch (error) {
-        console.warn('Failed to save cleanup history:', error);
+        // Failed to save cleanup history
     }
 }
 
@@ -1569,7 +1532,7 @@ function clearHistory() {
     try {
         localStorage.removeItem('cleanupHistory');
     } catch (error) {
-        console.warn('Failed to clear cleanup history:', error);
+        // Failed to clear cleanup history
     }
 
     displayCleanupHistory();
@@ -1666,7 +1629,6 @@ function initializeCategoryDisplays() {
 
 // Initialize cleanup tab when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Cleanup tab initialized');
 
     // Initialize category displays
     initializeCategoryDisplays();
@@ -1704,4 +1666,4 @@ window.clearHistory = clearHistory;
 window.exportResults = exportResults;
 window.openDiskCleanup = openDiskCleanup;
 
-console.log('Advanced cleanup tab script loaded successfully with enhanced features');
+

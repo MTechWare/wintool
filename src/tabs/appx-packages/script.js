@@ -66,8 +66,6 @@ class AppXPackageManager {
      * Initialize the AppX Package Manager
      */
     async init() {
-        console.log('Initializing AppX Package Manager...');
-
         try {
             // Load packages
             await this.loadPackages();
@@ -77,8 +75,6 @@ class AppXPackageManager {
 
             // Render initial package list
             this.renderPackages();
-
-            console.log('AppX Package Manager initialized');
 
             // Signal that this tab is ready
             if (window.markTabAsReady) {
@@ -149,6 +145,14 @@ class AppXPackageManager {
         const refreshBtn = document.getElementById('refresh-appx-packages');
         if (refreshBtn) {
             refreshBtn.addEventListener('click', () => {
+                this.refreshPackages();
+            });
+        }
+
+        // Header refresh button
+        const refreshHeaderBtn = document.getElementById('refresh-appx-header');
+        if (refreshHeaderBtn) {
+            refreshHeaderBtn.addEventListener('click', () => {
                 this.refreshPackages();
             });
         }
@@ -224,8 +228,6 @@ class AppXPackageManager {
             const response = await fetch('./tabs/appx-packages/appx-packages.json');
             const packageData = await response.json();
 
-            console.log('Loaded package definitions:', Object.keys(packageData.packages).length);
-
             // Get installed packages from PowerShell to check which ones are actually installed
             const installedPackages = await this.getInstalledPackages();
 
@@ -278,9 +280,7 @@ class AppXPackageManager {
     async getInstalledPackages() {
         try {
             // Enhanced command to get more package details including size, install date, and architecture
-            const command = `Get-AppxPackage | Select-Object Name, PackageFullName, Version, Publisher, InstallLocation, SignatureKind, Status, Architecture, IsFramework, IsBundle,
-            @{Name='SizeGB';Expression={if($_.InstallLocation -and (Test-Path $_.InstallLocation)){[math]::Round((Get-ChildItem $_.InstallLocation -Recurse -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum / 1GB, 2)} else {0}}},
-            @{Name='InstallDate';Expression={if($_.InstallLocation -and (Test-Path $_.InstallLocation)){(Get-ItemProperty $_.InstallLocation -ErrorAction SilentlyContinue).CreationTime} else {$null}}} | ConvertTo-Json -Depth 3`;
+            const command = `Get-AppxPackage | Select-Object Name, PackageFullName, Version, Publisher, InstallLocation, SignatureKind, Status, Architecture, IsFramework, IsBundle, @{Name='SizeGB';Expression={if($_.InstallLocation -and (Test-Path $_.InstallLocation)){[math]::Round((Get-ChildItem $_.InstallLocation -Recurse -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum / 1GB, 2)} else {0}}}, @{Name='InstallDate';Expression={if($_.InstallLocation -and (Test-Path $_.InstallLocation)){(Get-ItemProperty $_.InstallLocation -ErrorAction SilentlyContinue).CreationTime} else {$null}}} | ConvertTo-Json -Depth 3`;
 
             const result = await window.electronAPI.executePowerShell(command);
 
@@ -292,14 +292,13 @@ class AppXPackageManager {
                     packagesData = packagesData ? [packagesData] : [];
                 }
 
-                console.log('Found installed packages with enhanced info:', packagesData.length);
                 return packagesData;
             }
         } catch (error) {
-            console.warn('Could not get installed packages from PowerShell:', error);
+            console.warn('Enhanced AppX command failed, trying basic command:', error.message);
             // Fallback to basic command if enhanced fails
             try {
-                const basicCommand = 'Get-AppxPackage | Select-Object Name, PackageFullName, Version | ConvertTo-Json -Depth 3';
+                const basicCommand = 'Get-AppxPackage | Select-Object Name, PackageFullName, Version, Publisher, Architecture | ConvertTo-Json -Depth 3';
                 const basicResult = await window.electronAPI.executePowerShell(basicCommand);
 
                 if (basicResult && basicResult.trim()) {
@@ -310,7 +309,8 @@ class AppXPackageManager {
                     return packagesData;
                 }
             } catch (fallbackError) {
-                console.error('Fallback command also failed:', fallbackError);
+                console.error('Both AppX commands failed:', fallbackError.message);
+                // Both commands failed, return empty array
             }
         }
 
@@ -742,6 +742,15 @@ class AppXPackageManager {
 
                 if (!pkg) continue;
 
+                // Update current package display
+                this.updateCurrentPackage({
+                    name: pkg.name,
+                    publisher: pkg.publisher || 'Microsoft Corporation',
+                    version: pkg.version || 'Unknown',
+                    status: 'Uninstalling',
+                    statusClass: ''
+                });
+
                 this.updateProgress(`Uninstalling ${pkg.name}...`, ((i + 1) / packageKeys.length) * 100);
 
                 // Check if package is safe to remove
@@ -763,6 +772,16 @@ class AppXPackageManager {
                 try {
                     let result = await window.electronAPI.executePowerShell(command);
                     this.appendProgressOutput(`✓ Successfully uninstalled ${pkg.name}\n`);
+
+                    // Update package status to completed
+                    this.updateCurrentPackage({
+                        name: pkg.name,
+                        publisher: pkg.publisher || 'Microsoft Corporation',
+                        version: pkg.version || 'Unknown',
+                        status: 'Uninstalled',
+                        statusClass: 'success'
+                    });
+
                     // Remove from local data
                     delete this.packages[packageKey];
                     this.selectedPackages.delete(packageKey);
@@ -796,20 +815,29 @@ class AppXPackageManager {
                         } catch (error) {
                             this.appendProgressOutput(`✗ Failed to uninstall ${pkg.name}: ${error.message || 'Unknown error'}\n`);
                             this.appendProgressOutput(`Package may not be installed or may require administrator privileges\n`);
+
+                            // Update package status to error
+                            this.updateCurrentPackage({
+                                name: pkg.name,
+                                publisher: pkg.publisher || 'Microsoft Corporation',
+                                version: pkg.version || 'Unknown',
+                                status: 'Error',
+                                statusClass: 'error'
+                            });
                         }
                     }
                 }
             }
 
-            this.updateProgress('Uninstallation completed', 100);
+            // Complete with success
+            this.completeProgress('Uninstallation completed successfully');
 
-            // Refresh the package list
+            // Refresh the package list after a short delay
             setTimeout(() => {
-                this.hideProgress();
                 this.filterPackages();
                 this.renderPackages();
                 this.showStatus('Package uninstallation completed', 'success');
-            }, 2000);
+            }, 1000);
 
         } catch (error) {
             this.updateProgressError(`Error during uninstallation: ${error.message}`);
@@ -1100,15 +1128,290 @@ class AppXPackageManager {
 
         const modal = document.getElementById('appx-progress-modal');
         const titleElement = document.getElementById('appx-progress-title');
+        const subtitleElement = document.getElementById('appx-progress-subtitle');
         const textElement = document.getElementById('appx-progress-text');
         const outputElement = document.getElementById('appx-progress-output');
         const progressBar = document.getElementById('appx-progress-bar');
+        const statusElement = document.getElementById('appx-operation-status');
+        const percentageElement = document.getElementById('appx-progress-percentage');
+        const timeElement = document.getElementById('appx-time-elapsed');
 
-        if (modal) modal.style.display = 'flex';
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.className = 'progress-modal';
+        }
+
         if (titleElement) titleElement.textContent = title;
+        if (subtitleElement) subtitleElement.textContent = this.getOperationSubtitle(operation);
         if (textElement) textElement.textContent = message;
         if (outputElement) outputElement.textContent = '';
         if (progressBar) progressBar.style.width = '0%';
+        if (statusElement) statusElement.textContent = 'Initializing...';
+        if (percentageElement) percentageElement.textContent = '0%';
+        if (timeElement) timeElement.textContent = '00:00';
+
+        // Set appropriate icon
+        this.updateProgressIcon(operation);
+
+        // Hide action buttons initially
+        this.hideActionButtons();
+
+        // Hide current package section initially
+        const currentPackageSection = document.getElementById('appx-current-package');
+        if (currentPackageSection) {
+            currentPackageSection.style.display = 'none';
+        }
+
+        // Start with output section collapsed
+        const outputSection = document.querySelector('.progress-output-section');
+        if (outputSection) {
+            outputSection.classList.add('collapsed');
+            const toggleBtn = document.getElementById('appx-toggle-output');
+            if (toggleBtn) {
+                const icon = toggleBtn.querySelector('i');
+                if (icon) icon.className = 'fas fa-chevron-down';
+                toggleBtn.title = 'Expand Output';
+            }
+        }
+
+        // Start timer
+        this.startTimer();
+
+        // Setup event listeners
+        this.setupModalEventListeners();
+    }
+
+    getOperationSubtitle(operationType) {
+        const subtitles = {
+            'uninstalling': 'Removing AppX packages from your system',
+            'refreshing': 'Refreshing package information'
+        };
+        return subtitles[operationType] || 'Processing AppX package operation';
+    }
+
+    updateProgressIcon(operationType) {
+        const iconElement = document.getElementById('appx-progress-icon');
+        if (!iconElement) return;
+
+        const icons = {
+            'uninstalling': 'fas fa-trash',
+            'refreshing': 'fas fa-sync-alt'
+        };
+
+        const iconClass = icons[operationType] || 'fab fa-microsoft';
+        iconElement.innerHTML = `<i class="${iconClass}"></i>`;
+    }
+
+    startTimer() {
+        this.operationStartTime = Date.now();
+        this.timerInterval = setInterval(() => {
+            const elapsed = Date.now() - this.operationStartTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            const timeElement = document.getElementById('appx-time-elapsed');
+            if (timeElement) {
+                timeElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }, 1000);
+    }
+
+    stopTimer() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+    }
+
+    hideActionButtons() {
+        const buttons = ['appx-retry-operation', 'appx-view-logs', 'appx-done-modal'];
+        buttons.forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) btn.style.display = 'none';
+        });
+    }
+
+    showActionButton(buttonId) {
+        const btn = document.getElementById(buttonId);
+        if (btn) btn.style.display = 'flex';
+    }
+
+    setupModalEventListeners() {
+        // Setup close button
+        this.setupCloseButton();
+
+        // Setup minimize button
+        const minimizeBtn = document.getElementById('appx-minimize-modal');
+        if (minimizeBtn && !minimizeBtn.hasAttribute('data-listener-attached')) {
+            minimizeBtn.addEventListener('click', () => this.toggleMinimize());
+            minimizeBtn.setAttribute('data-listener-attached', 'true');
+        }
+
+        // Setup cancel button
+        const cancelBtn = document.getElementById('appx-cancel-operation');
+        if (cancelBtn && !cancelBtn.hasAttribute('data-listener-attached')) {
+            cancelBtn.addEventListener('click', () => this.cancelOperation());
+            cancelBtn.setAttribute('data-listener-attached', 'true');
+        }
+
+        // Setup output controls
+        this.setupOutputControls();
+
+        // Setup action buttons
+        this.setupActionButtons();
+
+        // Add click-outside-to-close functionality
+        const modal = document.getElementById('appx-progress-modal');
+        if (modal) {
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    this.hideProgress();
+                }
+            };
+        }
+
+        // Add escape key to close
+        const escapeHandler = (e) => {
+            if (e.key === 'Escape') {
+                this.hideProgress();
+                document.removeEventListener('keydown', escapeHandler);
+            }
+        };
+        document.addEventListener('keydown', escapeHandler);
+    }
+
+    setupCloseButton() {
+        const closeBtn = document.getElementById('appx-close-modal');
+        if (closeBtn && !closeBtn.hasAttribute('data-listener-attached')) {
+            closeBtn.addEventListener('click', () => this.hideProgress());
+            closeBtn.setAttribute('data-listener-attached', 'true');
+        }
+    }
+
+    setupOutputControls() {
+        // Clear output button
+        const clearBtn = document.getElementById('appx-clear-output');
+        if (clearBtn && !clearBtn.hasAttribute('data-listener-attached')) {
+            clearBtn.addEventListener('click', () => {
+                const outputElement = document.getElementById('appx-progress-output');
+                if (outputElement) outputElement.textContent = '';
+            });
+            clearBtn.setAttribute('data-listener-attached', 'true');
+        }
+
+        // Copy output button
+        const copyBtn = document.getElementById('appx-copy-output');
+        if (copyBtn && !copyBtn.hasAttribute('data-listener-attached')) {
+            copyBtn.addEventListener('click', () => {
+                const outputElement = document.getElementById('appx-progress-output');
+                if (outputElement && navigator.clipboard) {
+                    navigator.clipboard.writeText(outputElement.textContent);
+                    this.showTemporaryTooltip(copyBtn, 'Copied!');
+                }
+            });
+            copyBtn.setAttribute('data-listener-attached', 'true');
+        }
+
+        // Toggle output button
+        const toggleBtn = document.getElementById('appx-toggle-output');
+        if (toggleBtn && !toggleBtn.hasAttribute('data-listener-attached')) {
+            toggleBtn.addEventListener('click', () => {
+                const outputSection = document.querySelector('.progress-output-section');
+                const icon = toggleBtn.querySelector('i');
+
+                if (outputSection.classList.contains('collapsed')) {
+                    outputSection.classList.remove('collapsed');
+                    icon.className = 'fas fa-chevron-up';
+                    toggleBtn.title = 'Collapse Output';
+                } else {
+                    outputSection.classList.add('collapsed');
+                    icon.className = 'fas fa-chevron-down';
+                    toggleBtn.title = 'Expand Output';
+                }
+            });
+            toggleBtn.setAttribute('data-listener-attached', 'true');
+        }
+    }
+
+    setupActionButtons() {
+        // Retry button
+        const retryBtn = document.getElementById('appx-retry-operation');
+        if (retryBtn && !retryBtn.hasAttribute('data-listener-attached')) {
+            retryBtn.addEventListener('click', () => {
+                this.retryLastOperation();
+            });
+            retryBtn.setAttribute('data-listener-attached', 'true');
+        }
+
+        // View logs button
+        const logsBtn = document.getElementById('appx-view-logs');
+        if (logsBtn && !logsBtn.hasAttribute('data-listener-attached')) {
+            logsBtn.addEventListener('click', () => {
+                this.openLogsWindow();
+            });
+            logsBtn.setAttribute('data-listener-attached', 'true');
+        }
+
+        // Done button
+        const doneBtn = document.getElementById('appx-done-modal');
+        if (doneBtn && !doneBtn.hasAttribute('data-listener-attached')) {
+            doneBtn.addEventListener('click', () => {
+                this.hideProgress();
+            });
+            doneBtn.setAttribute('data-listener-attached', 'true');
+        }
+    }
+
+    toggleMinimize() {
+        const modal = document.getElementById('appx-progress-modal');
+        if (modal) {
+            modal.classList.toggle('minimized');
+            const minimizeBtn = document.getElementById('appx-minimize-modal');
+            const icon = minimizeBtn?.querySelector('i');
+            if (icon) {
+                if (modal.classList.contains('minimized')) {
+                    icon.className = 'fas fa-window-maximize';
+                } else {
+                    icon.className = 'fas fa-minus';
+                }
+            }
+        }
+    }
+
+    showTemporaryTooltip(element, text) {
+        const tooltip = document.createElement('div');
+        tooltip.textContent = text;
+        tooltip.style.cssText = `
+            position: absolute;
+            background: var(--background-dark);
+            color: var(--text-primary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 10001;
+            pointer-events: none;
+        `;
+
+        const rect = element.getBoundingClientRect();
+        tooltip.style.left = rect.left + 'px';
+        tooltip.style.top = (rect.top - 30) + 'px';
+
+        document.body.appendChild(tooltip);
+        setTimeout(() => tooltip.remove(), 2000);
+    }
+
+    retryLastOperation() {
+        console.log('Retry operation requested');
+        // This would need to be implemented based on the specific operation
+    }
+
+    openLogsWindow() {
+        console.log('Open logs window requested');
+        // This would open a detailed log viewer
+    }
+
+    cancelOperation() {
+        this.currentOperation = null;
+        this.hideProgress();
     }
 
     /**
@@ -1117,9 +1420,35 @@ class AppXPackageManager {
     updateProgress(message, percentage) {
         const textElement = document.getElementById('appx-progress-text');
         const progressBar = document.getElementById('appx-progress-bar');
+        const statusElement = document.getElementById('appx-operation-status');
+        const percentageElement = document.getElementById('appx-progress-percentage');
 
         if (textElement) textElement.textContent = message;
         if (progressBar) progressBar.style.width = `${percentage}%`;
+        if (statusElement) statusElement.textContent = message;
+        if (percentageElement) percentageElement.textContent = `${Math.round(percentage)}%`;
+    }
+
+    updateCurrentPackage(packageInfo) {
+        const currentPackageSection = document.getElementById('appx-current-package');
+        const nameElement = document.getElementById('appx-current-name');
+        const publisherElement = document.getElementById('appx-current-publisher');
+        const versionElement = document.getElementById('appx-current-version');
+        const statusElement = document.getElementById('appx-current-status');
+
+        if (packageInfo && currentPackageSection) {
+            currentPackageSection.style.display = 'block';
+
+            if (nameElement) nameElement.textContent = packageInfo.name || 'Unknown Package';
+            if (publisherElement) publisherElement.textContent = packageInfo.publisher || 'Unknown Publisher';
+            if (versionElement) versionElement.textContent = packageInfo.version || 'Unknown Version';
+            if (statusElement) {
+                statusElement.textContent = packageInfo.status || 'Processing';
+                statusElement.className = `status-badge ${packageInfo.statusClass || ''}`;
+            }
+        } else if (currentPackageSection) {
+            currentPackageSection.style.display = 'none';
+        }
     }
 
     /**
@@ -1137,21 +1466,180 @@ class AppXPackageManager {
      * Update progress with error
      */
     updateProgressError(message) {
-        this.updateProgress(message, 100);
-        this.appendProgressOutput(`\nERROR: ${message}\n`);
+        // Stop timer
+        this.stopTimer();
 
+        const modal = document.getElementById('appx-progress-modal');
+        const progressBar = document.getElementById('appx-progress-bar');
+        const textElement = document.getElementById('appx-progress-text');
+        const statusElement = document.getElementById('appx-operation-status');
+        const iconElement = document.getElementById('appx-progress-icon');
+
+        // Add error styling to modal
+        if (modal) {
+            modal.className = 'progress-modal error';
+        }
+
+        // Update progress bar with error styling
+        if (progressBar) {
+            progressBar.style.background = 'linear-gradient(90deg, #dc3545, #e74c3c)';
+            progressBar.style.width = '100%';
+        }
+
+        // Update text elements
+        if (textElement) {
+            textElement.textContent = `Error: ${message}`;
+            textElement.style.color = '#dc3545';
+            textElement.style.fontWeight = '600';
+        }
+
+        if (statusElement) {
+            statusElement.textContent = 'Error Occurred';
+            statusElement.style.color = '#dc3545';
+        }
+
+        // Update icon
+        if (iconElement) {
+            iconElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+        }
+
+        // Update current package status if visible
+        const currentStatusElement = document.getElementById('appx-current-status');
+        if (currentStatusElement) {
+            currentStatusElement.textContent = 'Error';
+            currentStatusElement.className = 'status-badge error';
+        }
+
+        this.appendProgressOutput(`\n❌ ERROR: ${message}\n`);
+
+        // Show retry button
+        this.showActionButton('appx-retry-operation');
+        this.showActionButton('appx-view-logs');
+
+        // Auto-close after 10 seconds for errors
         setTimeout(() => {
             this.hideProgress();
-        }, 5000);
+        }, 10000);
+    }
+
+    /**
+     * Complete progress with success
+     */
+    completeProgress(message = 'Operation completed') {
+        // Stop timer
+        this.stopTimer();
+
+        this.updateProgress(message, 100);
+
+        const modal = document.getElementById('appx-progress-modal');
+        const progressBar = document.getElementById('appx-progress-bar');
+        const textElement = document.getElementById('appx-progress-text');
+        const statusElement = document.getElementById('appx-operation-status');
+        const iconElement = document.getElementById('appx-progress-icon');
+
+        // Add success styling to modal
+        if (modal) {
+            modal.className = 'progress-modal success';
+        }
+
+        // Update progress bar with success styling
+        if (progressBar) {
+            progressBar.style.background = 'linear-gradient(90deg, #28a745, #20c997)';
+        }
+
+        // Update text elements
+        if (textElement) {
+            textElement.textContent = message;
+            textElement.style.color = '#28a745';
+            textElement.style.fontWeight = '600';
+        }
+
+        if (statusElement) {
+            statusElement.textContent = 'Completed Successfully';
+            statusElement.style.color = '#28a745';
+        }
+
+        // Update icon
+        if (iconElement) {
+            iconElement.innerHTML = '<i class="fas fa-check"></i>';
+        }
+
+        // Update current package status if visible
+        const currentStatusElement = document.getElementById('appx-current-status');
+        if (currentStatusElement) {
+            currentStatusElement.textContent = 'Completed';
+            currentStatusElement.className = 'status-badge success';
+        }
+
+        // Show done button
+        this.showActionButton('appx-done-modal');
+
+        // Auto-close after 3 seconds
+        setTimeout(() => {
+            this.hideProgress();
+        }, 3000);
     }
 
     /**
      * Hide progress modal
      */
     hideProgress() {
+        // Stop timer
+        this.stopTimer();
+
         const modal = document.getElementById('appx-progress-modal');
-        if (modal) modal.style.display = 'none';
+        if (modal) {
+            modal.style.display = 'none';
+            modal.className = 'progress-modal'; // Reset modal class
+        }
+
         this.currentOperation = null;
+
+        // Reset modal content
+        this.resetModalContent();
+    }
+
+    resetModalContent() {
+        // Reset progress bar
+        const progressBar = document.getElementById('appx-progress-bar');
+        if (progressBar) {
+            progressBar.style.width = '0%';
+            progressBar.style.background = 'linear-gradient(90deg, var(--primary-color), rgba(var(--primary-rgb), 0.8))';
+        }
+
+        // Reset text elements
+        const textElement = document.getElementById('appx-progress-text');
+        if (textElement) {
+            textElement.style.color = 'var(--text-primary)';
+            textElement.style.fontWeight = '500';
+        }
+
+        // Hide current package section
+        const currentPackageSection = document.getElementById('appx-current-package');
+        if (currentPackageSection) {
+            currentPackageSection.style.display = 'none';
+        }
+
+        // Reset output section to collapsed state
+        const outputSection = document.querySelector('.progress-output-section');
+        if (outputSection) {
+            outputSection.classList.add('collapsed');
+            const toggleBtn = document.getElementById('appx-toggle-output');
+            if (toggleBtn) {
+                const icon = toggleBtn.querySelector('i');
+                if (icon) icon.className = 'fas fa-chevron-down';
+                toggleBtn.title = 'Expand Output';
+            }
+        }
+
+        // Hide action buttons
+        this.hideActionButtons();
+
+        // Clear output
+        const outputElement = document.getElementById('appx-progress-output');
+        if (outputElement) {
+            outputElement.textContent = '';
+        }
     }
 
     /**
@@ -1320,4 +1808,4 @@ if (document.readyState === 'loading') {
     appxPackageManager.init();
 }
 
-console.log('AppX Packages tab script loaded');
+

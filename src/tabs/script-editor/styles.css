@@ -1,11 +1,5 @@
-/* Script Editor Styles */
-
-.tab-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
+/* Script Editor Styles - System Health Dashboard Theme */
+@import url('../../css/universal-tab-header.css');
 
 .tab-header div:last-child {
     display: flex;

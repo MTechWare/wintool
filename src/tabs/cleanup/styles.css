@@ -1,39 +1,5 @@
-/* Enhanced Cleanup Tab Styles */
-
-/* Ensure tab-header follows global styling */
-.tab-header {
-    margin-bottom: 32px;
-    text-align: left;
-    padding: 20px 24px;
-    background: transparent;
-    border-radius: 0;
-    border: none;
-    border-bottom: 1px solid var(--border-color);
-    box-shadow: none;
-}
-
-.tab-header h1 {
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: 4px;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.tab-header h1 i {
-    font-size: 24px;
-    color: var(--primary-color);
-}
-
-.tab-header p {
-    font-size: 14px;
-    color: var(--text-secondary);
-    margin: 0;
-    line-height: 1.4;
-    margin-left: 34px;
-}
+/* Enhanced Cleanup Tab Styles - System Health Dashboard Theme */
+@import url('../../css/universal-tab-header.css');
 
 .cleanup-content {
     max-width: 1400px;
@@ -68,7 +34,7 @@
 .disk-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
+    gap: 24px;
 }
 
 .disk-item {
@@ -155,6 +121,7 @@
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 30px;
+    margin-top: 30px;
 }
 
 .categories-header {

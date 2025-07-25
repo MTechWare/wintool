@@ -17,7 +17,6 @@ const REFRESH_DEBOUNCE_DELAY = 2000; // 2 seconds
 let HEALTH_THRESHOLDS = {
     memory: { warning: 80, critical: 95 },
     disk: { warning: 85, critical: 95 },
-    network: { warning: 100, critical: 500 }, // MB/s
     temperature: { warning: 70, critical: 85 }
 };
 
@@ -48,7 +47,6 @@ const ALERT_ICONS = {
 };
 
 async function loadSystemHealth(container) {
-    console.log('Loading system health dashboard...');
 
     try {
         // Initialize alert system (this loads settings including refresh interval)
@@ -61,13 +59,12 @@ async function loadSystemHealth(container) {
         setupEventListeners(container);
 
         // Load initial data
-        console.log('Loading initial health metrics...');
         await updateHealthMetrics();
 
         // Start real-time updates (now uses loaded refresh interval setting)
         startHealthUpdates();
 
-        console.log('System health dashboard loaded successfully');
+
 
         // Signal that the tab is ready
         if (window.markTabAsReady) {
@@ -156,11 +153,9 @@ function drawChart(chart, data, label, color) {
 function startHealthUpdates() {
     // Prevent multiple intervals from being created
     if (isHealthDashboardActive || healthUpdateInterval) {
-        console.log('Health updates already running, skipping...');
         return;
     }
 
-    console.log('Starting System Health monitoring...');
     isHealthDashboardActive = true;
 
     // Start performance monitoring with user-configured interval
@@ -175,7 +170,7 @@ function startHealthUpdates() {
         let lastPerformanceUpdate = 0;
         const performanceThrottleMs = (alertSettings.refreshInterval || 15) * 1000;
 
-        console.log(`Throttling performance updates to ${alertSettings.refreshInterval || 15} seconds`);
+
 
         window.electronAPI.onPerformanceUpdate((metrics) => {
             const now = Date.now();
@@ -188,8 +183,6 @@ function startHealthUpdates() {
 
     // Update other metrics based on user-configured refresh interval
     const refreshIntervalMs = (alertSettings.refreshInterval || 15) * 1000;
-    console.log(`Setting health update interval to ${alertSettings.refreshInterval || 15} seconds (${refreshIntervalMs}ms)`);
-    console.log('Current alertSettings:', alertSettings);
     healthUpdateInterval = setInterval(updateHealthMetrics, refreshIntervalMs);
 }
 
@@ -230,24 +223,19 @@ async function updateHealthMetrics() {
         // Check if we can use cached data to reduce CPU load
         if (cachedHealthData && (now - lastHealthDataFetch) < HEALTH_DATA_CACHE_DURATION) {
             console.log('Using cached health data to reduce CPU usage');
-            const { systemInfo, networkStats } = cachedHealthData;
+            const { systemInfo } = cachedHealthData;
             updateSystemDetails(systemInfo);
             await updateDiskInfo(systemInfo);
-            updateNetworkInfo(networkStats);
             return;
         }
 
-        console.log('Fetching fresh lightweight system health info and network stats...');
-        const [systemInfo, networkStats] = await Promise.all([
-            window.electronAPI.getSystemHealthInfo(),
-            window.electronAPI.getNetworkStats()
-        ]);
+        console.log('Fetching fresh lightweight system health info...');
+        const systemInfo = await window.electronAPI.getSystemHealthInfo();
 
         console.log('System health info received:', systemInfo);
-        console.log('Network stats received:', networkStats);
 
         // Cache the data
-        cachedHealthData = { systemInfo, networkStats };
+        cachedHealthData = { systemInfo };
         lastHealthDataFetch = now;
 
         // Update system details
@@ -255,9 +243,6 @@ async function updateHealthMetrics() {
 
         // Update disk information
         await updateDiskInfo(systemInfo);
-
-        // Update network information
-        updateNetworkInfo(networkStats);
 
     } catch (error) {
         console.error('Error updating health metrics:', error);
@@ -362,87 +347,7 @@ async function updateDiskInfo(systemInfo) {
     }
 }
 
-function updateNetworkInfo(networkStats) {
-    try {
-        if (networkStats && networkStats.totals) {
-            document.getElementById('network-total-down').textContent = networkStats.totals.rx_bytes;
-            document.getElementById('network-total-up').textContent = networkStats.totals.tx_bytes;
-        }
 
-        if (networkStats && networkStats.interfaces) {
-            const activeInterfaces = networkStats.interfaces.filter(iface => iface.operstate === 'up').length;
-            document.getElementById('network-interfaces').textContent = `${activeInterfaces} active`;
-
-            // Calculate real-time speeds from active interfaces
-            let totalDownloadSpeed = 0;
-            let totalUploadSpeed = 0;
-            let hasRealTimeData = false;
-
-            networkStats.interfaces.forEach(iface => {
-                if (iface.operstate === 'up' && iface.rx_sec && iface.tx_sec &&
-                    iface.rx_sec !== 'N/A' && iface.tx_sec !== 'N/A') {
-                    // Extract numeric values from formatted strings like "1.2 MB/s"
-                    const rxMatch = iface.rx_sec.match(/^([\d.]+)\s*([KMGT]?B)/);
-                    const txMatch = iface.tx_sec.match(/^([\d.]+)\s*([KMGT]?B)/);
-
-                    if (rxMatch && txMatch) {
-                        const rxValue = parseFloat(rxMatch[1]);
-                        const rxUnit = rxMatch[2];
-                        const txValue = parseFloat(txMatch[1]);
-                        const txUnit = txMatch[2];
-
-                        // Convert to bytes per second
-                        const rxBytes = convertToBytes(rxValue, rxUnit);
-                        const txBytes = convertToBytes(txValue, txUnit);
-
-                        totalDownloadSpeed += rxBytes;
-                        totalUploadSpeed += txBytes;
-                        hasRealTimeData = true;
-                    }
-                }
-            });
-
-            // Update real-time speeds with actual data
-            if (hasRealTimeData) {
-                document.getElementById('network-download').textContent = formatBytesPerSecond(totalDownloadSpeed);
-                document.getElementById('network-upload').textContent = formatBytesPerSecond(totalUploadSpeed);
-
-                // Check network speed thresholds for alerts (convert to MB/s)
-                const downloadMBps = totalDownloadSpeed / (1024 * 1024);
-                const uploadMBps = totalUploadSpeed / (1024 * 1024);
-                const maxSpeed = Math.max(downloadMBps, uploadMBps);
-
-                if (maxSpeed > 0.1) { // Only check if there's significant activity
-                    checkMetricThresholds('network', maxSpeed.toFixed(1), ' MB/s');
-                }
-
-                // Determine network status based on activity and connection
-                let status = 'Disconnected';
-                if (activeInterfaces > 0) {
-                    const isActive = totalDownloadSpeed > 1024 || totalUploadSpeed > 1024; // More than 1KB/s
-                    status = isActive ? 'Active' : 'Connected';
-                }
-                document.getElementById('network-status').textContent = status;
-            } else {
-                // Fallback when real-time data is not available (first call or no data)
-                document.getElementById('network-download').textContent = activeInterfaces > 0 ? 'Monitoring...' : '0 B/s';
-                document.getElementById('network-upload').textContent = activeInterfaces > 0 ? 'Monitoring...' : '0 B/s';
-                document.getElementById('network-status').textContent = activeInterfaces > 0 ? 'Connected' : 'Disconnected';
-            }
-        } else {
-            // No network data available
-            document.getElementById('network-download').textContent = 'N/A';
-            document.getElementById('network-upload').textContent = 'N/A';
-            document.getElementById('network-status').textContent = 'Unknown';
-        }
-    } catch (error) {
-        console.error('Error updating network info:', error);
-        // Show error state
-        document.getElementById('network-download').textContent = 'Error';
-        document.getElementById('network-upload').textContent = 'Error';
-        document.getElementById('network-status').textContent = 'Error';
-    }
-}
 
 
 
@@ -483,30 +388,7 @@ function formatBytes(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
-/**
- * Format bytes per second to human readable format
- */
-function formatBytesPerSecond(bytesPerSecond) {
-    if (bytesPerSecond === 0) return '0 B/s';
-    const k = 1024;
-    const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s'];
-    const i = Math.floor(Math.log(bytesPerSecond) / Math.log(k));
-    return parseFloat((bytesPerSecond / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-}
 
-/**
- * Convert formatted size string to bytes
- */
-function convertToBytes(value, unit) {
-    const multipliers = {
-        'B': 1,
-        'KB': 1024,
-        'MB': 1024 * 1024,
-        'GB': 1024 * 1024 * 1024,
-        'TB': 1024 * 1024 * 1024 * 1024
-    };
-    return value * (multipliers[unit] || 1);
-}
 
 function updateOverallStatus() {
     const memValue = parseFloat(document.getElementById('memory-percentage').textContent);
@@ -544,11 +426,17 @@ function setupEventListeners(container) {
     const clearAlertsBtn = container.querySelector('#clear-alerts-btn');
     const alertHistoryBtn = container.querySelector('#alert-history-btn');
 
-    if (alertSettingsBtn) {
+    // Alert section buttons (with different IDs to avoid conflicts)
+    const alertsSettingsBtn = container.querySelector('#alerts-settings-btn');
+    const alertsClearBtn = container.querySelector('#alerts-clear-btn');
+    const alertsHistoryBtn = container.querySelector('#alerts-history-btn');
+
+    if (alertSettingsBtn && !alertSettingsBtn.hasAttribute('data-listener-attached')) {
         alertSettingsBtn.addEventListener('click', openAlertSettings);
+        alertSettingsBtn.setAttribute('data-listener-attached', 'true');
     }
 
-    if (refreshBtn) {
+    if (refreshBtn && !refreshBtn.hasAttribute('data-listener-attached')) {
         refreshBtn.addEventListener('click', async () => {
             // Debounce rapid clicks to prevent CPU spikes
             if (refreshDebounceTimer) {
@@ -579,12 +467,14 @@ function setupEventListeners(container) {
                 }, REFRESH_DEBOUNCE_DELAY);
             }
         });
+        refreshBtn.setAttribute('data-listener-attached', 'true');
     }
 
-    if (exportBtn) {
+    if (exportBtn && !exportBtn.hasAttribute('data-listener-attached')) {
         exportBtn.addEventListener('click', () => {
             exportHealthReport();
         });
+        exportBtn.setAttribute('data-listener-attached', 'true');
     }
 
     if (clearAlertsBtn) {
@@ -593,6 +483,19 @@ function setupEventListeners(container) {
 
     if (alertHistoryBtn) {
         alertHistoryBtn.addEventListener('click', openAlertHistory);
+    }
+
+    // Alert section buttons event listeners
+    if (alertsSettingsBtn) {
+        alertsSettingsBtn.addEventListener('click', openAlertSettings);
+    }
+
+    if (alertsClearBtn) {
+        alertsClearBtn.addEventListener('click', clearAllAlerts);
+    }
+
+    if (alertsHistoryBtn) {
+        alertsHistoryBtn.addEventListener('click', openAlertHistory);
     }
 
     // Setup modal event listeners
@@ -605,10 +508,153 @@ function setupEventListeners(container) {
     }
 }
 
-function exportHealthReport() {
-    // Mock export functionality
-    console.log('Exporting health report...');
-    // Would implement actual export to CSV/JSON
+async function exportHealthReport() {
+    try {
+        console.log('Exporting health report...');
+
+        // Gather current system health data
+        const healthData = await gatherHealthReportData();
+
+        // Create the report content
+        const reportContent = generateHealthReportContent(healthData);
+
+        // Create and download the file
+        downloadHealthReport(reportContent, healthData.timestamp);
+
+        // Show success notification
+        if (window.showNotification) {
+            window.showNotification('Health report exported successfully!', 'success');
+        }
+
+    } catch (error) {
+        console.error('Error exporting health report:', error);
+        if (window.showNotification) {
+            window.showNotification('Failed to export health report', 'error');
+        }
+    }
+}
+
+async function gatherHealthReportData() {
+    const timestamp = new Date().toISOString();
+    const data = {
+        timestamp,
+        exportTime: new Date().toLocaleString(),
+        systemInfo: {},
+        healthMetrics: {},
+        alerts: {
+            active: Array.from(activeAlerts.values()),
+            history: alertHistory.slice(0, 50) // Last 50 alerts
+        },
+        settings: {
+            thresholds: HEALTH_THRESHOLDS,
+            alertSettings: alertSettings
+        }
+    };
+
+    try {
+        // Get system information if available
+        if (window.electronAPI) {
+            const systemInfo = await window.electronAPI.getSystemInfo();
+            data.systemInfo = {
+                platform: systemInfo.platform,
+                arch: systemInfo.arch,
+                hostname: systemInfo.hostname,
+                uptime: systemInfo.uptime,
+                memory: {
+                    total: systemInfo.totalMemory,
+                    used: systemInfo.usedMemory,
+                    usagePercent: systemInfo.memoryUsagePercent
+                },
+                cpu: {
+                    model: systemInfo.cpuModel,
+                    cores: systemInfo.cpuCores,
+                    speed: systemInfo.cpuSpeed
+                }
+            };
+
+            // Get current performance metrics
+            const performanceData = await window.electronAPI.getPerformanceData();
+            if (performanceData) {
+                data.healthMetrics = {
+                    memory: {
+                        usage: parseFloat(performanceData.mem),
+                        status: getHealthStatus(parseFloat(performanceData.mem), HEALTH_THRESHOLDS.memory)
+                    },
+                    disk: {
+                        usage: parseFloat(performanceData.disk || 0),
+                        status: getHealthStatus(parseFloat(performanceData.disk || 0), HEALTH_THRESHOLDS.disk)
+                    }
+                };
+            }
+        }
+
+        // Get current UI values
+        const memoryPercentage = document.getElementById('memory-percentage')?.textContent || 'N/A';
+        const diskPercentage = document.getElementById('disk-percentage')?.textContent || 'N/A';
+        const overallStatus = document.getElementById('overall-status-text')?.textContent || 'Unknown';
+
+        data.currentStatus = {
+            overall: overallStatus,
+            memory: memoryPercentage,
+            disk: diskPercentage
+        };
+
+    } catch (error) {
+        console.warn('Some health data could not be gathered:', error);
+    }
+
+    return data;
+}
+
+function generateHealthReportContent(data) {
+    const report = {
+        metadata: {
+            title: "System Health Report",
+            exportTime: data.exportTime,
+            timestamp: data.timestamp,
+            version: "2.4.0"
+        },
+        systemInformation: data.systemInfo,
+        currentStatus: data.currentStatus,
+        healthMetrics: data.healthMetrics,
+        alerts: {
+            activeCount: data.alerts.active.length,
+            activeAlerts: data.alerts.active,
+            recentHistory: data.alerts.history
+        },
+        configuration: {
+            healthThresholds: data.settings.thresholds,
+            alertSettings: data.settings.alertSettings
+        }
+    };
+
+    return JSON.stringify(report, null, 2);
+}
+
+function downloadHealthReport(content, timestamp) {
+    // Create filename with timestamp
+    const date = new Date(timestamp);
+    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    const timeStr = date.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
+    const filename = `system-health-report_${dateStr}_${timeStr}.json`;
+
+    // Create blob and download
+    const blob = new Blob([content], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Clean up the URL object
+    URL.revokeObjectURL(url);
+
+    console.log(`Health report exported as: ${filename}`);
 }
 
 // Alert System Functions
@@ -966,8 +1012,7 @@ function openAlertSettings() {
     document.getElementById('memory-critical').value = HEALTH_THRESHOLDS.memory.critical;
     document.getElementById('disk-warning').value = HEALTH_THRESHOLDS.disk.warning;
     document.getElementById('disk-critical').value = HEALTH_THRESHOLDS.disk.critical;
-    document.getElementById('network-warning').value = HEALTH_THRESHOLDS.network.warning;
-    document.getElementById('network-critical').value = HEALTH_THRESHOLDS.network.critical;
+
 
     document.getElementById('enable-sound-alerts').checked = alertSettings.enableSound;
     document.getElementById('enable-desktop-notifications').checked = alertSettings.enableDesktopNotifications;
@@ -1103,8 +1148,7 @@ function setupModalEventListeners() {
                 const memoryCritical = parseInt(document.getElementById('memory-critical').value);
                 const diskWarning = parseInt(document.getElementById('disk-warning').value);
                 const diskCritical = parseInt(document.getElementById('disk-critical').value);
-                const networkWarning = parseInt(document.getElementById('network-warning').value);
-                const networkCritical = parseInt(document.getElementById('network-critical').value);
+
 
                 // Validation
                 if (memoryWarning >= memoryCritical) {
@@ -1115,18 +1159,14 @@ function setupModalEventListeners() {
                     alert('Disk warning threshold must be less than critical threshold');
                     return;
                 }
-                if (networkWarning >= networkCritical) {
-                    alert('Network warning threshold must be less than critical threshold');
-                    return;
-                }
+
 
                 // Apply validated settings
                 HEALTH_THRESHOLDS.memory.warning = memoryWarning;
                 HEALTH_THRESHOLDS.memory.critical = memoryCritical;
                 HEALTH_THRESHOLDS.disk.warning = diskWarning;
                 HEALTH_THRESHOLDS.disk.critical = diskCritical;
-                HEALTH_THRESHOLDS.network.warning = networkWarning;
-                HEALTH_THRESHOLDS.network.critical = networkCritical;
+
 
                 // Save alert preferences
                 alertSettings.enableSound = document.getElementById('enable-sound-alerts').checked;
@@ -1208,7 +1248,7 @@ function setupModalEventListeners() {
             // Reset to defaults
             HEALTH_THRESHOLDS.memory = { warning: 80, critical: 95 };
             HEALTH_THRESHOLDS.disk = { warning: 85, critical: 95 };
-            HEALTH_THRESHOLDS.network = { warning: 100, critical: 500 };
+
 
             alertSettings.enableSound = true;
             alertSettings.enableDesktopNotifications = true;
@@ -1222,8 +1262,7 @@ function setupModalEventListeners() {
             document.getElementById('memory-critical').value = 95;
             document.getElementById('disk-warning').value = 85;
             document.getElementById('disk-critical').value = 95;
-            document.getElementById('network-warning').value = 100;
-            document.getElementById('network-critical').value = 500;
+
 
             document.getElementById('enable-sound-alerts').checked = true;
             document.getElementById('enable-desktop-notifications').checked = true;

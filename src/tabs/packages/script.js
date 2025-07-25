@@ -97,7 +97,7 @@ class PackageManager {
         const totalPackages = Object.keys(this.packages).length;
         this.updateTotalPackageCount(totalPackages);
         
-        console.log(`Ensured "All" category is active with ${totalPackages} total packages`);
+
     }
 
     setupTabActivationListener() {
@@ -106,7 +106,6 @@ class PackageManager {
             window.electronAPI.addTabListener('tab-switched', (event) => {
                 const { tabId } = event.detail;
                 if (tabId === 'packages' || tabId === 'folder-packages') {
-                    console.log('Packages tab activated, ensuring All category is loaded');
                     this.ensureAllCategoryActive();
                     this.filterPackages();
                 }
@@ -119,7 +118,6 @@ class PackageManager {
                 // Check if packages tab is currently active
                 const packagesTab = document.querySelector('.tab-content.active[id*="packages"]');
                 if (packagesTab) {
-                    console.log('Packages tab is visible, ensuring All category is loaded');
                     this.ensureAllCategoryActive();
                     this.filterPackages();
                 }
@@ -128,11 +126,8 @@ class PackageManager {
     }
 
     async init() {
-        console.log('Initializing Package Manager...');
-
         // Check if should initialize (lazy loading support)
         if (!this.lazyHelper.shouldInitialize()) {
-            console.log('Package Manager script already executed, skipping initialization');
             this.lazyHelper.markTabReady();
             return;
         }
@@ -166,7 +161,7 @@ class PackageManager {
             // Listen for tab activation events to ensure All category is loaded
             this.setupTabActivationListener();
 
-            console.log('Package Manager initialized');
+
 
             // Signal that this tab is ready
             this.lazyHelper.markTabReady();
@@ -181,10 +176,8 @@ class PackageManager {
         try {
             if (window.electronAPI && window.electronAPI.checkChocoAvailability) {
                 this.chocoAvailable = await window.electronAPI.checkChocoAvailability();
-                console.log('Chocolatey availability:', this.chocoAvailable);
             } else {
                 this.chocoAvailable = false;
-                console.log('Chocolatey check not available (browser mode)');
             }
         } catch (error) {
             console.error('Error checking Chocolatey availability:', error);
@@ -260,7 +253,7 @@ class PackageManager {
             }
         }
 
-        console.log(`Found ${this.installedPackages.size} installed winget packages`);
+
     }
 
     parseChocoList(output) {
@@ -282,7 +275,7 @@ class PackageManager {
             }
         }
 
-        console.log(`Found ${this.installedPackages.size} installed chocolatey packages`);
+
     }
 
     updatePackageManagerSelector() {
@@ -310,10 +303,8 @@ class PackageManager {
         try {
             // Try to load from Electron API first (when running in Electron)
             if (window.electronAPI && window.electronAPI.getApplicationsData) {
-                console.log('Loading packages from Electron API...');
                 this.packages = await window.electronAPI.getApplicationsData();
                 const packageCount = Object.keys(this.packages).length;
-                console.log('Loaded packages from Electron API:', packageCount);
                 this.showStatus(`Successfully loaded ${packageCount} packages from applications.json`, 'success');
                 
                 // Refresh installed packages and updates after loading
@@ -406,6 +397,14 @@ class PackageManager {
         const refreshInstalledBtn = document.getElementById('refresh-installed');
         if (refreshInstalledBtn) {
             refreshInstalledBtn.addEventListener('click', () => {
+                this.refreshInstalledPackages();
+            });
+        }
+
+        // Header refresh button
+        const refreshHeaderBtn = document.getElementById('refresh-packages-header');
+        if (refreshHeaderBtn) {
+            refreshHeaderBtn.addEventListener('click', () => {
                 this.refreshInstalledPackages();
             });
         }
@@ -1215,6 +1214,15 @@ class PackageManager {
             }
 
             try {
+                // Update current package display
+                this.updateCurrentPackage({
+                    name: pkg.content,
+                    publisher: pkg.publisher || 'Unknown Publisher',
+                    version: pkg.version || 'Latest',
+                    status: 'Installing',
+                    statusClass: ''
+                });
+
                 this.updateProgressMessage(`Installing ${this.escapeHtml(pkg.content)}...`);
                 this.updateProgressDetails(`Package ${completed + 1} of ${total}`);
                 this.appendProgressOutput(`\n--- Installing ${pkg.content} ---`);
@@ -1230,9 +1238,27 @@ class PackageManager {
                     ]);
                 }
 
+                // Update package status to completed
+                this.updateCurrentPackage({
+                    name: pkg.content,
+                    publisher: pkg.publisher || 'Unknown Publisher',
+                    version: pkg.version || 'Latest',
+                    status: 'Installed',
+                    statusClass: 'success'
+                });
+
                 completed++;
                 this.updateProgressPercentage((completed / total) * 100);
             } catch (error) {
+                // Update package status to error
+                this.updateCurrentPackage({
+                    name: pkg.content,
+                    publisher: pkg.publisher || 'Unknown Publisher',
+                    version: pkg.version || 'Latest',
+                    status: 'Error',
+                    statusClass: 'error'
+                });
+
                 this.appendProgressOutput(`Error installing ${pkg.content}: ${error.message}`);
             }
         }
@@ -1525,48 +1551,174 @@ class PackageManager {
 
         const modal = document.getElementById('packages-progress-modal');
         const titleElement = document.getElementById('packages-progress-title');
+        const subtitleElement = document.getElementById('packages-progress-subtitle');
         const textElement = document.getElementById('packages-progress-text');
         const outputElement = document.getElementById('packages-progress-output');
         const progressBar = document.getElementById('packages-progress-bar');
+        const statusElement = document.getElementById('packages-operation-status');
+        const percentageElement = document.getElementById('packages-progress-percentage');
+        const timeElement = document.getElementById('packages-time-elapsed');
 
         if (modal && titleElement && textElement) {
+            // Set title and subtitle
             titleElement.textContent = title;
-            textElement.innerHTML = `⚡ ${message}`;
+            if (subtitleElement) {
+                subtitleElement.textContent = this.getOperationSubtitle(operation);
+            }
 
-            // Reset styling
+            // Set appropriate icon
+            this.updateProgressIcon(operation);
+
+            // Initialize status
+            if (statusElement) statusElement.textContent = 'Initializing...';
+            if (percentageElement) percentageElement.textContent = '0%';
+            if (timeElement) timeElement.textContent = '00:00';
+
+            // Set progress text
+            textElement.textContent = message;
+
+            // Reset styling and state
+            modal.className = 'progress-modal';
             textElement.style.color = 'var(--text-primary)';
             textElement.style.fontWeight = '500';
 
             if (outputElement) outputElement.textContent = '';
             if (progressBar) {
                 progressBar.style.width = '0%';
-                progressBar.style.background = 'linear-gradient(90deg, var(--primary-color), rgba(var(--primary-rgb), 0.8))';
             }
 
-            // Ensure close button event listener is attached
-            this.setupCloseButton();
+            // Hide action buttons initially
+            this.hideActionButtons();
 
-            // Add click-outside-to-close functionality
-            modal.onclick = (e) => {
-                if (e.target === modal) {
-                    console.log('Clicked outside modal, closing');
-                    this.hideProgress();
-                }
-            };
+            // Hide current package section initially
+            const currentPackageSection = document.getElementById('packages-current-package');
+            if (currentPackageSection) {
+                currentPackageSection.style.display = 'none';
+            }
 
-            // Add escape key to close
-            const escapeHandler = (e) => {
-                if (e.key === 'Escape') {
-                    console.log('Escape key pressed, closing modal');
-                    this.hideProgress();
-                    document.removeEventListener('keydown', escapeHandler);
+            // Start with output section collapsed to prevent UI issues
+            const outputSection = document.querySelector('.progress-output-section');
+            if (outputSection) {
+                outputSection.classList.add('collapsed');
+                const toggleBtn = document.getElementById('packages-toggle-output');
+                if (toggleBtn) {
+                    const icon = toggleBtn.querySelector('i');
+                    if (icon) icon.className = 'fas fa-chevron-down';
+                    toggleBtn.title = 'Expand Output';
                 }
-            };
-            document.addEventListener('keydown', escapeHandler);
+            }
+
+            // Start timer
+            this.startTimer();
+
+            // Setup event listeners
+            this.setupModalEventListeners();
 
             modal.style.display = 'flex';
             modal.style.animation = 'fadeIn 0.3s ease-out';
         }
+    }
+
+    getOperationSubtitle(operationType) {
+        const subtitles = {
+            'install': 'Installing packages to your system',
+            'uninstall': 'Removing packages from your system',
+            'update': 'Updating packages to latest versions',
+            'upgrade': 'Upgrading packages to latest versions'
+        };
+        return subtitles[operationType] || 'Processing package operation';
+    }
+
+    updateProgressIcon(operationType) {
+        const iconElement = document.getElementById('packages-progress-icon');
+        if (!iconElement) return;
+
+        const icons = {
+            'install': 'fas fa-download',
+            'uninstall': 'fas fa-trash',
+            'update': 'fas fa-sync-alt',
+            'upgrade': 'fas fa-arrow-up'
+        };
+
+        const iconClass = icons[operationType] || 'fas fa-cog';
+        iconElement.innerHTML = `<i class="${iconClass}"></i>`;
+    }
+
+    startTimer() {
+        this.operationStartTime = Date.now();
+        this.timerInterval = setInterval(() => {
+            const elapsed = Date.now() - this.operationStartTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            const timeElement = document.getElementById('packages-time-elapsed');
+            if (timeElement) {
+                timeElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }, 1000);
+    }
+
+    stopTimer() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+    }
+
+    hideActionButtons() {
+        const buttons = ['packages-retry-operation', 'packages-view-logs', 'packages-done-modal'];
+        buttons.forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) btn.style.display = 'none';
+        });
+    }
+
+    showActionButton(buttonId) {
+        const btn = document.getElementById(buttonId);
+        if (btn) btn.style.display = 'flex';
+    }
+
+    setupModalEventListeners() {
+        // Setup close button
+        this.setupCloseButton();
+
+        // Setup minimize button
+        const minimizeBtn = document.getElementById('packages-minimize-modal');
+        if (minimizeBtn && !minimizeBtn.hasAttribute('data-listener-attached')) {
+            minimizeBtn.addEventListener('click', () => this.toggleMinimize());
+            minimizeBtn.setAttribute('data-listener-attached', 'true');
+        }
+
+        // Setup cancel button
+        const cancelBtn = document.getElementById('packages-cancel-operation');
+        if (cancelBtn && !cancelBtn.hasAttribute('data-listener-attached')) {
+            cancelBtn.addEventListener('click', () => this.cancelOperation());
+            cancelBtn.setAttribute('data-listener-attached', 'true');
+        }
+
+        // Setup output controls
+        this.setupOutputControls();
+
+        // Setup action buttons
+        this.setupActionButtons();
+
+        // Add click-outside-to-close functionality
+        const modal = document.getElementById('packages-progress-modal');
+        if (modal) {
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    this.hideProgress();
+                }
+            };
+        }
+
+        // Add escape key to close
+        const escapeHandler = (e) => {
+            if (e.key === 'Escape') {
+                this.hideProgress();
+                document.removeEventListener('keydown', escapeHandler);
+            }
+        };
+        document.addEventListener('keydown', escapeHandler);
     }
 
     setupCloseButton() {
@@ -1591,21 +1743,164 @@ class PackageManager {
         }
     }
 
+    setupOutputControls() {
+        // Clear output button
+        const clearBtn = document.getElementById('packages-clear-output');
+        if (clearBtn && !clearBtn.hasAttribute('data-listener-attached')) {
+            clearBtn.addEventListener('click', () => {
+                const outputElement = document.getElementById('packages-progress-output');
+                if (outputElement) outputElement.textContent = '';
+            });
+            clearBtn.setAttribute('data-listener-attached', 'true');
+        }
+
+        // Copy output button
+        const copyBtn = document.getElementById('packages-copy-output');
+        if (copyBtn && !copyBtn.hasAttribute('data-listener-attached')) {
+            copyBtn.addEventListener('click', () => {
+                const outputElement = document.getElementById('packages-progress-output');
+                if (outputElement && navigator.clipboard) {
+                    navigator.clipboard.writeText(outputElement.textContent);
+                    this.showTemporaryTooltip(copyBtn, 'Copied!');
+                }
+            });
+            copyBtn.setAttribute('data-listener-attached', 'true');
+        }
+
+        // Toggle output button
+        const toggleBtn = document.getElementById('packages-toggle-output');
+        if (toggleBtn && !toggleBtn.hasAttribute('data-listener-attached')) {
+            toggleBtn.addEventListener('click', () => {
+                const outputSection = document.querySelector('.progress-output-section');
+                const icon = toggleBtn.querySelector('i');
+
+                if (outputSection.classList.contains('collapsed')) {
+                    outputSection.classList.remove('collapsed');
+                    icon.className = 'fas fa-chevron-up';
+                    toggleBtn.title = 'Collapse Output';
+                } else {
+                    outputSection.classList.add('collapsed');
+                    icon.className = 'fas fa-chevron-down';
+                    toggleBtn.title = 'Expand Output';
+                }
+            });
+            toggleBtn.setAttribute('data-listener-attached', 'true');
+        }
+    }
+
+    setupActionButtons() {
+        // Retry button
+        const retryBtn = document.getElementById('packages-retry-operation');
+        if (retryBtn && !retryBtn.hasAttribute('data-listener-attached')) {
+            retryBtn.addEventListener('click', () => {
+                // Implement retry logic based on last operation
+                this.retryLastOperation();
+            });
+            retryBtn.setAttribute('data-listener-attached', 'true');
+        }
+
+        // View logs button
+        const logsBtn = document.getElementById('packages-view-logs');
+        if (logsBtn && !logsBtn.hasAttribute('data-listener-attached')) {
+            logsBtn.addEventListener('click', () => {
+                this.openLogsWindow();
+            });
+            logsBtn.setAttribute('data-listener-attached', 'true');
+        }
+
+        // Done button
+        const doneBtn = document.getElementById('packages-done-modal');
+        if (doneBtn && !doneBtn.hasAttribute('data-listener-attached')) {
+            doneBtn.addEventListener('click', () => {
+                this.hideProgress();
+            });
+            doneBtn.setAttribute('data-listener-attached', 'true');
+        }
+    }
+
+    toggleMinimize() {
+        const modal = document.getElementById('packages-progress-modal');
+        if (modal) {
+            modal.classList.toggle('minimized');
+            const minimizeBtn = document.getElementById('packages-minimize-modal');
+            const icon = minimizeBtn?.querySelector('i');
+            if (icon) {
+                if (modal.classList.contains('minimized')) {
+                    icon.className = 'fas fa-window-maximize';
+                } else {
+                    icon.className = 'fas fa-minus';
+                }
+            }
+        }
+    }
+
+    showTemporaryTooltip(element, text) {
+        const tooltip = document.createElement('div');
+        tooltip.textContent = text;
+        tooltip.style.cssText = `
+            position: absolute;
+            background: var(--background-dark);
+            color: var(--text-primary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 10001;
+            pointer-events: none;
+        `;
+
+        const rect = element.getBoundingClientRect();
+        tooltip.style.left = rect.left + 'px';
+        tooltip.style.top = (rect.top - 30) + 'px';
+
+        document.body.appendChild(tooltip);
+        setTimeout(() => tooltip.remove(), 2000);
+    }
+
+    retryLastOperation() {
+        // Implement retry logic based on the last operation
+        console.log('Retry operation requested');
+        // This would need to be implemented based on the specific operation
+    }
+
+    openLogsWindow() {
+        // Open a new window or modal with detailed logs
+        console.log('Open logs window requested');
+        // This would open a detailed log viewer
+    }
+
     updateProgress(message, percentage) {
         const textElement = document.getElementById('packages-progress-text');
         const progressBar = document.getElementById('packages-progress-bar');
+        const statusElement = document.getElementById('packages-operation-status');
+        const percentageElement = document.getElementById('packages-progress-percentage');
 
         if (textElement) {
-            const percentText = percentage < 100 ? ` (${Math.round(percentage)}%)` : '';
-            textElement.innerHTML = `⚡ ${message}${percentText}`;
+            textElement.textContent = message;
         }
-        if (progressBar) progressBar.style.width = `${percentage}%`;
+
+        if (statusElement) {
+            statusElement.textContent = message;
+        }
+
+        if (percentageElement) {
+            percentageElement.textContent = `${Math.round(percentage)}%`;
+        }
+
+        if (progressBar) {
+            progressBar.style.width = `${percentage}%`;
+        }
     }
 
     updateProgressMessage(message) {
         const textElement = document.getElementById('packages-progress-text');
+        const statusElement = document.getElementById('packages-operation-status');
+
         if (textElement) {
             textElement.textContent = message;
+        }
+
+        if (statusElement) {
+            statusElement.textContent = message;
         }
     }
 
@@ -1616,9 +1911,37 @@ class PackageManager {
 
     updateProgressPercentage(percentage) {
         const progressBar = document.getElementById('packages-progress-bar');
+        const percentageElement = document.getElementById('packages-progress-percentage');
+
         if (progressBar) {
             const clampedPercentage = Math.min(100, Math.max(0, percentage));
             progressBar.style.width = `${clampedPercentage}%`;
+        }
+
+        if (percentageElement) {
+            percentageElement.textContent = `${Math.round(percentage)}%`;
+        }
+    }
+
+    updateCurrentPackage(packageInfo) {
+        const currentPackageSection = document.getElementById('packages-current-package');
+        const nameElement = document.getElementById('packages-current-name');
+        const publisherElement = document.getElementById('packages-current-publisher');
+        const versionElement = document.getElementById('packages-current-version');
+        const statusElement = document.getElementById('packages-current-status');
+
+        if (packageInfo && currentPackageSection) {
+            currentPackageSection.style.display = 'block';
+
+            if (nameElement) nameElement.textContent = packageInfo.name || 'Unknown Package';
+            if (publisherElement) publisherElement.textContent = packageInfo.publisher || 'Unknown Publisher';
+            if (versionElement) versionElement.textContent = packageInfo.version || 'Unknown Version';
+            if (statusElement) {
+                statusElement.textContent = packageInfo.status || 'Processing';
+                statusElement.className = `status-badge ${packageInfo.statusClass || ''}`;
+            }
+        } else if (currentPackageSection) {
+            currentPackageSection.style.display = 'none';
         }
     }
 
@@ -1635,27 +1958,60 @@ class PackageManager {
         this.currentOperationPackage = null;
         this.currentOperationType = null;
 
+        // Stop timer
+        this.stopTimer();
+
+        const modal = document.getElementById('packages-progress-modal');
         const progressBar = document.getElementById('packages-progress-bar');
         const textElement = document.getElementById('packages-progress-text');
+        const statusElement = document.getElementById('packages-operation-status');
+        const iconElement = document.getElementById('packages-progress-icon');
 
-        // Add error styling
+        // Add error styling to modal
+        if (modal) {
+            modal.className = 'progress-modal error';
+        }
+
+        // Update progress bar with error styling
         if (progressBar) {
             progressBar.style.background = 'linear-gradient(90deg, #dc3545, #e74c3c)';
             progressBar.style.width = '100%';
         }
 
+        // Update text elements
         if (textElement) {
-            textElement.innerHTML = `❌ Error: ${message}`;
+            textElement.textContent = `Error: ${message}`;
             textElement.style.color = '#dc3545';
             textElement.style.fontWeight = '600';
         }
 
+        if (statusElement) {
+            statusElement.textContent = 'Error Occurred';
+            statusElement.style.color = '#dc3545';
+        }
+
+        // Update icon
+        if (iconElement) {
+            iconElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+        }
+
+        // Update current package status if visible
+        const currentStatusElement = document.getElementById('packages-current-status');
+        if (currentStatusElement) {
+            currentStatusElement.textContent = 'Error';
+            currentStatusElement.className = 'status-badge error';
+        }
+
         this.appendProgressOutput(`\n❌ ERROR: ${message}\n`);
 
-        // Auto-close after 5 seconds for errors
+        // Show retry button
+        this.showActionButton('packages-retry-operation');
+        this.showActionButton('packages-view-logs');
+
+        // Auto-close after 10 seconds for errors (increased time)
         setTimeout(() => {
             this.hideProgress();
-        }, 5000);
+        }, 10000);
     }
 
     hideProgress() {
@@ -1697,55 +2053,51 @@ class PackageManager {
     }
 
     completeProgress(message = 'Operation completed') {
+        // Stop timer
+        this.stopTimer();
+
         this.updateProgress(message, 100);
 
-        // Handle badge updates for successful operations
-        if (this.currentOperationPackage && this.currentOperationType) {
-            const { key, id } = this.currentOperationPackage;
-            const packageIdLower = id.toLowerCase();
-
-            switch (this.currentOperationType) {
-                case 'install':
-                    this.installedPackages.add(packageIdLower);
-                    break;
-                case 'update':
-                    this.packagesWithUpdates.delete(packageIdLower);
-                    break;
-                case 'uninstall':
-                    this.installedPackages.delete(packageIdLower);
-                    this.packagesWithUpdates.delete(packageIdLower);
-                    break;
-            }
-
-            // Refresh the package display
-            this.refreshPackageDisplay(key);
-
-            // Clear operation tracking
-            this.currentOperationPackage = null;
-            this.currentOperationType = null;
-        }
-
-        // Add success styling
+        const modal = document.getElementById('packages-progress-modal');
         const progressBar = document.getElementById('packages-progress-bar');
         const textElement = document.getElementById('packages-progress-text');
+        const statusElement = document.getElementById('packages-operation-status');
+        const iconElement = document.getElementById('packages-progress-icon');
 
+        // Add success styling to modal
+        if (modal) {
+            modal.className = 'progress-modal success';
+        }
+
+        // Update progress bar with success styling
         if (progressBar) {
             progressBar.style.background = 'linear-gradient(90deg, #28a745, #20c997)';
         }
 
+        // Update text elements
         if (textElement) {
-            textElement.innerHTML = `✅ ${message}`;
+            textElement.textContent = message;
             textElement.style.color = '#28a745';
             textElement.style.fontWeight = '600';
         }
 
-        // Auto-close after 2.5 seconds
-        setTimeout(() => {
-            this.hideProgress();
-        }, 2500);
-    }
+        if (statusElement) {
+            statusElement.textContent = 'Completed Successfully';
+            statusElement.style.color = '#28a745';
+        }
 
-    completeProgress(message) {
+        // Update icon
+        if (iconElement) {
+            iconElement.innerHTML = '<i class="fas fa-check"></i>';
+        }
+
+        // Update current package status if visible
+        const currentStatusElement = document.getElementById('packages-current-status');
+        if (currentStatusElement) {
+            currentStatusElement.textContent = 'Completed';
+            currentStatusElement.className = 'status-badge success';
+        }
+
         // Handle badge updates for successful operations
         if (this.currentOperationPackage && this.currentOperationType) {
             const { key, id } = this.currentOperationPackage;
@@ -1772,30 +2124,151 @@ class PackageManager {
             this.currentOperationType = null;
         }
 
-        const container = document.getElementById('progress-container');
-        if (container) {
-            container.className = 'progress-container completed';
-        }
-        this.updateProgressMessage(message);
-        this.updateProgressDetails('Click to close');
-        this.updateProgressPercentage(100);
+        // Refresh all packages after operation completion
+        this.schedulePackageRefresh();
 
-        // Auto-hide after 3 seconds
+        // Show done button
+        this.showActionButton('packages-done-modal');
+
+        // Auto-close after 3 seconds
         setTimeout(() => {
             this.hideProgress();
         }, 3000);
     }
 
+    schedulePackageRefresh() {
+        // Schedule a package refresh after a short delay to allow operations to complete
+        if (this.refreshTimeout) {
+            clearTimeout(this.refreshTimeout);
+        }
+
+        this.refreshTimeout = setTimeout(async () => {
+            try {
+                console.log('Refreshing packages after operation completion...');
+
+                // Update status to show refresh is happening
+                this.updateProgressMessage('Refreshing package list...');
+                this.appendProgressOutput('\n--- Refreshing package information ---\n');
+
+                // Update progress bar to show refresh activity
+                const progressBar = document.getElementById('packages-progress-bar');
+                if (progressBar) {
+                    progressBar.style.width = '100%';
+                    progressBar.style.background = 'linear-gradient(90deg, #17a2b8, #138496)';
+                }
+
+                // Update status
+                const statusElement = document.getElementById('packages-operation-status');
+                if (statusElement) {
+                    statusElement.textContent = 'Refreshing package list...';
+                }
+
+                // Refresh installed packages
+                await this.getInstalledPackages();
+
+                // Check for updates
+                await this.checkForUpdates();
+
+                // Re-render the package list to reflect changes
+                this.filterPackages();
+
+                // Clear selection since package states may have changed
+                this.selectedPackages.clear();
+
+                // Update selection info
+                this.updateSelectionInfo();
+
+                // Update status to completed
+                if (statusElement) {
+                    statusElement.textContent = 'Package list refreshed';
+                }
+
+                console.log('Package refresh completed');
+                this.appendProgressOutput('Package list refreshed successfully\n');
+
+            } catch (error) {
+                console.error('Error refreshing packages:', error);
+                this.appendProgressOutput(`Error refreshing packages: ${error.message}\n`);
+
+                // Update status to show error
+                const statusElement = document.getElementById('packages-operation-status');
+                if (statusElement) {
+                    statusElement.textContent = 'Refresh failed';
+                }
+            }
+        }, 1000); // 1 second delay to allow operations to settle
+    }
+
     hideProgress() {
+        console.log('hideProgress() called');
+
+        // Stop timer
+        this.stopTimer();
+
+        const modal = document.getElementById('packages-progress-modal');
         const container = document.getElementById('progress-container');
+
+        if (modal) {
+            console.log('Modal found, hiding');
+            modal.style.display = 'none';
+            modal.className = 'progress-modal'; // Reset modal class
+        }
+
         if (container) {
             container.style.display = 'none';
         }
+
         this.currentOperation = null;
 
         // Clear operation tracking
         this.currentOperationPackage = null;
         this.currentOperationType = null;
+
+        // Reset modal content
+        this.resetModalContent();
+    }
+
+    resetModalContent() {
+        // Reset progress bar
+        const progressBar = document.getElementById('packages-progress-bar');
+        if (progressBar) {
+            progressBar.style.width = '0%';
+            progressBar.style.background = 'linear-gradient(90deg, var(--primary-color), rgba(var(--primary-rgb), 0.8))';
+        }
+
+        // Reset text elements
+        const textElement = document.getElementById('packages-progress-text');
+        if (textElement) {
+            textElement.style.color = 'var(--text-primary)';
+            textElement.style.fontWeight = '500';
+        }
+
+        // Hide current package section
+        const currentPackageSection = document.getElementById('packages-current-package');
+        if (currentPackageSection) {
+            currentPackageSection.style.display = 'none';
+        }
+
+        // Reset output section to collapsed state
+        const outputSection = document.querySelector('.progress-output-section');
+        if (outputSection) {
+            outputSection.classList.add('collapsed');
+            const toggleBtn = document.getElementById('packages-toggle-output');
+            if (toggleBtn) {
+                const icon = toggleBtn.querySelector('i');
+                if (icon) icon.className = 'fas fa-chevron-down';
+                toggleBtn.title = 'Expand Output';
+            }
+        }
+
+        // Hide action buttons
+        this.hideActionButtons();
+
+        // Clear output
+        const outputElement = document.getElementById('packages-progress-output');
+        if (outputElement) {
+            outputElement.textContent = '';
+        }
     }
 
     cancelOperation() {
@@ -1961,4 +2434,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 100);
 });
 
-console.log('Packages tab script loaded');
+

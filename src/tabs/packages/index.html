@@ -1,6 +1,15 @@
 <div class="tab-header">
-    <h1><i class="fas fa-box"></i> Package Manager</h1>
-    <p id="package-manager-description">Manage Windows packages using winget</p>
+    <div>
+        <h1><i class="fas fa-box"></i> Package Manager</h1>
+        <p id="package-manager-description">Manage Windows packages using winget</p>
+    </div>
+    <div>
+    </div>
+</div>
+
+<div class="plugin-warning">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span><strong>Disclaimer:</strong> Installing or uninstalling packages can modify your system. Always verify package sources and ensure you trust the publisher. <strong>Administrator privileges may be required</strong> for some operations.</span>
 </div>
 
 <div class="packages-container">
@@ -125,21 +134,111 @@
     <div id="status-message" class="status-message" style="display: none;"></div>
 </div>
 
-<!-- Progress Modal -->
+<!-- Enhanced Progress Modal -->
 <div id="packages-progress-modal" class="progress-modal" style="display: none;">
     <div class="progress-modal-content">
         <div class="progress-header">
-            <h3 id="packages-progress-title">Processing...</h3>
-        </div>
-        <div class="progress-body">
-            <div class="progress-bar-container">
-                <div id="packages-progress-bar" class="progress-bar"></div>
+            <div class="progress-header-left">
+                <div class="progress-icon" id="packages-progress-icon">
+                    <i class="fas fa-download"></i>
+                </div>
+                <div class="progress-title-section">
+                    <h3 id="packages-progress-title">Processing...</h3>
+                    <div id="packages-progress-subtitle" class="progress-subtitle"></div>
+                </div>
             </div>
-            <div id="packages-progress-text" class="progress-text">Initializing...</div>
-            <div id="packages-progress-output" class="progress-output"></div>
+            <div class="progress-header-actions">
+                <button id="packages-minimize-modal" class="modal-action-btn minimize-btn" title="Minimize">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button id="packages-cancel-operation" class="modal-action-btn cancel-btn" title="Cancel Operation">
+                    <i class="fas fa-stop"></i>
+                </button>
+                <button id="packages-close-modal" class="modal-action-btn close-btn" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
         </div>
+
+        <div class="progress-body">
+            <!-- Status Section -->
+            <div class="progress-status-section">
+                <div class="progress-status-item">
+                    <span class="status-label">Status:</span>
+                    <span id="packages-operation-status" class="status-value">Initializing...</span>
+                </div>
+                <div class="progress-status-item">
+                    <span class="status-label">Progress:</span>
+                    <span id="packages-progress-percentage" class="status-value">0%</span>
+                </div>
+                <div class="progress-status-item">
+                    <span class="status-label">Time Elapsed:</span>
+                    <span id="packages-time-elapsed" class="status-value">00:00</span>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-bar-section">
+                <div class="progress-bar-container">
+                    <div id="packages-progress-bar" class="progress-bar">
+                        <div class="progress-bar-fill"></div>
+                        <div class="progress-bar-glow"></div>
+                    </div>
+                </div>
+                <div id="packages-progress-text" class="progress-text">Initializing...</div>
+            </div>
+
+            <!-- Package Details -->
+            <div id="packages-current-package" class="current-package-section" style="display: none;">
+                <div class="package-info-card">
+                    <div class="package-icon-placeholder">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    <div class="package-details">
+                        <div id="packages-current-name" class="package-name">Package Name</div>
+                        <div id="packages-current-publisher" class="package-publisher">Publisher</div>
+                        <div id="packages-current-version" class="package-version">Version</div>
+                    </div>
+                    <div class="package-status">
+                        <div id="packages-current-status" class="status-badge">Processing</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Output Console -->
+            <div class="progress-output-section">
+                <div class="output-header">
+                    <span class="output-title">
+                        <i class="fas fa-terminal"></i>
+                        Console Output
+                    </span>
+                    <div class="output-controls">
+                        <button id="packages-clear-output" class="output-control-btn" title="Clear Output">
+                            <i class="fas fa-eraser"></i>
+                        </button>
+                        <button id="packages-copy-output" class="output-control-btn" title="Copy Output">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button id="packages-toggle-output" class="output-control-btn" title="Toggle Output">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="packages-progress-output" class="progress-output"></div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
         <div class="progress-actions">
-            <button id="packages-close-modal" class="btn btn-secondary">Close</button>
+            <button id="packages-retry-operation" class="btn btn-primary" style="display: none;">
+                <i class="fas fa-redo"></i> Retry
+            </button>
+            <button id="packages-view-logs" class="btn btn-secondary" style="display: none;">
+                <i class="fas fa-file-alt"></i> View Logs
+            </button>
+            <button id="packages-done-modal" class="btn btn-success" style="display: none;">
+                <i class="fas fa-check"></i> Done
+            </button>
         </div>
     </div>
 </div>

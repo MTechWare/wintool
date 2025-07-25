@@ -93,39 +93,7 @@
             </div>
         </div>
 
-        <!-- Network Health Card -->
-        <div class="metric-card network-card">
-            <div class="metric-header">
-                <h4><i class="fas fa-wifi"></i> Network</h4>
-                <span class="metric-status" id="network-status">Good</span>
-            </div>
-            <div class="metric-content">
-                <div class="network-activity">
-                    <div class="activity-item">
-                        <i class="fas fa-arrow-down"></i>
-                        <span id="network-download">0 KB/s</span>
-                    </div>
-                    <div class="activity-item">
-                        <i class="fas fa-arrow-up"></i>
-                        <span id="network-upload">0 KB/s</span>
-                    </div>
-                </div>
-                <div class="metric-details">
-                    <div class="detail-item">
-                        <span>Downloaded:</span>
-                        <span id="network-total-down">-- GB</span>
-                    </div>
-                    <div class="detail-item">
-                        <span>Uploaded:</span>
-                        <span id="network-total-up">-- GB</span>
-                    </div>
-                    <div class="detail-item">
-                        <span>Active:</span>
-                        <span id="network-interfaces">--</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+
     </div>
 
     <!-- Performance Charts -->
@@ -142,13 +110,13 @@
         <div class="alerts-header">
             <h4><i class="fas fa-bell"></i> System Alerts</h4>
             <div class="alerts-controls">
-                <button id="alert-settings-btn" class="alert-control-btn" title="Alert Settings">
+                <button id="alerts-settings-btn" class="alert-control-btn" title="Alert Settings">
                     <i class="fas fa-cog"></i>
                 </button>
-                <button id="clear-alerts-btn" class="alert-control-btn" title="Clear All Alerts">
+                <button id="alerts-clear-btn" class="alert-control-btn" title="Clear All Alerts">
                     <i class="fas fa-trash"></i>
                 </button>
-                <button id="alert-history-btn" class="alert-control-btn" title="Alert History">
+                <button id="alerts-history-btn" class="alert-control-btn" title="Alert History">
                     <i class="fas fa-history"></i>
                 </button>
             </div>
@@ -199,19 +167,7 @@
                 </div>
             </div>
 
-            <div class="settings-section">
-                <h4>Network Thresholds</h4>
-                <div class="threshold-group">
-                    <div class="threshold-item">
-                        <label for="network-warning">Warning (MB/s)</label>
-                        <input type="number" id="network-warning" min="1" max="1000" value="100">
-                    </div>
-                    <div class="threshold-item">
-                        <label for="network-critical">Critical (MB/s)</label>
-                        <input type="number" id="network-critical" min="1" max="1000" value="500">
-                    </div>
-                </div>
-            </div>
+
 
             <div class="settings-section">
                 <h4>Alert Preferences</h4>
