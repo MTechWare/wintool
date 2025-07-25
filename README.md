@@ -2,10 +2,10 @@
 
 <div align="center">
 
-![WinTool Version](https://img.shields.io/badge/WinTool-v0.2.4wb-orange?style=for-the-badge&logo=windows&logoColor=white)
-![Platform](https://img.shields.io/badge/Platform-Windows_11-blue?style=for-the-badge&logo=windows)
+![WinTool Version](https://img.shields.io/badge/WinTool-v0.2.5wb-orange?style=for-the-badge&logo=windows&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Windows_10/11-blue?style=for-the-badge&logo=windows)
+![Architecture](https://img.shields.io/badge/Architecture-x64%20|%20ia32%20|%20ARM64-green?style=for-the-badge&logo=cpu)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=for-the-badge)
-
 [![Plugin Marketplace](https://img.shields.io/badge/🔌_Plugin-Marketplace-4CAF50?style=for-the-badge&logo=puzzle-piece)](https://mtechware.github.io/plugins.html)
 [![Discord Community](https://img.shields.io/badge/💬_Join-Discord-7289DA?style=for-the-badge&logo=discord)](https://discord.gg/GSTEfkxhmD)
 
@@ -23,6 +23,7 @@ WinTool is a powerful and intuitive application for Windows system management, d
   - [Core Features](#-core-features)
   - [Extensibility and Customization](#-extensibility-and-customization)
 - [📦 Installation](#-installation)
+- [🏗️ System Requirements & Architecture Support](#️-system-requirements--architecture-support)
 - [🔌 Plugin System](#-plugin-system)
 - [🎯 Quick Start](#-quick-start)
 - [🧩 Modular Architecture](#-modular-architecture)
@@ -40,8 +41,8 @@ WinTool is packed with features designed for power users, system administrators,
 
 ### ✨ Core Features
 
-- **🔧 12+ System Management Tools**: A complete suite for system administration.
-- **💻 24+ Integrated System Utilities**: Access essential Windows utilities from a single interface.
+- **🔧 14 System Management Tools**: A complete suite for system administration.
+- **💻 35 Integrated System Utilities**: Access essential Windows utilities from a single interface.
 - **📊 Real-time System Monitoring**: Live data on hardware, performance, and system health.
 - **🔌 Extensible through Plugins**: Add new features and tools with a simple and secure plugin system.
 - **🎨 Customizable Interface**: Personalize the look and feel with themes, colors, and layout options.
@@ -51,18 +52,18 @@ WinTool is packed with features designed for power users, system administrators,
 | Tool                          | Description                                         | Key Capabilities                                            |
 | ----------------------------- | --------------------------------------------------- | ----------------------------------------------------------- |
 | **System Information**        | Real-time system monitoring                         | Hardware, performance, and system overview                  |
-| **System Utilities**          | Windows administrative tools                        | 24+ utilities across 6 categories                           |
+| **System Utilities**          | Windows administrative tools                        | 35 utilities across 8 categories                            |
 | **Services Manager**          | Windows service management                          | Start/stop/restart services, customizable quick access      |
 | **Package Manager**           | Software package management                         | Install and manage packages with winget integration         |
 | **Network Tools**             | Network monitoring and analysis                     | Interface status and connectivity information               |
 | **System Cleanup**            | Performance optimization                            | Clean temporary files and optimize system performance       |
-| **Disk Usage Analyzer**       | Disk space visualization                            | Interactive treemap of disk usage                           |
 | **Environment Variables**     | Environment variable management                     | Manage system and user environment variables                |
 | **Windows Unattend**          | Automated installation file creation                | Create and export `unattend.xml` files                      |
 | **Script Editor**             | Code editor with syntax highlighting                | A powerful and lightweight editor for various languages     |
 | **Event Viewer**              | Windows Event Log viewer                            | Browse and search system event logs                         |
-| **Process Manager**           | Process management                                  | View, search, and terminate running processes               |
-| **Windows Tweaks**            | Windows customization                               | Apply various tweaks to customize the Windows 10/11         |
+| **AppX Packages**             | Microsoft app management                            | Uninstall Microsoft apps and AppX packages                  |
+| **System Health**             | Real-time system monitoring                         | Live performance metrics and health alerts                  |
+| **Windows Tweaks**            | Windows customization                               | Apply various tweaks to customize Windows 10/11 (sourced from Win11Debloat, Optimizer & W11Boost) |
 | **Plugin Management**         | Plugin installation and management                  | Install, update, and manage plugins from a simple UI        |
 
 ---
@@ -72,7 +73,7 @@ WinTool is packed with features designed for power users, system administrators,
     - **Isolated Data Storage**: Each plugin has its own private storage, preventing data tampering.
     - **User-Mediated File Access**: Plugins must ask for user permission to read or write files.
 - **🎨 Customizable UI**: Tailor the look and feel of the application with themes, including light, dark, and custom color schemes. Adjust window opacity for a modern look.
-- ** portability Portable Mode**: No installation required. Run WinTool from a USB drive or any directory.
+- **🚀 Portable Mode**: No installation required. Run WinTool from a USB drive or any directory.
 - **⌨️ Keyboard-Driven Navigation**: Use a command palette (`Ctrl+F`) and keyboard shortcuts for quick access to every tool and feature.
 
 ---
@@ -104,6 +105,42 @@ npm install
 # Launch the application
 npm start
 ```
+
+---
+
+## 🏗️ System Requirements & Architecture Support
+
+WinTool provides comprehensive support for modern Windows architectures:
+
+### Supported Architectures
+- **x64 (64-bit)** - Primary architecture for modern Windows systems
+- **ia32 (32-bit)** - Legacy support for older systems
+- **ARM64** - Native support for Windows on ARM devices
+
+### System Requirements
+- **Operating System**: Windows 10 (version 1903+) or Windows 11
+- **Memory**: 4 GB RAM minimum, 8 GB recommended
+- **Storage**: 200 MB available disk space
+- **Architecture**: x64, ia32, or ARM64 processor
+
+### Build Targets
+WinTool can be built for multiple architectures:
+
+```bash
+# Build for specific architecture
+npm run dist:x64    # 64-bit Intel/AMD
+npm run dist:ia32   # 32-bit Intel/AMD
+npm run dist:arm64  # ARM64 processors
+
+# Build for all architectures
+npm run dist:all
+```
+
+### Architecture Detection
+WinTool automatically detects and optimizes for your system architecture:
+- **Performance Scaling**: Adjusts resource usage based on system capabilities
+- **Native Integration**: Uses architecture-specific Windows APIs when available
+- **Memory Management**: Optimizes memory allocation for 32-bit vs 64-bit systems
 
 ---
 
@@ -141,23 +178,7 @@ For developers, see the [Plugin Development Guide](https://github.com/MTechWare/
 WinTool is designed with a modular architecture, separating the core tools from community-driven plugins.
 
 - **Core Tools**: Located in the `src/tabs/` directory. Each tool is a self-contained module with its own HTML, CSS, JavaScript, and a `config.json` file for metadata.
-- **Plugin System**: Plugins are stored in the `\AppData\Local\MTechTool\Plugins` directory. Each plugin includes a `plugin.json` manifest, UI files (`index.html`, `styles.css`, `script.js`), and an optional `backend.js` for advanced functionality.
-
----
-
-## 🔧 Configuration
-
-WinTool stores its settings in the `%APPDATA%/WinTool/settings.json` file.
-
-You can customize:
-- **Theme and Colors**
-- **Window Transparency**
-- **Auto-refresh Intervals**
-- **Tab Layout**
-- **Keyboard Shortcuts**
-- **Startup Behavior**
-
----
+- **Plugin System**: Plugins are stored in the `%LOCALAPPDATA%\MTechTool\Plugins` directory. Each plugin includes a `plugin.json` manifest, UI files (`index.html`, `styles.css`, `script.js`), and an optional `backend.js` for advanced functionality.
 
 ## 🤝 Support
 
@@ -172,7 +193,7 @@ You can customize:
 - **[Electron](https://electronjs.org/)** - Cross-platform desktop framework
 - **[Node.js](https://nodejs.org/)** - JavaScript runtime
 - **[Font Awesome](https://fontawesome.com/)** - Icon library
-- **[Systeminformation](https://systeminformation.io/)** - System data collection
+- **Windows PowerShell/WMI** - Native Windows system data collection
 
 ---
 
@@ -187,7 +208,10 @@ This project is licensed under the GPL-3.0-or-later License.
 - The Electron community for their excellent documentation and support.
 - Our contributors and beta testers for their valuable feedback.
 - The open-source community for the libraries and tools that made this project possible.
-- ChrisTitusTech for the packages and some of the tweaks!
+- ChrisTitusTech for the Winget/Choco packages
+- **[Raphire](https://github.com/Raphire)** for [Win11Debloat](https://github.com/Raphire/Win11Debloat) - Many Windows tweaks are adapted from this excellent project (MIT License)
+- **[hellzerg](https://github.com/hellzerg)** for [Optimizer](https://github.com/hellzerg/optimizer) - Performance and system optimization tweaks (GPL-3.0 License)
+- **[felikcat](https://github.com/felikcat)** for [W11Boost](https://github.com/felikcat/W11Boost) - Advanced Windows 11 performance and privacy tweaks (AGPL-3.0 License)
 
 ---
 
