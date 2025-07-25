@@ -1,0 +1,491 @@
+/* Shared Tab Styles - System Health Dashboard Theme */
+/* Based on Tweaks tab styling for consistency across all tabs */
+
+/* Tab Header Styles - Matching System Health Dashboard */
+.tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.tab-header div:last-child {
+    display: flex;
+    gap: 10px;
+}
+
+.tab-header h1 {
+    margin: 0 0 5px 0;
+    color: var(--text-primary);
+    font-size: 1.8rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.tab-header h1 i {
+    color: var(--primary-color);
+    margin-right: 12px;
+    filter: drop-shadow(0 4px 8px rgba(var(--primary-rgb), 0.3));
+}
+
+.tab-header p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+/* Warning/Info Section - System Health Dashboard Theme */
+.plugin-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-left: 4px solid #f59e0b;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);
+}
+
+.plugin-warning::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.05) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.plugin-warning:hover::before {
+    opacity: 1;
+}
+
+.plugin-warning i {
+    color: #f59e0b;
+    font-size: 1.5rem;
+    margin-top: 2px;
+    position: relative;
+    z-index: 2;
+    filter: drop-shadow(0 2px 4px rgba(245, 158, 11, 0.3));
+}
+
+.plugin-warning span {
+    color: var(--text-primary);
+    font-size: 1rem;
+    line-height: 1.5;
+    position: relative;
+    z-index: 2;
+}
+
+.plugin-warning strong {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+/* Info variant for informational messages */
+.plugin-warning.info {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-left: 4px solid #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.plugin-warning.info::before {
+    background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
+}
+
+.plugin-warning.info i {
+    color: #3b82f6;
+    filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.3));
+}
+
+.plugin-warning.info strong {
+    color: #3b82f6;
+}
+
+/* Action Buttons in Header - System Health Dashboard Theme */
+.action-btn {
+    padding: 12px 16px;
+    font-size: 1rem;
+    background: linear-gradient(135deg, var(--background-card) 0%, rgba(26, 26, 28, 0.8) 100%);
+    border: 1px solid rgba(var(--primary-rgb), 0.1);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.1) 0%, rgba(var(--primary-rgb), 0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.action-btn:hover::before {
+    opacity: 1;
+}
+
+.action-btn:hover {
+    border-color: rgba(var(--primary-rgb), 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.action-btn i {
+    color: var(--primary-color);
+    position: relative;
+    z-index: 2;
+    filter: drop-shadow(0 2px 4px rgba(var(--primary-rgb), 0.3));
+    transition: transform 0.3s ease;
+}
+
+.action-btn:hover i {
+    transform: scale(1.1);
+}
+
+/* Card Styles - System Health Dashboard Theme */
+.plugin-card,
+.feature-card {
+    background: linear-gradient(135deg, var(--background-card) 0%, rgba(26, 26, 28, 0.8) 100%);
+    border: 1px solid rgba(var(--primary-rgb), 0.1);
+    border-radius: 16px;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    min-height: 200px;
+}
+
+.plugin-card::before,
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.05) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.plugin-card:hover::before,
+.feature-card:hover::before {
+    opacity: 1;
+}
+
+.plugin-card:hover,
+.feature-card:hover {
+    border-color: rgba(var(--primary-rgb), 0.3);
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+}
+
+.plugin-card h4,
+.feature-card h4 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+    position: relative;
+    z-index: 2;
+    letter-spacing: 0.3px;
+}
+
+.plugin-card i,
+.feature-card i {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 2;
+    filter: drop-shadow(0 4px 8px rgba(var(--primary-rgb), 0.3));
+}
+
+/* Button Styles - System Health Dashboard Theme */
+.btn {
+    padding: 12px 16px;
+    font-size: 1rem;
+    background: linear-gradient(135deg, var(--background-card) 0%, rgba(26, 26, 28, 0.8) 100%);
+    border: 1px solid rgba(var(--primary-rgb), 0.1);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.1) 0%, rgba(var(--primary-rgb), 0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.btn:hover::before {
+    opacity: 1;
+}
+
+.btn:hover {
+    border-color: rgba(var(--primary-rgb), 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.btn i {
+    color: var(--primary-color);
+    position: relative;
+    z-index: 2;
+    filter: drop-shadow(0 2px 4px rgba(var(--primary-rgb), 0.3));
+    transition: transform 0.3s ease;
+}
+
+.btn:hover i {
+    transform: scale(1.1);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, rgba(var(--primary-rgb), 0.8) 100%);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.9) 0%, rgba(var(--primary-rgb), 0.7) 100%);
+    box-shadow: 0 8px 20px rgba(var(--primary-rgb), 0.3);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    color: white;
+    border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+    box-shadow: 0 8px 20px rgba(108, 117, 125, 0.3);
+}
+
+/* Search Input - System Health Dashboard Theme */
+.search-container {
+    position: relative;
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 16px 12px 45px;
+    border: 1px solid rgba(var(--primary-rgb), 0.1);
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--background-card) 0%, rgba(26, 26, 28, 0.8) 100%);
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 2;
+}
+
+.search-input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: rgba(var(--primary-rgb), 0.3);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+}
+
+.search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    z-index: 3;
+    filter: drop-shadow(0 2px 4px rgba(var(--primary-rgb), 0.3));
+    transition: transform 0.3s ease;
+}
+
+.search-container:hover .search-icon {
+    transform: translateY(-50%) scale(1.1);
+}
+
+/* Modal Styles - System Health Dashboard Theme */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background: linear-gradient(135deg, var(--background-card) 0%, rgba(26, 26, 28, 0.95) 100%);
+    margin: 5% auto;
+    padding: 0;
+    border: 1px solid rgba(var(--primary-rgb), 0.2);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 800px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    position: relative;
+    overflow: hidden;
+}
+
+.modal-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.05) 0%, transparent 50%);
+    opacity: 1;
+}
+
+.modal-header {
+    padding: 24px 30px;
+    border-bottom: 1px solid rgba(var(--primary-rgb), 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.modal-close:hover {
+    color: var(--primary-color);
+    background: rgba(var(--primary-rgb), 0.1);
+    transform: scale(1.1);
+}
+
+.modal-body {
+    padding: 30px;
+    position: relative;
+    z-index: 2;
+}
+
+.modal-footer {
+    padding: 20px 30px;
+    border-top: 1px solid rgba(var(--primary-rgb), 0.1);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    position: relative;
+    z-index: 2;
+}
+
+/* Loading Styles */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    background: linear-gradient(135deg, var(--background-card) 0%, rgba(26, 26, 28, 0.8) 100%);
+    border: 1px solid rgba(var(--primary-rgb), 0.1);
+    border-radius: 16px;
+    margin: 2rem 0;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.loading-spinner {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    filter: drop-shadow(0 4px 8px rgba(var(--primary-rgb), 0.3));
+}
+
+/* Grid Layouts */
+.features-grid,
+.plugins-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 32px;
+    margin-bottom: 40px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .tab-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .tab-header div:last-child {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .features-grid,
+    .plugins-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 2% auto;
+    }
+}

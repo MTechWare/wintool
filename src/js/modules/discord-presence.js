@@ -24,10 +24,8 @@ function start() {
     if (rpc) {
         return;
     }
-    console.log('Starting Discord Rich Presence');
     rpc = new RPC.Client({ transport: 'ipc' });
     rpc.on('ready', () => {
-        console.log('Discord Rich Presence is ready');
         setActivity();
     });
     rpc.login({ clientId }).catch(err => {
@@ -40,7 +38,6 @@ function stop() {
     if (!rpc) {
         return;
     }
-    console.log('Stopping Discord Rich Presence');
     rpc.destroy();
     rpc = null;
 }

@@ -252,12 +252,7 @@ export class StartupOptimizer {
         return performanceSettings.includes(key);
     }
 
-    /**
-     * Get applied optimizations for debugging
-     */
-    getAppliedOptimizations() {
-        return Object.fromEntries(this.optimizations);
-    }
+
 
     /**
      * Reset optimizations (for testing)

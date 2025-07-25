@@ -570,24 +570,7 @@ function showPerformanceNotification(isEnabled) {
 
 
 
-// Debug function for performance mode (can be called from console)
-window.debugPerformanceMode = function () {
-    console.log('=== PERFORMANCE MODE DEBUG ===');
-    console.log('Current performance mode variable:', currentPerformanceMode);
 
-    const selectedCards = document.querySelectorAll('.mode-card.selected');
-    console.log('Selected mode cards:', selectedCards.length);
-    selectedCards.forEach(card => {
-        console.log('Selected card mode:', card.dataset.mode);
-    });
-
-    console.log('All mode cards:');
-    document.querySelectorAll('.mode-card').forEach(card => {
-        console.log(`- ${card.dataset.mode}: ${card.classList.contains('selected') ? 'SELECTED' : 'not selected'}`);
-    });
-    console.log('=== END PERFORMANCE DEBUG ===');
-    return currentPerformanceMode;
-};
 
 // Helper function to reset performance customization flag (can be called from console)
 window.resetPerformanceCustomization = async function () {

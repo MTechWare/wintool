@@ -21,7 +21,6 @@ import './utils/batch-checker.js';
 
 async function initialBoot() {
     const startTime = performance.now();
-    console.log('🚀 WinTool starting critical boot...');
     showSplashScreen();
 
     const initStart = performance.now();
@@ -30,7 +29,6 @@ async function initialBoot() {
     initSystemTrayListeners();
     initContextMenu();
     initFpsCounter();
-    console.log(`⚡ Critical initialization completed in ${(performance.now() - initStart).toFixed(2)}ms`);
 
     // Try to fetch help modal content, fallback to cached version if offline
     const helpModalContainer = document.getElementById('help-modal-container');
@@ -53,29 +51,19 @@ async function initialBoot() {
 }
 
 async function deferredBoot() {
-    const deferredStart = performance.now();
-    console.log('🔄 WinTool starting deferred boot...');
-
     // Apply startup optimizations first
-    const optimizerStart = performance.now();
     await initStartupOptimizer();
-    console.log(`🚀 Startup optimizer applied in ${(performance.now() - optimizerStart).toFixed(2)}ms`);
 
     // Initialize systems that can be loaded in the background.
-    const systemsStart = performance.now();
     initTabSystem();
     initGlobalKeyboardShortcuts();
     initPluginInstallButton();
     initOpenPluginsDirButton();
-    console.log(`⚙️ Background systems initialized in ${(performance.now() - systemsStart).toFixed(2)}ms`);
 
     updateSplashProgress('Preparing application...', 20);
-    const settingsStart = performance.now();
     await loadAndApplyStartupSettings();
-    console.log(`⚙️ Settings loaded in ${(performance.now() - settingsStart).toFixed(2)}ms`);
 
     await continueNormalStartup(); // This function already handles the rest of the loading process.
-    console.log(`🎯 Total deferred boot time: ${(performance.now() - deferredStart).toFixed(2)}ms`);
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
@@ -91,9 +79,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 
 async function continueNormalStartup() {
-    const startupStart = performance.now();
     try {
-        console.log('🏁 Starting normal startup sequence...');
         updateSplashProgress('Setting up workspace...', 40);
 
         
@@ -111,7 +97,6 @@ async function continueNormalStartup() {
             // Configure sequential loading delay (can be customized via settings)
             // Reduced default from 100ms to 25ms for faster startup - system auto-detection will optimize further
             const sequentialLoadDelay = await window.electronAPI.getSetting('sequentialLoadDelay', 25);
-            console.log(`📊 Using sequential load delay: ${sequentialLoadDelay}ms`);
             newTabLoader.setSequentialLoadDelay(sequentialLoadDelay);
 
             // Configure lazy loading preference (default: enabled)
@@ -119,46 +104,25 @@ async function continueNormalStartup() {
             newTabLoader.setLazyLoadingEnabled(enableLazyLoading);
 
             newTabLoader.setCompleteCallback(async (loadedTabs) => {
-                const callbackStart = performance.now();
-                console.log('🎯 Tab loading completed, running completion callback...');
-
-                const tabOrderStart = performance.now();
                 await loadTabOrder();
-                console.log(`📋 Tab order loaded in ${(performance.now() - tabOrderStart).toFixed(2)}ms`);
-
-                const hiddenTabsStart = performance.now();
                 await applyHiddenTabs();
-                console.log(`👁️ Hidden tabs applied in ${(performance.now() - hiddenTabsStart).toFixed(2)}ms`);
-
-                const pluginCardsStart = performance.now();
                 renderPluginCards();
-                console.log(`🔌 Plugin cards rendered in ${(performance.now() - pluginCardsStart).toFixed(2)}ms`);
-
-                const restoreTabStart = performance.now();
                 await restoreLastActiveTab();
-                console.log(`🔄 Last active tab restored in ${(performance.now() - restoreTabStart).toFixed(2)}ms`);
 
-
-                const commandsStart = performance.now();
                 registerDefaultCommands(loadedTabs);
-                console.log(`⌨️ Default commands registered in ${(performance.now() - commandsStart).toFixed(2)}ms`);
 
-                // Finish startup phase early to allow more PowerShell processes
-                const finishPhaseStart = performance.now();
-                console.log('🏁 Finishing startup phase early after tab loading...');
+                // Finish startup phase (compatibility with SimpleCommandExecutor)
                 if (window.electronAPI && window.electronAPI.finishStartupPhase) {
                     await window.electronAPI.finishStartupPhase();
                 }
-                console.log(`✅ Startup phase finished in ${(performance.now() - finishPhaseStart).toFixed(2)}ms`);
 
 
-                const servicesStart = performance.now();
+                // Load services for command palette
                 try {
                     const services = await window.electronAPI.getServices();
                     registerServiceControlCommands(services);
                     // Cache services for offline use
                     localStorage.setItem('cachedServices', JSON.stringify(services));
-                    console.log(`🔧 Services loaded in ${(performance.now() - servicesStart).toFixed(2)}ms`);
                 } catch (error) {
                     console.error("Failed to fetch services:", error);
                     // Try to use cached services if available
@@ -167,46 +131,15 @@ async function continueNormalStartup() {
                         showNotification('Using cached service commands (offline mode)', 'warning');
                         registerServiceControlCommands(JSON.parse(cached));
                     }
-                    console.log(`⚠️ Services loading failed in ${(performance.now() - servicesStart).toFixed(2)}ms`);
                 }
 
-                const paletteStart = performance.now();
                 initCommandPalette();
-                console.log(`🎨 Command palette initialized in ${(performance.now() - paletteStart).toFixed(2)}ms`);
-
-                const splashEnd = performance.now();
                 hideSplashScreen();
-                console.log(`🎯 Total completion callback time: ${(performance.now() - callbackStart).toFixed(2)}ms`);
 
-                // Calculate and display comprehensive startup performance summary
-                const totalStartupTime = performance.now() - window.startupTimes.domContentLoaded;
-                console.log(`🚀 TOTAL STARTUP TIME: ${totalStartupTime.toFixed(2)}ms`);
 
-                // Store final timing for potential analysis
-                window.startupTimes.total = totalStartupTime;
-                window.startupTimes.phases.completion = performance.now() - callbackStart;
-
-                // Performance analysis and recommendations
-                const recommendations = getStartupRecommendations(totalStartupTime);
-                if (recommendations.length > 0) {
-                    console.log('💡 Startup Performance Recommendations:');
-                    recommendations.forEach(rec => {
-                        console.log(`${rec.type === 'critical' ? '🔴' : rec.type === 'warning' ? '🟡' : '🔵'} ${rec.message}`);
-                    });
-                }
-
-                if (totalStartupTime > 15000) {
-                    console.warn(`⚠️ Startup time (${totalStartupTime.toFixed(2)}ms) is slower than expected. Consider enabling performance optimizations.`);
-                } else if (totalStartupTime < 5000) {
-                    console.log(`🎉 Excellent startup performance! (${totalStartupTime.toFixed(2)}ms)`);
-                } else {
-                    console.log(`✅ Good startup performance (${totalStartupTime.toFixed(2)}ms)`);
-                }
             });
 
-            const tabLoaderStart = performance.now();
             await newTabLoader.init(DEFAULT_TAB_ORDER);
-            console.log(`📂 Tab loader initialization completed in ${(performance.now() - tabLoaderStart).toFixed(2)}ms`);
         } else {
             
             await restoreLastActiveTab();
@@ -219,7 +152,6 @@ async function continueNormalStartup() {
             setTimeout(hideSplashScreen, 500);
         }
 
-        console.log('WinTool startup complete');
     } catch (error) {
         console.error('Error during normal startup:', error);
         hideSplashScreen();
@@ -241,72 +173,7 @@ window.quitApplication = quitApplication;
 window.showSplashScreen = showSplashScreen;
 window.updateSplashProgress = updateSplashProgress;
 
-// Enhanced logging demonstration function
-window.demonstrateEnhancedLogging = function() {
-    const sources = ['SystemInfo', 'NetworkManager', 'PackageManager', 'ServiceController', 'SecurityModule'];
-    const messages = [
-        'System initialization completed successfully',
-        'Network interface eth0 is now active',
-        'Package installation completed',
-        'Service started successfully',
-        'Security scan completed - no threats detected',
-        'Memory usage is within normal parameters',
-        'Disk space check completed',
-        'User authentication successful',
-        'Configuration file loaded',
-        'Background task completed'
-    ];
 
-    const warningMessages = [
-        'High memory usage detected',
-        'Network latency is above normal',
-        'Service took longer than expected to start',
-        'Configuration file has deprecated settings',
-        'Disk space is running low'
-    ];
-
-    const errorMessages = [
-        'Failed to connect to remote server',
-        'Service failed to start',
-        'Configuration file is corrupted',
-        'Network interface is down',
-        'Authentication failed'
-    ];
-
-    let logCount = 0;
-    const maxLogs = 50;
-
-    const logInterval = setInterval(() => {
-        if (logCount >= maxLogs) {
-            clearInterval(logInterval);
-            window.electronAPI.logSuccess('Enhanced logging demonstration completed', 'LogDemo');
-            return;
-        }
-
-        const source = sources[Math.floor(Math.random() * sources.length)];
-        const rand = Math.random();
-
-        if (rand < 0.1) {
-            // 10% chance of error
-            const message = errorMessages[Math.floor(Math.random() * errorMessages.length)];
-            window.electronAPI.logError(message, source);
-        } else if (rand < 0.25) {
-            // 15% chance of warning
-            const message = warningMessages[Math.floor(Math.random() * warningMessages.length)];
-            window.electronAPI.logWarn(message, source);
-        } else if (rand < 0.35) {
-            // 10% chance of debug
-            const message = `Debug: Processing ${Math.floor(Math.random() * 100)} items`;
-            window.electronAPI.logDebug(message, source);
-        } else {
-            // 65% chance of info
-            const message = messages[Math.floor(Math.random() * messages.length)];
-            window.electronAPI.logInfo(message, source);
-        }
-
-        logCount++;
-    }, 200); // Generate a log every 200ms
-};
 window.hideSplashScreen = hideSplashScreen;
 window.refreshCurrentTab = refreshCurrentTab;
 window.refreshSystemInformation = refreshSystemInformation;
@@ -330,5 +197,5 @@ import('./modules/offline-status.js').then(module => {
     module.initOfflineStatusIndicator();
 });
 
-console.log('WinTool app.js loaded');
+
 

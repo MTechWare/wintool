@@ -1,0 +1,158 @@
+/* Universal Tab Header CSS - Minimal, Always Works */
+/* This file provides essential tab header styling that works regardless of theme loading */
+
+/* Essential CSS Variables - Hardcoded fallbacks */
+.tab-header {
+    --fallback-primary: #ff6b35;
+    --fallback-text-primary: #ffffff;
+    --fallback-text-secondary: #b0b0b0;
+    --fallback-background-card: #3a3a3c;
+    --fallback-border: #444444;
+    --fallback-hover: #4f4f52;
+}
+
+/* Tab Header Layout - Critical Styles */
+.tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.tab-header > div:first-child {
+    flex: 1;
+    min-width: 0;
+}
+
+.tab-header > div:last-child {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+/* Tab Header Text */
+.tab-header h1 {
+    margin: 0 0 5px 0;
+    color: var(--text-primary, var(--fallback-text-primary));
+    font-size: 1.8rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.tab-header h1 i {
+    color: var(--primary-color, var(--fallback-primary));
+    margin-right: 12px;
+    font-size: 1.8rem;
+    flex-shrink: 0;
+}
+
+.tab-header p {
+    margin: 0;
+    color: var(--text-secondary, var(--fallback-text-secondary));
+    font-size: 1.1rem;
+    line-height: 1.5;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Action Buttons */
+.action-btn {
+    padding: 12px 16px;
+    font-size: 1rem;
+    background: var(--background-card, var(--fallback-background-card));
+    border: 1px solid var(--border-color, var(--fallback-border));
+    color: var(--text-primary, var(--fallback-text-primary));
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.action-btn:hover {
+    border-color: var(--primary-color, var(--fallback-primary));
+    background: var(--hover-color, var(--fallback-hover));
+}
+
+.action-btn i {
+    color: var(--primary-color, var(--fallback-primary));
+    font-size: 1rem;
+}
+
+/* Plugin Warning */
+.plugin-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-left: 4px solid #f59e0b;
+    border-radius: 12px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.plugin-warning i {
+    color: #f59e0b;
+    font-size: 1.5rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.plugin-warning span {
+    color: var(--text-primary, var(--fallback-text-primary));
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.plugin-warning strong {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+.plugin-warning.info {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-left: 4px solid #3b82f6;
+}
+
+.plugin-warning.info i {
+    color: #3b82f6;
+}
+
+.plugin-warning.info strong {
+    color: #3b82f6;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .tab-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .tab-header > div:last-child {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .tab-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .tab-header p {
+        font-size: 1rem;
+    }
+}
