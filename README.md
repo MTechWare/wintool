@@ -111,35 +111,10 @@ npm start
 
 WinTool provides comprehensive support for modern Windows architectures:
 
-### Supported Architectures
-- **x64 (64-bit)** - Primary architecture for modern Windows systems
-- **ia32 (32-bit)** - Legacy support for older systems
-- **ARM64** - Native support for Windows on ARM devices
-
 ### System Requirements
 - **Operating System**: Windows 10 (version 1903+) or Windows 11
 - **Memory**: 4 GB RAM minimum, 8 GB recommended
-- **Storage**: 200 MB available disk space
-- **Architecture**: x64, ia32, or ARM64 processor
-
-### Build Targets
-WinTool can be built for multiple architectures:
-
-```bash
-# Build for specific architecture
-npm run dist:x64    # 64-bit Intel/AMD
-npm run dist:ia32   # 32-bit Intel/AMD
-npm run dist:arm64  # ARM64 processors
-
-# Build for all architectures
-npm run dist:all
-```
-
-### Architecture Detection
-WinTool automatically detects and optimizes for your system architecture:
-- **Performance Scaling**: Adjusts resource usage based on system capabilities
-- **Native Integration**: Uses architecture-specific Windows APIs when available
-- **Memory Management**: Optimizes memory allocation for 32-bit vs 64-bit systems
+- **Storage**: 100 MB available disk space
 
 ---
 
