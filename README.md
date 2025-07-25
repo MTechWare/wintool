@@ -4,7 +4,6 @@
 
 ![WinTool Version](https://img.shields.io/badge/WinTool-v0.2.5wb-orange?style=for-the-badge&logo=windows&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows_10/11-blue?style=for-the-badge&logo=windows)
-![Architecture](https://img.shields.io/badge/Architecture-x64%20|%20ia32%20|%20ARM64-green?style=for-the-badge&logo=cpu)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=for-the-badge)
 [![Plugin Marketplace](https://img.shields.io/badge/🔌_Plugin-Marketplace-4CAF50?style=for-the-badge&logo=puzzle-piece)](https://mtechware.github.io/plugins.html)
 [![Discord Community](https://img.shields.io/badge/💬_Join-Discord-7289DA?style=for-the-badge&logo=discord)](https://discord.gg/GSTEfkxhmD)
