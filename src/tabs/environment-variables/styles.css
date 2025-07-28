@@ -1,5 +1,5 @@
 /* Environment Variables Tab Styles - System Health Dashboard Theme */
-@import url('../../css/universal-tab-header.css');
+/* Universal tab header styles are now consolidated in main styles.css */
 
 .env-vars-container {
     padding: 30px;
@@ -32,33 +32,22 @@
     flex-wrap: wrap;
 }
 
+/* Search styling now uses universal styles from main CSS */
 .search-container {
-    position: relative;
+    /* Uses universal search container styles */
 }
 
 .search-input {
-    padding: 8px 35px 8px 12px;
-    border: 1px solid #444;
-    border-radius: 6px;
-    background: #2a2a2a;
-    color: #fff;
-    width: 200px;
-    font-size: 14px;
+    /* Uses universal search input styles */
+    width: 200px; /* Keep specific width for this tab */
 }
 
 .search-input:focus {
-    outline: none;
-    border-color: var(--primary-color, #ff9800);
-    box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2);
+    /* Uses universal focus styles */
 }
 
 .search-icon {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #888;
-    pointer-events: none;
+    /* Uses universal search icon styles */
 }
 
 .filter-select {

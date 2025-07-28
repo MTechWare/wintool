@@ -1,5 +1,5 @@
 /* System Utilities Tab Styles - System Health Dashboard Theme */
-@import url('../../css/universal-tab-header.css');
+/* Universal tab header styles are now consolidated in main styles.css */
 
 .system-utilities-content {
     max-width: 1200px;
@@ -12,39 +12,26 @@
     margin-bottom: 30px;
 }
 
+/* Search styling now uses universal styles from main CSS */
 .search-container {
-    position: relative;
-    margin-bottom: 15px;
+    /* Uses universal search container styles */
+    margin-bottom: 15px; /* Keep specific margin for this tab */
 }
 
 .search-input {
-    width: 100%;
-    padding: 12px 45px 12px 15px;
-    background: var(--background-card);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    color: var(--text-primary);
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.3s ease;
+    /* Uses universal search input styles */
 }
 
 .search-input:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+    /* Uses universal focus styles */
 }
 
 .search-input::placeholder {
-    color: var(--text-secondary);
+    /* Uses universal placeholder styles */
 }
 
 .search-icon {
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-secondary);
-    pointer-events: none;
+    /* Uses universal search icon styles */
 }
 
 .utilities-info {

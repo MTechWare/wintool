@@ -18,19 +18,19 @@
  * For antivirus whitelist instructions, see ANTIVIRUS_WHITELIST.md
  */
 
-const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, dialog, shell, globalShortcut, Notification } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, dialog, shell, globalShortcut, Notification } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs').promises;
 const os = require('os');
 const windowsSysInfo = require('./utils/windows-sysinfo');
-const extract = require('extract-zip');
-const axios = require('axios');
-const crypto = require('crypto');
 const discordPresence = require('./js/modules/discord-presence');
 const SimpleCommandExecutor = require('./utils/simple-command-executor');
-
-const verifiedHashes = {};
+const WindowManager = require('./modules/window-manager');
+const SettingsManager = require('./modules/settings-manager');
+const PluginManager = require('./modules/plugin-manager');
+const SystemTray = require('./modules/system-tray');
+const LoggingManager = require('./modules/logging-manager');
 
 // Command execution using SimpleCommandExecutor for better reliability
 
@@ -48,189 +48,56 @@ const processPool = new SimpleCommandExecutor();
 // Performance optimization based on system capabilities
 async function applyPerformanceOptimizations() {
     try {
-        const settingsStore = await getStore();
-        if (!settingsStore) return;
-
-        // Check if user has customized performance settings
-        const hasCustomizedSettings = settingsStore.get('hasCustomizedPerformanceSettings', false);
-
-        if (hasCustomizedSettings) {
-
-            return;
-        }
-
         // Get system capabilities using simple detection
         const systemCapabilities = await processPool.detectSystemCapabilities();
 
-        if (systemCapabilities === 'low-end') {
-            // Enable performance optimizations for low-end systems
-            settingsStore.set('fastSystemInfo', true);
-            settingsStore.set('performanceMode', 'low-end');
-            settingsStore.set('cacheSystemInfo', true);
-            settingsStore.set('enableDiscordRpc', false); // Disable Discord RPC for performance
-            settingsStore.set('clearPluginCache', true); // Clear plugin cache to save memory
-        } else if (systemCapabilities === 'high-end') {
-            // Enable full features for high-end systems
-            settingsStore.set('fastSystemInfo', false);
-            settingsStore.set('performanceMode', 'high-end');
-            settingsStore.set('cacheSystemInfo', true);
-            settingsStore.set('enableDiscordRpc', true);
-        } else {
-            // Balanced settings for mid-range systems
-            settingsStore.set('performanceMode', 'balanced');
-            settingsStore.set('cacheSystemInfo', true);
-        }
-
-
-
+        // Use SettingsManager to apply optimizations
+        await settingsManager.applyPerformanceOptimizations(systemCapabilities);
     } catch (error) {
         console.error('Error applying performance optimizations:', error);
     }
 }
 
-// Fetch verified plugins list from GitHub only
-async function updateVerifiedPluginsList() {
-    try {
-        const response = await axios.get('https://raw.githubusercontent.com/MTechWare/wintool/refs/heads/main/src/config/verified-plugins.json', {
-            timeout: 10000, // 10 second timeout
-            headers: {
-                'Cache-Control': 'no-cache',
-                'User-Agent': 'WinTool/1.0'
-            }
-        });
+// Plugin-related functions are now handled by PluginManager
 
-        if (response.data && response.data.verified_hashes) {
-            // Clear existing hashes and replace with GitHub data
-            Object.keys(verifiedHashes).forEach(key => delete verifiedHashes[key]);
-            Object.assign(verifiedHashes, response.data.verified_hashes);
-        } else {
-            throw new Error('Invalid response format from GitHub');
-        }
-    } catch (error) {
-        console.error('Failed to fetch verified plugins list from GitHub:', error.message);
-        // Clear any existing hashes since we can't verify them
-        Object.keys(verifiedHashes).forEach(key => delete verifiedHashes[key]);
-    }
-}
+// Settings manager instance
+const settingsManager = new SettingsManager();
 
-// Initialize verified plugins list
-updateVerifiedPluginsList();
+// Window manager instance
+const windowManager = new WindowManager();
 
-// Refresh verified plugins list periodically (every 30 minutes)
-setInterval(updateVerifiedPluginsList, 30 * 60 * 1000);
+// Plugin manager instance
+const pluginManager = new PluginManager();
 
-// Initialize store for settings
-let store;
+// System tray instance
+const systemTray = new SystemTray();
 
-// Main window reference
-let mainWindow = null;
-let logViewerWindow = null;
-
-// System tray reference
-let tray = null;
-
-let windowCreationAttempts = 0;
-const MAX_WINDOW_CREATION_ATTEMPTS = 3;
+// Logging manager instance
+const loggingManager = new LoggingManager();
 
 // --- Helper Functions ---
 
-/**
- * Gets the correct, user-writable path for storing plugins.
- * This is crucial for when the app is installed in a read-only location.
- */
-function getPluginsPath() {
-    let basePath;
-
-    // The user specifically requested %LOCALAPPDATA% on Windows.
-    // The most direct and reliable way to get this is via the environment variable.
-    if (process.platform === 'win32' && process.env.LOCALAPPDATA) {
-        basePath = process.env.LOCALAPPDATA;
-    } else {
-        // For other platforms (macOS, Linux) or if the environment variable is somehow
-        // missing on Windows, fall back to Electron's standard 'userData' directory.
-        // This is a robust, cross-platform default.
-        basePath = app.getPath('userData');
-
-    }
-    
-    // The user specified creating an "MTechTool" folder for plugins.
-    const pluginsPath = path.join(basePath, 'MTechTool', 'Plugins');
-    
-    return pluginsPath;
-}
+// getPluginsPath function is now handled by PluginManager
 
 /**
- * Ensures the user-writable plugins directory exists on startup.
+ * Ensures the user-writable directories exist on startup.
  */
-async function ensurePluginsPathExists() {
-    const pluginsPath = getPluginsPath();
+async function ensureAppDirectoriesExist() {
     try {
-        // recursive: true prevents errors if the directory already exists.
-        await fs.mkdir(pluginsPath, { recursive: true });
+        // Ensure the main MTechWare\WinTool directory exists
+        const appDataPath = getAppDataPath();
+        await fs.mkdir(appDataPath, { recursive: true });
+
+        // Ensure the plugins directory exists
+        await pluginManager.ensurePluginsDirectoryExists();
 
     } catch (error) {
-        console.error('Fatal: Failed to create user plugin directory:', error);
-        dialog.showErrorBox('Initialization Error', `Failed to create required plugin directory at ${pluginsPath}. Please check permissions.`);
+        console.error('Fatal: Failed to create user directories:', error);
+        dialog.showErrorBox('Initialization Error', `Failed to create required directories. Please check permissions.`);
     }
 }
 
-/**
- * Scans both development and user plugin directories and returns a map
- * of unique plugin IDs to their full paths. User plugins override dev plugins.
- * This provides a robust way to handle plugins in both dev and prod environments.
- */
-async function getPluginMap() {
-    // For local development, we check the built-in plugins folder.
-    const devPluginsPath = path.join(__dirname, 'plugins');
-    // This is the primary, user-writable location for installed plugins.
-    const userPluginsPath = getPluginsPath();
-    const pluginMap = new Map();
-
-    const readFoldersFromDir = async (dirPath) => {
-        try {
-            const items = await fs.readdir(dirPath);
-            const directories = [];
-            for (const item of items) {
-                const itemPath = path.join(dirPath, item);
-                try {
-                    if ((await fs.stat(itemPath)).isDirectory()) {
-                        directories.push({ name: item, path: itemPath });
-                    }
-                } catch (e) { /* ignore files and other non-directory items */ }
-            }
-            return directories;
-        } catch (error) {
-            // It's normal for a directory to not exist (e.g., dev path in prod), so we don't log an error.
-            return [];
-        }
-    };
-
-    // Load development plugins first.
-    const devPlugins = await readFoldersFromDir(devPluginsPath);
-    for (const plugin of devPlugins) {
-        const manifestPath = path.join(plugin.path, 'plugin.json');
-        try {
-            const manifestData = await fs.readFile(manifestPath, 'utf8');
-            const manifest = JSON.parse(manifestData);
-            if (manifest.id) {
-                pluginMap.set(manifest.id, plugin.path);
-            } else {
-                pluginMap.set(plugin.name, plugin.path);
-            }
-        } catch (e) {
-            pluginMap.set(plugin.name, plugin.path);
-        }
-    }
-
-    // Load user-installed plugins. If a name conflicts, this will overwrite
-    // the development version, allowing users to override built-in plugins.
-    const userPlugins = await readFoldersFromDir(userPluginsPath);
-    for (const plugin of userPlugins) {
-        pluginMap.set(plugin.name, plugin.path);
-    }
-
-    return pluginMap;
-}
+// getPluginMap function is now handled by PluginManager
 
 // Rate limiting for security
 const rateLimiter = new Map();
@@ -265,570 +132,66 @@ function checkRateLimit(operation) {
 // Set app name
 app.setName('WinTool');
 
-// Security logging using enhanced logger
-function logSecurityEvent(event, details) {
-    if (global.logger) {
-        global.logger.logSecurity(event, details);
+// Disable unused Chromium features for smaller memory footprint
+app.commandLine.appendSwitch('--disable-features', 'VizDisplayCompositor,UseSurfaceLayerForVideo');
+app.commandLine.appendSwitch('--disable-background-timer-throttling');
+app.commandLine.appendSwitch('--disable-renderer-backgrounding');
+app.commandLine.appendSwitch('--disable-backgrounding-occluded-windows');
+app.commandLine.appendSwitch('--disable-ipc-flooding-protection');
+// Disable GPU features that aren't needed for a system tool
+app.commandLine.appendSwitch('--disable-gpu-sandbox');
+app.commandLine.appendSwitch('--disable-software-rasterizer');
+// Memory optimizations
+app.commandLine.appendSwitch('--memory-pressure-off');
+app.commandLine.appendSwitch('--max_old_space_size=512'); // Limit V8 heap size
+
+// Security logging is now handled by LoggingManager
+
+// Enhanced logging system is now handled by LoggingManager
+
+
+
+/**
+ * Gets the correct, user-writable path for storing app data.
+ * This ensures consistency with the plugin storage location.
+ */
+function getAppDataPath() {
+    let basePath;
+
+    // Use the same logic as getPluginsPath() for consistency
+    if (process.platform === 'win32' && process.env.LOCALAPPDATA) {
+        basePath = process.env.LOCALAPPDATA;
+    } else {
+        // For other platforms or if the environment variable is missing,
+        // fall back to Electron's standard 'userData' directory.
+        basePath = app.getPath('userData');
     }
+
+    // Use MTechWare\WinTool folder for all app data
+    const appDataPath = path.join(basePath, 'MTechWare', 'WinTool');
+
+    return appDataPath;
 }
-
-// Enhanced logging system for the log viewer
-class EnhancedLogger {
-    constructor() {
-        this.originalLog = console.log;
-        this.originalWarn = console.warn;
-        this.originalError = console.error;
-        this.originalDebug = console.debug;
-        this.originalTrace = console.trace;
-
-        this.setupConsoleOverrides();
-    }
-
-    setupConsoleOverrides() {
-        // Override console.log
-        console.log = (...args) => {
-            this.originalLog.apply(console, args);
-            this.sendToLogViewer('info', args.join(' '), 'System');
-        };
-
-        // Override console.warn
-        console.warn = (...args) => {
-            this.originalWarn.apply(console, args);
-            this.sendToLogViewer('warn', args.join(' '), 'System');
-        };
-
-        // Override console.error
-        console.error = (...args) => {
-            this.originalError.apply(console, args);
-            this.sendToLogViewer('error', args.join(' '), 'System');
-        };
-
-        // Override console.debug
-        console.debug = (...args) => {
-            this.originalDebug.apply(console, args);
-            this.sendToLogViewer('debug', args.join(' '), 'System');
-        };
-
-        // Override console.trace
-        console.trace = (...args) => {
-            this.originalTrace.apply(console, args);
-            this.sendToLogViewer('trace', args.join(' '), 'System');
-        };
-    }
-
-    sendToLogViewer(level, message, source = 'System') {
-        if (logViewerWindow && !logViewerWindow.isDestroyed()) {
-            logViewerWindow.webContents.send('log-message', level, message, source);
-        }
-    }
-
-    // Custom logging methods with source tracking
-    logInfo(message, source = 'System') {
-        this.originalLog(`[INFO] ${source}: ${message}`);
-        this.sendToLogViewer('info', message, source);
-    }
-
-    logWarn(message, source = 'System') {
-        this.originalWarn(`[WARN] ${source}: ${message}`);
-        this.sendToLogViewer('warn', message, source);
-    }
-
-    logError(message, source = 'System') {
-        this.originalError(`[ERROR] ${source}: ${message}`);
-        this.sendToLogViewer('error', message, source);
-    }
-
-    logDebug(message, source = 'System') {
-        this.originalDebug(`[DEBUG] ${source}: ${message}`);
-        this.sendToLogViewer('debug', message, source);
-    }
-
-    logSuccess(message, source = 'System') {
-        this.originalLog(`[SUCCESS] ${source}: ${message}`);
-        this.sendToLogViewer('success', message, source);
-    }
-
-    logTrace(message, source = 'System') {
-        this.originalTrace(`[TRACE] ${source}: ${message}`);
-        this.sendToLogViewer('trace', message, source);
-    }
-
-    logSecurity(event, details, source = 'Security') {
-        const timestamp = new Date().toISOString();
-        const message = `${event} - ${JSON.stringify(details)}`;
-        this.originalLog(`[SECURITY] ${timestamp}: ${message}`);
-        this.sendToLogViewer('warn', message, source);
-    }
-}
-
-// Initialize the enhanced logger
-const enhancedLogger = new EnhancedLogger();
-
-// Export logger functions for use throughout the application
-global.logger = enhancedLogger;
-
-
 
 // Load store on demand
-async function getStore() {
-    if (!store) {
-        try {
-            const Store = await import('electron-store');
-            store = new Store.default();
 
-        } catch (error) {
-            console.error('Failed to load electron-store:', error);
-            return null;
-        }
-    }
-    return store;
-}
 
-/**
- * Create performance settings window
- */
-function createPerformanceSettingsWindow() {
-    const performanceWindow = new BrowserWindow({
-        width: 900,
-        height: 700,
-        title: 'Performance Settings - WinTool',
-        webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
-            nodeIntegration: false,
-            contextIsolation: true,
-        },
-        parent: mainWindow,
-        modal: true,
-        resizable: true,
-        minimizable: false,
-        maximizable: false,
-    });
 
-    performanceWindow.loadFile(path.join(__dirname, 'performance-settings.html'));
 
-    performanceWindow.on('closed', () => {
-        // Window closed
-    });
 
-    return performanceWindow;
-}
 
-/**
- * Create the main application window
- */
-function createLogViewerWindow() {
-    if (logViewerWindow) {
-        logViewerWindow.focus();
-        return;
-    }
 
-    logViewerWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
-        title: 'Log Viewer',
-        webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
-            nodeIntegration: false,
-            contextIsolation: true,
-        },
-    });
 
-    logViewerWindow.loadFile(path.join(__dirname, 'log-viewer.html'));
+// System tray creation is now handled by SystemTray module
 
-    logViewerWindow.webContents.on('did-finish-load', async () => {
-        const settingsStore = await getStore();
-        if (settingsStore) {
-            const themeSettings = {
-                theme: settingsStore.get('theme', 'classic-dark'),
-                primaryColor: settingsStore.get('primaryColor', '#ff9800'),
-                customTheme: settingsStore.get('customTheme', {}),
-                rainbowMode: settingsStore.get('rainbowMode', false)
-            };
-            logViewerWindow.webContents.send('theme-data', themeSettings);
-        }
-    });
 
-    logViewerWindow.on('closed', () => {
-        logViewerWindow = null;
-    });
-}
 
-async function createWindow() {
-    windowCreationAttempts++;
 
-    try {
-        // Get screen dimensions for responsive sizing
-        const primaryDisplay = screen.getPrimaryDisplay();
-        const {
-            width: screenWidth,
-            height: screenHeight
-        } = primaryDisplay.workAreaSize;
 
-        // Validate screen dimensions
-        if (screenWidth < 800 || screenHeight < 600) {
-            console.warn(`Screen dimensions too small: ${screenWidth}x${screenHeight}`);
-        }
-
-        // Always use % of screen for window size
-        const windowSizePercent = 0.8;
-        const windowWidth = Math.max(800, Math.round(screenWidth * windowSizePercent));
-        const windowHeight = Math.max(600, Math.round(screenHeight * windowSizePercent));
-
-
-
-        // Get transparency setting before creating the window
-        const settingsStore = await getStore();
-        let opacity = settingsStore ? settingsStore.get('transparency', 1) : 1;
-        let useTransparent = settingsStore ? settingsStore.get('useTransparentWindow', false) : false; // Default to false for better compatibility
-
-        // If we've had multiple failed attempts, disable transparency
-        if (windowCreationAttempts > 1) {
-            useTransparent = false;
-            if (settingsStore) {
-                settingsStore.set('useTransparentWindow', false);
-            }
-        }
-
-        // Ensure opacity is within valid range and not causing invisible window
-        if (opacity < 0.3) {
-            opacity = 0.3;
-            // Save the corrected value
-            if (settingsStore) {
-                settingsStore.set('transparency', opacity);
-            }
-        }
-        if (opacity > 1) {
-            opacity = 1;
-        }
-
-
-
-        // Calculate window position to ensure it's on screen
-        const x = Math.max(0, Math.round((screenWidth - windowWidth) / 2));
-        const y = Math.max(0, Math.round((screenHeight - windowHeight) / 2));
-
-        // Create the browser window with improved settings
-        const windowOptions = {
-            width: windowWidth,
-            height: windowHeight,
-            minWidth: 800,
-            minHeight: 600,
-            x: x,
-            y: y,
-            icon: path.join(__dirname, 'assets/images/icon.ico'),
-            webPreferences: {
-                preload: path.join(__dirname, 'preload.js'),
-                nodeIntegration: false,
-                contextIsolation: true,
-                devTools: true,
-                webSecurity: true
-            },
-            frame: false, // Custom title bar
-            transparent: useTransparent,
-            show: false, // Show when ready
-            center: false, // We're setting position manually
-            opacity: opacity,
-            backgroundColor: useTransparent ? undefined : '#1a1a1a', // Fallback background
-            titleBarStyle: 'hidden',
-            skipTaskbar: false,
-            alwaysOnTop: false // Will be set later based on settings
-        };
-
-        mainWindow = new BrowserWindow(windowOptions);
-
-    } catch (error) {
-        console.error('Error creating BrowserWindow:', error);
-
-        if (windowCreationAttempts < MAX_WINDOW_CREATION_ATTEMPTS) {
-            // Reset and try again with safer settings
-            const settingsStore = await getStore();
-            if (settingsStore) {
-                settingsStore.set('useTransparentWindow', false);
-                settingsStore.set('transparency', 1);
-            }
-            return await createWindow();
-        } else {
-            throw new Error(`Failed to create window after ${MAX_WINDOW_CREATION_ATTEMPTS} attempts: ${error.message}`);
-        }
-    }
-
-    // Load the main HTML file
-    mainWindow.loadFile(path.join(__dirname, 'index.html'));
-
-    // Apply always on top setting
-    const settingsStore = await getStore();
-    const topMost = settingsStore ? settingsStore.get('topMost', false) : false;
-    if (topMost) {
-        mainWindow.setAlwaysOnTop(true);
-    }
-
-    // Show window when ready with improved visibility handling
-    mainWindow.once('ready-to-show', () => {
-        try {
-            // Ensure window is properly positioned before showing
-            const bounds = mainWindow.getBounds();
-
-            // Verify window is within screen bounds
-            const primaryDisplay = screen.getPrimaryDisplay();
-            const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
-
-            if (bounds.x < 0 || bounds.y < 0 || bounds.x > screenWidth || bounds.y > screenHeight) {
-                mainWindow.center();
-            }
-
-            // Show the window
-            mainWindow.show();
-
-            // Focus the window
-            mainWindow.focus();
-
-            // Verify visibility after a short delay
-            setTimeout(() => {
-                if (mainWindow) {
-                    const isVisible = mainWindow.isVisible();
-                    const currentOpacity = mainWindow.getOpacity();
-
-                    if (!isVisible) {
-                        // Try multiple recovery strategies
-                        try {
-                            // Strategy 1: Increase opacity if too low
-                            if (currentOpacity < 0.3) {
-                                mainWindow.setOpacity(0.8);
-                            }
-
-                            // Strategy 2: Show inactive then active
-                            mainWindow.showInactive();
-                            setTimeout(() => {
-                                if (mainWindow) {
-                                    mainWindow.show();
-                                    mainWindow.focus();
-                                    mainWindow.moveTop();
-                                }
-                            }, 100);
-
-                        } catch (recoveryError) {
-                            console.error('Recovery attempt failed:', recoveryError);
-                        }
-                    } else {
-                        // Reset creation attempts on successful show
-                        windowCreationAttempts = 0;
-                    }
-                }
-            }, 200);
-
-        } catch (error) {
-            console.error('Error in ready-to-show handler:', error);
-            // Fallback: try to show window without focus
-            try {
-                mainWindow.showInactive();
-                setTimeout(() => {
-                    if (mainWindow) {
-                        mainWindow.show();
-                    }
-                }, 100);
-            } catch (fallbackError) {
-                console.error('Fallback show also failed:', fallbackError);
-                // Last resort: recreate window without transparency
-                setTimeout(() => {
-                    if (settingsStore) {
-                        settingsStore.set('useTransparentWindow', false);
-                        mainWindow = null;
-                        createWindow();
-                    }
-                }, 500);
-            }
-        }
-    });
-
-    // Handle window close event (always hide to tray instead of closing)
-    mainWindow.on('close', async (event) => {
-        if (!app.isQuiting) {
-            event.preventDefault();
-            hideWindow();
-
-            // Show notification on first hide to tray
-            const settingsStore = await getStore();
-            if (settingsStore && !settingsStore.get('trayNotificationShown', false)) {
-                tray.displayBalloon({
-                    iconType: 'info',
-                    title: 'WinTool',
-                    content: 'Application was minimized to tray. Click the tray icon to restore.'
-                });
-                settingsStore.set('trayNotificationShown', true);
-            }
-        }
-    });
-
-    // Handle window closed
-    mainWindow.on('closed', () => {
-        mainWindow = null;
-    });
-
-
-
-    return mainWindow;
-}
-
-/**
- * Create system tray
- */
-function createTray() {
-    // Create tray icon using the application icon
-    const trayIconPath = path.join(__dirname, 'assets/images/icon.ico');
-
-    try {
-        // Create native image for tray icon
-        const trayIcon = nativeImage.createFromPath(trayIconPath);
-
-        // Check if icon was loaded successfully
-        if (trayIcon.isEmpty()) {
-            // Fallback to a simple icon or let system use default
-        }
-
-        // Create tray
-        tray = new Tray(trayIcon);
-
-        // Set tooltip
-        tray.setToolTip('WinTool');
-
-        // Create context menu
-        const contextMenu = Menu.buildFromTemplate([{
-            label: 'Show WinTool',
-            click: async () => {
-                await showWindow();
-            }
-        }, {
-            label: 'Hide WinTool',
-            click: () => {
-                hideWindow();
-            }
-        }, {
-            type: 'separator'
-        }, {
-            label: 'Settings',
-            click: async () => {
-                await showWindow();
-                // Send message to renderer to show settings
-                if (mainWindow) {
-                    mainWindow.webContents.send('show-settings');
-                }
-            }
-        },
-            { type: 'separator' },
-            {
-                label: 'Quit WinTool',
-                click: () => {
-                    quitApplication();
-                }
-            }
-        ]);
-
-        // Set context menu
-        tray.setContextMenu(contextMenu);
-
-        // Handle tray icon click (show/hide window)
-        tray.on('click', async () => {
-            if (mainWindow && mainWindow.isVisible()) {
-                hideWindow();
-            } else {
-                await showWindow();
-            }
-        });
-
-    } catch (error) {
-        console.error('Failed to create system tray:', error);
-    }
-}
-
-/**
- * Show main window with improved visibility handling
- */
-async function showWindow() {
-    if (mainWindow) {
-        try {
-            // Check if window is destroyed
-            if (mainWindow.isDestroyed()) {
-                mainWindow = null;
-                await createWindow();
-                return;
-            }
-
-            // Restore if minimized
-            if (mainWindow.isMinimized()) {
-                mainWindow.restore();
-            }
-
-            // Ensure window is visible
-            mainWindow.show();
-            mainWindow.focus();
-
-            // Double-check visibility and force if needed
-            setTimeout(() => {
-                if (mainWindow && !mainWindow.isDestroyed()) {
-                    const stillVisible = mainWindow.isVisible();
-                    if (!stillVisible) {
-                        try {
-                            // Multiple recovery strategies
-                            const currentOpacity = mainWindow.getOpacity();
-
-                            // Strategy 1: Ensure minimum opacity
-                            if (currentOpacity < 0.3) {
-                                mainWindow.setOpacity(0.8);
-                            }
-
-                            // Strategy 2: Move to center of screen
-                            mainWindow.center();
-
-                            // Strategy 3: Show inactive then active
-                            mainWindow.showInactive();
-                            setTimeout(() => {
-                                if (mainWindow && !mainWindow.isDestroyed()) {
-                                    mainWindow.show();
-                                    mainWindow.focus();
-                                    mainWindow.moveTop();
-                                }
-                            }, 100);
-
-                        } catch (recoveryError) {
-                            console.error('Recovery attempt failed:', recoveryError);
-                        }
-                    }
-                }
-            }, 200);
-
-        } catch (error) {
-            console.error('Error showing existing window:', error);
-            // Try to recreate window if showing fails
-            mainWindow = null;
-            await createWindow();
-        }
-    } else {
-
-        await createWindow();
-    }
-}
-
-/**
- * Hide main window
- */
-function hideWindow() {
-    if (mainWindow) {
-        mainWindow.hide();
-    }
-}
-
-
-
-/**
- * Quit application properly
- */
-function quitApplication() {
-
-    app.isQuiting = true;
-    app.quit();
-}
+// Application quit functionality is now handled by SystemTray module
 
 function restartApp() {
+    const mainWindow = windowManager.getMainWindow();
     if (mainWindow) {
         mainWindow.reload();
     }
@@ -836,85 +199,7 @@ function restartApp() {
 
 
 
-// --- Plugin Backend Loader ---
-// A map to hold the loaded plugin backend modules
-const loadedPluginBackends = new Map();
-
-async function loadPluginBackends() {
-    const pluginMap = await getPluginMap();
-
-    // Batch plugin loading to reduce concurrent processes - optimized for faster startup
-    const pluginEntries = Array.from(pluginMap.entries());
-    const batchSize = 5; // Increased from 3 to 5 plugins at a time for faster loading
-
-    for (let i = 0; i < pluginEntries.length; i += batchSize) {
-        const batch = pluginEntries.slice(i, i + batchSize);
-
-        // Process batch concurrently but with limited concurrency
-        await Promise.all(batch.map(async ([pluginId, pluginPath]) => {
-            const backendScriptPath = path.join(pluginPath, 'backend.js');
-            try {
-                // Check if backend.js exists before trying to require it.
-                await fs.stat(backendScriptPath);
-
-                // Conditionally clear the module from the cache based on the setting
-                const settingsStore = await getStore();
-                if (settingsStore && settingsStore.get('clearPluginCache', false)) {
-                    delete require.cache[require.resolve(backendScriptPath)];
-                }
-
-                const pluginModule = require(backendScriptPath);
-                if (pluginModule && typeof pluginModule.initialize === 'function') {
-                    // Create a secure API for this specific plugin's backend
-                    const backendApi = {
-                        handlers: {},
-                        registerHandler(name, func) {
-                            // All handlers must be async functions for consistent promise-based results
-                            this.handlers[name] = async (...args) => func(...args);
-                        },
-                        getStore: () => getStore(),
-                        dialog: dialog,
-                        axios: axios,
-                        // Add a way for plugins to require their own dependencies
-                        require: (moduleName) => {
-                            try {
-                                return require(path.join(pluginPath, 'node_modules', moduleName));
-                            } catch (e) {
-                                console.error(`Failed to load module '${moduleName}' for plugin '${pluginId}'. Make sure it is listed in the plugin's package.json.`);
-                                throw e;
-                            }
-                        }
-                    };
-
-                    // Initialize the plugin with its dedicated, secure API
-                    pluginModule.initialize(backendApi);
-                    loadedPluginBackends.set(pluginId, backendApi);
-                }
-            } catch (e) {
-                // This is a normal flow; most plugins won't have a backend.
-                if (e.code !== 'ENOENT') {
-                    console.error(`Error loading backend for plugin ${pluginId}:`, e);
-                }
-            }
-        }));
-
-        // Reduced delay between batches for faster startup
-        if (i + batchSize < pluginEntries.length) {
-            await new Promise(resolve => setTimeout(resolve, 50)); // Reduced from 100ms to 50ms
-        }
-    }
-}
-
-// Generic handler for all plugin frontend-to-backend communication
-ipcMain.handle('plugin-invoke', async (event, pluginId, handlerName, ...args) => {
-    const pluginBackend = loadedPluginBackends.get(pluginId);
-    if (pluginBackend && pluginBackend.handlers && typeof pluginBackend.handlers[handlerName] === 'function') {
-        // The handler function itself will be an async function
-        return await pluginBackend.handlers[handlerName](...args);
-    } else {
-        throw new Error(`Handler '${handlerName}' not found for plugin '${pluginId}'`);
-    }
-});
+// Plugin backend loading and communication is now handled by PluginManager
 
 
 // App event handlers
@@ -925,36 +210,71 @@ async function initializeApplication() {
     }
 
     globalShortcut.register('Control+Q', () => {
-        quitApplication();
+        systemTray.quitApplication();
     });
 
-    const settingsStore = await getStore();
+    // Set up SettingsManager dependencies
+    settingsManager.setDependencies({
+        discordPresence: discordPresence,
+        windowManager: windowManager,
+        restartApp: restartApp
+    });
+
+    // Set up PluginManager dependencies
+    pluginManager.setDependencies({
+        settingsManager: settingsManager,
+        windowManager: windowManager,
+        processPool: processPool,
+        restartApp: restartApp
+    });
+
+    // Set up SystemTray dependencies
+    systemTray.setDependencies({
+        windowManager: windowManager,
+        app: app
+    });
+
+    // Set up LoggingManager dependencies
+    loggingManager.setDependencies({
+        windowManager: windowManager
+    });
+
+    // Initialize logging and set global logger
+    loggingManager.initialize();
+    global.logger = loggingManager;
+
     const { default: isElevated } = await import('is-elevated');
     const elevated = await isElevated();
 
     const showWindowAndFinishSetup = async () => {
+        const mainWindow = windowManager.getMainWindow();
         if (mainWindow) {
             return; // Window already exists
         }
 
         try {
-            await createWindow();
-            createTray();
+            // Set up WindowManager dependencies
+            windowManager.setDependencies({
+                getStore: () => settingsManager.getStore(),
+                systemTray: systemTray,
+                app: app
+            });
+
+            await windowManager.createWindow();
+            systemTray.initialize();
 
             // Run slow tasks after the window is visible.
             (async () => {
                 try {
-                    if (settingsStore) {
-                        const enableDiscordRpc = settingsStore.get('enableDiscordRpc', true);
-                        if (enableDiscordRpc) {
-                            discordPresence.start();
-                        }
+                    const enableDiscordRpc = await settingsManager.getSetting('enableDiscordRpc', true);
+                    if (enableDiscordRpc) {
+                        discordPresence.start();
                     }
 
-                    await ensurePluginsPathExists();
+                    await ensureAppDirectoriesExist();
 
                     // Load plugin backends
-                    await loadPluginBackends();
+                    await pluginManager.loadPluginBackends();
 
                     // Finish startup phase (compatibility method)
                     await processPool.finishStartupPhase();
@@ -976,7 +296,11 @@ async function initializeApplication() {
                     webPreferences: {
                         preload: path.join(__dirname, 'preload.js'),
                         nodeIntegration: false,
-                        contextIsolation: true
+                        contextIsolation: true,
+                        enableRemoteModule: false,
+                        webSecurity: true,
+                        sandbox: false,
+                        devTools: process.env.NODE_ENV !== 'production'
                     },
                     frame: true, // Use standard frame
                     transparent: false, // No transparency
@@ -984,10 +308,10 @@ async function initializeApplication() {
                 });
 
                 basicWindow.loadFile(path.join(__dirname, 'index.html'));
-                mainWindow = basicWindow;
+                // Note: We're not setting mainWindow here anymore since it's managed by WindowManager
 
                 // Still create tray for basic functionality
-                createTray();
+                systemTray.initialize();
             } catch (basicError) {
                 console.error('Even basic window creation failed:', basicError);
                 // Show error dialog and quit
@@ -999,7 +323,7 @@ async function initializeApplication() {
     };
 
     if (!elevated) {
-        const elevationChoice = settingsStore ? settingsStore.get('elevationChoice', 'ask') : 'ask';
+        const elevationChoice = await settingsManager.getSetting('elevationChoice', 'ask');
 
         if (elevationChoice === 'yes') {
             const { exec } = require('child_process');
@@ -1021,29 +345,26 @@ async function initializeApplication() {
                 webPreferences: {
                     preload: path.join(__dirname, 'preload.js'),
                     nodeIntegration: false,
-                    contextIsolation: true
+                    contextIsolation: true,
+                    enableRemoteModule: false,
+                    webSecurity: true,
+                    sandbox: false,
+                    devTools: process.env.NODE_ENV !== 'production'
                 }
             });
 
             promptWindow.loadFile(path.join(__dirname, 'elevation-prompt.html'));
 
             promptWindow.webContents.on('did-finish-load', async () => {
-                if (settingsStore) {
-                    const themeSettings = {
-                        theme: settingsStore.get('theme', 'classic-dark'),
-                        primaryColor: settingsStore.get('primaryColor', '#ff9800'),
-                        customTheme: settingsStore.get('customTheme', {}),
-                        rainbowMode: settingsStore.get('rainbowMode', false)
-                    };
-                    promptWindow.webContents.send('theme-data', themeSettings);
-                }
+                const themeSettings = await settingsManager.getThemeSettings();
+                promptWindow.webContents.send('theme-data', themeSettings);
             });
 
-            ipcMain.once('elevation-choice', (event, { choice, remember }) => {
+            ipcMain.once('elevation-choice', async (event, { choice, remember }) => {
                 promptWindow.close();
 
-                if (remember && settingsStore) {
-                    settingsStore.set('elevationChoice', choice ? 'yes' : 'no');
+                if (remember) {
+                    await settingsManager.setSetting('elevationChoice', choice ? 'yes' : 'no');
                 }
 
                 if (choice) {
@@ -1077,7 +398,7 @@ app.on('window-all-closed', () => {
 
 app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-        await createWindow();
+        await windowManager.createWindow();
     }
 });
 
@@ -1092,9 +413,9 @@ app.on('will-quit', () => {
 // Handle app before quit event
 app.on('before-quit', () => {
     app.isQuiting = true;
-    if (tray) {
-        tray.destroy();
-    }
+
+    // Destroy system tray
+    systemTray.destroyTray();
 
     // Cleanup SimpleCommandExecutor
     processPool.cleanup();
@@ -1106,57 +427,7 @@ app.on('before-quit', () => {
     }
 });
 
-// Window control IPC handlers
-ipcMain.handle('minimize-window', async () => {
-    if (mainWindow) {
-        // Always hide to tray when minimizing
-        hideWindow();
-
-        // Show notification on first hide to tray
-        const settingsStore = await getStore();
-        if (settingsStore && !settingsStore.get('trayNotificationShown', false)) {
-            tray.displayBalloon({
-                iconType: 'info',
-                title: 'WinTool',
-                content: 'Application was minimized to tray. Click the tray icon to restore.'
-            });
-            settingsStore.set('trayNotificationShown', true);
-        }
-    }
-    return true;
-});
-
-ipcMain.handle('maximize-window', () => {
-    if (mainWindow) {
-        if (mainWindow.isMaximized()) {
-            mainWindow.unmaximize();
-        } else {
-            mainWindow.maximize();
-        }
-    }
-    return true;
-});
-
-ipcMain.handle('close-window', () => {
-    if (mainWindow) mainWindow.close();
-    return true;
-});
-
-// System tray IPC handlers
-ipcMain.handle('hide-to-tray', () => {
-    hideWindow();
-    return true;
-});
-
-ipcMain.handle('show-from-tray', async () => {
-    await showWindow();
-    return true;
-});
-
-ipcMain.handle('quit-app', () => {
-    quitApplication();
-    return true;
-});
+// System tray IPC handlers are now handled by SystemTray module
 
 // Generic command execution handler with PowerShell Process Optimization
 ipcMain.handle('run-admin-command', async (event, command) => {
@@ -1181,7 +452,7 @@ ipcMain.handle('run-admin-command', async (event, command) => {
 });
 
 ipcMain.handle('run-command', async (event, command, asAdmin = false) => {
-    logSecurityEvent('RUN_COMMAND', { command, asAdmin });
+    loggingManager.logSecurity('RUN_COMMAND', { command, asAdmin });
 
     if (!command || typeof command !== 'string') {
         throw new Error('Invalid command provided.');
@@ -1242,6 +513,7 @@ ipcMain.handle('open-app-directory', () => {
 });
 
 ipcMain.handle('toggle-dev-tools', () => {
+    const mainWindow = windowManager.getMainWindow();
     if (mainWindow && mainWindow.webContents.isDevToolsOpened()) {
         mainWindow.webContents.closeDevTools();
     } else if (mainWindow) {
@@ -1268,75 +540,13 @@ ipcMain.handle('open-special-folder', (event, folderKey) => {
     shell.openPath(folderPath);
 });
 
-// Settings IPC handlers
-ipcMain.handle('get-setting', async (event, key, defaultValue) => {
-    const settingsStore = await getStore();
-    if (!settingsStore) return defaultValue;
-    return settingsStore.get(key, defaultValue);
-});
+// Settings IPC handlers are now handled by SettingsManager
 
-ipcMain.handle('set-setting', async (event, key, value) => {
-    const settingsStore = await getStore();
-    if (!settingsStore) return false;
-    settingsStore.set(key, value);
-    if (key === 'enableDiscordRpc') {
-        if (value) {
-            discordPresence.start();
-        } else {
-            discordPresence.stop();
-        }
-    }
-    if (key === 'topMost') {
-        if (mainWindow) {
-            mainWindow.setAlwaysOnTop(value);
-        }
-    }
-    return true;
-});
 
-ipcMain.handle('set-window-opacity', (event, opacity) => {
-    if (mainWindow) {
-        mainWindow.setOpacity(opacity);
-    }
-});
 
-ipcMain.handle('open-log-viewer', () => {
-    createLogViewerWindow();
-});
+// Custom log message handler is now handled by LoggingManager
 
-// Handle custom log messages from renderer processes
-ipcMain.handle('log-custom-message', (event, level, message, source) => {
-    if (global.logger) {
-        switch(level) {
-            case 'info':
-                global.logger.logInfo(message, source);
-                break;
-            case 'warn':
-                global.logger.logWarn(message, source);
-                break;
-            case 'error':
-                global.logger.logError(message, source);
-                break;
-            case 'debug':
-                global.logger.logDebug(message, source);
-                break;
-            case 'success':
-                global.logger.logSuccess(message, source);
-                break;
-            case 'trace':
-                global.logger.logTrace(message, source);
-                break;
-            default:
-                global.logger.logInfo(message, source);
-        }
-    }
-    return { success: true };
-});
 
-// Open performance settings handler
-ipcMain.handle('open-performance-settings', () => {
-    createPerformanceSettingsWindow();
-});
 
 
 
@@ -1359,6 +569,7 @@ ipcMain.handle('start-performance-updates', async () => {
                 // Use cached data if recent (within 2 seconds)
                 const now = Date.now();
                 if (performanceCache && (now - performanceCacheTime) < 2000) {
+                    const mainWindow = windowManager.getMainWindow();
                     if (mainWindow && mainWindow.webContents) {
                         mainWindow.webContents.send('performance-update', performanceCache);
                     }
@@ -1375,6 +586,7 @@ ipcMain.handle('start-performance-updates', async () => {
                 performanceCache = metrics;
                 performanceCacheTime = now;
 
+                const mainWindow = windowManager.getMainWindow();
                 if (mainWindow && mainWindow.webContents) {
                     mainWindow.webContents.send('performance-update', metrics);
                 }
@@ -1401,43 +613,7 @@ ipcMain.handle('stop-performance-updates', () => {
     }
 });
 
-// Performance settings handlers
-ipcMain.handle('get-performance-mode', async () => {
-    const settingsStore = await getStore();
-    return settingsStore ? settingsStore.get('performanceMode', 'balanced') : 'balanced';
-});
-
-ipcMain.handle('set-performance-mode', async (event, mode) => {
-    const settingsStore = await getStore();
-    if (!settingsStore) return false;
-
-    try {
-        settingsStore.set('performanceMode', mode);
-
-        // Apply immediate optimizations based on mode
-        if (mode === 'low-end') {
-            settingsStore.set('fastSystemInfo', true);
-            settingsStore.set('cacheSystemInfo', true);
-            settingsStore.set('enableDiscordRpc', false);
-            settingsStore.set('enableLazyLoading', true);
-        } else if (mode === 'high-end') {
-            settingsStore.set('fastSystemInfo', false);
-            settingsStore.set('cacheSystemInfo', false); // Disable caching for real-time data
-            settingsStore.set('enableDiscordRpc', true);
-            settingsStore.set('enableLazyLoading', false); // Disable lazy loading for instant access
-        } else if (mode === 'balanced') {
-            settingsStore.set('fastSystemInfo', true);
-            settingsStore.set('cacheSystemInfo', true);
-            settingsStore.set('enableDiscordRpc', true);
-            settingsStore.set('enableLazyLoading', true);
-        }
-
-        return true;
-    } catch (error) {
-        console.error('Error setting performance mode:', error);
-        return false;
-    }
-});
+// Performance settings handlers are now handled by SettingsManager
 
 ipcMain.handle('get-system-capabilities', () => {
     return {
@@ -1447,20 +623,7 @@ ipcMain.handle('get-system-capabilities', () => {
     };
 });
 
-// Clear all settings handler
-ipcMain.handle('clear-all-settings', async () => {
-    const settingsStore = await getStore();
-    if (!settingsStore) return false;
-
-    try {
-        // Clear all data from the store
-        settingsStore.clear();
-        return true;
-    } catch (error) {
-        console.error('Error clearing all settings:', error);
-        return false;
-    }
-});
+// Clear all settings handler is now handled by SettingsManager
 
 // Restart application handler
 ipcMain.handle('restart-application', () => {
@@ -1648,14 +811,13 @@ ipcMain.handle('get-system-info', async (event, type) => {
 
     try {
         // Check if we should use fast mode (basic info only)
-        const settingsStore = await getStore();
         // Default to fast mode during startup phase for better performance
         const isStartupPhase = processPool && processPool.isStartupPhase;
         // Also enable fast mode if we've had recent timeout errors
         const hasRecentTimeoutError = systemInfoCache && systemInfoCache.error && systemInfoCache.error.includes('timed out');
         const shouldUseFastMode = isStartupPhase || hasRecentTimeoutError;
-        const fastMode = settingsStore ? settingsStore.get('fastSystemInfo', shouldUseFastMode) : shouldUseFastMode;
-        const useCache = settingsStore ? settingsStore.get('cacheSystemInfo', true) : true;
+        const fastMode = await settingsManager.getSetting('fastSystemInfo', shouldUseFastMode);
+        const useCache = await settingsManager.getSetting('cacheSystemInfo', true);
 
         // Check cache first if enabled and no specific type requested
         if (!type && useCache && systemInfoCache && (Date.now() - systemInfoCacheTime) < SYSTEM_INFO_CACHE_DURATION) {
@@ -2019,536 +1181,22 @@ ipcMain.handle('get-network-stats', async () => {
     }
 });
 
-// Tab and plugin folder management handlers
-ipcMain.handle('get-tab-folders', async () => {
-    console.log('get-tab-folders handler called');
-    const settingsStore = await getStore();
-    const disabledPlugins = settingsStore ? settingsStore.get('disabledPlugins', []) : [];
-    const tabs = [];
-    const plugins = [];
+// Tab and plugin folder management handlers are now handled by PluginManager
 
-    // 1. Read built-in tabs from the installation directory
-    const tabsPath = path.join(__dirname, 'tabs');
-    try {
-        const items = await fs.readdir(tabsPath);
-        for (const item of items) {
-            const itemPath = path.join(tabsPath, item);
-            try {
-                if ((await fs.stat(itemPath)).isDirectory()) {
-                    tabs.push({ name: item, type: 'tab' });
-                }
-            } catch (e) { /* ignore files and other non-directory items */ }
-        }
-    } catch (error) {
-        console.error(`Could not read built-in tabs directory: ${tabsPath}`, error);
-    }
-    
-    // 2. Read enabled plugins from both dev and user locations
-    const pluginMap = await getPluginMap();
-    for (const pluginId of pluginMap.keys()) {
-        if (!disabledPlugins.includes(pluginId)) {
-            plugins.push({ name: pluginId, type: 'plugin' });
-        }
-    }
+// Plugin hash calculation is now handled by PluginManager
 
-    // Combine tabs and plugins, ensuring plugins are last
-    const allItems = [...tabs, ...plugins];
+// get-all-plugins handler is now handled by PluginManager
 
-    console.log('Found tab/plugin items:', allItems);
-    return allItems;
-});
+// delete-plugin handler is now handled by PluginManager
 
-// Handler to get all plugins, including disabled ones, for the management UI
-// Function to calculate the hash of a directory's contents
-async function calculateDirectoryHash(directory) {
-    const hash = crypto.createHash('sha256');
-    const files = await fs.readdir(directory);
+// install-plugin and open-plugins-directory handlers are now handled by PluginManager
 
-    for (const file of files.sort()) { // Sort for consistent hash results
-        const filePath = path.join(directory, file);
-        const stat = await fs.stat(filePath);
+// run-plugin-script handler is now handled by PluginManager
 
-        if (stat.isDirectory()) {
-            // Recursively hash subdirectories
-            const subDirHash = await calculateDirectoryHash(filePath);
-            hash.update(subDirHash);
-        } else {
-            // Hash file contents
-            const fileContents = await fs.readFile(filePath);
-            hash.update(fileContents);
-        }
-    }
+// Plugin API handlers are now handled by PluginManager
 
-    return hash.digest('hex');
-}
 
-ipcMain.handle('get-all-plugins', async () => {
-    console.log('get-all-plugins handler called');
-    const pluginMap = await getPluginMap();
-    const settingsStore = await getStore();
-    const disabledPlugins = settingsStore ? settingsStore.get('disabledPlugins', []) : [];
-
-    const allPlugins = await Promise.all(Array.from(pluginMap.entries()).map(async ([pluginId, pluginPath]) => {
-        const configPath = path.join(pluginPath, 'plugin.json');
-        let config = {};
-        try {
-            const configData = await fs.readFile(configPath, 'utf8');
-            config = JSON.parse(configData);
-        } catch (e) {
-            console.error(`Could not read plugin.json for ${pluginId}:`, e);
-            // Return a default object so the plugin still appears, albeit with default info
-            config = { name: pluginId, description: 'Could not load plugin manifest.', icon: 'fas fa-exclamation-triangle' };
-        }
-
-        // --- Verification Logic ---
-        const directoryHash = await calculateDirectoryHash(pluginPath);
-        const isVerified = verifiedHashes[pluginId] === directoryHash;
-        // --- End Verification Logic ---
-
-        return {
-            id: pluginId,
-            name: config.name || pluginId,
-            description: config.description || 'No description available.',
-            version: config.version || 'N/A',
-            author: config.author || 'Unknown',
-            icon: config.icon || 'fas fa-cog',
-            enabled: !disabledPlugins.includes(pluginId),
-            verified: isVerified, // Add the verified status to the plugin object
-            hash: directoryHash // Add the hash to the plugin object
-        };
-    }));
-    
-    return allPlugins;
-});
-
-ipcMain.handle('delete-plugin', async (event, pluginId) => {
-    
-    // For security, we only allow deleting from the user-writable plugins path.
-    const userPluginsPath = getPluginsPath();
-    const pluginPath = path.join(userPluginsPath, pluginId);
-
-    try {
-        // Verify the plugin actually exists in the user directory before proceeding.
-        await fs.access(pluginPath);
-    } catch (error) {
-        return { success: false, message: 'Plugin not found or it is a core plugin that cannot be deleted.' };
-    }
-    
-    // Confirm with the user
-    const choice = await dialog.showMessageBox(mainWindow, {
-        type: 'warning',
-        title: 'Delete Plugin',
-        message: `Are you sure you want to permanently delete the plugin "${pluginId}"?`,
-        detail: 'This action cannot be undone. The plugin files will be removed from your computer.',
-        buttons: ['Delete', 'Cancel'],
-        defaultId: 1,
-        cancelId: 1
-    });
-
-    if (choice.response === 1) { // User canceled
-        return { success: true, restarted: false }; // Return success to stop loading icon
-    }
-
-    try {
-        // Delete the plugin folder
-        await fs.rm(pluginPath, { recursive: true, force: true });
-        
-        // Also remove it from the disabled list if it's there
-        const settingsStore = await getStore();
-        if (settingsStore) {
-            const disabledPlugins = settingsStore.get('disabledPlugins', []);
-            const newDisabled = disabledPlugins.filter(id => id !== pluginId);
-            settingsStore.set('disabledPlugins', newDisabled);
-        }
-
-        // Notify and restart
-        await dialog.showMessageBox(mainWindow, {
-            type: 'info',
-            title: 'Plugin Deleted',
-            message: `The plugin "${pluginId}" has been deleted.`,
-            detail: 'The application must be restarted for the changes to take effect.',
-            buttons: ['Restart Now']
-        });
-
-        restartApp();
-        return { success: true, restarted: true };
-
-    } catch (error) {
-        console.error(`Failed to delete plugin ${pluginId}:`, error);
-        return { success: false, message: `Error deleting plugin: ${error.message}` };
-    }
-});
-
-ipcMain.handle('toggle-plugin-state', async (event, pluginId) => {
-    const settingsStore = await getStore();
-    if (!settingsStore) {
-        return { success: false, message: 'Settings store not available.' };
-    }
-
-    try {
-        let disabledPlugins = settingsStore.get('disabledPlugins', []);
-        const isCurrentlyEnabled = !disabledPlugins.includes(pluginId);
-
-        if (isCurrentlyEnabled) {
-            // Disable it
-            disabledPlugins.push(pluginId);
-        } else {
-            // Enable it
-            disabledPlugins = disabledPlugins.filter(id => id !== pluginId);
-        }
-
-        settingsStore.set('disabledPlugins', disabledPlugins);
-
-        // Notify the user and ask for a restart
-        const actionText = isCurrentlyEnabled ? 'disabled' : 'enabled';
-        const restartChoice = await dialog.showMessageBox(mainWindow, {
-            type: 'info',
-            title: `Plugin ${actionText}`,
-            message: `The plugin "${pluginId}" has been ${actionText}.`,
-            detail: 'A restart is required for this change to take effect.',
-            buttons: ['Restart Now', 'Restart Later'],
-            defaultId: 0,
-            cancelId: 1
-        });
-
-        if (restartChoice.response === 0) { // "Restart Now"
-            restartApp();
-        }
-
-        return { success: true };
-    } catch (error) {
-        console.error(`Failed to toggle plugin state for ${pluginId}:`, error);
-        return { success: false, message: error.message };
-    }
-});
-
-ipcMain.handle('install-plugin', async () => {
-    // Plugins must ALWAYS be installed to the user-writable directory.
-    const userPluginsPath = getPluginsPath();
-
-    // 1. Show open file dialog to select the plugin zip
-    const result = await dialog.showOpenDialog(mainWindow, {
-        title: 'Select Plugin ZIP File',
-        properties: ['openFile'],
-        filters: [
-            { name: 'Plugin Packages', extensions: ['zip'] },
-            { name: 'All Files', extensions: ['*'] }
-        ]
-    });
-
-    if (result.canceled || result.filePaths.length === 0) {
-        return { success: false, message: 'Installation canceled.' };
-    }
-
-    const zipPath = result.filePaths[0];
-
-    // 2. Extract the zip file to a temporary directory first to inspect it
-    const tempDir = path.join(os.tmpdir(), `wintool-plugin-${Date.now()}`);
-    await fs.mkdir(tempDir, { recursive: true });
-
-    try {
-        await extract(zipPath, { dir: tempDir });
-
-        // 3. Validate the plugin structure (check for plugin.json)
-        const items = await fs.readdir(tempDir);
-        // The unzipped folder might contain a single root folder.
-        const rootDir = items.length === 1 ? path.join(tempDir, items[0]) : tempDir;
-
-        const manifestPath = path.join(rootDir, 'plugin.json');
-        await fs.access(manifestPath); // Throws if not found
-
-        // 4. Determine the final plugin folder name and path
-        const pluginName = path.basename(rootDir);
-        const finalPath = path.join(userPluginsPath, pluginName);
-
-        // Check if plugin already exists
-        try {
-            await fs.access(finalPath);
-            return { success: false, message: `Plugin "${pluginName}" already exists.` };
-        } catch (e) {
-            // Doesn't exist, which is good
-        }
-
-        // 5. Move the validated plugin from temp to the final plugins directory
-        await fs.rename(rootDir, finalPath);
-
-        // Notify the user and ask to restart
-        const restartChoice = await dialog.showMessageBox(mainWindow, {
-            type: 'info',
-            title: 'Plugin Installed',
-            message: `Plugin "${pluginName}" has been installed successfully.`,
-            detail: 'The application needs to be restarted for the changes to take effect.',
-            buttons: ['Restart Now', 'Later'],
-            defaultId: 0,
-            cancelId: 1
-        });
-
-        if (restartChoice.response === 0) { // "Restart Now"
-            restartApp();
-        }
-
-        return { success: true, message: `Plugin "${pluginName}" installed successfully.` };
-
-    } catch (error) {
-        console.error('Plugin installation error:', error);
-        return { success: false, message: `Installation failed: ${error.message}` };
-    } finally {
-        // Clean up the temporary directory
-        await fs.rm(tempDir, { recursive: true, force: true });
-    }
-});
-
-ipcMain.handle('open-plugins-directory', async () => {
-    // Always open the user-writable plugins directory, as this is where users should manage plugins.
-    const userPluginsPath = getPluginsPath();
-    console.log(`Opening user plugins directory: ${userPluginsPath}`);
-    await shell.openPath(userPluginsPath);
-    return true;
-});
-
-ipcMain.handle('run-plugin-script', async (event, pluginId, scriptPath) => {
-    // Security Validation
-    if (!pluginId || !scriptPath || typeof pluginId !== 'string' || typeof scriptPath !== 'string') {
-        throw new Error('Invalid pluginId or scriptPath.');
-    }
-    
-    // Find the correct path for the given pluginId from our map
-    const pluginMap = await getPluginMap();
-    const pluginDir = pluginMap.get(pluginId);
-
-    if (!pluginDir) {
-        throw new Error(`Plugin with ID '${pluginId}' not found.`);
-    }
-
-    // Prevent path traversal attacks
-    const safeScriptPath = path.normalize(scriptPath).replace(/^(\.\.(\/|\\|$))+/, '');
-    const fullScriptPath = path.join(pluginDir, safeScriptPath);
-
-    // Verify the resolved script path is securely within the plugin's directory
-    if (!fullScriptPath.startsWith(pluginDir)) {
-        throw new Error('Script path is outside of the allowed plugin directory.');
-    }
-
-    // Check that the script exists
-    await fs.stat(fullScriptPath);
-
-    // Use SimpleCommandExecutor for script execution
-    const scriptCommand = `& "${fullScriptPath}"`;
-
-    try {
-        const output = await processPool.executePowerShellCommand(scriptCommand);
-        return output;
-    } catch (error) {
-        throw new Error(`Plugin script execution failed: ${error.message}`);
-    }
-});
-
-// --- New Plugin API Handlers ---
-
-// 1. Handle requests from plugins to show a notification
-ipcMain.on('plugin-show-notification', (event, { title, body, type }) => {
-    // Forward the request to the main window's renderer process, which owns the UI
-    if (mainWindow) {
-        mainWindow.webContents.send('display-notification', { title, body, type });
-    }
-});
-
-// Handle native Windows notifications for System Health Dashboard
-ipcMain.handle('show-native-notification', async (event, { title, body, urgency = 'normal', silent = false, persistent = false }) => {
-    try {
-        console.log('Native notification requested:', { title, body, urgency, silent, persistent });
-
-        // Check if notifications are supported
-        if (!Notification.isSupported()) {
-            console.warn('Native notifications are not supported on this system');
-            return { success: false, error: 'Notifications not supported' };
-        }
-
-        console.log('Native notifications are supported');
-
-        // Create the notification
-        const notification = new Notification({
-            title: title,
-            body: body,
-            icon: path.join(__dirname, 'assets', 'images', 'icon.ico'), // Use app icon
-            urgency: urgency, // 'normal', 'critical', or 'low'
-            silent: silent,
-            timeoutType: (urgency === 'critical' && persistent) ? 'never' : 'default',
-            actions: urgency === 'critical' ? [
-                {
-                    type: 'button',
-                    text: 'View System Health'
-                }
-            ] : []
-        });
-
-        // Handle notification events
-        notification.on('show', () => {
-            console.log(`Native notification shown: ${title} (urgency: ${urgency}, persistent: ${persistent})`);
-        });
-
-        notification.on('click', () => {
-            console.log('Native notification clicked:', title);
-            // Bring the app to foreground when notification is clicked
-            if (mainWindow) {
-                if (mainWindow.isMinimized()) mainWindow.restore();
-                mainWindow.focus();
-                showWindow();
-
-                // Send message to switch to system health tab
-                mainWindow.webContents.send('message', 'switch-to-tab:system-health');
-            }
-        });
-
-        notification.on('action', (event, index) => {
-            console.log('Notification action clicked:', index);
-            // Handle action button clicks
-            if (index === 0) { // "View System Health" button
-                if (mainWindow) {
-                    if (mainWindow.isMinimized()) mainWindow.restore();
-                    mainWindow.focus();
-                    showWindow();
-                    mainWindow.webContents.send('message', 'switch-to-tab:system-health');
-                }
-            }
-        });
-
-        notification.on('close', () => {
-            console.log('Native notification closed:', title);
-        });
-
-        // Show the notification
-        notification.show();
-
-        return { success: true };
-    } catch (error) {
-        console.error('Error showing native notification:', error);
-        return { success: false, error: error.message };
-    }
-});
-
-
-
-// 2. Handle plugin-specific storage
-ipcMain.handle('plugin-storage-get', async (event, pluginId, key) => {
-    const settingsStore = await getStore();
-    if (!settingsStore) return null;
-    // Namespace the key to prevent collisions
-    const namespacedKey = `plugin_${pluginId}_${key}`;
-    return settingsStore.get(namespacedKey);
-});
-
-ipcMain.handle('plugin-storage-set', async (event, pluginId, key, value) => {
-    const settingsStore = await getStore();
-    if (!settingsStore) return false;
-    const namespacedKey = `plugin_${pluginId}_${key}`;
-    settingsStore.set(namespacedKey, value);
-    return true;
-});
-
-// 3. Handle secure file dialogs for plugins
-ipcMain.handle('plugin-show-open-dialog', async (event, options) => {
-    const result = await dialog.showOpenDialog(mainWindow, options);
-    if (result.canceled || result.filePaths.length === 0) {
-        return { canceled: true, file: null };
-    }
-    const filePath = result.filePaths[0];
-    const content = await fs.readFile(filePath, 'utf8');
-    return { canceled: false, file: { path: filePath, content: content } };
-});
-
-ipcMain.handle('plugin-show-save-dialog', async (event, options, content) => {
-    const result = await dialog.showSaveDialog(mainWindow, options);
-    if (result.canceled || !result.filePath) {
-        return { canceled: true, path: null };
-    }
-    await fs.writeFile(result.filePath, content, 'utf8');
-    return { canceled: false, path: result.filePath };
-});
-
-
-ipcMain.handle('get-tab-content', async (event, tabFolder) => {
-    console.log('get-tab-content handler called for:', tabFolder);
-
-    // Determine the base path (could be a built-in 'tab' or a 'plugin')
-    let tabPath;
-    let isPlugin = false;
-    
-    // First, check if it's a built-in tab.
-    const builtInTabPath = path.join(__dirname, 'tabs', tabFolder);
-    try {
-        // Check if config.json exists. This is more reliable than checking the directory inside asar.
-        const configPathForCheck = path.join(builtInTabPath, 'config.json');
-        await fs.stat(configPathForCheck);
-        tabPath = builtInTabPath;
-    } catch (e) {
-        // If not a built-in tab, check if it's a plugin.
-        const pluginMap = await getPluginMap();
-        const pluginPath = pluginMap.get(tabFolder);
-        if (pluginPath) {
-            tabPath = pluginPath;
-            isPlugin = true;
-        } else {
-            console.error(`Folder for '${tabFolder}' not found in built-in tabs or any plugin directories.`);
-            throw new Error(`Content for '${tabFolder}' not found.`);
-        }
-    }
-
-    try {
-        // For plugins, the config is named plugin.json
-        const configFileName = isPlugin ? 'plugin.json' : 'config.json';
-        const configPath = path.join(tabPath, configFileName);
-        let config = {};
-        try {
-            const configData = await fs.readFile(configPath, 'utf8');
-            config = JSON.parse(configData);
-        } catch (configError) {
-            console.log(`No ${configFileName} found for ${tabFolder}, using defaults`);
-            config = {
-                name: tabFolder,
-                icon: 'fas fa-cog',
-                description: 'Custom tab/plugin'
-            };
-        }
-
-        // Read HTML content
-        const htmlPath = path.join(tabPath, 'index.html');
-        let html = '';
-        try {
-            html = await fs.readFile(htmlPath, 'utf8');
-        } catch (htmlError) {
-            html = `<div class="tab-header"><h1><i class="${config.icon}"></i> ${config.name}</h1><p>No index.html found for this tab</p></div>`;
-        }
-
-        // Read CSS content
-        const cssPath = path.join(tabPath, 'styles.css');
-        let css = '';
-        try {
-            css = await fs.readFile(cssPath, 'utf8');
-        } catch (cssError) {
-            console.log(`No styles.css found for tab ${tabFolder}`);
-        }
-
-        // Read JavaScript content
-        const jsPath = path.join(tabPath, 'script.js');
-        let js = '';
-        try {
-            js = await fs.readFile(jsPath, 'utf8');
-        } catch (jsError) {
-            console.log(`No script.js found for tab ${tabFolder}`);
-        }
-
-        return {
-            config,
-            html,
-            css,
-            js
-        };
-    } catch (error) {
-        console.error(`Error reading tab content for ${tabFolder}:`, error);
-        throw error;
-    }
-});
+// get-tab-content handler is now handled by PluginManager
 
 // Load applications.json file handler
 ipcMain.handle('get-applications-data', async () => {
@@ -2586,12 +1234,12 @@ ipcMain.handle('execute-winget-command', async (event, command) => {
     const mainCommand = commandParts[0];
 
     if (!allowedCommands.includes(mainCommand)) {
-        logSecurityEvent('BLOCKED_WINGET_COMMAND', { command: mainCommand, fullCommand: command });
+        loggingManager.logSecurity('BLOCKED_WINGET_COMMAND', { command: mainCommand, fullCommand: command });
         throw new Error(`Command '${mainCommand}' is not allowed for security reasons`);
     }
 
     // Log allowed winget commands for monitoring
-    logSecurityEvent('WINGET_COMMAND_EXECUTED', { command: mainCommand, args: commandParts.slice(1) });
+    loggingManager.logSecurity('WINGET_COMMAND_EXECUTED', { command: mainCommand, args: commandParts.slice(1) });
 
     // Sanitize command arguments to prevent injection
     const sanitizedCommand = commandParts.map(part => {
@@ -3536,6 +2184,7 @@ ipcMain.handle('execute-cmd', async (event, command) => {
 ipcMain.handle('show-open-dialog', async (event, options) => {
     console.log('show-open-dialog handler called with options:', options);
     try {
+        const mainWindow = windowManager.getMainWindow();
         const result = await dialog.showOpenDialog(mainWindow, options);
         return result;
     } catch (error) {
@@ -3573,6 +2222,7 @@ ipcMain.handle('read-file', async (event, filePath) => {
 // File operation handlers
 ipcMain.handle('open-file-dialog', async (event) => {
     console.log('open-file-dialog handler called');
+    const mainWindow = windowManager.getMainWindow();
     const result = await dialog.showOpenDialog(mainWindow, {
         properties: ['openFile'],
         filters: [
@@ -3598,6 +2248,7 @@ ipcMain.handle('open-file-dialog', async (event) => {
 ipcMain.handle('show-save-dialog', async (event, options) => {
     console.log('show-save-dialog handler called with options:', options);
     try {
+        const mainWindow = windowManager.getMainWindow();
         const result = await dialog.showSaveDialog(mainWindow, options);
         return result;
     } catch (error) {
@@ -3694,6 +2345,7 @@ ipcMain.handle('get-event-logs', async (event, logName) => {
 
 ipcMain.handle('save-file-dialog-and-write', async (event, content, options) => {
     const { title, defaultPath, filters } = options || {};
+    const mainWindow = windowManager.getMainWindow();
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
         title: title || 'Save File',
         defaultPath,
@@ -3714,26 +2366,6 @@ ipcMain.handle('save-file-dialog-and-write', async (event, content, options) => 
     }
 });
 
-// Refresh verified plugins list handler
-ipcMain.handle('refresh-verified-plugins', async () => {
-    console.log('refresh-verified-plugins handler called');
-    try {
-        await updateVerifiedPluginsList();
-        return { success: true, message: 'Verified plugins list refreshed successfully' };
-    } catch (error) {
-        console.error('Failed to refresh verified plugins list:', error);
-        return { success: false, message: error.message };
-    }
-});
-
-// Get current verified plugins list handler
-ipcMain.handle('get-verified-plugins', async () => {
-    console.log('get-verified-plugins handler called');
-    return {
-        success: true,
-        verifiedHashes: { ...verifiedHashes },
-        count: Object.keys(verifiedHashes).length
-    };
-});
+// Verified plugins handlers are now handled by PluginManager
 
 // End of file

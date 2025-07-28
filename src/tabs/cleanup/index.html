@@ -348,9 +348,7 @@
                 <button class="btn btn-secondary" onclick="exportResults()">
                     <i class="fas fa-download"></i> Export Report
                 </button>
-                <button class="btn btn-secondary" onclick="showCleanupHistory()">
-                    <i class="fas fa-history"></i> View History
-                </button>
+
                 <button class="btn btn-secondary" onclick="openDiskCleanup()">
                     <i class="fas fa-external-link-alt"></i> Windows Cleanup
                 </button>
@@ -358,26 +356,7 @@
         </div>
     </div>
 
-    <!-- Cleanup History Section -->
-    <div class="history-section" id="history-section" style="display: none;">
-        <div class="history-header">
-            <h3><i class="fas fa-history"></i> Cleanup History</h3>
-            <div class="history-controls">
-                <button class="btn btn-sm btn-secondary" onclick="clearHistory()">
-                    <i class="fas fa-trash"></i> Clear History
-                </button>
-                <button class="btn btn-sm btn-secondary" onclick="hideHistory()">
-                    <i class="fas fa-times"></i> Close
-                </button>
-            </div>
-        </div>
-        <div class="history-content" id="history-content">
-            <div class="history-empty">
-                <i class="fas fa-clock"></i>
-                <p>No cleanup history available</p>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Cleanup Settings Modal -->
     <div class="settings-modal" id="cleanup-settings-modal" style="display: none;">

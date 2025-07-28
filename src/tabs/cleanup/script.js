@@ -16,7 +16,13 @@ let cleanupState = {
     totalCategories: 0,
     completedCategories: 0,
     selectedCategories: new Set(['temp', 'cache', 'browser']), // Default selections
-    cleanupHistory: [],
+    lastCleanupResults: [], // Store detailed results from last cleanup
+    lastCleanupSummary: { // Store summary from last cleanup
+        totalFilesRemoved: 0,
+        totalSpaceFreed: 0,
+        duration: 0,
+        timestamp: null
+    },
     settings: {
         confirmBeforeDelete: true,
         skipRecentFiles: true,
@@ -140,6 +146,8 @@ function initAdvancedCleanupTab() {
         return;
     }
 
+
+
     // Initialize components
     loadDiskSpace();
     initializeCategoryCards();
@@ -208,7 +216,6 @@ function setupEventListeners() {
 function handleKeyboardShortcuts(e) {
     if (e.key === 'Escape') {
         hideCleanupSettings();
-        hideHistory();
     }
 }
 
@@ -436,6 +443,7 @@ async function startCleanupSecure() {
     try {
         await performCleanupProcessSecure();
         showNotification('System cleanup completed successfully', 'success');
+
     } catch (error) {
         console.error('Cleanup failed:', error);
         showNotification(`Cleanup failed: ${error.message}`, 'error');
@@ -529,9 +537,6 @@ async function startAdvancedCleanup() {
     try {
         await performAdvancedCleanupProcess();
         showNotification('Advanced cleanup completed successfully', 'success');
-
-        // Add to history
-        addToCleanupHistory();
 
     } catch (error) {
         console.error('Advanced cleanup failed:', error);
@@ -679,8 +684,17 @@ async function performCleanupProcessSecure() {
         }
     }
 
-    // Show results
+    // Store results in global state for export functionality
     const timeTaken = Math.round((Date.now() - cleanupState.startTime) / 1000);
+    cleanupState.lastCleanupResults = [...results]; // Store detailed results
+    cleanupState.lastCleanupSummary = {
+        totalFilesRemoved: totalFilesRemoved,
+        totalSpaceFreed: totalSpaceFreed,
+        duration: timeTaken,
+        timestamp: new Date().toISOString()
+    };
+
+    // Show results
     showResultsSecure(totalFilesRemoved, totalSpaceFreed, timeTaken, results);
 
     // Refresh disk space
@@ -807,8 +821,17 @@ async function performAdvancedCleanupProcess() {
     cleanupState.completedCategories = validCategories.length;
     updateAdvancedProgress(100, 'Cleanup completed', 'Finalizing results...');
 
-    // Show results
+    // Store results in global state for export functionality
     const timeTaken = Math.round((Date.now() - cleanupState.startTime) / 1000);
+    cleanupState.lastCleanupResults = [...results]; // Store detailed results
+    cleanupState.lastCleanupSummary = {
+        totalFilesRemoved: totalFilesRemoved,
+        totalSpaceFreed: totalSpaceFreed,
+        duration: timeTaken,
+        timestamp: new Date().toISOString()
+    };
+
+    // Show results
     showAdvancedResults(totalFilesRemoved, totalSpaceFreed, timeTaken, results);
 
     // Refresh disk space
@@ -1420,124 +1443,15 @@ function loadCleanupSettings() {
     }
 }
 
-/**
- * Show cleanup history
- */
-function showCleanupHistory() {
-    const historySection = document.getElementById('history-section');
-    if (historySection) {
-        loadCleanupHistory();
-        historySection.style.display = 'block';
-    }
-}
 
-/**
- * Hide cleanup history
- */
-function hideHistory() {
-    const historySection = document.getElementById('history-section');
-    if (historySection) {
-        historySection.style.display = 'none';
-    }
-}
 
-/**
- * Load cleanup history from localStorage
- */
-function loadCleanupHistory() {
-    try {
-        const saved = localStorage.getItem('cleanupHistory');
-        if (saved) {
-            cleanupState.cleanupHistory = JSON.parse(saved);
-        }
-    } catch (error) {
-        // Failed to load cleanup history
-    }
 
-    displayCleanupHistory();
-}
 
-/**
- * Display cleanup history
- */
-function displayCleanupHistory() {
-    const historyContent = document.getElementById('history-content');
-    if (!historyContent) return;
 
-    if (cleanupState.cleanupHistory.length === 0) {
-        historyContent.innerHTML = `
-            <div class="history-empty">
-                <i class="fas fa-clock"></i>
-                <p>No cleanup history available</p>
-            </div>
-        `;
-        return;
-    }
 
-    let html = '';
-    cleanupState.cleanupHistory.slice(-20).reverse().forEach(entry => {
-        html += `
-            <div class="history-item">
-                <div class="history-info">
-                    <div class="history-date">${new Date(entry.date).toLocaleString()}</div>
-                    <div class="history-details">${entry.categories.join(', ')} • ${entry.duration}s</div>
-                </div>
-                <div class="history-stats">
-                    ${formatBytes(entry.spaceFreed)}<br>
-                    ${entry.filesDeleted} files
-                </div>
-            </div>
-        `;
-    });
 
-    historyContent.innerHTML = html;
-}
 
-/**
- * Add entry to cleanup history
- */
-function addToCleanupHistory() {
-    const entry = {
-        date: new Date().toISOString(),
-        categories: Array.from(cleanupState.selectedCategories),
-        spaceFreed: calculateTotalSpaceFreed(),
-        filesDeleted: calculateTotalFilesDeleted(),
-        duration: Math.round((Date.now() - cleanupState.startTime) / 1000)
-    };
 
-    cleanupState.cleanupHistory.push(entry);
-
-    // Keep only last 50 entries
-    if (cleanupState.cleanupHistory.length > 50) {
-        cleanupState.cleanupHistory = cleanupState.cleanupHistory.slice(-50);
-    }
-
-    // Save to localStorage
-    try {
-        localStorage.setItem('cleanupHistory', JSON.stringify(cleanupState.cleanupHistory));
-    } catch (error) {
-        // Failed to save cleanup history
-    }
-}
-
-/**
- * Clear cleanup history
- */
-function clearHistory() {
-    const confirmed = confirm('Are you sure you want to clear all cleanup history?');
-    if (!confirmed) return;
-
-    cleanupState.cleanupHistory = [];
-
-    try {
-        localStorage.removeItem('cleanupHistory');
-    } catch (error) {
-        // Failed to clear cleanup history
-    }
-
-    displayCleanupHistory();
-    showNotification('Cleanup history cleared', 'info');
-}
 
 /**
  * Export cleanup results
@@ -1563,44 +1477,72 @@ function exportResults() {
  */
 function generateCleanupReport() {
     const timestamp = new Date().toLocaleString();
-    const categories = Array.from(cleanupState.selectedCategories);
     const spaceFreed = calculateTotalSpaceFreed();
     const filesDeleted = calculateTotalFilesDeleted();
-    const duration = Math.round((Date.now() - cleanupState.startTime) / 1000);
+    const lastResults = cleanupState.lastCleanupResults || [];
+    const lastSummary = cleanupState.lastCleanupSummary;
+
+    // Use stored duration if available, otherwise calculate from current time
+    const duration = lastSummary.duration ||
+        (cleanupState.startTime ? Math.round((Date.now() - cleanupState.startTime) / 1000) : 0);
+
+    // Generate detailed results section
+    let detailedResults = '';
+    if (lastResults.length > 0) {
+        detailedResults = lastResults.map(result => {
+            const status = result.success ? 'SUCCESS' : 'FAILED';
+            const files = result.filesRemoved || 0;
+            const size = formatBytes(result.sizeFreed || 0);
+            const error = result.error ? ` (Error: ${result.error})` : '';
+            return `${result.label || result.category}: ${status} - ${files} files, ${size} freed${error}`;
+        }).join('\n');
+    } else {
+        // Fallback to selected categories if no detailed results available
+        const categories = Array.from(cleanupState.selectedCategories);
+        detailedResults = categories.map(cat => `${cat.toUpperCase()}: No detailed results available`).join('\n');
+    }
+
+    // Generate categories list
+    const categoriesCleaned = lastResults.length > 0
+        ? lastResults.map(r => r.label || r.category).join(', ')
+        : Array.from(cleanupState.selectedCategories).join(', ');
 
     return `WinTool System Cleanup Report
 Generated: ${timestamp}
+Cleanup Performed: ${lastSummary.timestamp ? new Date(lastSummary.timestamp).toLocaleString() : 'Unknown'}
 
 === CLEANUP SUMMARY ===
-Categories Cleaned: ${categories.join(', ')}
-Space Freed: ${formatBytes(spaceFreed)}
-Files Deleted: ${filesDeleted}
+Categories Cleaned: ${categoriesCleaned}
+Total Space Freed: ${formatBytes(spaceFreed)}
+Total Files Deleted: ${filesDeleted}
 Duration: ${duration} seconds
+Success Rate: ${lastResults.length > 0 ? Math.round((lastResults.filter(r => r.success).length / lastResults.length) * 100) : 'N/A'}%
 
 === DETAILED RESULTS ===
-${categories.map(cat => `${cat.toUpperCase()}: Cleaned`).join('\n')}
+${detailedResults}
 
 === SYSTEM INFO ===
 User Agent: ${navigator.userAgent}
 Platform: ${navigator.platform}
 Language: ${navigator.language}
+Report Generated: ${timestamp}
 
 Report generated by WinTool Advanced System Cleanup
 `;
 }
 
 /**
- * Calculate total space freed (returns 0 since we removed scanning)
+ * Calculate total space freed from last cleanup
  */
 function calculateTotalSpaceFreed() {
-    return 0; // No scan results available
+    return cleanupState.lastCleanupSummary.totalSpaceFreed || 0;
 }
 
 /**
- * Calculate total files deleted (returns 0 since we removed scanning)
+ * Calculate total files deleted from last cleanup
  */
 function calculateTotalFilesDeleted() {
-    return 0; // No scan results available
+    return cleanupState.lastCleanupSummary.totalFilesRemoved || 0;
 }
 
 
@@ -1640,8 +1582,7 @@ document.addEventListener('DOMContentLoaded', function() {
         free: 400000000000    // 400GB
     });
 
-    // Load cleanup history
-    loadCleanupHistory();
+
 
     // Initialize cleanup summary
     updateCleanupSummary();
@@ -1660,9 +1601,7 @@ window.showCleanupSettings = showCleanupSettings;
 window.hideCleanupSettings = hideCleanupSettings;
 window.saveCleanupSettings = saveCleanupSettings;
 window.resetCleanupSettings = resetCleanupSettings;
-window.showCleanupHistory = showCleanupHistory;
-window.hideHistory = hideHistory;
-window.clearHistory = clearHistory;
+
 window.exportResults = exportResults;
 window.openDiskCleanup = openDiskCleanup;
 

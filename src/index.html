@@ -439,31 +439,92 @@
                     <!-- Appearance Settings -->
                     <div id="settings-appearance" class="settings-panel active">
                         <h4>Appearance Settings</h4>
+                        
+                        <!-- Theme Selection with Visual Previews -->
                         <div class="settings-group">
-                            <label class="settings-label">Theme</label>
-                            <select id="theme-selector" class="settings-select">
-                                <option value="classic-dark">Classic Dark</option>
-                                <option value="modern-gray">Modern Gray</option>
-                                <option value="custom">Custom</option>
-                            </select>
-                            <p class="settings-description">Choose the application's color scheme</p>
+                            <label class="settings-label">
+                                <i class="fas fa-palette"></i> Theme Collection
+                            </label>
+                            <p class="settings-description">Choose from our curated theme collection or create your own custom themes</p>
+                            
+                            <!-- Theme Categories -->
+                            <div class="theme-categories">
+                                <div class="theme-category active" data-category="all">
+                                    <i class="fas fa-th"></i>
+                                    <span>All Themes</span>
+                                </div>
+                                <div class="theme-category" data-category="dark">
+                                    <i class="fas fa-moon"></i>
+                                    <span>Dark</span>
+                                </div>
+                                <div class="theme-category" data-category="light">
+                                    <i class="fas fa-sun"></i>
+                                    <span>Light</span>
+                                </div>
+                                <div class="theme-category" data-category="warm">
+                                    <i class="fas fa-fire"></i>
+                                    <span>Warm</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Theme Preview Grid Container -->
+                            <div class="theme-collection-container">
+                                <div id="theme-preview-grid" class="theme-preview-grid">
+                                    <!-- Theme previews will be dynamically inserted here -->
+                                </div>
+                            </div>
                         </div>
-                        <div class="settings-group" id="custom-theme-creator" style="display: none;">
-                            <label class="settings-label">Custom Theme</label>
-                            <div class="custom-theme-actions">
-                                <button class="btn btn-secondary" onclick="openThemeCreator()">
-                                    <i class="fas fa-palette"></i> Create/Edit Custom Theme
+
+                        <!-- Theme History -->
+                        <div class="settings-group">
+                            <div id="theme-history-container" class="theme-history-container">
+                                <div class="theme-history-title">Recently Used Themes</div>
+                                <div id="theme-history-grid" class="theme-history-grid">
+                                    <!-- Recent themes will be shown here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Custom Theme Tools -->
+                        <div class="settings-group">
+                            <label class="settings-label">
+                                <i class="fas fa-magic"></i> Theme Creation Tools
+                            </label>
+                            <p class="settings-description">Advanced tools for creating and customizing themes</p>
+                            <div class="theme-tools-grid">
+                                <button class="btn btn-secondary theme-tool-btn" onclick="openThemeCreator()">
+                                    <i class="fas fa-palette"></i>
+                                    <span>Create Custom Theme</span>
+                                </button>
+                                <button class="btn btn-secondary theme-tool-btn" onclick="window.generateRandomTheme()">
+                                    <i class="fas fa-dice"></i>
+                                    <span>Generate Random</span>
+                                </button>
+                                <button class="btn btn-secondary theme-tool-btn" onclick="window.generateComplementaryTheme()">
+                                    <i class="fas fa-adjust"></i>
+                                    <span>Complementary Colors</span>
+                                </button>
+                                <button class="btn btn-secondary theme-tool-btn" onclick="window.duplicateCurrentTheme()">
+                                    <i class="fas fa-copy"></i>
+                                    <span>Duplicate Current</span>
                                 </button>
                             </div>
                         </div>
+
+                        <!-- Primary Color Customization -->
                         <div class="settings-group">
-                            <label class="settings-label">Primary Color</label>
+                            <label class="settings-label">Primary Color Override</label>
                             <div class="color-picker-group">
                                 <input type="color" id="primary-color-picker" class="color-picker" value="#ff9800">
                                 <span class="color-preview" id="primary-color-preview">#ff9800</span>
+                                <button class="btn btn-small btn-secondary" onclick="window.resetPrimaryColor()">
+                                    <i class="fas fa-undo"></i>
+                                </button>
                             </div>
-                            <p class="settings-description">Choose the primary accent color for the application</p>
+                            <p class="settings-description">Override the primary color for the current theme</p>
                         </div>
+
+                        <!-- Rainbow Mode -->
                         <div class="settings-group">
                             <label class="settings-label">
                                 <input type="checkbox" id="rainbow-mode-checkbox" class="settings-checkbox">
@@ -471,36 +532,71 @@
                             </label>
                             <p class="settings-description">Enable a cycling rainbow effect for the primary color</p>
                         </div>
+                        
                         <div class="settings-group" id="rainbow-speed-container" style="display: none;">
-                            <label class="settings-label">Rainbow Speed</label>
-                            <div class="slider-group">
-                                <input type="range" id="rainbow-speed-slider" min="1" max="10" step="1" value="5"
-                                    class="slider">
-                                <span class="slider-value" id="rainbow-speed-value">5s</span>
+                            <label class="settings-label">Rainbow Configuration</label>
+                            <div class="rainbow-controls">
+                                <div class="slider-group">
+                                    <label class="slider-label">Speed</label>
+                                    <input type="range" id="rainbow-speed-slider" min="1" max="10" step="1" value="5" class="slider">
+                                    <span class="slider-value" id="rainbow-speed-value">5s</span>
+                                </div>
+                                <div class="slider-group">
+                                    <label class="slider-label">Saturation</label>
+                                    <input type="range" id="rainbow-saturation-slider" min="50" max="100" step="5" value="100" class="slider">
+                                    <span class="slider-value" id="rainbow-saturation-value">100%</span>
+                                </div>
+                                <div class="checkbox-group">
+                                    <label class="settings-label">
+                                        <input type="checkbox" id="rainbow-smooth-checkbox" class="settings-checkbox" checked>
+                                        Smooth Transitions
+                                    </label>
+                                </div>
+                                <div class="checkbox-group">
+                                    <label class="settings-label">
+                                        <input type="checkbox" id="rainbow-reverse-checkbox" class="settings-checkbox">
+                                        Reverse Direction
+                                    </label>
+                                </div>
                             </div>
-                            <p class="settings-description">Set the speed of the rainbow color cycle (in seconds)</p>
+                            <p class="settings-description">Fine-tune the rainbow effect behavior</p>
                         </div>
+
+                        <!-- Window Appearance -->
                         <div class="settings-group">
-                            <label class="settings-label">App Transparency</label>
+                            <label class="settings-label">Window Appearance</label>
                             <div class="slider-group">
-                                <input type="range" id="transparency-slider" min="0.1" max="1" step="0.05" value="1"
-                                    class="slider">
+                                <label class="slider-label">Transparency</label>
+                                <input type="range" id="transparency-slider" min="0.1" max="1" step="0.05" value="1" class="slider">
                                 <span class="slider-value" id="transparency-value">100%</span>
                             </div>
                             <p class="settings-description">Adjust the transparency of the application window</p>
                         </div>
 
+                        <!-- Theme Management -->
                         <div class="settings-group">
-                            <label class="settings-label">Theme Actions</label>
-                            <div class="shortcut-actions">
+                            <label class="settings-label">
+                                <i class="fas fa-cogs"></i> Theme Management
+                            </label>
+                            <p class="settings-description">Import, export, and manage your theme collection</p>
+                            <div class="theme-management-grid">
                                 <button class="btn btn-secondary" onclick="importTheme()">
-                                    <i class="fas fa-upload"></i> Import Theme
+                                    <i class="fas fa-upload"></i>
+                                    <span>Import Theme</span>
                                 </button>
                                 <button class="btn btn-secondary" onclick="exportTheme()">
-                                    <i class="fas fa-download"></i> Export Theme
+                                    <i class="fas fa-download"></i>
+                                    <span>Export Current</span>
+                                </button>
+                                <button class="btn btn-secondary" onclick="window.exportThemeCollection()">
+                                    <i class="fas fa-archive"></i>
+                                    <span>Export Collection</span>
+                                </button>
+                                <button class="btn btn-secondary" onclick="window.clearThemeHistory()">
+                                    <i class="fas fa-trash"></i>
+                                    <span>Clear History</span>
                                 </button>
                             </div>
-                            <p class="settings-description">Import or export your theme settings</p>
                         </div>
                     </div>
 

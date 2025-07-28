@@ -1,5 +1,5 @@
 /* About Tab Styles - System Health Dashboard Theme */
-@import url('../../css/universal-tab-header.css');
+/* Universal tab header styles are now consolidated in main styles.css */
 
 .about-content {
     max-width: 1000px;

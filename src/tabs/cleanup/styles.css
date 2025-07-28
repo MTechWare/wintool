@@ -1,5 +1,5 @@
 /* Enhanced Cleanup Tab Styles - System Health Dashboard Theme */
-@import url('../../css/universal-tab-header.css');
+/* Universal tab header styles are now consolidated in main styles.css */
 
 .cleanup-content {
     max-width: 1400px;
@@ -986,95 +986,9 @@
     color: var(--error-color);
 }
 
-/* History Section */
-.history-section {
-    background: var(--background-card);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 30px;
-    animation: slideInUp 0.5s ease-out;
-}
 
-.history-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid var(--border-color);
-}
 
-.history-header h3 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
 
-.history-controls {
-    display: flex;
-    gap: 10px;
-}
-
-.history-content {
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-.history-empty {
-    text-align: center;
-    padding: 40px;
-    color: var(--text-secondary);
-}
-
-.history-empty i {
-    font-size: 48px;
-    margin-bottom: 15px;
-    opacity: 0.5;
-}
-
-.history-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px;
-    background: var(--background-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    margin-bottom: 10px;
-    transition: all 0.3s ease;
-}
-
-.history-item:hover {
-    border-color: var(--primary-color);
-    transform: translateY(-1px);
-}
-
-.history-info {
-    flex: 1;
-}
-
-.history-date {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 5px;
-}
-
-.history-details {
-    font-size: 12px;
-    color: var(--text-secondary);
-}
-
-.history-stats {
-    text-align: right;
-    font-size: 13px;
-    color: var(--primary-color);
-    font-weight: 600;
-}
 
 /* Settings Modal */
 .settings-modal {

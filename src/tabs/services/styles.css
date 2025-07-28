@@ -1,5 +1,5 @@
 /* Services Manager Tab Styles */
-@import url('../../css/universal-tab-header.css');
+/* Universal tab header styles are now consolidated in main styles.css */
 
 /* Services-specific Controls Section */
 .services-controls {
@@ -45,44 +45,25 @@
     margin-bottom: 0;
 }
 
-/* Ensure search input inherits universal styles */
+/* Search styling now uses universal styles from main CSS */
 .search-container .search-input {
-    width: 100%;
-    padding: 12px 16px 12px 45px;
-    border: 1px solid rgba(var(--primary-rgb), 0.1);
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--background-card) 0%, rgba(26, 26, 28, 0.8) 100%);
-    color: var(--text-primary);
-    font-size: 1rem;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    /* Uses universal search input styles */
 }
 
 .search-container .search-input::placeholder {
-    color: var(--text-secondary);
-    opacity: 0.8;
+    /* Uses universal placeholder styles */
 }
 
 .search-container .search-input:focus {
-    outline: none;
-    border-color: rgba(var(--primary-rgb), 0.3);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-    transform: translateY(-1px);
+    /* Uses universal focus styles */
 }
 
 .search-container .search-icon {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--primary-color);
-    font-size: 1.1rem;
-    z-index: 3;
-    transition: transform 0.3s ease;
+    /* Uses universal search icon styles */
 }
 
 .search-container:hover .search-icon {
-    transform: translateY(-50%) scale(1.1);
+    /* Uses universal hover styles */
 }
 
 .filter-container {
