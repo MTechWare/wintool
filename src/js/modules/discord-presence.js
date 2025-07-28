@@ -1,6 +1,6 @@
-const RPC = require('discord-rpc');
 const clientId = "564432873419964426";
 let rpc;
+let RPC;
 
 const activity = {
     details: 'Comprehensive. Intuitive. Professional.',
@@ -20,18 +20,26 @@ async function setActivity() {
     await rpc.setActivity(activity);
 }
 
-function start() {
+async function start() {
     if (rpc) {
         return;
     }
-    rpc = new RPC.Client({ transport: 'ipc' });
-    rpc.on('ready', () => {
-        setActivity();
-    });
-    rpc.login({ clientId }).catch(err => {
+
+    try {
+        // Dynamic import for discord-rpc to reduce bundle size
+        if (!RPC) {
+            RPC = require('discord-rpc');
+        }
+
+        rpc = new RPC.Client({ transport: 'ipc' });
+        rpc.on('ready', () => {
+            setActivity();
+        });
+        await rpc.login({ clientId });
+    } catch (err) {
         console.error('Failed to connect to Discord RPC', err);
         rpc = null;
-    });
+    }
 }
 
 function stop() {

@@ -1,6 +1,8 @@
 import { showNotification } from './notifications.js';
 import { loadTabOrder, switchToTab } from './tabs.js';
-import { applyTheme, updatePrimaryColorVariables, applyRainbowEffect, removeRainbowEffect, loadCustomTheme } from './theme.js';
+import { applyTheme, updatePrimaryColorVariables, applyRainbowEffect, removeRainbowEffect, loadCustomTheme, getThemeCategories, duplicateTheme, generateThemeFromColor } from './theme.js';
+import { themeManager, generateRandomTheme } from './theme-manager.js';
+import { createThemeGrid, ThemePreview } from './theme-preview.js';
 import { showFpsCounter, hideFpsCounter } from './fps-counter.js';
 import { THEMES, hiddenTabs, rainbowAnimationId, setHiddenTabs } from './state.js';
 import { loadKeyboardShortcutsSettings, saveKeyboardShortcuts } from './keyboard-shortcuts.js';
@@ -26,6 +28,8 @@ export async function showSettings() {
 async function loadCurrentSettings() {
     try {
         if (window.electronAPI) {
+            // Initialize theme management UI first
+            await initializeThemeUI();
 
             const theme = await window.electronAPI.getSetting('theme', 'classic-dark');
             const themeSelector = document.getElementById('theme-selector');
@@ -163,6 +167,7 @@ function initSettingsNavigation() {
         themeSelector.addEventListener('change', async (e) => {
             const selectedTheme = e.target.value;
             await applyTheme(selectedTheme);
+            await themeManager.addToHistory(selectedTheme);
             const customThemeCreator = document.getElementById('custom-theme-creator');
             if (customThemeCreator) {
                 customThemeCreator.style.display = selectedTheme === 'custom' ? 'block' : 'none';
@@ -345,6 +350,259 @@ export async function resetSettings() {
     }
 }
 
+
+// Track if theme UI has been initialized to prevent duplicates
+let themeUIInitialized = false;
+
+// Reset theme UI initialization flag (useful for testing or forced refresh)
+function resetThemeUI() {
+    themeUIInitialized = false;
+    const themePreviewGrid = document.getElementById('theme-preview-grid');
+    const historyContainer = document.getElementById('theme-history-grid');
+    
+    if (themePreviewGrid) themePreviewGrid.innerHTML = '';
+    if (historyContainer) historyContainer.innerHTML = '';
+}
+
+// Initialize theme management UI
+async function initializeThemeUI() {
+    try {
+        // Initialize theme preview grid
+        const themePreviewGrid = document.getElementById('theme-preview-grid');
+        if (themePreviewGrid) {
+            // Clear existing content to prevent duplicates
+            themePreviewGrid.innerHTML = '';
+            
+            const currentTheme = await window.electronAPI.getSetting('theme', 'classic-dark');
+            
+            createThemeGrid(themePreviewGrid, THEMES, {
+                size: 'medium',
+                showName: true,
+                onThemeSelect: async (themeKey, theme) => {
+                    await applyTheme(themeKey);
+                    await themeManager.addToHistory(themeKey);
+                    await window.electronAPI.setSetting('theme', themeKey);
+                    updateThemeHistory();
+                }
+            });
+        }
+
+        // Initialize theme categories only once
+        if (!themeUIInitialized) {
+            setupThemeCategories();
+            setupEnhancedRainbowControls();
+            themeUIInitialized = true;
+        }
+        
+        // Always update theme history (this should refresh)
+        updateThemeHistory();
+        
+    } catch (error) {
+        console.error('Error initializing theme UI:', error);
+    }
+}
+
+function setupThemeCategories() {
+    const categories = document.querySelectorAll('.theme-category');
+    
+    categories.forEach(category => {
+        // Remove existing listeners to prevent duplicates
+        category.removeEventListener('click', handleCategoryClick);
+        category.addEventListener('click', handleCategoryClick);
+    });
+}
+
+// Separate function for category click handling to enable proper removal
+function handleCategoryClick(event) {
+    const category = event.currentTarget;
+    const categories = document.querySelectorAll('.theme-category');
+    
+    // Update active category
+    categories.forEach(cat => cat.classList.remove('active'));
+    category.classList.add('active');
+    
+    // Filter themes
+    const selectedCategory = category.dataset.category;
+    filterThemesByCategory(selectedCategory);
+}
+
+function filterThemesByCategory(category) {
+    const themeGrid = document.getElementById('theme-preview-grid');
+    if (!themeGrid) return;
+    
+    // Clear existing grid to prevent duplicates
+    themeGrid.innerHTML = '';
+    
+    // Filter themes based on category
+    let filteredThemes = {};
+    
+    if (category === 'all') {
+        filteredThemes = THEMES;
+    } else {
+        Object.entries(THEMES).forEach(([key, theme]) => {
+            if (key === 'custom' || theme.category === category) {
+                filteredThemes[key] = theme;
+            }
+        });
+    }
+    
+    // Recreate grid with filtered themes
+    createThemeGrid(themeGrid, filteredThemes, {
+        size: 'medium',
+        showName: true,
+        onThemeSelect: async (themeKey, theme) => {
+            await applyTheme(themeKey);
+            await themeManager.addToHistory(themeKey);
+            await window.electronAPI.setSetting('theme', themeKey);
+            updateThemeHistory();
+        }
+    });
+}
+
+async function updateThemeHistory() {
+    const historyContainer = document.getElementById('theme-history-grid');
+    if (!historyContainer) return;
+    
+    const history = themeManager.getThemeHistory();
+    
+    // Clear existing content to prevent duplicates
+    historyContainer.innerHTML = '';
+    
+    if (history.length === 0) {
+        historyContainer.innerHTML = '<div class="theme-history-empty">No recent themes</div>';
+        return;
+    }
+    
+    history.slice(0, 5).forEach(entry => {
+        const theme = THEMES[entry.name];
+        if (theme) {
+            const container = document.createElement('div');
+            container.className = 'theme-history-item';
+            
+            new ThemePreview(container, theme, {
+                size: 'small',
+                showName: false,
+                onSelect: async () => {
+                    await applyTheme(entry.name);
+                    await themeManager.addToHistory(entry.name);
+                    await window.electronAPI.setSetting('theme', entry.name);
+                    updateThemeHistory();
+                    // Also refresh the main theme grid to show selection
+                    await initializeThemeUI();
+                }
+            });
+            
+            historyContainer.appendChild(container);
+        }
+    });
+}
+
+function setupEnhancedRainbowControls() {
+    // Rainbow saturation control
+    const saturationSlider = document.getElementById('rainbow-saturation-slider');
+    const saturationValue = document.getElementById('rainbow-saturation-value');
+    
+    if (saturationSlider && saturationValue) {
+        saturationSlider.addEventListener('input', (e) => {
+            const value = e.target.value;
+            saturationValue.textContent = `${value}%`;
+            
+            if (rainbowAnimationId) {
+                const speed = document.getElementById('rainbow-speed-slider')?.value || 5;
+                const smooth = document.getElementById('rainbow-smooth-checkbox')?.checked || true;
+                const reverse = document.getElementById('rainbow-reverse-checkbox')?.checked || false;
+                
+                applyRainbowEffect(speed, {
+                    saturation: parseInt(value),
+                    smooth,
+                    reverse
+                });
+            }
+        });
+    }
+    
+    // Rainbow smooth transitions
+    const smoothCheckbox = document.getElementById('rainbow-smooth-checkbox');
+    if (smoothCheckbox) {
+        smoothCheckbox.addEventListener('change', (e) => {
+            if (rainbowAnimationId) {
+                const speed = document.getElementById('rainbow-speed-slider')?.value || 5;
+                const saturation = document.getElementById('rainbow-saturation-slider')?.value || 100;
+                const reverse = document.getElementById('rainbow-reverse-checkbox')?.checked || false;
+                
+                applyRainbowEffect(speed, {
+                    saturation: parseInt(saturation),
+                    smooth: e.target.checked,
+                    reverse
+                });
+            }
+        });
+    }
+    
+    // Rainbow reverse direction
+    const reverseCheckbox = document.getElementById('rainbow-reverse-checkbox');
+    if (reverseCheckbox) {
+        reverseCheckbox.addEventListener('change', (e) => {
+            if (rainbowAnimationId) {
+                const speed = document.getElementById('rainbow-speed-slider')?.value || 5;
+                const saturation = document.getElementById('rainbow-saturation-slider')?.value || 100;
+                const smooth = document.getElementById('rainbow-smooth-checkbox')?.checked || true;
+                
+                applyRainbowEffect(speed, {
+                    saturation: parseInt(saturation),
+                    smooth,
+                    reverse: e.target.checked
+                });
+            }
+        });
+    }
+}
+
+// Global functions for theme management buttons
+window.generateRandomTheme = async function() {
+    await themeManager.generateRandomTheme();
+    updateThemeHistory();
+};
+
+window.generateComplementaryTheme = async function() {
+    const currentTheme = await window.electronAPI.getSetting('theme', 'classic-dark');
+    await themeManager.generateComplementaryTheme(currentTheme);
+    updateThemeHistory();
+};
+
+window.duplicateCurrentTheme = async function() {
+    const currentTheme = await window.electronAPI.getSetting('theme', 'classic-dark');
+    const newName = prompt('Enter a name for the duplicated theme:', `${THEMES[currentTheme]?.name || currentTheme} Copy`);
+    if (newName) {
+        await duplicateTheme(currentTheme, newName);
+        updateThemeHistory();
+    }
+};
+
+window.resetPrimaryColor = async function() {
+    const currentTheme = await window.electronAPI.getSetting('theme', 'classic-dark');
+    const theme = THEMES[currentTheme];
+    if (theme && theme['--primary-color']) {
+        const colorPicker = document.getElementById('primary-color-picker');
+        const colorPreview = document.getElementById('primary-color-preview');
+        if (colorPicker && colorPreview) {
+            colorPicker.value = theme['--primary-color'];
+            colorPreview.textContent = theme['--primary-color'];
+            updatePrimaryColorVariables(theme['--primary-color']);
+        }
+    }
+};
+
+window.exportThemeCollection = async function() {
+    await themeManager.exportThemeCollection();
+};
+
+window.clearThemeHistory = async function() {
+    if (confirm('Are you sure you want to clear your theme history?')) {
+        await themeManager.clearHistory();
+        updateThemeHistory();
+    }
+};
 
 export async function loadAndApplyStartupSettings() {
     try {

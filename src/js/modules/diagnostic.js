@@ -93,17 +93,22 @@ app.whenReady().then(() => {
     console.log(`\n=== Test 5: Settings Directory ===`);
     try {
         const userDataPath = app.getPath('userData');
-        console.log(`User data path: ${userDataPath}`);
-        
-        const settingsPath = path.join(userDataPath, 'config.json');
+        console.log(`Default user data path: ${userDataPath}`);
+
+        // Test custom MTechWare\WinTool directory
+        const mtechWareWinToolPath = path.join(process.env.LOCALAPPDATA || userDataPath, 'MTechWare', 'WinTool');
+        console.log(`MTechWare\\WinTool app data path: ${mtechWareWinToolPath}`);
+        console.log(`MTechWare\\WinTool dir exists: ${fs.existsSync(mtechWareWinToolPath)}`);
+
+        const settingsPath = path.join(mtechWareWinToolPath, 'config.json');
         console.log(`Settings path: ${settingsPath}`);
         console.log(`Settings exists: ${fs.existsSync(settingsPath)}`);
-        
+
         // Test plugins directory
-        const pluginsPath = path.join(process.env.LOCALAPPDATA || userDataPath, 'MTechTool', 'Plugins');
+        const pluginsPath = path.join(mtechWareWinToolPath, 'Plugins');
         console.log(`Plugins path: ${pluginsPath}`);
         console.log(`Plugins dir exists: ${fs.existsSync(pluginsPath)}`);
-        
+
     } catch (error) {
         console.error(`Settings directory test failed: ${error.message}`);
     }
