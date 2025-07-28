@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![WinTool Version](https://img.shields.io/badge/WinTool-v0.2.5wb-orange?style=for-the-badge&logo=windows&logoColor=white)
+![WinTool Version](https://img.shields.io/badge/WinTool-v0.2.6wb-orange?style=for-the-badge&logo=windows&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows_10/11-blue?style=for-the-badge&logo=windows)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=for-the-badge)
 [![Plugin Marketplace](https://img.shields.io/badge/🔌_Plugin-Marketplace-4CAF50?style=for-the-badge&logo=puzzle-piece)](https://mtechware.github.io/plugins.html)
@@ -85,6 +85,10 @@ Run the following command in PowerShell as an administrator for a seamless insta
 irm https://raw.githubusercontent.com/MTechWare/wintool/refs/heads/main/WinTool_Installer.ps1 | iex
 ```
 
+**Installation Location**: `%LOCALAPPDATA%\MTechWare\WinTool\` (typically `C:\Users\[Username]\AppData\Local\MTechWare\WinTool\`)
+
+**Installation Location**: `%LOCALAPPDATA%\MTechWare\WinTool\` (typically `C:\Users\[Username]\AppData\Local\MTechWare\WinTool\`)
+
 ### Option 2: Portable Executable
 1. Download the latest `WinTool.exe` from the [releases page](https://github.com/MTechWare/wintool/releases).
 2. Place the executable in your desired directory.
@@ -103,6 +107,16 @@ npm install
 
 # Launch the application
 npm start
+```
+
+### 📁 Directory Structure
+After installation, WinTool creates the following directory structure:
+```
+%LOCALAPPDATA%\MTechWare\WinTool\
+├── WinTool.exe              # Main application executable
+├── config.json              # Application settings and preferences
+└── Plugins\                 # User-installed plugins directory
+    └── [plugin-folders]\    # Individual plugin directories
 ```
 
 ---
@@ -152,7 +166,7 @@ For developers, see the [Plugin Development Guide](https://github.com/MTechWare/
 WinTool is designed with a modular architecture, separating the core tools from community-driven plugins.
 
 - **Core Tools**: Located in the `src/tabs/` directory. Each tool is a self-contained module with its own HTML, CSS, JavaScript, and a `config.json` file for metadata.
-- **Plugin System**: Plugins are stored in the `%LOCALAPPDATA%\MTechTool\Plugins` directory. Each plugin includes a `plugin.json` manifest, UI files (`index.html`, `styles.css`, `script.js`), and an optional `backend.js` for advanced functionality.
+- **Plugin System**: Plugins are stored in the `%LOCALAPPDATA%\MTechWare\WinTool\Plugins` directory. Each plugin includes a `plugin.json` manifest, UI files (`index.html`, `styles.css`, `script.js`), and an optional `backend.js` for advanced functionality.
 
 ## 🤝 Support
 

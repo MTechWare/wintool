@@ -81,17 +81,22 @@ function Show-Spinner {
 # ======================================================================
 # This script will:
 #  - Check for required dependencies
-#  - Create the installation directory
+#  - Create the installation directory (%LOCALAPPDATA%\MTechWare\WinTool)
 #  - Download the latest WinTool application
 #  - Create a desktop shortcut
 #  - Launch the application
+#
+# Installation Directory: %LOCALAPPDATA%\MTechWare\WinTool
+#  - Application executable: WinTool.exe
+#  - Settings and data: config.json
+#  - User plugins: Plugins\ subdirectory
 # ======================================================================
 
 # Configuration
 $appName = "WinTool"
 $companyName = "MTechWare"
 $version = "Latest"
-$installDir = "$env:LOCALAPPDATA\MTechTool"
+$installDir = "$env:LOCALAPPDATA\MTechWare\WinTool"
 $exeUrl = "https://github.com/MTechWare/wintool/releases/download/release/WinTool.exe"
 $desktop = [Environment]::GetFolderPath("Desktop")
 $shortcutPath = Join-Path $desktop "$appName.lnk"
@@ -245,6 +250,10 @@ Write-ThemeLine "Helpful Information" -Color "DarkYellow"
 Write-Host ""
 Write-Host "  * Installation Directory: " -NoNewline -ForegroundColor "White"
 Write-Host "$installDir" -ForegroundColor "Yellow"
+Write-Host "  * Settings & Data: " -NoNewline -ForegroundColor "White"
+Write-Host "$installDir\config.json" -ForegroundColor "Yellow"
+Write-Host "  * Plugins Directory: " -NoNewline -ForegroundColor "White"
+Write-Host "$installDir\Plugins" -ForegroundColor "Yellow"
 Write-Host "  * Desktop Shortcut: " -NoNewline -ForegroundColor "White"
 Write-Host "$shortcutPath" -ForegroundColor "Yellow"
 Write-Host "  * Version: " -NoNewline -ForegroundColor "White"
