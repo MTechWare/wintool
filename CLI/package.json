@@ -1,0 +1,39 @@
+{
+  "name": "wintool-plugin-cli",
+  "version": "1.0.1",
+  "description": "Command-line tool for WinTool plugin development",
+  "main": "wintool-plugin-cli.js",
+  "bin": {
+    "wintool-plugin-cli": "./wintool-plugin-cli.js"
+  },
+  "scripts": {
+    "test": "node wintool-plugin-cli.js test",
+    "install-global": "npm install -g .",
+    "uninstall-global": "npm uninstall -g wintool-plugin-cli"
+  },
+  "keywords": [
+    "wintool",
+    "plugin",
+    "cli",
+    "development",
+    "scaffolding"
+  ],
+  "author": "MTech",
+  "license": "GPL-3.0-or-later",
+  "dependencies": {
+    "archiver": "^5.3.1",
+    "chokidar": "^3.5.3"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MTechWare/wintool"
+  },
+  "bugs": {
+    "url": "https://github.com/MTechWare/wintool/issues"
+  },
+  "homepage": "https://github.com/MTechWare/wintool#readme"
+}
