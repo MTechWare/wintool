@@ -20,8 +20,17 @@ WinTool is a powerful and intuitive application for Windows system management, d
 
 # Version: v0.2.7wb
 
-- **ESLint Integration**: Enhanced ESLint configuration with separate rules for Node.js and browser environments
-- **Docs**: Updated documentation through out the tabs
+**FIXED: Plugin CLI Tool**
+- **Template Literal Fixes**: Resolved syntax errors in generated plugin code
+- **Improved Code Generation**: Fixed template string escaping in CLI tool
+
+**NEW: Automatic Plugin Dependency Installation**
+- **Auto npm install**: WinTool now automatically installs plugin dependencies on startup
+- **Smart Detection**: Checks for package.json and missing node_modules in plugin directories
+
+**Docs**
+- **Better Error Handling**: Improved error messages and debugging information
+- **Docs**: Updated documentation through out the project
 
 ---
 
