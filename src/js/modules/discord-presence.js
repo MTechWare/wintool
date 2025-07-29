@@ -1,4 +1,4 @@
-const clientId = "564432873419964426";
+const clientId = '564432873419964426';
 let rpc;
 let RPC;
 
@@ -52,5 +52,5 @@ function stop() {
 
 module.exports = {
     start,
-    stop
+    stop,
 };

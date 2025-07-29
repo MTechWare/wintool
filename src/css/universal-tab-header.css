@@ -1,7 +1,6 @@
-/* Universal Tab Header CSS - Minimal, Always Works */
-/* This file provides essential tab header styling that works regardless of theme loading */
+/* Universal Tab Header CSS */
 
-/* Essential CSS Variables - Hardcoded fallbacks */
+/* CSS Variables */
 .tab-header {
     --fallback-primary: #ff6b35;
     --fallback-text-primary: #ffffff;
@@ -11,7 +10,7 @@
     --fallback-hover: #4f4f52;
 }
 
-/* Tab Header Layout - Critical Styles */
+/* Tab Header Layout */
 .tab-header {
     display: flex;
     justify-content: space-between;

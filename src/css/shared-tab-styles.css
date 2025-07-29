@@ -1,7 +1,6 @@
-/* Shared Tab Styles - System Health Dashboard Theme */
-/* Based on Tweaks tab styling for consistency across all tabs */
+/* Shared Tab Styles */
 
-/* Tab Header Styles - Matching System Health Dashboard */
+/* Tab Header */
 .tab-header {
     display: flex;
     justify-content: space-between;
@@ -35,7 +34,7 @@
     line-height: 1.5;
 }
 
-/* Warning/Info Section - System Health Dashboard Theme */
+/* Warning/Info Section */
 .plugin-warning {
     display: flex;
     align-items: flex-start;

@@ -5,7 +5,7 @@ try {
     $filesRemoved = 0
     $totalSizeFreed = 0
     
-    # Windows Update cache paths
+
     $updatePaths = @(
         "$env:SystemRoot\SoftwareDistribution\Download\*",
         "$env:SystemRoot\SoftwareDistribution\DataStore\Logs\*"
@@ -34,7 +34,7 @@ try {
         }
     }
     
-    # Additional update-related log files
+
     $logPaths = @(
         "$env:SystemRoot\Logs\CBS\*.log",
         "$env:SystemRoot\Logs\DISM\*.log"
@@ -63,7 +63,7 @@ try {
         }
     }
     
-    # Windows Update log files
+
     $updateLogPaths = @(
         "$env:SystemRoot\WindowsUpdate.log*",
         "$env:LOCALAPPDATA\Microsoft\Windows\WindowsUpdate.log*"
@@ -92,7 +92,7 @@ try {
         }
     }
     
-    # Output JSON result
+
     $result = @{
         timestamp = (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
         sizeFreed = $totalSizeFreed

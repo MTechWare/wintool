@@ -1,4 +1,3 @@
-
 // c/Users/userv/Desktop/WIN/src/js/modules/fps-counter.js
 
 let fpsElement;
@@ -57,7 +56,7 @@ export async function initFpsCounter() {
     if (isInitialized) return;
 
     createFpsElement(); // Create the element once
-    window.electronAPI.onPerformanceUpdate((metrics) => {
+    window.electronAPI.onPerformanceUpdate(metrics => {
         if (fpsElement.style.display !== 'none') {
             document.getElementById('mem-value').textContent = `MEM: ${metrics.mem}%`;
         }

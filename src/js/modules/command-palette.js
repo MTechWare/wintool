@@ -4,7 +4,6 @@ import { refreshCurrentTab, switchToTab } from './tabs.js';
 import { closeModal } from './modals.js';
 import { showNotification } from './notifications.js';
 
-
 export function initCommandPalette() {
     const input = document.getElementById('command-palette-input');
     const resultsList = document.getElementById('command-palette-results');
@@ -16,7 +15,7 @@ export function initCommandPalette() {
         renderCommands(input.value);
     });
 
-    input.addEventListener('keydown', (e) => {
+    input.addEventListener('keydown', e => {
         const items = resultsList.querySelectorAll('.command-palette-item');
         if (items.length === 0) return;
 
@@ -40,7 +39,7 @@ export function initCommandPalette() {
         }
     });
 
-    resultsList.addEventListener('click', (e) => {
+    resultsList.addEventListener('click', e => {
         const item = e.target.closest('.command-palette-item');
         if (item) {
             const commandId = item.dataset.commandId;
@@ -74,9 +73,10 @@ function renderCommands(filter = '') {
     resultsList.innerHTML = '';
     const lowerCaseFilter = filter.toLowerCase();
 
-    const filteredCommands = commandRegistry.filter(cmd =>
-        cmd.title.toLowerCase().includes(lowerCaseFilter) ||
-        cmd.category.toLowerCase().includes(lowerCaseFilter)
+    const filteredCommands = commandRegistry.filter(
+        cmd =>
+            cmd.title.toLowerCase().includes(lowerCaseFilter) ||
+            cmd.category.toLowerCase().includes(lowerCaseFilter)
     );
 
     filteredCommands.forEach(cmd => {
@@ -125,41 +125,36 @@ export function registerCommand(command) {
 }
 
 export function registerDefaultCommands(loadedTabs) {
-    
     const allTabs = new Map([...tabs, ...loadedTabs]);
 
-    
     allTabs.forEach((tab, id) => {
-        
         const name = tab.config ? tab.config.name : tab.name;
         const icon = tab.config ? tab.config.icon : tab.icon;
 
-        
         if (name) {
             registerCommand({
                 id: `navigate-${id}`,
                 title: `Go to ${name}`,
                 category: 'Navigation',
                 icon: icon,
-                action: () => switchToTab(id)
+                action: () => switchToTab(id),
             });
         }
     });
-    
-    
+
     registerCommand({
         id: 'show-help',
         title: 'Show Help',
         category: 'Application',
         icon: 'fas fa-question-circle',
-        action: showHelpModal
+        action: showHelpModal,
     });
     registerCommand({
         id: 'open-settings',
         title: 'Open Settings',
         category: 'Application',
         icon: 'fas fa-cog',
-        action: showSettings
+        action: showSettings,
     });
 
     registerCommand({
@@ -167,18 +162,15 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Refresh Current Tab',
         category: 'Application',
         icon: 'fas fa-sync-alt',
-        action: refreshCurrentTab
+        action: refreshCurrentTab,
     });
-
-    
-
 
     registerCommand({
         id: 'sfc-scannow',
         title: 'Run SFC Scan',
         category: 'System Utilities',
         icon: 'fas fa-first-aid',
-        action: () => window.electronAPI.runCommand('sfc /scannow', true)
+        action: () => window.electronAPI.runCommand('sfc /scannow', true),
     });
 
     registerCommand({
@@ -186,7 +178,8 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Run DISM Cleanup',
         category: 'System Utilities',
         icon: 'fas fa-medkit',
-        action: () => window.electronAPI.runCommand('Dism /Online /Cleanup-Image /RestoreHealth', true)
+        action: () =>
+            window.electronAPI.runCommand('Dism /Online /Cleanup-Image /RestoreHealth', true),
     });
 
     registerCommand({
@@ -194,18 +187,15 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Open App Directory',
         category: 'Application',
         icon: 'fas fa-folder-open',
-        action: () => window.electronAPI.openAppDirectory()
+        action: () => window.electronAPI.openAppDirectory(),
     });
-    
-    
-    
-    
+
     registerCommand({
         id: 'toggle-dev-tools',
         title: 'Toggle Developer Tools',
         category: 'Application',
         icon: 'fas fa-code',
-        action: () => window.electronAPI.toggleDevTools()
+        action: () => window.electronAPI.toggleDevTools(),
     });
 
     // Enhanced Log Viewer - Always available
@@ -214,7 +204,7 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Open Enhanced Log Viewer',
         category: 'Application',
         icon: 'fas fa-list-alt',
-        action: () => window.electronAPI.openLogViewer()
+        action: () => window.electronAPI.openLogViewer(),
     });
 
     // Log demonstration command
@@ -226,9 +216,12 @@ export function registerDefaultCommands(loadedTabs) {
         action: () => {
             if (window.demonstrateEnhancedLogging) {
                 window.demonstrateEnhancedLogging();
-                showNotification('Enhanced logging demonstration started! Open the Log Viewer to see the results.', 'info');
+                showNotification(
+                    'Enhanced logging demonstration started! Open the Log Viewer to see the results.',
+                    'info'
+                );
             }
-        }
+        },
     });
 
     // Conditionally register dev-only commands
@@ -239,7 +232,7 @@ export function registerDefaultCommands(loadedTabs) {
                 title: 'Toggle Developer Tools',
                 category: 'Developer',
                 icon: 'fas fa-code',
-                action: () => window.electronAPI.toggleDevTools()
+                action: () => window.electronAPI.toggleDevTools(),
             });
         }
     });
@@ -248,14 +241,14 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Restart Application',
         category: 'Application',
         icon: 'fas fa-redo',
-        action: () => window.electronAPI.restartApplication()
+        action: () => window.electronAPI.restartApplication(),
     });
     registerCommand({
         id: 'quit-app',
         title: 'Quit Application',
         category: 'Application',
         icon: 'fas fa-power-off',
-        action: () => window.electronAPI.quitApp()
+        action: () => window.electronAPI.quitApp(),
     });
 
     registerCommand({
@@ -263,7 +256,7 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch Device Manager',
         category: 'System Utilities',
         icon: 'fas fa-microchip',
-        action: () => window.electronAPI.launchSystemUtility('devmgmt.msc')
+        action: () => window.electronAPI.launchSystemUtility('devmgmt.msc'),
     });
 
     registerCommand({
@@ -271,7 +264,7 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch Disk Management',
         category: 'System Utilities',
         icon: 'fas fa-hdd',
-        action: () => window.electronAPI.launchSystemUtility('diskmgmt.msc')
+        action: () => window.electronAPI.launchSystemUtility('diskmgmt.msc'),
     });
 
     registerCommand({
@@ -279,7 +272,7 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch Computer Management',
         category: 'System Utilities',
         icon: 'fas fa-desktop',
-        action: () => window.electronAPI.launchSystemUtility('compmgmt.msc')
+        action: () => window.electronAPI.launchSystemUtility('compmgmt.msc'),
     });
 
     registerCommand({
@@ -287,14 +280,14 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch System Configuration',
         category: 'System Utilities',
         icon: 'fas fa-sliders-h',
-        action: () => window.electronAPI.launchSystemUtility('msconfig')
+        action: () => window.electronAPI.launchSystemUtility('msconfig'),
     });
     registerCommand({
         id: 'launch-registry-editor',
         title: 'Launch Registry Editor',
         category: 'System Utilities',
         icon: 'fas fa-edit',
-        action: () => window.electronAPI.launchSystemUtility('regedit')
+        action: () => window.electronAPI.launchSystemUtility('regedit'),
     });
 
     registerCommand({
@@ -302,7 +295,7 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch Services',
         category: 'System Utilities',
         icon: 'fas fa-server',
-        action: () => window.electronAPI.launchSystemUtility('services.msc')
+        action: () => window.electronAPI.launchSystemUtility('services.msc'),
     });
 
     registerCommand({
@@ -310,7 +303,7 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch Task Manager',
         category: 'System Utilities',
         icon: 'fas fa-tasks',
-        action: () => window.electronAPI.launchSystemUtility('taskmgr')
+        action: () => window.electronAPI.launchSystemUtility('taskmgr'),
     });
 
     registerCommand({
@@ -318,14 +311,14 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch Group Policy Editor',
         category: 'System Utilities',
         icon: 'fas fa-shield-alt',
-        action: () => window.electronAPI.launchSystemUtility('gpedit.msc')
+        action: () => window.electronAPI.launchSystemUtility('gpedit.msc'),
     });
     registerCommand({
         id: 'launch-network-connections',
         title: 'Launch Network Connections',
         category: 'System Utilities',
         icon: 'fas fa-wifi',
-        action: () => window.electronAPI.launchSystemUtility('ncpa.cpl')
+        action: () => window.electronAPI.launchSystemUtility('ncpa.cpl'),
     });
 
     registerCommand({
@@ -333,7 +326,10 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch Network and Sharing Center',
         category: 'System Utilities',
         icon: 'fas fa-share-alt',
-        action: () => window.electronAPI.launchSystemUtility('control /name Microsoft.NetworkAndSharingCenter')
+        action: () =>
+            window.electronAPI.launchSystemUtility(
+                'control /name Microsoft.NetworkAndSharingCenter'
+            ),
     });
 
     registerCommand({
@@ -341,7 +337,7 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch Command Prompt',
         category: 'System Utilities',
         icon: 'fas fa-terminal',
-        action: () => window.electronAPI.launchSystemUtility('cmd')
+        action: () => window.electronAPI.launchSystemUtility('cmd'),
     });
 
     registerCommand({
@@ -349,7 +345,7 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch PowerShell',
         category: 'System Utilities',
         icon: 'fas fa-code',
-        action: () => window.electronAPI.launchSystemUtility('powershell')
+        action: () => window.electronAPI.launchSystemUtility('powershell'),
     });
 
     registerCommand({
@@ -357,7 +353,7 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch Event Viewer',
         category: 'System Utilities',
         icon: 'fas fa-list-alt',
-        action: () => window.electronAPI.launchSystemUtility('eventvwr.msc')
+        action: () => window.electronAPI.launchSystemUtility('eventvwr.msc'),
     });
 
     registerCommand({
@@ -365,7 +361,7 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch Performance Monitor',
         category: 'System Utilities',
         icon: 'fas fa-chart-line',
-        action: () => window.electronAPI.launchSystemUtility('perfmon.msc')
+        action: () => window.electronAPI.launchSystemUtility('perfmon.msc'),
     });
 
     registerCommand({
@@ -373,7 +369,7 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch User Accounts',
         category: 'System Utilities',
         icon: 'fas fa-user-cog',
-        action: () => window.electronAPI.launchSystemUtility('netplwiz')
+        action: () => window.electronAPI.launchSystemUtility('netplwiz'),
     });
 
     registerCommand({
@@ -381,7 +377,7 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch Local Users and Groups',
         category: 'System Utilities',
         icon: 'fas fa-users-cog',
-        action: () => window.electronAPI.launchSystemUtility('lusrmgr.msc')
+        action: () => window.electronAPI.launchSystemUtility('lusrmgr.msc'),
     });
 
     registerCommand({
@@ -389,7 +385,7 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch User Control Panel',
         category: 'System Utilities',
         icon: 'fas fa-id-card',
-        action: () => window.electronAPI.launchSystemUtility('control userpasswords')
+        action: () => window.electronAPI.launchSystemUtility('control userpasswords'),
     });
 
     registerCommand({
@@ -397,15 +393,15 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch Security Policy',
         category: 'System Utilities',
         icon: 'fas fa-lock',
-        action: () => window.electronAPI.launchSystemUtility('secpol.msc')
+        action: () => window.electronAPI.launchSystemUtility('secpol.msc'),
     });
-    
+
     registerCommand({
         id: 'launch-disk-cleanup',
         title: 'Launch Disk Cleanup',
         category: 'System Utilities',
         icon: 'fas fa-broom',
-        action: () => window.electronAPI.launchSystemUtility('cleanmgr')
+        action: () => window.electronAPI.launchSystemUtility('cleanmgr'),
     });
 
     registerCommand({
@@ -413,7 +409,7 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch Disk Defragmenter',
         category: 'System Utilities',
         icon: 'fas fa-puzzle-piece',
-        action: () => window.electronAPI.launchSystemUtility('dfrgui')
+        action: () => window.electronAPI.launchSystemUtility('dfrgui'),
     });
 
     registerCommand({
@@ -421,7 +417,7 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch Check Disk',
         category: 'System Utilities',
         icon: 'fas fa-search',
-        action: () => window.electronAPI.launchSystemUtility('chkdsk /f')
+        action: () => window.electronAPI.launchSystemUtility('chkdsk /f'),
     });
 
     registerCommand({
@@ -429,63 +425,66 @@ export function registerDefaultCommands(loadedTabs) {
         title: 'Launch DiskPart',
         category: 'System Utilities',
         icon: 'fas fa-cut',
-        action: () => window.electronAPI.launchSystemUtility('diskpart')
+        action: () => window.electronAPI.launchSystemUtility('diskpart'),
     });
-     registerCommand({
+    registerCommand({
         id: 'install-plugin',
         title: 'Install Plugin from File...',
         category: 'Plugin Management',
         icon: 'fas fa-plus',
         action: () => {
             const installBtn = document.getElementById('install-plugin-btn');
-            if(installBtn) installBtn.click();
-        }
+            if (installBtn) installBtn.click();
+        },
     });
     registerCommand({
         id: 'open-plugins-dir',
         title: 'Open Plugins Folder',
         category: 'Plugin Management',
         icon: 'fas fa-folder-open',
-        action: () => window.electronAPI.openPluginsDirectory()
+        action: () => window.electronAPI.openPluginsDirectory(),
     });
 
-    
     registerCommand({
         id: 'open-temp-folder',
         title: 'Open Temp Folder',
         category: 'System Utilities',
         icon: 'fas fa-folder',
-        action: () => window.electronAPI.openSpecialFolder('temp')
+        action: () => window.electronAPI.openSpecialFolder('temp'),
     });
     registerCommand({
         id: 'open-startup-folder',
         title: 'Open Startup Folder',
         category: 'System Utilities',
         icon: 'fas fa-folder',
-        action: () => window.electronAPI.openSpecialFolder('startup')
+        action: () => window.electronAPI.openSpecialFolder('startup'),
     });
     registerCommand({
         id: 'open-hosts-folder',
         title: 'Open Hosts File Folder',
         category: 'System Utilities',
         icon: 'fas fa-folder',
-        action: () => window.electronAPI.openSpecialFolder('hosts')
+        action: () => window.electronAPI.openSpecialFolder('hosts'),
     });
 
-    
     registerCommand({
         id: 'cleanup-temp',
         title: 'Clean Temporary Files',
         category: 'System Utilities',
         icon: 'fas fa-broom',
         action: () => {
-            window.electronAPI.executeCleanup('temp').then(result => {
-                showNotification(`Cleaned temporary files. Space freed: ${(result.sizeFreed / 1024 / 1024).toFixed(2)} MB`, 'success');
-            }).catch(err => showNotification(`Cleanup failed: ${err.message}`, 'error'));
-        }
+            window.electronAPI
+                .executeCleanup('temp')
+                .then(result => {
+                    showNotification(
+                        `Cleaned temporary files. Space freed: ${(result.sizeFreed / 1024 / 1024).toFixed(2)} MB`,
+                        'success'
+                    );
+                })
+                .catch(err => showNotification(`Cleanup failed: ${err.message}`, 'error'));
+        },
     });
 
-    
     if (window.electronAPI && window.electronAPI.getApplicationsData) {
         window.electronAPI.getApplicationsData().then(packages => {
             Object.keys(packages).forEach(pkgKey => {
@@ -495,14 +494,14 @@ export function registerDefaultCommands(loadedTabs) {
                     title: `Install ${pkg.content}`,
                     category: 'Package Management',
                     icon: 'fas fa-download',
-                    action: () => window.installPackage(pkgKey)
+                    action: () => window.installPackage(pkgKey),
                 });
                 registerCommand({
                     id: `uninstall-${pkgKey}`,
                     title: `Uninstall ${pkg.content}`,
                     category: 'Package Management',
                     icon: 'fas fa-trash',
-                    action: () => window.uninstallPackage(pkgKey)
+                    action: () => window.uninstallPackage(pkgKey),
                 });
             });
         });
@@ -517,9 +516,9 @@ export function registerServiceControlCommands(services) {
 
     services.forEach(service => {
         const serviceId = service.Name;
-        
+
         const serviceName = service.DisplayName || service.Name;
-        
+
         ['start', 'stop', 'restart'].forEach(action => {
             registerCommand({
                 id: `${action}-${serviceId}-service`,
@@ -527,10 +526,21 @@ export function registerServiceControlCommands(services) {
                 category: 'Service Control',
                 icon: 'fas fa-cogs',
                 action: () => {
-                    window.electronAPI.controlService(serviceId, action)
-                        .then(() => showNotification(`${serviceName} service ${action}ed successfully.`, 'success'))
-                        .catch(err => showNotification(`Failed to ${action} ${serviceName}: ${err.message}`, 'error'));
-                }
+                    window.electronAPI
+                        .controlService(serviceId, action)
+                        .then(() =>
+                            showNotification(
+                                `${serviceName} service ${action}ed successfully.`,
+                                'success'
+                            )
+                        )
+                        .catch(err =>
+                            showNotification(
+                                `Failed to ${action} ${serviceName}: ${err.message}`,
+                                'error'
+                            )
+                        );
+                },
             });
         });
     });
@@ -548,8 +558,7 @@ export function showHelpModal() {
     let packageCommandsRendered = 0;
     let systemUtilitiesCommandsRendered = 0;
 
-    
-    commandList.onclick = function(e) {
+    commandList.onclick = function (e) {
         const commandItem = e.target.closest('.help-command-item');
         if (commandItem && commandItem.dataset.commandId) {
             executeCommand(commandItem.dataset.commandId);
@@ -561,7 +570,7 @@ export function showHelpModal() {
 
         const loadMoreBtn = e.target.closest('.load-more-btn');
         if (loadMoreBtn) {
-            loadMoreBtn.onclick(); 
+            loadMoreBtn.onclick();
         }
     };
 
@@ -582,7 +591,9 @@ export function showHelpModal() {
         }, {});
 
         for (const category in groupedCommands) {
-            let categoryDiv = commandList.querySelector(`.help-category[data-category="${category}"]`);
+            let categoryDiv = commandList.querySelector(
+                `.help-category[data-category="${category}"]`
+            );
             if (!categoryDiv && !loadMore) {
                 categoryDiv = document.createElement('div');
                 categoryDiv.className = 'help-category';
@@ -603,21 +614,24 @@ export function showHelpModal() {
             const lazyLoadCategories = {
                 'Service Control': {
                     rendered: serviceCommandsRendered,
-                    updateRendered: (count) => serviceCommandsRendered = count
+                    updateRendered: count => (serviceCommandsRendered = count),
                 },
                 'Package Management': {
                     rendered: packageCommandsRendered,
-                    updateRendered: (count) => packageCommandsRendered = count
+                    updateRendered: count => (packageCommandsRendered = count),
                 },
                 'System Utilities': {
                     rendered: systemUtilitiesCommandsRendered,
-                    updateRendered: (count) => systemUtilitiesCommandsRendered = count
-                }
+                    updateRendered: count => (systemUtilitiesCommandsRendered = count),
+                },
             };
 
             if (lazyLoadCategories[category] && filter === '') {
                 const lazyLoader = lazyLoadCategories[category];
-                const commandsToRender = filteredCommands.slice(lazyLoader.rendered, lazyLoader.rendered + commandsPerLoad);
+                const commandsToRender = filteredCommands.slice(
+                    lazyLoader.rendered,
+                    lazyLoader.rendered + commandsPerLoad
+                );
 
                 commandsToRender.forEach(cmd => {
                     const item = document.createElement('div');
@@ -644,19 +658,23 @@ export function showHelpModal() {
                         const item = document.createElement('div');
                         item.className = 'help-command-item';
                         item.dataset.commandId = cmd.id;
-                        item.style.cursor = 'pointer'; 
+                        item.style.cursor = 'pointer';
                         item.innerHTML = `<i class="${cmd.icon}"></i><span class="help-command-title">${cmd.title}</span>`;
                         categoryDiv.appendChild(item);
                     });
                 }
             }
-            if (categoryDiv && categoryDiv.childElementCount <= 1 && !categoryDiv.querySelector('.load-more-btn')) {
+            if (
+                categoryDiv &&
+                categoryDiv.childElementCount <= 1 &&
+                !categoryDiv.querySelector('.load-more-btn')
+            ) {
                 categoryDiv.remove();
             }
         }
     };
-    
-    searchInput.oninput = (e) => renderHelpList(e.target.value);
+
+    searchInput.oninput = e => renderHelpList(e.target.value);
 
     renderHelpList();
     modal.style.display = 'flex';

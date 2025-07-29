@@ -1,4 +1,3 @@
-
 export function showSplashScreen() {
     const splashScreen = document.getElementById('splash-screen');
     if (splashScreen) {
@@ -6,7 +5,6 @@ export function showSplashScreen() {
         console.log('Splash screen shown');
     }
 }
-
 
 export function updateSplashProgress(message, percentage) {
     const progressFill = document.getElementById('progress-fill');
@@ -22,7 +20,6 @@ export function updateSplashProgress(message, percentage) {
 
     console.log(`Splash progress: ${percentage}% - ${message}`);
 }
-
 
 export function hideSplashScreen() {
     const splashScreen = document.getElementById('splash-screen');

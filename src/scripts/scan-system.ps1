@@ -1,10 +1,9 @@
 # Scan system files and calculate total size
-# Returns the total size in bytes of system files that can be cleaned
 
 try {
     $totalSize = 0
     
-    # System temporary and cache paths
+
     $systemPaths = @(
         "$env:SystemRoot\Temp\*",
         "$env:SystemRoot\Logs\MeasuredBoot\*",

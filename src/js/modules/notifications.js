@@ -1,6 +1,12 @@
-
+/**
+ * Display a notification message to the user with specified type and styling.
+ * Creates a notification container if it doesn't exist and shows a styled notification.
+ *
+ * @param {string} message - The message to display in the notification
+ * @param {string} [type='info'] - The type of notification ('info', 'success', 'error', 'warning')
+ * @returns {void}
+ */
 export function showNotification(message, type = 'info') {
-    
     let container = document.querySelector('.notification-container');
     if (!container) {
         container = document.createElement('div');
@@ -15,14 +21,12 @@ export function showNotification(message, type = 'info') {
         document.body.appendChild(container);
     }
 
-    
     const notification = document.createElement('div');
     notification.className = 'notification';
-    
-    
+
     let icon = 'fas fa-info-circle';
     let bgColor = 'var(--primary-color)';
-    
+
     switch (type) {
         case 'success':
             icon = 'fas fa-check-circle';
@@ -65,12 +69,10 @@ export function showNotification(message, type = 'info') {
 
     container.appendChild(notification);
 
-    
     setTimeout(() => {
         notification.style.transform = 'translateX(0)';
     }, 100);
 
-    
     setTimeout(() => {
         notification.style.transform = 'translateX(100%)';
         setTimeout(() => {

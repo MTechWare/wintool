@@ -11,25 +11,41 @@ const crypto = require('crypto');
 const extract = require('extract-zip');
 
 class PluginManager {
+    /**
+     * Creates a new PluginManager instance.
+     * Initializes plugin backend storage, verified hashes, and sets up IPC handlers.
+     *
+     * @constructor
+     */
     constructor() {
         this.loadedPluginBackends = new Map();
         this.verifiedHashes = {};
-        
+
         // Bind methods to preserve context
         this.getPluginMap = this.getPluginMap.bind(this);
         this.loadPluginBackends = this.loadPluginBackends.bind(this);
         this.updateVerifiedPluginsList = this.updateVerifiedPluginsList.bind(this);
         this.calculateDirectoryHash = this.calculateDirectoryHash.bind(this);
-        
+
         this.setupIpcHandlers();
         this.initializeVerifiedPlugins();
     }
 
+    /**
+     * Set up IPC handlers for plugin management and communication.
+     * Handles plugin invocation, tab management, and plugin installation.
+     *
+     * @returns {void}
+     */
     setupIpcHandlers() {
         // Plugin backend communication
         ipcMain.handle('plugin-invoke', async (event, pluginId, handlerName, ...args) => {
             const pluginBackend = this.loadedPluginBackends.get(pluginId);
-            if (pluginBackend && pluginBackend.handlers && typeof pluginBackend.handlers[handlerName] === 'function') {
+            if (
+                pluginBackend &&
+                pluginBackend.handlers &&
+                typeof pluginBackend.handlers[handlerName] === 'function'
+            ) {
                 return await pluginBackend.handlers[handlerName](...args);
             } else {
                 throw new Error(`Handler '${handlerName}' not found for plugin '${pluginId}'`);
@@ -57,7 +73,7 @@ class PluginManager {
             } catch (error) {
                 console.error(`Could not read built-in tabs directory: ${tabsPath}`, error);
             }
-            
+
             // 2. Read enabled plugins from both dev and user locations
             const pluginMap = await this.getPluginMap();
             for (const pluginId of pluginMap.keys()) {
@@ -78,34 +94,40 @@ class PluginManager {
             const pluginMap = await this.getPluginMap();
             const disabledPlugins = await this.settingsManager.getDisabledPlugins();
 
-            const allPlugins = await Promise.all(Array.from(pluginMap.entries()).map(async ([pluginId, pluginPath]) => {
-                const configPath = path.join(pluginPath, 'plugin.json');
-                let config = {};
-                try {
-                    const configData = await fs.readFile(configPath, 'utf8');
-                    config = JSON.parse(configData);
-                } catch (e) {
-                    console.error(`Could not read plugin.json for ${pluginId}:`, e);
-                    config = { name: pluginId, description: 'Could not load plugin manifest.', icon: 'fas fa-exclamation-triangle' };
-                }
+            const allPlugins = await Promise.all(
+                Array.from(pluginMap.entries()).map(async ([pluginId, pluginPath]) => {
+                    const configPath = path.join(pluginPath, 'plugin.json');
+                    let config = {};
+                    try {
+                        const configData = await fs.readFile(configPath, 'utf8');
+                        config = JSON.parse(configData);
+                    } catch (e) {
+                        console.error(`Could not read plugin.json for ${pluginId}:`, e);
+                        config = {
+                            name: pluginId,
+                            description: 'Could not load plugin manifest.',
+                            icon: 'fas fa-exclamation-triangle',
+                        };
+                    }
 
-                // Verification Logic
-                const directoryHash = await this.calculateDirectoryHash(pluginPath);
-                const isVerified = this.verifiedHashes[pluginId] === directoryHash;
+                    // Verification Logic
+                    const directoryHash = await this.calculateDirectoryHash(pluginPath);
+                    const isVerified = this.verifiedHashes[pluginId] === directoryHash;
 
-                return {
-                    id: pluginId,
-                    name: config.name || pluginId,
-                    description: config.description || 'No description available.',
-                    version: config.version || 'N/A',
-                    author: config.author || 'Unknown',
-                    icon: config.icon || 'fas fa-cog',
-                    enabled: !disabledPlugins.includes(pluginId),
-                    verified: isVerified,
-                    hash: directoryHash
-                };
-            }));
-            
+                    return {
+                        id: pluginId,
+                        name: config.name || pluginId,
+                        description: config.description || 'No description available.',
+                        version: config.version || 'N/A',
+                        author: config.author || 'Unknown',
+                        icon: config.icon || 'fas fa-cog',
+                        enabled: !disabledPlugins.includes(pluginId),
+                        verified: isVerified,
+                        hash: directoryHash,
+                    };
+                })
+            );
+
             return allPlugins;
         });
 
@@ -117,9 +139,12 @@ class PluginManager {
             try {
                 await fs.access(pluginPath);
             } catch (error) {
-                return { success: false, message: 'Plugin not found or it is a core plugin that cannot be deleted.' };
+                return {
+                    success: false,
+                    message: 'Plugin not found or it is a core plugin that cannot be deleted.',
+                };
             }
-            
+
             // Confirm with the user
             const mainWindow = this.windowManager ? this.windowManager.getMainWindow() : null;
             if (mainWindow) {
@@ -130,10 +155,11 @@ class PluginManager {
                     detail: 'This action cannot be undone. The plugin files will be removed from your computer.',
                     buttons: ['Delete', 'Cancel'],
                     defaultId: 1,
-                    cancelId: 1
+                    cancelId: 1,
                 });
 
-                if (choice.response === 1) { // User canceled
+                if (choice.response === 1) {
+                    // User canceled
                     return { success: true, restarted: false };
                 }
             }
@@ -141,7 +167,7 @@ class PluginManager {
             try {
                 // Delete the plugin folder
                 await fs.rm(pluginPath, { recursive: true, force: true });
-                
+
                 // Also remove it from the disabled list if it's there
                 await this.settingsManager.removePluginFromDisabled(pluginId);
 
@@ -152,7 +178,7 @@ class PluginManager {
                         title: 'Plugin Deleted',
                         message: `The plugin "${pluginId}" has been deleted.`,
                         detail: 'The application must be restarted for the changes to take effect.',
-                        buttons: ['Restart Now']
+                        buttons: ['Restart Now'],
                     });
                 }
 
@@ -160,7 +186,6 @@ class PluginManager {
                     this.restartApp();
                 }
                 return { success: true, restarted: true };
-
             } catch (error) {
                 console.error(`Failed to delete plugin ${pluginId}:`, error);
                 return { success: false, message: `Error deleting plugin: ${error.message}` };
@@ -181,8 +206,8 @@ class PluginManager {
                 properties: ['openFile'],
                 filters: [
                     { name: 'Plugin Packages', extensions: ['zip'] },
-                    { name: 'All Files', extensions: ['*'] }
-                ]
+                    { name: 'All Files', extensions: ['*'] },
+                ],
             });
 
             if (result.canceled || result.filePaths.length === 0) {
@@ -228,17 +253,17 @@ class PluginManager {
                     detail: 'The application needs to be restarted for the changes to take effect.',
                     buttons: ['Restart Now', 'Later'],
                     defaultId: 0,
-                    cancelId: 1
+                    cancelId: 1,
                 });
 
-                if (restartChoice.response === 0) { // "Restart Now"
+                if (restartChoice.response === 0) {
+                    // "Restart Now"
                     if (this.restartApp) {
                         this.restartApp();
                     }
                 }
 
                 return { success: true, message: `Plugin "${pluginName}" installed successfully.` };
-
             } catch (error) {
                 console.error('Plugin installation error:', error);
                 return { success: false, message: `Installation failed: ${error.message}` };
@@ -257,10 +282,15 @@ class PluginManager {
 
         ipcMain.handle('run-plugin-script', async (event, pluginId, scriptPath) => {
             // Security Validation
-            if (!pluginId || !scriptPath || typeof pluginId !== 'string' || typeof scriptPath !== 'string') {
+            if (
+                !pluginId ||
+                !scriptPath ||
+                typeof pluginId !== 'string' ||
+                typeof scriptPath !== 'string'
+            ) {
                 throw new Error('Invalid pluginId or scriptPath.');
             }
-            
+
             // Find the correct path for the given pluginId from our map
             const pluginMap = await this.getPluginMap();
             const pluginDir = pluginMap.get(pluginId);
@@ -346,7 +376,7 @@ class PluginManager {
             return {
                 success: true,
                 verifiedHashes: { ...this.verifiedHashes },
-                count: Object.keys(this.verifiedHashes).length
+                count: Object.keys(this.verifiedHashes).length,
             };
         });
 
@@ -356,7 +386,17 @@ class PluginManager {
         });
     }
 
-    // Dependency injection method
+    /**
+     * Set dependencies for the plugin manager using dependency injection.
+     * Allows injection of settings manager, window manager, process pool, and restart function.
+     *
+     * @param {Object} dependencies - Object containing dependency instances
+     * @param {Object} dependencies.settingsManager - Settings manager instance
+     * @param {Object} dependencies.windowManager - Window manager instance
+     * @param {Object} dependencies.processPool - Process pool for command execution
+     * @param {Function} dependencies.restartApp - Function to restart the application
+     * @returns {void}
+     */
     setDependencies(dependencies) {
         this.settingsManager = dependencies.settingsManager;
         this.windowManager = dependencies.windowManager;
@@ -375,7 +415,7 @@ class PluginManager {
         } else {
             basePath = app.getPath('userData');
         }
-        
+
         const pluginsPath = path.join(basePath, 'MTechWare', 'WinTool', 'Plugins');
         return pluginsPath;
     }
@@ -401,7 +441,7 @@ class PluginManager {
         const userPluginsPath = this.getPluginsPath();
         const pluginMap = new Map();
 
-        const readFoldersFromDir = async (dirPath) => {
+        const readFoldersFromDir = async dirPath => {
             try {
                 const items = await fs.readdir(dirPath);
                 const directories = [];
@@ -457,55 +497,152 @@ class PluginManager {
         for (let i = 0; i < pluginEntries.length; i += batchSize) {
             const batch = pluginEntries.slice(i, i + batchSize);
 
-            await Promise.all(batch.map(async ([pluginId, pluginPath]) => {
-                const backendScriptPath = path.join(pluginPath, 'backend.js');
-                try {
-                    await fs.stat(backendScriptPath);
+            await Promise.all(
+                batch.map(async ([pluginId, pluginPath]) => {
+                    // Check for automatic dependency installation
+                    await this.ensurePluginDependencies(pluginId, pluginPath);
 
-                    // Conditionally clear the module from the cache based on the setting
-                    const clearPluginCache = await this.settingsManager.getSetting('clearPluginCache', false);
-                    if (clearPluginCache) {
-                        delete require.cache[require.resolve(backendScriptPath)];
-                    }
+                    const backendScriptPath = path.join(pluginPath, 'backend.js');
+                    try {
+                        await fs.stat(backendScriptPath);
 
-                    const pluginModule = require(backendScriptPath);
-                    if (pluginModule && typeof pluginModule.initialize === 'function') {
-                        // Create a secure API for this specific plugin's backend
-                        const backendApi = {
-                            handlers: {},
-                            registerHandler(name, func) {
-                                this.handlers[name] = async (...args) => func(...args);
-                            },
-                            getStore: () => this.settingsManager.getStore(),
-                            dialog: dialog,
-                            get axios() {
-                                return require('axios');
-                            },
-                            require: (moduleName) => {
-                                try {
-                                    return require(path.join(pluginPath, 'node_modules', moduleName));
-                                } catch (e) {
-                                    console.error(`Failed to load module '${moduleName}' for plugin '${pluginId}'. Make sure it is listed in the plugin's package.json.`);
-                                    throw e;
-                                }
-                            }
-                        };
+                        // Conditionally clear the module from the cache based on the setting
+                        const clearPluginCache = await this.settingsManager.getSetting(
+                            'clearPluginCache',
+                            false
+                        );
+                        if (clearPluginCache) {
+                            delete require.cache[require.resolve(backendScriptPath)];
+                        }
 
-                        // Initialize the plugin with its dedicated, secure API
-                        pluginModule.initialize(backendApi);
-                        this.loadedPluginBackends.set(pluginId, backendApi);
+                        const pluginModule = require(backendScriptPath);
+                        if (pluginModule && typeof pluginModule.initialize === 'function') {
+                            // Create a secure API for this specific plugin's backend
+                            const backendApi = {
+                                handlers: {},
+                                registerHandler(name, func) {
+                                    this.handlers[name] = async (...args) => func(...args);
+                                },
+                                getStore: () => this.settingsManager.getStore(),
+                                dialog: dialog,
+                                get axios() {
+                                    return require('axios');
+                                },
+                                require: moduleName => {
+                                    try {
+                                        return require(
+                                            path.join(pluginPath, 'node_modules', moduleName)
+                                        );
+                                    } catch (e) {
+                                        console.error(
+                                            `Failed to load module '${moduleName}' for plugin '${pluginId}'. Make sure it is listed in the plugin's package.json.`
+                                        );
+                                        throw e;
+                                    }
+                                },
+                            };
+
+                            // Initialize the plugin with its dedicated, secure API
+                            pluginModule.initialize(backendApi);
+                            this.loadedPluginBackends.set(pluginId, backendApi);
+                        }
+                    } catch (e) {
+                        if (e.code !== 'ENOENT') {
+                            console.error(`Error loading backend for plugin ${pluginId}:`, e);
+                        }
                     }
-                } catch (e) {
-                    if (e.code !== 'ENOENT') {
-                        console.error(`Error loading backend for plugin ${pluginId}:`, e);
-                    }
-                }
-            }));
+                })
+            );
 
             // Reduced delay between batches for faster startup
             if (i + batchSize < pluginEntries.length) {
                 await new Promise(resolve => setTimeout(resolve, 50));
             }
+        }
+    }
+
+    /**
+     * Ensure plugin dependencies are installed
+     * Automatically installs dependencies if package.json exists and node_modules is missing
+     */
+    async ensurePluginDependencies(pluginId, pluginPath) {
+        try {
+            const packageJsonPath = path.join(pluginPath, 'package.json');
+            const nodeModulesPath = path.join(pluginPath, 'node_modules');
+
+            // Check if package.json exists
+            try {
+                await fs.stat(packageJsonPath);
+            } catch (e) {
+                // No package.json, no dependencies to install
+                return;
+            }
+
+            // Check if node_modules exists and is not empty
+            try {
+                const nodeModulesStats = await fs.stat(nodeModulesPath);
+                if (nodeModulesStats.isDirectory()) {
+                    const nodeModulesContents = await fs.readdir(nodeModulesPath);
+                    if (nodeModulesContents.length > 0) {
+                        // node_modules exists and has content, assume dependencies are installed
+                        return;
+                    }
+                }
+            } catch (e) {
+                // node_modules doesn't exist, need to install dependencies
+            }
+
+            // Read package.json to check if there are dependencies to install
+            const packageJsonContent = await fs.readFile(packageJsonPath, 'utf8');
+            const packageJson = JSON.parse(packageJsonContent);
+
+            if (!packageJson.dependencies && !packageJson.devDependencies) {
+                // No dependencies to install
+                return;
+            }
+
+            console.log(`Installing dependencies for plugin '${pluginId}'...`);
+
+            // Install dependencies using npm
+            const { spawn } = require('child_process');
+
+            await new Promise((resolve, reject) => {
+                const npmProcess = spawn('npm', ['install'], {
+                    cwd: pluginPath,
+                    stdio: ['ignore', 'pipe', 'pipe'],
+                    shell: true
+                });
+
+                let stdout = '';
+                let stderr = '';
+
+                npmProcess.stdout.on('data', (data) => {
+                    stdout += data.toString();
+                });
+
+                npmProcess.stderr.on('data', (data) => {
+                    stderr += data.toString();
+                });
+
+                npmProcess.on('close', (code) => {
+                    if (code === 0) {
+                        console.log(`Successfully installed dependencies for plugin '${pluginId}'`);
+                        resolve();
+                    } else {
+                        console.error(`Failed to install dependencies for plugin '${pluginId}': ${stderr}`);
+                        reject(new Error(`npm install failed with code ${code}: ${stderr}`));
+                    }
+                });
+
+                npmProcess.on('error', (error) => {
+                    console.error(`Failed to start npm install for plugin '${pluginId}': ${error.message}`);
+                    reject(error);
+                });
+            });
+
+        } catch (error) {
+            console.error(`Error ensuring dependencies for plugin '${pluginId}': ${error.message}`);
+            // Don't throw the error, just log it so plugin loading can continue
         }
     }
 
@@ -537,13 +674,16 @@ class PluginManager {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-            const response = await fetch('https://raw.githubusercontent.com/MTechWare/wintool/refs/heads/main/src/config/verified-plugins.json', {
-                signal: controller.signal,
-                headers: {
-                    'Cache-Control': 'no-cache',
-                    'User-Agent': 'WinTool/1.0'
+            const response = await fetch(
+                'https://raw.githubusercontent.com/MTechWare/wintool/refs/heads/main/src/config/verified-plugins.json',
+                {
+                    signal: controller.signal,
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'User-Agent': 'WinTool/1.0',
+                    },
                 }
-            });
+            );
 
             clearTimeout(timeoutId);
 
@@ -596,7 +736,9 @@ class PluginManager {
                 tabPath = pluginPath;
                 isPlugin = true;
             } else {
-                console.error(`Folder for '${tabFolder}' not found in built-in tabs or any plugin directories.`);
+                console.error(
+                    `Folder for '${tabFolder}' not found in built-in tabs or any plugin directories.`
+                );
                 throw new Error(`Content for '${tabFolder}' not found.`);
             }
         }
@@ -614,7 +756,7 @@ class PluginManager {
                 config = {
                     name: tabFolder,
                     icon: 'fas fa-cog',
-                    description: 'Custom tab/plugin'
+                    description: 'Custom tab/plugin',
                 };
             }
 
@@ -651,7 +793,7 @@ class PluginManager {
                 html: htmlContent,
                 css: cssContent,
                 js: jsContent,
-                isPlugin
+                isPlugin,
             };
         } catch (error) {
             console.error(`Error reading content for ${tabFolder}:`, error);

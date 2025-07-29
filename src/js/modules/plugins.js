@@ -1,6 +1,5 @@
 import { showNotification } from './notifications.js';
 
-
 export function initPluginInstallButton() {
     const installBtn = document.getElementById('install-plugin-btn');
     if (installBtn) {
@@ -9,7 +8,7 @@ export function initPluginInstallButton() {
                 const result = await window.electronAPI.installPlugin();
                 if (result.success) {
                     showNotification(result.message, 'success');
-                    
+
                     await renderPluginCards();
                 } else {
                     showNotification(result.message, 'error');
@@ -18,7 +17,6 @@ export function initPluginInstallButton() {
         });
     }
 }
-
 
 export function initOpenPluginsDirButton() {
     const openDirBtn = document.getElementById('open-plugins-dir-btn');
@@ -36,7 +34,8 @@ export function initOpenPluginsDirButton() {
             if (window.electronAPI) {
                 const originalText = refreshVerifiedBtn.innerHTML;
                 refreshVerifiedBtn.disabled = true;
-                refreshVerifiedBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+                refreshVerifiedBtn.innerHTML =
+                    '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
 
                 try {
                     const result = await window.electronAPI.refreshVerifiedPlugins();
@@ -48,7 +47,10 @@ export function initOpenPluginsDirButton() {
                         showNotification(`Failed to refresh: ${result.message}`, 'error');
                     }
                 } catch (error) {
-                    showNotification(`Error refreshing verified plugins: ${error.message}`, 'error');
+                    showNotification(
+                        `Error refreshing verified plugins: ${error.message}`,
+                        'error'
+                    );
                 } finally {
                     refreshVerifiedBtn.disabled = false;
                     refreshVerifiedBtn.innerHTML = originalText;
@@ -59,7 +61,7 @@ export function initOpenPluginsDirButton() {
 
     const searchInput = document.getElementById('plugin-search');
     if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
+        searchInput.addEventListener('input', e => {
             const searchTerm = e.target.value.toLowerCase();
             const pluginCards = document.querySelectorAll('.plugin-card');
             pluginCards.forEach(card => {
@@ -74,15 +76,14 @@ export function initOpenPluginsDirButton() {
     }
 }
 
-
 export async function renderPluginCards() {
     const activeContainer = document.getElementById('active-plugins-grid');
     const disabledContainer = document.getElementById('disabled-plugins-grid');
 
     if (!activeContainer || !disabledContainer) return;
 
-    activeContainer.innerHTML = ''; 
-    disabledContainer.innerHTML = ''; 
+    activeContainer.innerHTML = '';
+    disabledContainer.innerHTML = '';
 
     if (!window.electronAPI) return;
 
@@ -102,7 +103,8 @@ export async function renderPluginCards() {
         const disabledPlugins = plugins.filter(p => !p.enabled);
 
         if (activePlugins.length === 0) {
-            activeContainer.innerHTML = '<p class="empty-plugin-message">No active plugins installed.</p>';
+            activeContainer.innerHTML =
+                '<p class="empty-plugin-message">No active plugins installed.</p>';
         } else {
             activePlugins.forEach(plugin => {
                 const card = document.createElement('div');
@@ -111,9 +113,10 @@ export async function renderPluginCards() {
                     <div class="plugin-card-header">
                         <i class="${plugin.icon}"></i>
                         <h4>${plugin.name}</h4>
-                        ${plugin.verified ?
-                            '<span class="verification-badge verified" title="Verified by MTechWare"><i class="fas fa-shield-alt"></i> Verified</span>' :
-                            '<span class="verification-badge unverified" title="Not verified - use with caution"><i class="fas fa-exclamation-triangle"></i> Unverified</span>'
+                        ${
+                            plugin.verified
+                                ? '<span class="verification-badge verified" title="Verified by MTechWare"><i class="fas fa-shield-alt"></i> Verified</span>'
+                                : '<span class="verification-badge unverified" title="Not verified - use with caution"><i class="fas fa-exclamation-triangle"></i> Unverified</span>'
                         }
                     </div>
                     <p>${plugin.description}</p>
@@ -142,7 +145,8 @@ export async function renderPluginCards() {
         }
 
         if (disabledPlugins.length === 0) {
-            disabledContainer.innerHTML = '<p class="empty-plugin-message">No disabled plugins.</p>';
+            disabledContainer.innerHTML =
+                '<p class="empty-plugin-message">No disabled plugins.</p>';
         } else {
             disabledPlugins.forEach(plugin => {
                 const card = document.createElement('div');
@@ -151,9 +155,10 @@ export async function renderPluginCards() {
                      <div class="plugin-card-header">
                         <i class="${plugin.icon}"></i>
                         <h4>${plugin.name} (Disabled)</h4>
-                        ${plugin.verified ?
-                            '<span class="verification-badge verified" title="Verified by MTechWare"><i class="fas fa-shield-alt"></i> Verified</span>' :
-                            '<span class="verification-badge unverified" title="Not verified - use with caution"><i class="fas fa-exclamation-triangle"></i> Unverified</span>'
+                        ${
+                            plugin.verified
+                                ? '<span class="verification-badge verified" title="Verified by MTechWare"><i class="fas fa-shield-alt"></i> Verified</span>'
+                                : '<span class="verification-badge unverified" title="Not verified - use with caution"><i class="fas fa-exclamation-triangle"></i> Unverified</span>'
                         }
                     </div>
                     <p>${plugin.description}</p>
@@ -181,11 +186,9 @@ export async function renderPluginCards() {
             });
         }
 
-        
         document.querySelectorAll('.plugin-action-btn').forEach(button => {
             button.addEventListener('click', handlePluginAction);
         });
-
     } catch (error) {
         console.error('Error rendering plugin cards:', error);
         activeContainer.innerHTML = '<p>Error loading plugin information.</p>';
@@ -215,7 +218,10 @@ async function handlePluginAction(event) {
         if (plugin) {
             const verificationStatus = plugin.verified ? '✅ VERIFIED' : '⚠️ UNVERIFIED';
             const onlineStatus = navigator.onLine ? '' : ' (offline mode)';
-            showNotification(`${plugin.name}\nStatus: ${verificationStatus}${onlineStatus}\nHash: ${plugin.hash}\nVersion: ${plugin.version}\nAuthor: ${plugin.author}`, 'info');
+            showNotification(
+                `${plugin.name}\nStatus: ${verificationStatus}${onlineStatus}\nHash: ${plugin.hash}\nVersion: ${plugin.version}\nAuthor: ${plugin.author}`,
+                'info'
+            );
         }
         return;
     }
@@ -235,9 +241,15 @@ async function handlePluginAction(event) {
         const plugin = plugins.find(p => p.id === pluginId);
         if (plugin) {
             if (plugin.verified) {
-                showNotification(`✅ Plugin "${plugin.name}" is VERIFIED by MTechWare\nHash matches official repository`, 'success');
+                showNotification(
+                    `✅ Plugin "${plugin.name}" is VERIFIED by MTechWare\nHash matches official repository`,
+                    'success'
+                );
             } else {
-                showNotification(`⚠️ Plugin "${plugin.name}" is NOT VERIFIED\nThis plugin may be safe but has not been officially verified by MTechWare.\nHash: ${plugin.hash}`, 'warning');
+                showNotification(
+                    `⚠️ Plugin "${plugin.name}" is NOT VERIFIED\nThis plugin may be safe but has not been officially verified by MTechWare.\nHash: ${plugin.hash}`,
+                    'warning'
+                );
             }
         }
         return;

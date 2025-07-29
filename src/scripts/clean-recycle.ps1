@@ -75,7 +75,7 @@ try {
         }
     }
     
-    # Output JSON result
+
     $result = @{
         timestamp = (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
         sizeFreed = $totalSizeFreed

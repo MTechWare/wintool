@@ -23,7 +23,7 @@ class BatchChecker {
             key,
             path,
             name,
-            expectedValue
+            expectedValue,
         });
     }
 
@@ -46,11 +46,14 @@ class BatchChecker {
 
         try {
             const data = {
-                checks: this.registryChecks
+                checks: this.registryChecks,
             };
 
-            const results = await window.electronAPI.executeBatchPowerShell('batch-registry-check', data);
-            
+            const results = await window.electronAPI.executeBatchPowerShell(
+                'batch-registry-check',
+                data
+            );
+
             // Store results for later retrieval
             for (const [key, result] of Object.entries(results)) {
                 this.results.set(key, result);
@@ -80,11 +83,14 @@ class BatchChecker {
 
         try {
             const data = {
-                services: this.serviceChecks
+                services: this.serviceChecks,
             };
 
-            const results = await window.electronAPI.executeBatchPowerShell('batch-service-check', data);
-            
+            const results = await window.electronAPI.executeBatchPowerShell(
+                'batch-service-check',
+                data
+            );
+
             // Store results for later retrieval
             for (const [serviceName, result] of Object.entries(results)) {
                 this.results.set(`service_${serviceName}`, result);
@@ -96,7 +102,11 @@ class BatchChecker {
             // Return empty results on failure
             const emptyResults = {};
             this.serviceChecks.forEach(serviceName => {
-                emptyResults[serviceName] = { Name: serviceName, Status: 'Error', StartType: 'Error' };
+                emptyResults[serviceName] = {
+                    Name: serviceName,
+                    Status: 'Error',
+                    StartType: 'Error',
+                };
                 this.results.set(`service_${serviceName}`, emptyResults[serviceName]);
             });
             return emptyResults;
@@ -110,12 +120,12 @@ class BatchChecker {
     async executeAllChecks() {
         const [registryResults, serviceResults] = await Promise.all([
             this.executeRegistryChecks(),
-            this.executeServiceChecks()
+            this.executeServiceChecks(),
         ]);
 
         return {
             registry: registryResults,
-            services: serviceResults
+            services: serviceResults,
         };
     }
 
@@ -146,7 +156,9 @@ class BatchChecker {
      */
     isServiceInState(serviceName, expectedStatus) {
         const result = this.getResult(`service_${serviceName}`);
-        return result ? result.StartType === expectedStatus || result.Status === expectedStatus : false;
+        return result
+            ? result.StartType === expectedStatus || result.Status === expectedStatus
+            : false;
     }
 
     /**
@@ -165,7 +177,7 @@ class BatchChecker {
      */
     static createTweaksBatchChecker() {
         const checker = new BatchChecker();
-        
+
         // Add common registry checks for tweaks
         checker.addRegistryCheck(
             'activity-history',
@@ -173,42 +185,42 @@ class BatchChecker {
             'EnableActivityFeed',
             'EnableActivityFeed    REG_DWORD    0x0'
         );
-        
+
         checker.addRegistryCheck(
             'cortana',
             'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search',
             'AllowCortana',
             'AllowCortana    REG_DWORD    0x0'
         );
-        
+
         checker.addRegistryCheck(
             'consumer-features',
             'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent',
             'DisableWindowsConsumerFeatures',
             'DisableWindowsConsumerFeatures    REG_DWORD    0x1'
         );
-        
+
         checker.addRegistryCheck(
             'location-tracking',
             'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location',
             'Value',
             'Value    REG_SZ    Deny'
         );
-        
+
         checker.addRegistryCheck(
             'hibernation',
             'HKLM\\System\\CurrentControlSet\\Control\\Session Manager\\Power',
             'HibernateEnabled',
             'HibernateEnabled    REG_DWORD    0x0'
         );
-        
+
         // Add service checks
         checker.addServiceCheck('DiagTrack');
         checker.addServiceCheck('dmwappushservice');
         checker.addServiceCheck('WerSvc');
         checker.addServiceCheck('Spooler');
         checker.addServiceCheck('WSearch');
-        
+
         return checker;
     }
 }

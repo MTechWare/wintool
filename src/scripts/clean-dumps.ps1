@@ -5,7 +5,7 @@ try {
     $filesRemoved = 0
     $totalSizeFreed = 0
     
-    # Memory dump paths (be very careful with system dumps)
+
     $dumpPaths = @(
         "$env:SystemRoot\Minidump\*.dmp",
         "$env:LOCALAPPDATA\CrashDumps\*.dmp"
@@ -34,7 +34,7 @@ try {
         }
     }
     
-    # Windows Error Reporting files (safer to clean)
+
     $werPaths = @(
         "$env:LOCALAPPDATA\Microsoft\Windows\WER\ReportArchive\*\*.*",
         "$env:LOCALAPPDATA\Microsoft\Windows\WER\Temp\*.*"
@@ -63,7 +63,7 @@ try {
         }
     }
     
-    # Application crash dumps from desktop/documents (user-generated)
+
     $appDumpPaths = @(
         "$env:USERPROFILE\Desktop\*.dmp",
         "$env:USERPROFILE\Documents\*.dmp"
@@ -92,9 +92,7 @@ try {
         }
     }
     
-    # Note: We intentionally skip MEMORY.DMP and LiveKernelReports as they may be needed for debugging
-    
-    # Output JSON result
+
     $result = @{
         timestamp = (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
         sizeFreed = $totalSizeFreed

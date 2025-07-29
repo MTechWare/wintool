@@ -1,22 +1,22 @@
 import { showNotification } from './notifications.js';
 import { loadTabOrder, switchToTab } from './tabs.js';
-import { applyTheme, updatePrimaryColorVariables, applyRainbowEffect, removeRainbowEffect, loadCustomTheme, getThemeCategories, duplicateTheme, generateThemeFromColor } from './theme.js';
-import { themeManager, generateRandomTheme } from './theme-manager.js';
-import { createThemeGrid, ThemePreview } from './theme-preview.js';
+import {
+    applyTheme,
+    updatePrimaryColorVariables,
+    applyRainbowEffect,
+    removeRainbowEffect,
+    loadCustomTheme,
+} from './theme.js';
 import { showFpsCounter, hideFpsCounter } from './fps-counter.js';
 import { THEMES, hiddenTabs, rainbowAnimationId, setHiddenTabs } from './state.js';
 import { loadKeyboardShortcutsSettings, saveKeyboardShortcuts } from './keyboard-shortcuts.js';
 
-
 export async function showSettings() {
     const modal = document.getElementById('settings-modal');
     if (modal) {
-
         await loadCurrentSettings();
 
-
         initSettingsNavigation();
-
 
         modal.style.display = 'flex';
 
@@ -24,19 +24,14 @@ export async function showSettings() {
     }
 }
 
-
 async function loadCurrentSettings() {
     try {
         if (window.electronAPI) {
-            // Initialize theme management UI first
-            await initializeThemeUI();
-
             const theme = await window.electronAPI.getSetting('theme', 'classic-dark');
             const themeSelector = document.getElementById('theme-selector');
             if (themeSelector) {
                 themeSelector.value = theme;
             }
-
 
             const primaryColor = await window.electronAPI.getSetting('primaryColor', '#ff9800');
             const colorPicker = document.getElementById('primary-color-picker');
@@ -45,7 +40,6 @@ async function loadCurrentSettings() {
                 colorPicker.value = primaryColor;
                 colorPreview.textContent = primaryColor;
             }
-
 
             const rainbowMode = await window.electronAPI.getSetting('rainbowMode', false);
             const rainbowModeCheckbox = document.getElementById('rainbow-mode-checkbox');
@@ -62,7 +56,6 @@ async function loadCurrentSettings() {
             }
             toggleRainbowSpeedContainer(rainbowMode);
 
-
             const transparency = await window.electronAPI.getSetting('transparency', 1);
             const transparencySlider = document.getElementById('transparency-slider');
             const transparencyValue = document.getElementById('transparency-value');
@@ -71,37 +64,29 @@ async function loadCurrentSettings() {
                 transparencyValue.textContent = `${Math.round(transparency * 100)}%`;
             }
 
-
-
-
             const rememberLastTab = await window.electronAPI.getSetting('rememberLastTab', false);
             const rememberLastTabCheckbox = document.getElementById('remember-last-tab');
             if (rememberLastTabCheckbox) {
                 rememberLastTabCheckbox.checked = rememberLastTab;
             }
 
-
-
-
-
             // Load performance settings
             await loadPerformanceSettings();
 
-            const elevationPreference = await window.electronAPI.getSetting('elevationChoice', 'ask');
+            const elevationPreference = await window.electronAPI.getSetting(
+                'elevationChoice',
+                'ask'
+            );
             const elevationSelector = document.getElementById('elevation-preference');
             if (elevationSelector) {
                 elevationSelector.value = elevationPreference;
             }
 
-
-
-
-
             const enableDevTools = await window.electronAPI.getSetting('enableDevTools', false);
             const enableDevToolsCheckbox = document.getElementById('enable-dev-tools');
             if (enableDevToolsCheckbox) {
                 enableDevToolsCheckbox.checked = enableDevTools;
-                enableDevToolsCheckbox.addEventListener('change', (e) => {
+                enableDevToolsCheckbox.addEventListener('change', e => {
                     if (e.target.checked) {
                         showFpsCounter();
                     } else {
@@ -116,12 +101,16 @@ async function loadCurrentSettings() {
                 clearPluginCacheCheckbox.checked = clearPluginCache;
             }
 
-            const disableAnimations = await window.electronAPI.getSetting('disableAnimations', true);
-            const disableAnimationsCheckbox = document.getElementById('disable-animations-checkbox');
+            const disableAnimations = await window.electronAPI.getSetting(
+                'disableAnimations',
+                true
+            );
+            const disableAnimationsCheckbox = document.getElementById(
+                'disable-animations-checkbox'
+            );
             if (disableAnimationsCheckbox) {
                 disableAnimationsCheckbox.checked = disableAnimations;
             }
-
 
             const topMost = await window.electronAPI.getSetting('topMost', false);
             const topMostCheckbox = document.getElementById('top-most-checkbox');
@@ -129,16 +118,12 @@ async function loadCurrentSettings() {
                 topMostCheckbox.checked = topMost;
             }
 
-
-
-
             await loadKeyboardShortcutsSettings();
         }
     } catch (error) {
         console.error('Error loading settings:', error);
     }
 }
-
 
 function initSettingsNavigation() {
     const navItems = document.querySelectorAll('.settings-nav-item');
@@ -148,10 +133,8 @@ function initSettingsNavigation() {
         item.addEventListener('click', () => {
             const targetTab = item.getAttribute('data-settings-tab');
 
-
             navItems.forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
-
 
             panels.forEach(panel => panel.classList.remove('active'));
             const targetPanel = document.getElementById(`settings-${targetTab}`);
@@ -161,13 +144,11 @@ function initSettingsNavigation() {
         });
     });
 
-
     const themeSelector = document.getElementById('theme-selector');
     if (themeSelector) {
-        themeSelector.addEventListener('change', async (e) => {
+        themeSelector.addEventListener('change', async e => {
             const selectedTheme = e.target.value;
             await applyTheme(selectedTheme);
-            await themeManager.addToHistory(selectedTheme);
             const customThemeCreator = document.getElementById('custom-theme-creator');
             if (customThemeCreator) {
                 customThemeCreator.style.display = selectedTheme === 'custom' ? 'block' : 'none';
@@ -175,11 +156,10 @@ function initSettingsNavigation() {
         });
     }
 
-
     const colorPicker = document.getElementById('primary-color-picker');
     const colorPreview = document.getElementById('primary-color-preview');
     if (colorPicker && colorPreview) {
-        colorPicker.addEventListener('input', (e) => {
+        colorPicker.addEventListener('input', e => {
             const color = e.target.value;
             colorPreview.textContent = color;
 
@@ -187,11 +167,10 @@ function initSettingsNavigation() {
         });
     }
 
-
     const transparencySlider = document.getElementById('transparency-slider');
     const transparencyValue = document.getElementById('transparency-value');
     if (transparencySlider && transparencyValue) {
-        transparencySlider.addEventListener('input', (e) => {
+        transparencySlider.addEventListener('input', e => {
             const value = e.target.value;
             transparencyValue.textContent = `${Math.round(value * 100)}%`;
             if (window.electronAPI && window.electronAPI.setWindowOpacity) {
@@ -200,10 +179,9 @@ function initSettingsNavigation() {
         });
     }
 
-
     const rainbowModeCheckbox = document.getElementById('rainbow-mode-checkbox');
     if (rainbowModeCheckbox) {
-        rainbowModeCheckbox.addEventListener('change', (e) => {
+        rainbowModeCheckbox.addEventListener('change', e => {
             const enabled = e.target.checked;
             toggleRainbowSpeedContainer(enabled);
             if (enabled) {
@@ -220,7 +198,7 @@ function initSettingsNavigation() {
     const rainbowSpeedSlider = document.getElementById('rainbow-speed-slider');
     const rainbowSpeedValue = document.getElementById('rainbow-speed-value');
     if (rainbowSpeedSlider && rainbowSpeedValue) {
-        rainbowSpeedSlider.addEventListener('input', (e) => {
+        rainbowSpeedSlider.addEventListener('input', e => {
             const speed = e.target.value;
             rainbowSpeedValue.textContent = `${speed}s`;
 
@@ -238,22 +216,18 @@ function toggleRainbowSpeedContainer(enabled) {
     }
 }
 
-
 export async function saveSettings() {
     try {
         if (window.electronAPI) {
-
             const theme = document.getElementById('theme-selector')?.value || 'classic-dark';
             await window.electronAPI.setSetting('theme', theme);
 
-
-            const primaryColor = document.getElementById('primary-color-picker')?.value || '#ff9800';
+            const primaryColor =
+                document.getElementById('primary-color-picker')?.value || '#ff9800';
             await window.electronAPI.setSetting('primaryColor', primaryColor);
-
 
             const rainbowMode = document.getElementById('rainbow-mode-checkbox')?.checked || false;
             await window.electronAPI.setSetting('rainbowMode', rainbowMode);
-
 
             let rainbowSpeed = parseInt(document.getElementById('rainbow-speed-slider')?.value, 10);
             if (isNaN(rainbowSpeed) || rainbowSpeed < 1 || rainbowSpeed > 10) {
@@ -261,42 +235,34 @@ export async function saveSettings() {
             }
             await window.electronAPI.setSetting('rainbowSpeed', rainbowSpeed);
 
-
             const transparency = document.getElementById('transparency-slider')?.value || 1;
             await window.electronAPI.setSetting('transparency', parseFloat(transparency));
-
 
             const rememberLastTab = document.getElementById('remember-last-tab')?.checked || false;
             await window.electronAPI.setSetting('rememberLastTab', rememberLastTab);
 
-            const elevationPreference = document.getElementById('elevation-preference')?.value || 'ask';
+            const elevationPreference =
+                document.getElementById('elevation-preference')?.value || 'ask';
             await window.electronAPI.setSetting('elevationChoice', elevationPreference);
-
-
-
-
 
             const enableDevTools = document.getElementById('enable-dev-tools')?.checked || false;
             await window.electronAPI.setSetting('enableDevTools', enableDevTools);
 
-            const clearPluginCache = document.getElementById('clear-plugin-cache')?.checked || false;
+            const clearPluginCache =
+                document.getElementById('clear-plugin-cache')?.checked || false;
             await window.electronAPI.setSetting('clearPluginCache', clearPluginCache);
 
-            const disableAnimations = document.getElementById('disable-animations-checkbox')?.checked || false;
+            const disableAnimations =
+                document.getElementById('disable-animations-checkbox')?.checked || false;
             await window.electronAPI.setSetting('disableAnimations', disableAnimations);
-
 
             const topMost = document.getElementById('top-most-checkbox')?.checked || false;
             await window.electronAPI.setSetting('topMost', topMost);
 
-
-
             // Save performance settings
             await savePerformanceSettings();
 
-
             await saveKeyboardShortcuts();
-
 
             applySettings();
 
@@ -315,7 +281,6 @@ export async function saveSettings() {
     }
 }
 
-
 export function cancelSettings() {
     const modal = document.getElementById('settings-modal');
     if (modal) {
@@ -323,19 +288,24 @@ export function cancelSettings() {
     }
 }
 
-
 export async function resetSettings() {
-    if (!confirm('Are you sure you want to reset all application settings? This will restart the application and cannot be undone.')) {
+    if (
+        !confirm(
+            'Are you sure you want to reset all application settings? This will restart the application and cannot be undone.'
+        )
+    ) {
         return;
     }
 
     try {
         if (window.electronAPI) {
-
             const success = await window.electronAPI.clearAllSettings();
 
             if (success) {
-                showNotification('Settings have been reset. The application will now restart.', 'success');
+                showNotification(
+                    'Settings have been reset. The application will now restart.',
+                    'success'
+                );
 
                 setTimeout(async () => {
                     await window.electronAPI.restartApplication();
@@ -350,264 +320,9 @@ export async function resetSettings() {
     }
 }
 
-
-// Track if theme UI has been initialized to prevent duplicates
-let themeUIInitialized = false;
-
-// Reset theme UI initialization flag (useful for testing or forced refresh)
-function resetThemeUI() {
-    themeUIInitialized = false;
-    const themePreviewGrid = document.getElementById('theme-preview-grid');
-    const historyContainer = document.getElementById('theme-history-grid');
-    
-    if (themePreviewGrid) themePreviewGrid.innerHTML = '';
-    if (historyContainer) historyContainer.innerHTML = '';
-}
-
-// Initialize theme management UI
-async function initializeThemeUI() {
-    try {
-        // Initialize theme preview grid
-        const themePreviewGrid = document.getElementById('theme-preview-grid');
-        if (themePreviewGrid) {
-            // Clear existing content to prevent duplicates
-            themePreviewGrid.innerHTML = '';
-            
-            const currentTheme = await window.electronAPI.getSetting('theme', 'classic-dark');
-            
-            createThemeGrid(themePreviewGrid, THEMES, {
-                size: 'medium',
-                showName: true,
-                onThemeSelect: async (themeKey, theme) => {
-                    await applyTheme(themeKey);
-                    await themeManager.addToHistory(themeKey);
-                    await window.electronAPI.setSetting('theme', themeKey);
-                    updateThemeHistory();
-                }
-            });
-        }
-
-        // Initialize theme categories only once
-        if (!themeUIInitialized) {
-            setupThemeCategories();
-            setupEnhancedRainbowControls();
-            themeUIInitialized = true;
-        }
-        
-        // Always update theme history (this should refresh)
-        updateThemeHistory();
-        
-    } catch (error) {
-        console.error('Error initializing theme UI:', error);
-    }
-}
-
-function setupThemeCategories() {
-    const categories = document.querySelectorAll('.theme-category');
-    
-    categories.forEach(category => {
-        // Remove existing listeners to prevent duplicates
-        category.removeEventListener('click', handleCategoryClick);
-        category.addEventListener('click', handleCategoryClick);
-    });
-}
-
-// Separate function for category click handling to enable proper removal
-function handleCategoryClick(event) {
-    const category = event.currentTarget;
-    const categories = document.querySelectorAll('.theme-category');
-    
-    // Update active category
-    categories.forEach(cat => cat.classList.remove('active'));
-    category.classList.add('active');
-    
-    // Filter themes
-    const selectedCategory = category.dataset.category;
-    filterThemesByCategory(selectedCategory);
-}
-
-function filterThemesByCategory(category) {
-    const themeGrid = document.getElementById('theme-preview-grid');
-    if (!themeGrid) return;
-    
-    // Clear existing grid to prevent duplicates
-    themeGrid.innerHTML = '';
-    
-    // Filter themes based on category
-    let filteredThemes = {};
-    
-    if (category === 'all') {
-        filteredThemes = THEMES;
-    } else {
-        Object.entries(THEMES).forEach(([key, theme]) => {
-            if (key === 'custom' || theme.category === category) {
-                filteredThemes[key] = theme;
-            }
-        });
-    }
-    
-    // Recreate grid with filtered themes
-    createThemeGrid(themeGrid, filteredThemes, {
-        size: 'medium',
-        showName: true,
-        onThemeSelect: async (themeKey, theme) => {
-            await applyTheme(themeKey);
-            await themeManager.addToHistory(themeKey);
-            await window.electronAPI.setSetting('theme', themeKey);
-            updateThemeHistory();
-        }
-    });
-}
-
-async function updateThemeHistory() {
-    const historyContainer = document.getElementById('theme-history-grid');
-    if (!historyContainer) return;
-    
-    const history = themeManager.getThemeHistory();
-    
-    // Clear existing content to prevent duplicates
-    historyContainer.innerHTML = '';
-    
-    if (history.length === 0) {
-        historyContainer.innerHTML = '<div class="theme-history-empty">No recent themes</div>';
-        return;
-    }
-    
-    history.slice(0, 5).forEach(entry => {
-        const theme = THEMES[entry.name];
-        if (theme) {
-            const container = document.createElement('div');
-            container.className = 'theme-history-item';
-            
-            new ThemePreview(container, theme, {
-                size: 'small',
-                showName: false,
-                onSelect: async () => {
-                    await applyTheme(entry.name);
-                    await themeManager.addToHistory(entry.name);
-                    await window.electronAPI.setSetting('theme', entry.name);
-                    updateThemeHistory();
-                    // Also refresh the main theme grid to show selection
-                    await initializeThemeUI();
-                }
-            });
-            
-            historyContainer.appendChild(container);
-        }
-    });
-}
-
-function setupEnhancedRainbowControls() {
-    // Rainbow saturation control
-    const saturationSlider = document.getElementById('rainbow-saturation-slider');
-    const saturationValue = document.getElementById('rainbow-saturation-value');
-    
-    if (saturationSlider && saturationValue) {
-        saturationSlider.addEventListener('input', (e) => {
-            const value = e.target.value;
-            saturationValue.textContent = `${value}%`;
-            
-            if (rainbowAnimationId) {
-                const speed = document.getElementById('rainbow-speed-slider')?.value || 5;
-                const smooth = document.getElementById('rainbow-smooth-checkbox')?.checked || true;
-                const reverse = document.getElementById('rainbow-reverse-checkbox')?.checked || false;
-                
-                applyRainbowEffect(speed, {
-                    saturation: parseInt(value),
-                    smooth,
-                    reverse
-                });
-            }
-        });
-    }
-    
-    // Rainbow smooth transitions
-    const smoothCheckbox = document.getElementById('rainbow-smooth-checkbox');
-    if (smoothCheckbox) {
-        smoothCheckbox.addEventListener('change', (e) => {
-            if (rainbowAnimationId) {
-                const speed = document.getElementById('rainbow-speed-slider')?.value || 5;
-                const saturation = document.getElementById('rainbow-saturation-slider')?.value || 100;
-                const reverse = document.getElementById('rainbow-reverse-checkbox')?.checked || false;
-                
-                applyRainbowEffect(speed, {
-                    saturation: parseInt(saturation),
-                    smooth: e.target.checked,
-                    reverse
-                });
-            }
-        });
-    }
-    
-    // Rainbow reverse direction
-    const reverseCheckbox = document.getElementById('rainbow-reverse-checkbox');
-    if (reverseCheckbox) {
-        reverseCheckbox.addEventListener('change', (e) => {
-            if (rainbowAnimationId) {
-                const speed = document.getElementById('rainbow-speed-slider')?.value || 5;
-                const saturation = document.getElementById('rainbow-saturation-slider')?.value || 100;
-                const smooth = document.getElementById('rainbow-smooth-checkbox')?.checked || true;
-                
-                applyRainbowEffect(speed, {
-                    saturation: parseInt(saturation),
-                    smooth,
-                    reverse: e.target.checked
-                });
-            }
-        });
-    }
-}
-
-// Global functions for theme management buttons
-window.generateRandomTheme = async function() {
-    await themeManager.generateRandomTheme();
-    updateThemeHistory();
-};
-
-window.generateComplementaryTheme = async function() {
-    const currentTheme = await window.electronAPI.getSetting('theme', 'classic-dark');
-    await themeManager.generateComplementaryTheme(currentTheme);
-    updateThemeHistory();
-};
-
-window.duplicateCurrentTheme = async function() {
-    const currentTheme = await window.electronAPI.getSetting('theme', 'classic-dark');
-    const newName = prompt('Enter a name for the duplicated theme:', `${THEMES[currentTheme]?.name || currentTheme} Copy`);
-    if (newName) {
-        await duplicateTheme(currentTheme, newName);
-        updateThemeHistory();
-    }
-};
-
-window.resetPrimaryColor = async function() {
-    const currentTheme = await window.electronAPI.getSetting('theme', 'classic-dark');
-    const theme = THEMES[currentTheme];
-    if (theme && theme['--primary-color']) {
-        const colorPicker = document.getElementById('primary-color-picker');
-        const colorPreview = document.getElementById('primary-color-preview');
-        if (colorPicker && colorPreview) {
-            colorPicker.value = theme['--primary-color'];
-            colorPreview.textContent = theme['--primary-color'];
-            updatePrimaryColorVariables(theme['--primary-color']);
-        }
-    }
-};
-
-window.exportThemeCollection = async function() {
-    await themeManager.exportThemeCollection();
-};
-
-window.clearThemeHistory = async function() {
-    if (confirm('Are you sure you want to clear your theme history?')) {
-        await themeManager.clearHistory();
-        updateThemeHistory();
-    }
-};
-
 export async function loadAndApplyStartupSettings() {
     try {
         if (window.electronAPI) {
-
             const theme = await window.electronAPI.getSetting('theme', 'classic-dark');
             if (theme === 'custom') {
                 await loadCustomTheme();
@@ -619,7 +334,6 @@ export async function loadAndApplyStartupSettings() {
                 const rainbowSpeed = await window.electronAPI.getSetting('rainbowSpeed', 5);
                 applyRainbowEffect(rainbowSpeed);
             } else {
-
                 const primaryColor = await window.electronAPI.getSetting('primaryColor', '#ff9800');
                 updatePrimaryColorVariables(primaryColor);
             }
@@ -631,11 +345,7 @@ export async function loadAndApplyStartupSettings() {
                 window.electronAPI.openLogViewer();
             }
 
-
-
-
             await loadTabOrder();
-
 
             const loadedHiddenTabs = await window.electronAPI.getSetting('hiddenTabs', []);
             setHiddenTabs(loadedHiddenTabs);
@@ -646,7 +356,6 @@ export async function loadAndApplyStartupSettings() {
         console.error('Error loading startup settings:', error);
     }
 }
-
 
 export function applyHiddenTabs() {
     if (!hiddenTabs || hiddenTabs.length === 0) return;
@@ -660,7 +369,6 @@ export function applyHiddenTabs() {
     console.log('Hidden tabs applied:', hiddenTabs);
 }
 
-
 export async function restoreLastActiveTab() {
     try {
         if (!window.electronAPI) {
@@ -668,20 +376,17 @@ export async function restoreLastActiveTab() {
             return;
         }
 
-
         const rememberLastTab = await window.electronAPI.getSetting('rememberLastTab', false);
         if (!rememberLastTab) {
             console.log('Remember last tab setting is disabled');
             return;
         }
 
-
         const lastActiveTab = await window.electronAPI.getSetting('lastActiveTab', 'welcome');
         if (!lastActiveTab || lastActiveTab === 'welcome') {
-            console.log('No last active tab to restore or it\'s already welcome tab');
+            console.log("No last active tab to restore or it's already welcome tab");
             return;
         }
-
 
         const targetTabElement = document.querySelector(`[data-tab="${lastActiveTab}"]`);
         const targetContentElement = document.getElementById(`tab-${lastActiveTab}`);
@@ -693,10 +398,8 @@ export async function restoreLastActiveTab() {
             return;
         }
 
-
         console.log(`Restoring last active tab: ${lastActiveTab}`);
         switchToTab(lastActiveTab);
-
     } catch (error) {
         console.error('Error restoring last active tab:', error);
 
@@ -707,7 +410,6 @@ export async function restoreLastActiveTab() {
         }
     }
 }
-
 
 function applySettings() {
     applyAnimationSetting();
@@ -722,15 +424,10 @@ function applySettings() {
         updatePrimaryColorVariables(primaryColor);
     }
 
-
     const transparency = document.getElementById('transparency-slider')?.value || 1;
     if (window.electronAPI && window.electronAPI.setWindowOpacity) {
         window.electronAPI.setWindowOpacity(parseFloat(transparency));
     }
-
-
-
-
 }
 
 export async function applyAnimationSetting() {
@@ -826,15 +523,13 @@ function showPerformanceNotification(isEnabled) {
     }, 2000);
 }
 
-
-
-
-
 // Helper function to reset performance customization flag (can be called from console)
 window.resetPerformanceCustomization = async function () {
     if (window.electronAPI) {
         await window.electronAPI.setSetting('hasCustomizedPerformanceSettings', false);
-        console.log('Performance customization flag reset. Restart the app to allow automatic optimizations.');
+        console.log(
+            'Performance customization flag reset. Restart the app to allow automatic optimizations.'
+        );
         return true;
     }
     return false;
@@ -874,7 +569,10 @@ async function loadPerformanceSettings() {
             }
 
             // Load lazy loading setting (now part of performance settings)
-            const enableLazyLoading = await window.electronAPI.getSetting('enableLazyLoading', true);
+            const enableLazyLoading = await window.electronAPI.getSetting(
+                'enableLazyLoading',
+                true
+            );
             const enableLazyLoadingCheckbox = document.getElementById('enable-lazy-loading');
             if (enableLazyLoadingCheckbox) {
                 enableLazyLoadingCheckbox.checked = enableLazyLoading;
@@ -882,9 +580,6 @@ async function loadPerformanceSettings() {
 
             // Setup performance mode card click handlers
             setupPerformanceModeHandlers();
-
-            // Show recommendation (placeholder for future implementation)
-            // showPerformanceRecommendation();
         }
     } catch (error) {
         console.error('Error loading performance settings:', error);
@@ -897,12 +592,21 @@ async function savePerformanceSettings() {
             // Get current settings from UI
             const fastSystemInfo = document.getElementById('fast-system-info')?.checked || false;
             const cacheSystemInfo = document.getElementById('cache-system-info')?.checked !== false; // Default to true
-            const enableDiscordRpc = document.getElementById('enable-discord-rpc')?.checked !== false; // Default to true
-            const enableLazyLoading = document.getElementById('enable-lazy-loading')?.checked !== false; // Default to true
-            const disableAnimations = document.getElementById('disable-animations-checkbox')?.checked || false;
+            const enableDiscordRpc =
+                document.getElementById('enable-discord-rpc')?.checked !== false; // Default to true
+            const enableLazyLoading =
+                document.getElementById('enable-lazy-loading')?.checked !== false; // Default to true
+            const disableAnimations =
+                document.getElementById('disable-animations-checkbox')?.checked || false;
 
             // Check if current settings match any predefined performance mode
-            const detectedMode = detectPerformanceModeFromSettings(fastSystemInfo, cacheSystemInfo, enableDiscordRpc, enableLazyLoading, disableAnimations);
+            const detectedMode = detectPerformanceModeFromSettings(
+                fastSystemInfo,
+                cacheSystemInfo,
+                enableDiscordRpc,
+                enableLazyLoading,
+                disableAnimations
+            );
 
             console.log('=== PERFORMANCE MODE SAVE DEBUG ===');
             console.log('Current performance mode variable:', currentPerformanceMode);
@@ -912,19 +616,24 @@ async function savePerformanceSettings() {
             if (detectedMode !== currentPerformanceMode && detectedMode !== 'custom') {
                 const shouldOverride = confirm(
                     `Your current settings match "${getPerformanceModeDisplayName(detectedMode)}" mode, but you have "${getPerformanceModeDisplayName(currentPerformanceMode)}" selected.\n\n` +
-                    `Would you like to switch to "${getPerformanceModeDisplayName(detectedMode)}" mode to match your settings?\n\n` +
-                    `Click "OK" to switch modes, or "Cancel" to keep "${getPerformanceModeDisplayName(currentPerformanceMode)}" mode with custom settings.`
+                        `Would you like to switch to "${getPerformanceModeDisplayName(detectedMode)}" mode to match your settings?\n\n` +
+                        `Click "OK" to switch modes, or "Cancel" to keep "${getPerformanceModeDisplayName(currentPerformanceMode)}" mode with custom settings.`
                 );
 
                 if (shouldOverride) {
                     currentPerformanceMode = detectedMode;
                     updatePerformanceModeSelection(currentPerformanceMode);
-                    console.log('User chose to override performance mode to:', currentPerformanceMode);
+                    console.log(
+                        'User chose to override performance mode to:',
+                        currentPerformanceMode
+                    );
                 } else {
                     console.log('User chose to keep current performance mode with custom settings');
                 }
             } else if (detectedMode === 'custom') {
-                console.log('Settings don\'t match any predefined mode - keeping current mode with custom settings');
+                console.log(
+                    "Settings don't match any predefined mode - keeping current mode with custom settings"
+                );
             }
 
             // Double-check which card is selected
@@ -945,7 +654,10 @@ async function savePerformanceSettings() {
             await window.electronAPI.setSetting('enableDiscordRpc', enableDiscordRpc);
 
             // Save lazy loading setting (now part of performance settings)
-            const previousLazyLoading = await window.electronAPI.getSetting('enableLazyLoading', true);
+            const previousLazyLoading = await window.electronAPI.getSetting(
+                'enableLazyLoading',
+                true
+            );
             await window.electronAPI.setSetting('enableLazyLoading', enableLazyLoading);
 
             // Mark that user has customized performance settings
@@ -1007,7 +719,7 @@ function setupPerformanceModeHandlers() {
             if (hasCustomSettings) {
                 const userConfirmed = confirm(
                     `Switching to ${getPerformanceModeDisplayName(selectedMode)} mode will overwrite your current advanced settings.\n\n` +
-                    `Do you want to continue and apply the preset settings for ${getPerformanceModeDisplayName(selectedMode)} mode?`
+                        `Do you want to continue and apply the preset settings for ${getPerformanceModeDisplayName(selectedMode)} mode?`
                 );
 
                 if (!userConfirmed) {
@@ -1037,10 +749,14 @@ async function checkForCustomSettings(selectedMode) {
     try {
         // Get current checkbox states with correct defaults matching the app's actual defaults
         const currentFastSystemInfo = document.getElementById('fast-system-info')?.checked ?? false;
-        const currentCacheSystemInfo = document.getElementById('cache-system-info')?.checked ?? true;
-        const currentEnableDiscordRpc = document.getElementById('enable-discord-rpc')?.checked ?? true;
-        const currentEnableLazyLoading = document.getElementById('enable-lazy-loading')?.checked ?? true;
-        const currentDisableAnimations = document.getElementById('disable-animations-checkbox')?.checked ?? true;
+        const currentCacheSystemInfo =
+            document.getElementById('cache-system-info')?.checked ?? true;
+        const currentEnableDiscordRpc =
+            document.getElementById('enable-discord-rpc')?.checked ?? true;
+        const currentEnableLazyLoading =
+            document.getElementById('enable-lazy-loading')?.checked ?? true;
+        const currentDisableAnimations =
+            document.getElementById('disable-animations-checkbox')?.checked ?? true;
 
         // Get expected settings for the selected mode
         const expectedSettings = getExpectedSettingsForMode(selectedMode);
@@ -1068,7 +784,7 @@ function getExpectedSettingsForMode(mode) {
                 cacheSystemInfo: true,
                 enableDiscordRpc: false,
                 enableLazyLoading: true,
-                disableAnimations: true
+                disableAnimations: true,
             };
         case 'balanced':
             return {
@@ -1076,7 +792,7 @@ function getExpectedSettingsForMode(mode) {
                 cacheSystemInfo: true,
                 enableDiscordRpc: true,
                 enableLazyLoading: true,
-                disableAnimations: true
+                disableAnimations: true,
             };
         case 'high-end':
             return {
@@ -1084,7 +800,7 @@ function getExpectedSettingsForMode(mode) {
                 cacheSystemInfo: false,
                 enableDiscordRpc: true,
                 enableLazyLoading: false,
-                disableAnimations: true
+                disableAnimations: true,
             };
         default:
             return {
@@ -1092,7 +808,7 @@ function getExpectedSettingsForMode(mode) {
                 cacheSystemInfo: false,
                 enableDiscordRpc: false,
                 enableLazyLoading: false,
-                disableAnimations: false
+                disableAnimations: false,
             };
     }
 }
@@ -1119,19 +835,43 @@ function applyPerformanceModeSettings(mode) {
 }
 
 // Helper function to detect performance mode from current settings
-function detectPerformanceModeFromSettings(fastSystemInfo, cacheSystemInfo, enableDiscordRpc, enableLazyLoading, disableAnimations) {
+function detectPerformanceModeFromSettings(
+    fastSystemInfo,
+    cacheSystemInfo,
+    enableDiscordRpc,
+    enableLazyLoading,
+    disableAnimations
+) {
     // Low-end mode characteristics
-    if (fastSystemInfo && cacheSystemInfo && !enableDiscordRpc && enableLazyLoading && disableAnimations) {
+    if (
+        fastSystemInfo &&
+        cacheSystemInfo &&
+        !enableDiscordRpc &&
+        enableLazyLoading &&
+        disableAnimations
+    ) {
         return 'low-end';
     }
 
     // Balanced mode characteristics
-    if (fastSystemInfo && cacheSystemInfo && enableDiscordRpc && enableLazyLoading && disableAnimations) {
+    if (
+        fastSystemInfo &&
+        cacheSystemInfo &&
+        enableDiscordRpc &&
+        enableLazyLoading &&
+        disableAnimations
+    ) {
         return 'balanced';
     }
 
     // High-end mode characteristics
-    if (!fastSystemInfo && !cacheSystemInfo && enableDiscordRpc && !enableLazyLoading && disableAnimations) {
+    if (
+        !fastSystemInfo &&
+        !cacheSystemInfo &&
+        enableDiscordRpc &&
+        !enableLazyLoading &&
+        disableAnimations
+    ) {
         return 'high-end';
     }
 
@@ -1152,5 +892,3 @@ function getPerformanceModeDisplayName(mode) {
             return 'Custom Mode';
     }
 }
-
-

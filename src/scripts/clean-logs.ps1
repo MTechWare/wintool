@@ -1,11 +1,9 @@
 # Clean system log files
-# Returns JSON with cleanup statistics
 
 try {
     $filesRemoved = 0
     $totalSizeFreed = 0
-    
-    # System log paths - match scan script criteria
+
     $logPaths = @(
         "$env:SystemRoot\Logs\*\*.log",
         "$env:SystemRoot\Logs\*\*.etl",
@@ -39,7 +37,6 @@ try {
         }
     }
     
-    # Application log paths (safer to clean)
     $appLogPaths = @(
         "$env:LOCALAPPDATA\Temp\*.log",
         "$env:TEMP\*.log"
@@ -68,7 +65,6 @@ try {
         }
     }
     
-    # IIS logs (if present)
     $iisLogPaths = @(
         "$env:SystemRoot\System32\LogFiles\W3SVC*\*.log",
         "$env:SystemRoot\System32\LogFiles\HTTPERR\*.log"
@@ -97,18 +93,16 @@ try {
         }
     }
     
-    # Output JSON result
     $result = @{
         timestamp = (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
         sizeFreed = $totalSizeFreed
         filesRemoved = $filesRemoved
         category = "logs"
     }
-    
+
     Write-Output ($result | ConvertTo-Json -Compress)
-    
+
 } catch {
-    # If anything fails, output minimal result
     $result = @{
         timestamp = (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
         sizeFreed = 0

@@ -1,16 +1,12 @@
 # Clean Cache Files
-# Improved version with comprehensive cache cleaning
 
 try {
-    # Initialize counters
     $filesRemoved = 0
     $totalSizeFreed = 0
     $ErrorActionPreference = "SilentlyContinue"
 
-    # 1. Clean prefetch files (keep recent ones for performance)
     $prefetchPath = "$env:SystemRoot\Prefetch"
     if (Test-Path $prefetchPath -ErrorAction SilentlyContinue) {
-        # Only remove prefetch files older than 14 days to maintain system performance
         $oldFiles = Get-ChildItem -Path $prefetchPath -Force -ErrorAction SilentlyContinue |
                    Where-Object {
                        -not $_.PSIsContainer -and
@@ -30,7 +26,6 @@ try {
         }
     }
 
-    # 2. Clean thumbnail cache
     $thumbCachePath = "$env:LOCALAPPDATA\Microsoft\Windows\Explorer"
     if (Test-Path $thumbCachePath -ErrorAction SilentlyContinue) {
         $thumbFiles = Get-ChildItem -Path $thumbCachePath -Force -ErrorAction SilentlyContinue |
@@ -51,7 +46,6 @@ try {
         }
     }
 
-    # 3. Clean browser caches (if accessible)
     $browserCaches = @(
         "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Cache\*",
         "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Cache\*",
@@ -79,7 +73,6 @@ try {
         }
     }
 
-    # 4. Clean Windows Store cache
     $storeCachePath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsStore_*\LocalCache"
     try {
         $storeCaches = Get-ChildItem -Path $storeCachePath -Force -ErrorAction SilentlyContinue
@@ -101,10 +94,8 @@ try {
             }
         }
     } catch {
-        # Skip if Windows Store cache is not accessible
     }
 
-    # 5. Clean font cache
     $fontCachePath = "$env:SystemRoot\ServiceProfiles\LocalService\AppData\Local\FontCache"
     if (Test-Path $fontCachePath -ErrorAction SilentlyContinue) {
         try {
@@ -122,11 +113,9 @@ try {
                 }
             }
         } catch {
-            # Skip if font cache is not accessible
         }
     }
 
-    # Output result as JSON
     $result = @{
         filesRemoved = $filesRemoved
         sizeFreed = $totalSizeFreed
@@ -137,7 +126,6 @@ try {
     $result | ConvertTo-Json -Compress
 
 } catch {
-    # Return error in JSON format
     @{
         filesRemoved = 0
         sizeFreed = 0

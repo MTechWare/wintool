@@ -1,6 +1,6 @@
 /**
  * Startup Performance Optimizer
- * 
+ *
  * This module applies aggressive performance optimizations during startup
  * to reduce the 20-second startup time to under 10 seconds.
  */
@@ -16,23 +16,24 @@ export class StartupOptimizer {
      */
     async applyStartupOptimizations() {
         if (this.applied) return;
-        
+
         const startTime = performance.now();
         console.log('🚀 Applying startup performance optimizations...');
 
         try {
             // Get system information for optimization decisions
             const systemInfo = await this.getSystemCapabilities();
-            
+
             // Apply optimizations based on system type
             await this.applySystemSpecificOptimizations(systemInfo);
-            
+
             // Apply general startup optimizations
             await this.applyGeneralOptimizations();
-            
+
             this.applied = true;
-            console.log(`✅ Startup optimizations applied in ${(performance.now() - startTime).toFixed(2)}ms`);
-            
+            console.log(
+                `✅ Startup optimizations applied in ${(performance.now() - startTime).toFixed(2)}ms`
+            );
         } catch (error) {
             console.error('❌ Error applying startup optimizations:', error);
         }
@@ -45,27 +46,33 @@ export class StartupOptimizer {
         try {
             if (window.electronAPI && window.electronAPI.getSystemInfo) {
                 const systemInfo = await window.electronAPI.getSystemInfo();
-                const memoryGB = systemInfo.totalMemory ? 
-                    Math.round(parseInt(systemInfo.totalMemory.replace(/[^\d]/g, '')) / 1024 / 1024 / 1024) : 4;
+                const memoryGB = systemInfo.totalMemory
+                    ? Math.round(
+                          parseInt(systemInfo.totalMemory.replace(/[^\d]/g, '')) /
+                              1024 /
+                              1024 /
+                              1024
+                      )
+                    : 4;
                 const cpuCores = systemInfo.cpuCores || 4;
-                
+
                 return {
                     memoryGB,
                     cpuCores,
                     isLowEnd: memoryGB < 4 || cpuCores < 4,
-                    isHighEnd: memoryGB >= 8 && cpuCores >= 8
+                    isHighEnd: memoryGB >= 8 && cpuCores >= 8,
                 };
             }
         } catch (error) {
             console.warn('Could not get system info, using conservative defaults');
         }
-        
+
         // Default to mid-range system
         return {
             memoryGB: 8,
             cpuCores: 4,
             isLowEnd: false,
-            isHighEnd: false
+            isHighEnd: false,
         };
     }
 
@@ -77,7 +84,10 @@ export class StartupOptimizer {
         let userPerformanceMode = 'balanced';
         try {
             if (window.electronAPI) {
-                userPerformanceMode = await window.electronAPI.getSetting('performanceMode', 'balanced');
+                userPerformanceMode = await window.electronAPI.getSetting(
+                    'performanceMode',
+                    'balanced'
+                );
                 console.log('🎯 User performance mode preference:', userPerformanceMode);
             }
         } catch (error) {
@@ -112,7 +122,7 @@ export class StartupOptimizer {
             enableLazyLoading: true, // Enable lazy loading for better performance on low-end systems
             sequentialLoadDelay: 15,
             performanceMode: 'low-end',
-            disableAnimations: true
+            disableAnimations: true,
         };
 
         await this.applySettings(optimizations);
@@ -130,7 +140,7 @@ export class StartupOptimizer {
             enableLazyLoading: false, // Disable lazy loading for instant access on high-end systems
             sequentialLoadDelay: 2,
             performanceMode: 'high-end',
-            disableAnimations: true
+            disableAnimations: true,
         };
 
         await this.applySettings(optimizations);
@@ -148,7 +158,7 @@ export class StartupOptimizer {
             enableLazyLoading: true, // Enable lazy loading for balanced approach
             sequentialLoadDelay: 5,
             performanceMode: 'balanced', // Save the detected balanced mode instead of keeping 'auto'
-            disableAnimations: true
+            disableAnimations: true,
         };
 
         await this.applySettings(optimizations);
@@ -163,13 +173,13 @@ export class StartupOptimizer {
             // Reduce timeouts for faster startup
             tabInitTimeout: 4000,
             systemInfoTimeout: 10000,
-            
+
             // Enable aggressive caching
             enableStartupCache: true,
-            
+
             // Optimize plugin loading
             pluginBatchSize: 5,
-            pluginBatchDelay: 50
+            pluginBatchDelay: 50,
         };
 
         await this.applySettings(generalOptimizations);
@@ -184,16 +194,18 @@ export class StartupOptimizer {
 
         // Check if user has a custom performance mode or has manually configured settings
         const hasCustomSettings = await this.checkForUserCustomizations();
-        
+
         if (hasCustomSettings) {
-            console.log('🎯 User has custom performance settings - skipping automatic optimizations');
+            console.log(
+                '🎯 User has custom performance settings - skipping automatic optimizations'
+            );
             return;
         }
 
         for (const [key, value] of Object.entries(settings)) {
             try {
                 // Only apply non-performance settings or if this is the first run
-                if (!this.isPerformanceSetting(key) || await this.isFirstRun()) {
+                if (!this.isPerformanceSetting(key) || (await this.isFirstRun())) {
                     await window.electronAPI.setSetting(key, value);
                     console.log(`⚙️ Applied setting: ${key} = ${value}`);
                 }
@@ -209,11 +221,17 @@ export class StartupOptimizer {
     async checkForUserCustomizations() {
         try {
             // Check if user has explicitly set performance mode to something other than default
-            const performanceMode = await window.electronAPI.getSetting('performanceMode', 'balanced');
-            
+            const performanceMode = await window.electronAPI.getSetting(
+                'performanceMode',
+                'balanced'
+            );
+
             // Check if user has a flag indicating they've customized settings
-            const hasCustomizedSettings = await window.electronAPI.getSetting('hasCustomizedPerformanceSettings', false);
-            
+            const hasCustomizedSettings = await window.electronAPI.getSetting(
+                'hasCustomizedPerformanceSettings',
+                false
+            );
+
             return hasCustomizedSettings;
         } catch (error) {
             console.warn('Could not check for user customizations:', error);
@@ -244,15 +262,13 @@ export class StartupOptimizer {
     isPerformanceSetting(key) {
         const performanceSettings = [
             'fastSystemInfo',
-            'cacheSystemInfo', 
+            'cacheSystemInfo',
             'enableDiscordRpc',
             'enableLazyLoading',
-            'disableAnimations'
+            'disableAnimations',
         ];
         return performanceSettings.includes(key);
     }
-
-
 
     /**
      * Reset optimizations (for testing)
@@ -274,9 +290,6 @@ export async function initStartupOptimizer() {
     await startupOptimizer.applyStartupOptimizations();
 }
 
-/**
- * Get startup performance recommendations
- */
 export function getStartupRecommendations(startupTime) {
     const recommendations = [];
 
@@ -284,19 +297,19 @@ export function getStartupRecommendations(startupTime) {
         recommendations.push({
             type: 'critical',
             message: 'Startup time is very slow. Consider enabling low-end mode.',
-            action: 'enableLowEndMode'
+            action: 'enableLowEndMode',
         });
     } else if (startupTime > 15000) {
         recommendations.push({
             type: 'warning',
             message: 'Startup time could be improved. Consider optimizing settings.',
-            action: 'optimizeSettings'
+            action: 'optimizeSettings',
         });
     } else if (startupTime > 10000) {
         recommendations.push({
             type: 'info',
             message: 'Startup time is acceptable but could be faster.',
-            action: 'minorOptimizations'
+            action: 'minorOptimizations',
         });
     }
 

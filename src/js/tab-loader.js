@@ -5,24 +5,58 @@
  * Each tab folder should contain: index.html, styles.css, script.js, and config.json
  */
 
+/**
+ * TabLoader Class
+ *
+ * Advanced tab loading and management system that handles dynamic loading of
+ * folder-based tabs with performance optimization and lazy loading capabilities.
+ *
+ * Key Features:
+ * - Dynamic tab discovery from filesystem folders
+ * - Lazy loading of tab scripts for optimal performance
+ * - Sequential loading with configurable delays
+ * - System capability detection for performance optimization
+ * - Progress tracking and completion callbacks
+ * - Tab initialization state management
+ *
+ * The TabLoader works in conjunction with the core tab system to provide
+ * a scalable architecture for adding new tabs without modifying core code.
+ */
 class TabLoader {
+    /**
+     * Initialize a new TabLoader instance
+     *
+     * Sets up the internal state management for tab loading including:
+     * - Tab tracking maps for loaded tabs and styles
+     * - Progress tracking counters
+     * - Performance optimization settings
+     * - Lazy loading configuration
+     *
+     * @constructor
+     */
     constructor() {
-        this.loadedTabs = new Map();
-        this.styleElements = new Map();
-        this.totalTabs = 0;
-        this.loadedTabsCount = 0;
-        this.initializedTabsCount = 0;
-        this.onProgressCallback = null;
-        this.onCompleteCallback = null;
-        this.tabInitializationPromises = new Map();
-        this.tabReadyCallbacks = new Map();
-        // Configuration for sequential loading - optimized for faster startup
-        this.sequentialLoadDelay = 5; // Reduced default for faster loading
-        // Lazy loading configuration (default: enabled)
-        this.lazyLoadingEnabled = true;
-        // Performance mode detection
-        this.performanceMode = 'auto';
-        this.systemCapabilities = null;
+        // Core tab tracking
+        this.loadedTabs = new Map(); // Stores loaded tab data and metadata
+        this.styleElements = new Map(); // Tracks injected CSS style elements
+
+        // Progress tracking
+        this.totalTabs = 0; // Total number of tabs to load
+        this.loadedTabsCount = 0; // Number of tabs that have been loaded
+        this.initializedTabsCount = 0; // Number of tabs that have been initialized
+
+        // Callback management
+        this.onProgressCallback = null; // Called during loading progress
+        this.onCompleteCallback = null; // Called when all tabs are loaded
+
+        // Initialization tracking
+        this.tabInitializationPromises = new Map(); // Tracks async tab initialization
+        this.tabReadyCallbacks = new Map(); // Stores tab ready callbacks
+
+        // Performance optimization settings
+        this.sequentialLoadDelay = 5; // Delay between sequential tab loads (ms)
+        this.lazyLoadingEnabled = true; // Enable lazy loading of tab scripts
+        this.performanceMode = 'auto'; // Performance mode: 'auto', 'fast', 'balanced'
+        this.systemCapabilities = null; // Detected system performance capabilities
     }
 
     /**
@@ -92,9 +126,12 @@ class TabLoader {
                     this.performanceMode = 'mid-range';
                 }
 
-                console.log(`🖥️ Tab loader detected system: ${this.systemCapabilities} (${memoryGB}GB RAM, ${cpuCores} cores)`);
-                console.log(`⚡ Set sequential load delay to: ${this.sequentialLoadDelay}ms (optimized for faster startup)`);
-
+                console.log(
+                    `🖥️ Tab loader detected system: ${this.systemCapabilities} (${memoryGB}GB RAM, ${cpuCores} cores)`
+                );
+                console.log(
+                    `⚡ Set sequential load delay to: ${this.sequentialLoadDelay}ms (optimized for faster startup)`
+                );
             } else {
                 // Fallback to browser detection
                 this.systemCapabilities = 'unknown';
@@ -112,7 +149,7 @@ class TabLoader {
      * Register a tab as ready for initialization tracking
      */
     registerTabForInitialization(tabId) {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             this.tabReadyCallbacks.set(tabId, resolve);
             console.log(`Registered tab for initialization tracking: ${tabId}`);
         });
@@ -127,10 +164,12 @@ class TabLoader {
             callback();
             this.tabReadyCallbacks.delete(tabId);
             this.initializedTabsCount++;
-            console.log(`Tab marked as ready: ${tabId} (${this.initializedTabsCount}/${this.totalTabs})`);
+            console.log(
+                `Tab marked as ready: ${tabId} (${this.initializedTabsCount}/${this.totalTabs})`
+            );
 
             // Update progress for initialization phase (50-100%)
-            const initProgress = 50 + ((this.initializedTabsCount / this.totalTabs) * 50);
+            const initProgress = 50 + (this.initializedTabsCount / this.totalTabs) * 50;
             this.updateProgress(`${tabId} configured`, initProgress);
 
             // Check if all tabs are initialized
@@ -146,15 +185,30 @@ class TabLoader {
 
     /**
      * Initialize the tab loader and load all folder-based tabs
+     *
+     * This is the main entry point for the TabLoader system. It orchestrates
+     * the complete tab loading process including:
+     * 1. System capability detection for performance optimization
+     * 2. Discovery of available tabs and plugins from filesystem
+     * 3. Tab ordering based on user preferences and defaults
+     * 4. Sequential or parallel loading based on performance mode
+     * 5. Progress tracking and completion notification
+     *
+     * The initialization process is designed to be non-blocking and provides
+     * progress feedback through callbacks for UI updates.
+     *
+     * @async
+     * @param {string[]} defaultOrder - Default tab ordering array
+     * @returns {Promise<void>}
      */
     async init(defaultOrder = []) {
         console.log('Initializing tab loader...');
 
-        // Detect system capabilities first
+        // Detect system capabilities first to optimize loading strategy
         await this.detectSystemCapabilities();
 
         try {
-            // 1. Get the combined, unsorted list of tabs and plugins
+            // 1. Get the combined, unsorted list of tabs and plugins from filesystem
             const allItems = await window.electronAPI.getTabFolders();
             console.log('Found tabs and plugins:', allItems);
 
@@ -173,7 +227,7 @@ class TabLoader {
                     // Both are built-in tabs, sort by the default order.
                     return (aIndex > -1 ? aIndex : Infinity) - (bIndex > -1 ? bIndex : Infinity);
                 }
-                
+
                 // If one is a tab and the other isn't, the default order from get-tab-folders is maintained.
                 if (aIsTab && !bIsTab) return -1;
                 if (!aIsTab && bIsTab) return 1;
@@ -182,7 +236,10 @@ class TabLoader {
                 return a.name.localeCompare(b.name);
             });
 
-            console.log('Sorted tab folders:', allItems.map(item => item.name));
+            console.log(
+                'Sorted tab folders:',
+                allItems.map(item => item.name)
+            );
 
             this.totalTabs = allItems.length;
             this.loadedTabsCount = 0;
@@ -206,10 +263,15 @@ class TabLoader {
             for (let i = 0; i < allItems.length; i++) {
                 const item = allItems[i];
                 try {
-                    this.updateProgress(`Setting up ${item.name}...`, 10 + (i / this.totalTabs) * 40);
+                    this.updateProgress(
+                        `Setting up ${item.name}...`,
+                        10 + (i / this.totalTabs) * 40
+                    );
                     const tabStart = performance.now();
                     await this.loadTab(item.name);
-                    console.log(`📂 Tab '${item.name}' loaded in ${(performance.now() - tabStart).toFixed(2)}ms`);
+                    console.log(
+                        `📂 Tab '${item.name}' loaded in ${(performance.now() - tabStart).toFixed(2)}ms`
+                    );
                     this.loadedTabsCount++;
 
                     // Add delay between tab loads to prevent resource spikes
@@ -222,14 +284,17 @@ class TabLoader {
                 }
             }
 
-            console.log(`📊 Sequential tab loading completed in ${(performance.now() - sequentialStart).toFixed(2)}ms`);
+            console.log(
+                `📊 Sequential tab loading completed in ${(performance.now() - sequentialStart).toFixed(2)}ms`
+            );
 
             this.updateProgress('Finalizing setup...', 50);
-            console.log(`Loaded ${allItems.length} folder-based tabs, waiting for initialization...`);
+            console.log(
+                `Loaded ${allItems.length} folder-based tabs, waiting for initialization...`
+            );
 
             // Set a timeout for all tabs to initialize
             this.waitForInitialization();
-
         } catch (error) {
             console.error('Error initializing tab loader:', error);
             this.updateProgress('Setup encountered an issue', 100);
@@ -270,15 +335,18 @@ class TabLoader {
 
                 const uninitializedTabs = Array.from(this.tabReadyCallbacks.keys());
                 if (uninitializedTabs.length > 0) {
-                    console.error('The following tabs failed to initialize in time:', uninitializedTabs);
-                    
+                    console.error(
+                        'The following tabs failed to initialize in time:',
+                        uninitializedTabs
+                    );
+
                     // To prevent the app from getting stuck, mark remaining tabs as ready
                     uninitializedTabs.forEach(tabId => {
                         console.warn(`Force marking tab as ready: ${tabId}`);
                         this.markTabAsReady(tabId);
                     });
                 }
-                
+
                 // The onCompleteCallback will be triggered by the last markTabAsReady call
             }
         }, checkInterval);
@@ -295,39 +363,55 @@ class TabLoader {
 
     /**
      * Load a single tab from its folder
+     *
+     * This method handles the complete loading process for a single tab including:
+     * 1. Fetching tab content from the filesystem via main process
+     * 2. Creating the tab navigation item in the sidebar
+     * 3. Creating the tab content area in the main view
+     * 4. Loading and injecting tab-specific CSS styles
+     * 5. Storing tab data for lazy script execution
+     * 6. Registering the tab for initialization tracking
+     *
+     * The loading process is designed to be non-blocking and supports
+     * both immediate and lazy loading of tab functionality.
+     *
+     * @async
+     * @param {string} folderName - The folder name containing the tab files
+     * @returns {Promise<void>}
+     * @throws {Error} If tab loading fails
      */
     async loadTab(folderName) {
         try {
             console.log(`Loading tab from folder: ${folderName}`);
-            
-            // Get tab content from main process
+
+            // Get tab content from main process (config.json, index.html, styles.css, script.js)
             const tabData = await window.electronAPI.getTabContent(folderName);
             const { config, html, css, js } = tabData;
-            
-            // Generate unique tab ID
+
+            // Generate unique tab ID based on folder name
             const tabId = folderName;
-            
-            // Create tab item in sidebar
+
+            // Create tab navigation item in the sidebar
             this.createTabItem(tabId, config);
-            
-            // Create tab content area
+
+            // Create tab content area in the main view
             this.createTabContent(tabId, config, html);
-            
-            // Load tab-specific CSS
+
+            // Load and inject tab-specific CSS if present
             if (css.trim()) {
                 this.loadTabCSS(tabId, css);
             }
-            
-            // Store tab data for later use
+
+            // Store complete tab data for later use (especially for lazy script loading)
             this.loadedTabs.set(tabId, {
                 folder: folderName,
                 config,
                 html,
                 css,
-                js
+                js,
             });
-            
-            // Register tab for initialization tracking
+
+            // Register tab for initialization tracking and lazy loading
             this.registerTabForInitialization(tabId);
 
             // Handle JavaScript execution based on lazy loading preference
@@ -335,24 +419,27 @@ class TabLoader {
                 this.loadedTabs.get(tabId).jsExecuted = false;
 
                 // Check if lazy loading is enabled and this isn't the welcome tab
-                const shouldDeferExecution = this.lazyLoadingEnabled &&
-                    (tabId !== 'welcome' && folderName !== 'welcome');
+                const shouldDeferExecution =
+                    this.lazyLoadingEnabled && tabId !== 'welcome' && folderName !== 'welcome';
 
                 if (shouldDeferExecution) {
-                    console.log(`Deferring JavaScript execution for tab: ${tabId} (lazy loading enabled)`);
+                    console.log(
+                        `Deferring JavaScript execution for tab: ${tabId} (lazy loading enabled)`
+                    );
                     // Mark as ready without executing JS - will be executed on demand
                     this.markTabAsReady(tabId);
                 } else {
-                    console.log(`Executing JavaScript immediately for tab: ${tabId} (lazy loading disabled or welcome tab)`);
+                    console.log(
+                        `Executing JavaScript immediately for tab: ${tabId} (lazy loading disabled or welcome tab)`
+                    );
                     this.executeTabJS(tabId, js);
                 }
             } else {
                 // If no JavaScript, mark as ready immediately
                 this.markTabAsReady(tabId);
             }
-            
+
             console.log(`Successfully loaded tab: ${config.name} (${tabId})`);
-            
         } catch (error) {
             console.error(`Error loading tab from folder ${folderName}:`, error);
         }
@@ -364,7 +451,7 @@ class TabLoader {
     createTabItem(tabId, config) {
         const tabList = document.getElementById('tab-list');
         if (!tabList) return;
-        
+
         const tabItem = document.createElement('li');
         tabItem.className = 'tab-item';
         tabItem.setAttribute('data-tab', tabId);
@@ -372,7 +459,7 @@ class TabLoader {
             <i class="${config.icon || 'fas fa-cog'}"></i>
             <span>${config.name || 'Unnamed Tab'}</span>
         `;
-        
+
         // Add click handler
         tabItem.addEventListener('click', () => {
             if (window.switchToTab) {
@@ -394,19 +481,19 @@ class TabLoader {
     createTabContent(tabId, config, html) {
         const contentArea = document.querySelector('.content-area');
         if (!contentArea) return;
-        
+
         const tabContent = document.createElement('div');
         tabContent.id = `tab-${tabId}`;
         tabContent.className = 'tab-content';
         tabContent.setAttribute('data-tab-folder', config.folder || '');
-        
+
         // Wrap the HTML content in a container for scoping
         tabContent.innerHTML = `
             <div class="folder-tab-container" data-tab="${tabId}">
                 ${html}
             </div>
         `;
-        
+
         contentArea.appendChild(tabContent);
     }
 
@@ -416,15 +503,15 @@ class TabLoader {
     loadTabCSS(tabId, css) {
         // Scope the CSS to this specific tab
         const scopedCSS = this.scopeCSS(css, `[data-tab="${tabId}"]`);
-        
+
         // Create style element
         const styleElement = document.createElement('style');
         styleElement.setAttribute('data-tab', tabId);
         styleElement.textContent = scopedCSS;
-        
+
         // Add to document head
         document.head.appendChild(styleElement);
-        
+
         // Store reference for cleanup
         this.styleElements.set(tabId, styleElement);
     }
@@ -440,19 +527,23 @@ class TabLoader {
             if (selector.trim().startsWith('@')) {
                 return match;
             }
-            
+
             // Add scope to each selector
             const selectors = selector.split(',').map(s => {
                 const trimmed = s.trim();
                 // If a selector targets html, body, or :root, it should NOT be scoped,
                 // as these are global styles. Scoping them would break the rule.
-                if (trimmed.startsWith('html') || trimmed.startsWith('body') || trimmed.startsWith(':root')) {
+                if (
+                    trimmed.startsWith('html') ||
+                    trimmed.startsWith('body') ||
+                    trimmed.startsWith(':root')
+                ) {
                     return trimmed; // Return the original selector without the scope
                 }
                 // For all other selectors, apply the scope.
                 return `${scope} ${trimmed}`;
             });
-            
+
             return `${selectors.join(', ')}{`;
         });
     }
@@ -500,7 +591,6 @@ class TabLoader {
             func();
 
             console.log(`Executed JavaScript for tab: ${tabId}`);
-
         } catch (error) {
             console.error(`Error executing JavaScript for tab ${tabId}:`, error);
             // If JS execution fails, mark it as "ready" to not block other tabs
@@ -558,17 +648,17 @@ class TabLoader {
             styleElement.remove();
             this.styleElements.delete(tabId);
         }
-        
+
         // Remove tab data
         this.loadedTabs.delete(tabId);
-        
+
         // Remove DOM elements
         const tabItem = document.querySelector(`[data-tab="${tabId}"]`);
         if (tabItem) tabItem.remove();
-        
+
         const tabContent = document.getElementById(`tab-${tabId}`);
         if (tabContent) tabContent.remove();
-        
+
         console.log(`Removed tab: ${tabId}`);
     }
 
@@ -577,10 +667,10 @@ class TabLoader {
      */
     async reloadTab(folderName) {
         const tabId = folderName;
-        
+
         // Remove existing tab
         this.removeTab(tabId);
-        
+
         // Reload tab
         await this.loadTab(folderName);
     }
@@ -597,7 +687,7 @@ class TabLoader {
 window.TabLoader = TabLoader;
 
 // Global function for tabs to signal they're ready
-window.markTabAsReady = function(tabId) {
+window.markTabAsReady = function (tabId) {
     if (window.tabLoader && typeof window.tabLoader.markTabAsReady === 'function') {
         window.tabLoader.markTabAsReady(tabId);
     } else {

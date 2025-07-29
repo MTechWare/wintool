@@ -9,7 +9,7 @@ class LazyLoadingHelper {
         this.initialized = false;
         this.scriptExecuted = false;
         this.globalKey = `${tabId}ScriptExecuted`;
-        
+
         // Check if script has already been executed globally
         this.scriptExecuted = window[this.globalKey] || false;
     }
@@ -76,11 +76,7 @@ class LazyLoadingHelper {
      * @param {Object} options - Options for initialization
      */
     async initialize(initFunction, options = {}) {
-        const { 
-            skipIfExecuted = true, 
-            markReady = true, 
-            errorHandling = true 
-        } = options;
+        const { skipIfExecuted = true, markReady = true, errorHandling = true } = options;
 
         // Skip if already executed and skipIfExecuted is true
         if (skipIfExecuted && this.scriptExecuted) {
@@ -109,17 +105,16 @@ class LazyLoadingHelper {
 
             console.log(`Tab initialization completed: ${this.tabId}`);
             return true;
-
         } catch (error) {
             console.error(`Error initializing tab ${this.tabId}:`, error);
-            
+
             if (errorHandling) {
                 // Still mark as ready to prevent blocking
                 if (markReady) {
                     this.markTabReady();
                 }
             }
-            
+
             throw error;
         }
     }
@@ -129,7 +124,7 @@ class LazyLoadingHelper {
      */
     createGlobalResetFunction() {
         const resetFunctionName = `reset${this.tabId.charAt(0).toUpperCase() + this.tabId.slice(1)}Initialization`;
-        
+
         window[resetFunctionName] = () => {
             this.resetScriptExecution();
             console.log(`${resetFunctionName} called - tab will reinitialize on next access`);
@@ -143,7 +138,7 @@ class LazyLoadingHelper {
      * Standard DOM ready check
      */
     static waitForDOM() {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', resolve);
             } else {
@@ -173,7 +168,7 @@ class LazyLoadingHelper {
 
             observer.observe(document.body, {
                 childList: true,
-                subtree: true
+                subtree: true,
             });
 
             // Timeout fallback

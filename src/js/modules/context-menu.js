@@ -2,7 +2,6 @@ import { currentTab, hiddenTabs } from './state.js';
 import { switchToTab } from './tabs.js';
 import { showNotification } from './notifications.js';
 
-
 export function initContextMenu() {
     const tabContextMenu = document.getElementById('tab-context-menu');
     const sidebarContextMenu = document.getElementById('sidebar-context-menu');
@@ -11,14 +10,12 @@ export function initContextMenu() {
 
     let activeTabId = null;
 
-    
-    tabList.addEventListener('contextmenu', (e) => {
+    tabList.addEventListener('contextmenu', e => {
         const targetTab = e.target.closest('.tab-item');
         if (targetTab) {
             e.preventDefault();
             activeTabId = targetTab.getAttribute('data-tab');
 
-            
             if (activeTabId === 'welcome') return;
 
             tabContextMenu.style.top = `${e.clientY}px`;
@@ -28,9 +25,7 @@ export function initContextMenu() {
         }
     });
 
-    
-    sidebar.addEventListener('contextmenu', (e) => {
-        
+    sidebar.addEventListener('contextmenu', e => {
         if (!e.target.closest('.tab-item')) {
             e.preventDefault();
             updateHiddenTabsMenu();
@@ -41,28 +36,24 @@ export function initContextMenu() {
         }
     });
 
-    
     document.addEventListener('click', () => {
         tabContextMenu.style.display = 'none';
         sidebarContextMenu.style.display = 'none';
     });
 
-    
     document.getElementById('context-menu-hide-tab').addEventListener('click', () => {
         if (activeTabId) {
             hideTab(activeTabId);
         }
     });
 
-    
-    document.getElementById('hidden-tabs-list').addEventListener('click', (e) => {
+    document.getElementById('hidden-tabs-list').addEventListener('click', e => {
         const target = e.target.closest('.context-menu-item');
         if (target && target.dataset.tab) {
             showTab(target.dataset.tab);
         }
     });
 }
-
 
 async function hideTab(tabId) {
     if (hiddenTabs.includes(tabId)) return;
@@ -73,14 +64,12 @@ async function hideTab(tabId) {
         hiddenTabs.push(tabId);
         await window.electronAPI.setSetting('hiddenTabs', hiddenTabs);
 
-        
         if (currentTab === tabId) {
             switchToTab('welcome');
         }
         showNotification(`Tab "${tabItem.textContent.trim()}" hidden.`, 'info');
     }
 }
-
 
 async function showTab(tabId) {
     const index = hiddenTabs.indexOf(tabId);
@@ -95,11 +84,10 @@ async function showTab(tabId) {
     }
 }
 
-
 function updateHiddenTabsMenu() {
     const hiddenTabsList = document.getElementById('hidden-tabs-list');
     const showTabsSubmenu = document.getElementById('context-menu-show-tabs');
-    hiddenTabsList.innerHTML = ''; 
+    hiddenTabsList.innerHTML = '';
 
     if (hiddenTabs.length === 0) {
         showTabsSubmenu.style.display = 'none';

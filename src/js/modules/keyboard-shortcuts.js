@@ -4,15 +4,15 @@ import { showSettings } from './settings.js';
 import { showCommandPalette, showHelpModal } from './command-palette.js';
 import { refreshCurrentTab, refreshSystemInformation } from './tabs.js';
 
-
 export function initGlobalKeyboardShortcuts() {
-    
     loadCustomShortcuts();
 
-    document.addEventListener('keydown', (e) => {
-        
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
-            
+    document.addEventListener('keydown', e => {
+        if (
+            e.target.tagName === 'INPUT' ||
+            e.target.tagName === 'TEXTAREA' ||
+            e.target.isContentEditable
+        ) {
             if (matchesShortcut(e, currentShortcuts['close-modal'])) {
                 const openModal = document.querySelector('.modal[style*="flex"]');
                 if (openModal) {
@@ -23,7 +23,6 @@ export function initGlobalKeyboardShortcuts() {
             return;
         }
 
-        
         if (matchesShortcut(e, currentShortcuts['show-help'])) {
             e.preventDefault();
             showHelpModal();
@@ -56,7 +55,6 @@ export function initGlobalKeyboardShortcuts() {
     });
 }
 
-
 function matchesShortcut(event, shortcutString) {
     if (!shortcutString) return false;
 
@@ -64,29 +62,31 @@ function matchesShortcut(event, shortcutString) {
     const key = parts[parts.length - 1].toLowerCase();
     const modifiers = parts.slice(0, -1).map(mod => mod.toLowerCase());
 
-    
     const eventKey = event.key.toLowerCase();
     if (eventKey !== key.toLowerCase() && event.code.toLowerCase() !== key.toLowerCase()) {
         return false;
     }
 
-    
     const hasCtrl = modifiers.includes('ctrl');
     const hasAlt = modifiers.includes('alt');
     const hasShift = modifiers.includes('shift');
     const hasMeta = modifiers.includes('meta') || modifiers.includes('cmd');
 
-    return event.ctrlKey === hasCtrl &&
-           event.altKey === hasAlt &&
-           event.shiftKey === hasShift &&
-           event.metaKey === hasMeta;
+    return (
+        event.ctrlKey === hasCtrl &&
+        event.altKey === hasAlt &&
+        event.shiftKey === hasShift &&
+        event.metaKey === hasMeta
+    );
 }
-
 
 export async function loadCustomShortcuts() {
     try {
         if (window.electronAPI) {
-            const savedShortcuts = await window.electronAPI.getSetting('keyboardShortcuts', DEFAULT_SHORTCUTS);
+            const savedShortcuts = await window.electronAPI.getSetting(
+                'keyboardShortcuts',
+                DEFAULT_SHORTCUTS
+            );
             setCurrentShortcuts({ ...DEFAULT_SHORTCUTS, ...savedShortcuts });
         }
     } catch (error) {
@@ -95,13 +95,14 @@ export async function loadCustomShortcuts() {
     }
 }
 
-
 export async function loadKeyboardShortcutsSettings() {
     try {
         if (window.electronAPI) {
-            const savedShortcuts = await window.electronAPI.getSetting('keyboardShortcuts', DEFAULT_SHORTCUTS);
+            const savedShortcuts = await window.electronAPI.getSetting(
+                'keyboardShortcuts',
+                DEFAULT_SHORTCUTS
+            );
 
-            
             Object.keys(DEFAULT_SHORTCUTS).forEach(key => {
                 const input = document.getElementById(`shortcut-${key}`);
                 if (input) {
@@ -109,14 +110,12 @@ export async function loadKeyboardShortcutsSettings() {
                 }
             });
 
-            
             initShortcutInputs();
         }
     } catch (error) {
         console.error('Error loading keyboard shortcuts settings:', error);
     }
 }
-
 
 function initShortcutInputs() {
     Object.keys(DEFAULT_SHORTCUTS).forEach(key => {
@@ -128,33 +127,29 @@ function initShortcutInputs() {
     });
 }
 
-
 function startRecordingShortcut(input, shortcutKey) {
     input.classList.add('recording');
     input.value = 'Press keys...';
 
-    const recordKeydown = (e) => {
+    const recordKeydown = e => {
         e.preventDefault();
         e.stopPropagation();
 
-        
         const parts = [];
         if (e.ctrlKey) parts.push('Ctrl');
         if (e.altKey) parts.push('Alt');
         if (e.shiftKey) parts.push('Shift');
         if (e.metaKey) parts.push('Meta');
 
-        
         let key = e.key;
         if (key === ' ') key = 'Space';
         else if (key === 'Control' || key === 'Alt' || key === 'Shift' || key === 'Meta') {
-            return; 
+            return;
         }
 
         parts.push(key);
         const shortcutString = parts.join('+');
 
-        
         const conflict = checkShortcutConflict(shortcutString, shortcutKey);
         if (conflict) {
             input.classList.add('shortcut-conflict');
@@ -164,7 +159,6 @@ function startRecordingShortcut(input, shortcutKey) {
             input.value = shortcutString;
         }
 
-        
         document.removeEventListener('keydown', recordKeydown, true);
         input.classList.remove('recording');
     };
@@ -172,16 +166,13 @@ function startRecordingShortcut(input, shortcutKey) {
     document.addEventListener('keydown', recordKeydown, true);
 }
 
-
 function stopRecordingShortcut(input) {
     input.classList.remove('recording');
     if (input.value === 'Press keys...') {
-        
         const shortcutKey = input.id.replace('shortcut-', '');
         input.value = currentShortcuts[shortcutKey] || DEFAULT_SHORTCUTS[shortcutKey];
     }
 }
-
 
 function checkShortcutConflict(shortcutString, excludeKey) {
     for (const [key, value] of Object.entries(currentShortcuts)) {
@@ -191,7 +182,6 @@ function checkShortcutConflict(shortcutString, excludeKey) {
     }
     return null;
 }
-
 
 export async function saveKeyboardShortcuts() {
     try {
@@ -215,7 +205,6 @@ export async function saveKeyboardShortcuts() {
     }
 }
 
-
 export function resetShortcut(shortcutKey) {
     const input = document.getElementById(`shortcut-${shortcutKey}`);
     if (input) {
@@ -224,7 +213,6 @@ export function resetShortcut(shortcutKey) {
     }
 }
 
-
 export function resetAllShortcuts() {
     if (confirm('Are you sure you want to reset all keyboard shortcuts to their defaults?')) {
         Object.keys(DEFAULT_SHORTCUTS).forEach(key => {
@@ -232,7 +220,6 @@ export function resetAllShortcuts() {
         });
     }
 }
-
 
 export async function exportShortcuts() {
     try {
@@ -258,21 +245,19 @@ export async function exportShortcuts() {
     }
 }
 
-
 export function importShortcuts() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
 
-    input.onchange = (e) => {
+    input.onchange = e => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = e => {
                 try {
                     const shortcuts = JSON.parse(e.target.result);
 
-                    
                     Object.keys(DEFAULT_SHORTCUTS).forEach(key => {
                         if (shortcuts[key]) {
                             const input = document.getElementById(`shortcut-${key}`);

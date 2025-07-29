@@ -8,18 +8,30 @@ const path = require('path');
 const os = require('os');
 
 class SettingsManager {
+    /**
+     * Creates a new SettingsManager instance.
+     * Initializes the settings store and sets up IPC handlers for settings management.
+     *
+     * @constructor
+     */
     constructor() {
         this.store = null;
-        
+
         // Bind methods to preserve context
         this.getStore = this.getStore.bind(this);
         this.getSetting = this.getSetting.bind(this);
         this.setSetting = this.setSetting.bind(this);
         this.clearAllSettings = this.clearAllSettings.bind(this);
-        
+
         this.setupIpcHandlers();
     }
 
+    /**
+     * Set up IPC handlers for settings management operations.
+     * Handles get/set settings, performance modes, themes, and other configuration options.
+     *
+     * @returns {void}
+     */
     setupIpcHandlers() {
         // Basic settings IPC handlers
         ipcMain.handle('get-setting', async (event, key, defaultValue) => {
@@ -31,12 +43,12 @@ class SettingsManager {
         ipcMain.handle('set-setting', async (event, key, value) => {
             const settingsStore = await this.getStore();
             if (!settingsStore) return false;
-            
+
             settingsStore.set(key, value);
-            
+
             // Handle special settings that require immediate action
             await this.handleSpecialSetting(key, value);
-            
+
             return true;
         });
 
@@ -143,10 +155,11 @@ class SettingsManager {
                         detail: 'A restart is required for this change to take effect.',
                         buttons: ['Restart Now', 'Restart Later'],
                         defaultId: 0,
-                        cancelId: 1
+                        cancelId: 1,
                     });
 
-                    if (restartChoice.response === 0) { // "Restart Now"
+                    if (restartChoice.response === 0) {
+                        // "Restart Now"
                         if (this.restartApp) {
                             this.restartApp();
                         } else {
@@ -159,7 +172,7 @@ class SettingsManager {
                 return {
                     success: true,
                     isEnabled: !isCurrentlyEnabled,
-                    message: `Plugin ${actionText} successfully.`
+                    message: `Plugin ${actionText} successfully.`,
                 };
             } catch (error) {
                 console.error('Error toggling plugin state:', error);
@@ -212,8 +225,8 @@ class SettingsManager {
                         trayNotificationShown: false,
                         hasCustomizedPerformanceSettings: false,
                         rainbowMode: false,
-                        customTheme: {}
-                    }
+                        customTheme: {},
+                    },
                 });
             } catch (error) {
                 console.error('Failed to initialize settings store:', error);
@@ -238,12 +251,12 @@ class SettingsManager {
     async setSetting(key, value) {
         const settingsStore = await this.getStore();
         if (!settingsStore) return false;
-        
+
         settingsStore.set(key, value);
-        
+
         // Handle special settings that require immediate action
         await this.handleSpecialSetting(key, value);
-        
+
         return true;
     }
 
@@ -301,7 +314,7 @@ class SettingsManager {
     async setDisabledPlugins(disabledPlugins) {
         const settingsStore = await this.getStore();
         if (!settingsStore) return false;
-        
+
         settingsStore.set('disabledPlugins', disabledPlugins);
         return true;
     }
@@ -312,7 +325,7 @@ class SettingsManager {
     async removePluginFromDisabled(pluginId) {
         const settingsStore = await this.getStore();
         if (!settingsStore) return false;
-        
+
         const disabledPlugins = settingsStore.get('disabledPlugins', []);
         const newDisabled = disabledPlugins.filter(id => id !== pluginId);
         settingsStore.set('disabledPlugins', newDisabled);
@@ -328,7 +341,10 @@ class SettingsManager {
             if (!settingsStore) return;
 
             // Check if user has customized performance settings
-            const hasCustomizedSettings = settingsStore.get('hasCustomizedPerformanceSettings', false);
+            const hasCustomizedSettings = settingsStore.get(
+                'hasCustomizedPerformanceSettings',
+                false
+            );
 
             if (hasCustomizedSettings) {
                 return; // Don't override user's custom settings
@@ -367,7 +383,7 @@ class SettingsManager {
                 theme: 'classic-dark',
                 primaryColor: '#ff9800',
                 customTheme: {},
-                rainbowMode: false
+                rainbowMode: false,
             };
         }
 
@@ -375,7 +391,7 @@ class SettingsManager {
             theme: settingsStore.get('theme', 'classic-dark'),
             primaryColor: settingsStore.get('primaryColor', '#ff9800'),
             customTheme: settingsStore.get('customTheme', {}),
-            rainbowMode: settingsStore.get('rainbowMode', false)
+            rainbowMode: settingsStore.get('rainbowMode', false),
         };
     }
 }

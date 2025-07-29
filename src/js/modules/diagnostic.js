@@ -15,20 +15,20 @@ console.log(`App path: ${app.getAppPath()}`);
 
 app.whenReady().then(() => {
     console.log('Electron app ready');
-    
+
     // Test 1: Check icon file
     const iconPath = path.join(__dirname, '../../../src/assets/images/icon.ico');
     console.log(`\n=== Test 1: Icon File ===`);
     console.log(`Icon path: ${iconPath}`);
-    
+
     try {
         const iconExists = fs.existsSync(iconPath);
         console.log(`Icon exists: ${iconExists}`);
-        
+
         if (iconExists) {
             const iconStats = fs.statSync(iconPath);
             console.log(`Icon size: ${iconStats.size} bytes`);
-            
+
             // Test loading icon
             const nativeIcon = nativeImage.createFromPath(iconPath);
             console.log(`Icon loaded: ${!nativeIcon.isEmpty()}`);
@@ -37,7 +37,7 @@ app.whenReady().then(() => {
     } catch (error) {
         console.error(`Icon test failed: ${error.message}`);
     }
-    
+
     // Test 2: Basic window creation
     console.log(`\n=== Test 2: Basic Window ===`);
     try {
@@ -47,15 +47,15 @@ app.whenReady().then(() => {
             show: false,
             webPreferences: {
                 nodeIntegration: false,
-                contextIsolation: true
-            }
+                contextIsolation: true,
+            },
         });
         console.log('Basic window created successfully');
         testWindow.close();
     } catch (error) {
         console.error(`Basic window creation failed: ${error.message}`);
     }
-    
+
     // Test 3: Transparent window creation
     console.log(`\n=== Test 3: Transparent Window ===`);
     try {
@@ -67,15 +67,15 @@ app.whenReady().then(() => {
             frame: false,
             webPreferences: {
                 nodeIntegration: false,
-                contextIsolation: true
-            }
+                contextIsolation: true,
+            },
         });
         console.log('Transparent window created successfully');
         transparentWindow.close();
     } catch (error) {
         console.error(`Transparent window creation failed: ${error.message}`);
     }
-    
+
     // Test 4: System Tray
     console.log(`\n=== Test 4: System Tray ===`);
     try {
@@ -88,7 +88,7 @@ app.whenReady().then(() => {
     } catch (error) {
         console.error(`System tray creation failed: ${error.message}`);
     }
-    
+
     // Test 5: Settings directory
     console.log(`\n=== Test 5: Settings Directory ===`);
     try {
@@ -96,7 +96,11 @@ app.whenReady().then(() => {
         console.log(`Default user data path: ${userDataPath}`);
 
         // Test custom MTechWare\WinTool directory
-        const mtechWareWinToolPath = path.join(process.env.LOCALAPPDATA || userDataPath, 'MTechWare', 'WinTool');
+        const mtechWareWinToolPath = path.join(
+            process.env.LOCALAPPDATA || userDataPath,
+            'MTechWare',
+            'WinTool'
+        );
         console.log(`MTechWare\\WinTool app data path: ${mtechWareWinToolPath}`);
         console.log(`MTechWare\\WinTool dir exists: ${fs.existsSync(mtechWareWinToolPath)}`);
 
@@ -108,15 +112,14 @@ app.whenReady().then(() => {
         const pluginsPath = path.join(mtechWareWinToolPath, 'Plugins');
         console.log(`Plugins path: ${pluginsPath}`);
         console.log(`Plugins dir exists: ${fs.existsSync(pluginsPath)}`);
-
     } catch (error) {
         console.error(`Settings directory test failed: ${error.message}`);
     }
-    
+
     console.log('\n=== Diagnostic Complete ===');
     console.log('If any tests failed, those are likely causing the red flashing icon.');
     console.log('Check the console output above for specific error messages.');
-    
+
     setTimeout(() => {
         app.quit();
     }, 2000);

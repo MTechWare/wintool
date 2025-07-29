@@ -1,14 +1,17 @@
-
+/**
+ * Initialize modal functionality and event listeners.
+ * Sets up click handlers for modal closing and escape key functionality.
+ *
+ * @returns {void}
+ */
 export function initModals() {
-    
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', e => {
         if (e.target.classList.contains('modal')) {
             closeModal(e.target.id);
         }
     });
-    
-    
-    document.addEventListener('keydown', (e) => {
+
+    document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
             const openModal = document.querySelector('.modal[style*="flex"]');
             if (openModal) {
@@ -17,7 +20,6 @@ export function initModals() {
         }
     });
 
-    
     const closeButtons = document.querySelectorAll('.modal .close-btn');
     closeButtons.forEach(button => {
         button.addEventListener('click', () => {
@@ -29,7 +31,13 @@ export function initModals() {
     });
 }
 
-
+/**
+ * Close a modal by its ID.
+ * Hides the modal and logs the action for debugging purposes.
+ *
+ * @param {string} modalId - The ID of the modal element to close
+ * @returns {void}
+ */
 export function closeModal(modalId) {
     console.log('Attempting to close modal:', modalId);
     const modal = document.getElementById(modalId);
@@ -42,23 +50,18 @@ export function closeModal(modalId) {
     }
 }
 
-
-
 export async function showSystemInfo() {
     const modal = document.getElementById('system-info-modal');
     const content = document.getElementById('system-info-content');
 
     if (modal && content) {
-        
         content.innerHTML = '<p>Loading system information...</p>';
         modal.style.display = 'flex';
 
         try {
-            
             if (window.electronAPI) {
                 const systemInfo = await window.electronAPI.getSystemInfo();
 
-                
                 content.innerHTML = `
                     <div class="system-info-grid">
                         <div class="system-info-item">

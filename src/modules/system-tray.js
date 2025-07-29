@@ -7,17 +7,29 @@ const { ipcMain, Tray, Menu, nativeImage, app } = require('electron');
 const path = require('path');
 
 class SystemTray {
+    /**
+     * Creates a new SystemTray instance.
+     * Initializes tray state and sets up IPC handlers for tray management.
+     *
+     * @constructor
+     */
     constructor() {
         this.tray = null;
-        
+
         // Bind methods to preserve context
         this.createTray = this.createTray.bind(this);
         this.destroyTray = this.destroyTray.bind(this);
         this.quitApplication = this.quitApplication.bind(this);
-        
+
         this.setupIpcHandlers();
     }
 
+    /**
+     * Set up IPC handlers for system tray operations.
+     * Handles quit application requests from renderer processes.
+     *
+     * @returns {void}
+     */
     setupIpcHandlers() {
         // System tray IPC handlers
         ipcMain.handle('quit-app', () => {
@@ -26,7 +38,15 @@ class SystemTray {
         });
     }
 
-    // Dependency injection method
+    /**
+     * Set dependencies for the system tray using dependency injection.
+     * Allows injection of window manager and app instance.
+     *
+     * @param {Object} dependencies - Object containing dependency instances
+     * @param {Object} dependencies.windowManager - Window manager instance
+     * @param {Object} dependencies.app - Electron app instance
+     * @returns {void}
+     */
     setDependencies(dependencies) {
         this.windowManager = dependencies.windowManager;
         this.app = dependencies.app;
@@ -63,7 +83,7 @@ class SystemTray {
                         if (this.windowManager) {
                             await this.windowManager.showWindow();
                         }
-                    }
+                    },
                 },
                 {
                     label: 'Hide WinTool',
@@ -71,10 +91,10 @@ class SystemTray {
                         if (this.windowManager) {
                             this.windowManager.hideWindow();
                         }
-                    }
+                    },
                 },
                 {
-                    type: 'separator'
+                    type: 'separator',
                 },
                 {
                     label: 'Settings',
@@ -87,17 +107,17 @@ class SystemTray {
                                 mainWindow.webContents.send('show-settings');
                             }
                         }
-                    }
+                    },
                 },
                 {
-                    type: 'separator'
+                    type: 'separator',
                 },
                 {
                     label: 'Quit WinTool',
                     click: () => {
                         this.quitApplication();
-                    }
-                }
+                    },
+                },
             ]);
 
             // Set context menu
@@ -116,7 +136,6 @@ class SystemTray {
             });
 
             console.log('System tray created successfully');
-
         } catch (error) {
             console.error('Failed to create system tray:', error);
         }
@@ -157,7 +176,7 @@ class SystemTray {
             this.tray.displayBalloon({
                 iconType: options.iconType || 'info',
                 title: options.title || 'WinTool',
-                content: options.content || ''
+                content: options.content || '',
             });
         }
     }

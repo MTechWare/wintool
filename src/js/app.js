@@ -1,24 +1,74 @@
 import { showSplashScreen, updateSplashProgress, hideSplashScreen } from './modules/splash.js';
 import { initWindowControls } from './modules/window-controls.js';
-import { initTabSystem, switchToTab, refreshCurrentTab, refreshSystemInformation, loadTabOrder } from './modules/tabs.js';
+import {
+    initTabSystem,
+    switchToTab,
+    refreshCurrentTab,
+    refreshSystemInformation,
+    loadTabOrder,
+} from './modules/tabs.js';
 import { initModals, closeModal, showSystemInfo } from './modules/modals.js';
-import { initSystemTrayListeners, hideToTray, showFromTray, quitApplication } from './modules/system-tray.js';
-import { initGlobalKeyboardShortcuts, resetShortcut, resetAllShortcuts, exportShortcuts, importShortcuts } from './modules/keyboard-shortcuts.js';
+import {
+    initSystemTrayListeners,
+    hideToTray,
+    showFromTray,
+    quitApplication,
+} from './modules/system-tray.js';
+import {
+    initGlobalKeyboardShortcuts,
+    resetShortcut,
+    resetAllShortcuts,
+    exportShortcuts,
+    importShortcuts,
+} from './modules/keyboard-shortcuts.js';
 import { initContextMenu } from './modules/context-menu.js';
 import { showNotification } from './modules/notifications.js';
-import { initCommandPalette, showCommandPalette, registerDefaultCommands, registerServiceControlCommands, showHelpModal } from './modules/command-palette.js';
-import { initPluginInstallButton, initOpenPluginsDirButton, renderPluginCards } from './modules/plugins.js';
-import { loadAndApplyStartupSettings, saveSettings, resetSettings, cancelSettings, applyHiddenTabs, restoreLastActiveTab, showSettings, applyAnimationSetting, togglePerformanceMode } from './modules/settings.js';
-import { openThemeCreator, saveCustomTheme, importTheme, exportTheme, resetCustomTheme } from './modules/theme.js';
+import {
+    initCommandPalette,
+    showCommandPalette,
+    registerDefaultCommands,
+    registerServiceControlCommands,
+    showHelpModal,
+} from './modules/command-palette.js';
+import {
+    initPluginInstallButton,
+    initOpenPluginsDirButton,
+    renderPluginCards,
+} from './modules/plugins.js';
+import {
+    loadAndApplyStartupSettings,
+    saveSettings,
+    resetSettings,
+    cancelSettings,
+    applyHiddenTabs,
+    restoreLastActiveTab,
+    showSettings,
+    applyAnimationSetting,
+    togglePerformanceMode,
+} from './modules/settings.js';
+import {
+    openThemeCreator,
+    saveCustomTheme,
+    importTheme,
+    exportTheme,
+    resetCustomTheme,
+} from './modules/theme.js';
 import { initFpsCounter, showFpsCounter, hideFpsCounter } from './modules/fps-counter.js';
 import { DEFAULT_TAB_ORDER, setTabLoader } from './modules/state.js';
 import { initStartupOptimizer, getStartupRecommendations } from './modules/startup-optimizer.js';
 
-// Import utilities that need to be available globally
 import './utils/lazy-loading-helper.js';
 import './utils/batch-checker.js';
 
-
+/**
+ * Performs the initial boot sequence for the application.
+ * Initializes all core modules, loads settings, and sets up the user interface.
+ * Shows splash screen during initialization and tracks performance metrics.
+ *
+ * @async
+ * @returns {Promise<void>} Promise that resolves when initial boot is complete
+ * @throws {Error} If critical initialization steps fail
+ */
 async function initialBoot() {
     const startTime = performance.now();
     showSplashScreen();
@@ -50,11 +100,16 @@ async function initialBoot() {
     }
 }
 
+/**
+ * Performs deferred initialization tasks after the main boot sequence.
+ * Initializes non-critical modules and features that can be loaded after the UI is ready.
+ *
+ * @async
+ * @returns {Promise<void>} Promise that resolves when deferred boot is complete
+ */
 async function deferredBoot() {
-    // Apply startup optimizations first
     await initStartupOptimizer();
 
-    // Initialize systems that can be loaded in the background.
     initTabSystem();
     initGlobalKeyboardShortcuts();
     initPluginInstallButton();
@@ -62,48 +117,58 @@ async function deferredBoot() {
 
     updateSplashProgress('Preparing application...', 20);
     await loadAndApplyStartupSettings();
-
-    await continueNormalStartup(); // This function already handles the rest of the loading process.
+    await continueNormalStartup();
 }
 
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', async function () {
     window.startupTimes = {
         domContentLoaded: performance.now(),
-        phases: {}
+        phases: {},
     };
 
     await initialBoot();
-    // Reduced timeout for faster tab loading - UI should render quickly enough
+
     setTimeout(deferredBoot, 10);
 });
 
-
+/**
+ * Continues the normal startup sequence after initial checks and optimizations.
+ * Handles tab loading, settings application, and final UI setup.
+ *
+ * @async
+ * @returns {Promise<void>} Promise that resolves when normal startup is complete
+ * @throws {Error} If startup sequence encounters critical errors
+ */
 async function continueNormalStartup() {
     try {
         updateSplashProgress('Setting up workspace...', 40);
 
-        
         if (window.TabLoader) {
             const newTabLoader = new window.TabLoader();
             setTabLoader(newTabLoader);
             window.tabLoader = newTabLoader;
 
-            
             newTabLoader.setProgressCallback((message, percentage) => {
-                const adjustedPercentage = 40 + (percentage * 0.6);
+                const adjustedPercentage = 40 + percentage * 0.6;
                 updateSplashProgress(message, adjustedPercentage);
             });
 
             // Configure sequential loading delay (can be customized via settings)
             // Reduced default from 100ms to 25ms for faster startup - system auto-detection will optimize further
-            const sequentialLoadDelay = await window.electronAPI.getSetting('sequentialLoadDelay', 25);
+            const sequentialLoadDelay = await window.electronAPI.getSetting(
+                'sequentialLoadDelay',
+                25
+            );
             newTabLoader.setSequentialLoadDelay(sequentialLoadDelay);
 
             // Configure lazy loading preference (default: enabled)
-            const enableLazyLoading = await window.electronAPI.getSetting('enableLazyLoading', true);
+            const enableLazyLoading = await window.electronAPI.getSetting(
+                'enableLazyLoading',
+                true
+            );
             newTabLoader.setLazyLoadingEnabled(enableLazyLoading);
 
-            newTabLoader.setCompleteCallback(async (loadedTabs) => {
+            newTabLoader.setCompleteCallback(async loadedTabs => {
                 await loadTabOrder();
                 await applyHiddenTabs();
                 renderPluginCards();
@@ -116,7 +181,6 @@ async function continueNormalStartup() {
                     await window.electronAPI.finishStartupPhase();
                 }
 
-
                 // Load services for command palette
                 try {
                     const services = await window.electronAPI.getServices();
@@ -124,7 +188,7 @@ async function continueNormalStartup() {
                     // Cache services for offline use
                     localStorage.setItem('cachedServices', JSON.stringify(services));
                 } catch (error) {
-                    console.error("Failed to fetch services:", error);
+                    console.error('Failed to fetch services:', error);
                     // Try to use cached services if available
                     const cached = localStorage.getItem('cachedServices');
                     if (cached) {
@@ -135,29 +199,23 @@ async function continueNormalStartup() {
 
                 initCommandPalette();
                 hideSplashScreen();
-
-
             });
 
             await newTabLoader.init(DEFAULT_TAB_ORDER);
         } else {
-            
             await restoreLastActiveTab();
-            
-            
-            registerDefaultCommands(new Map()); 
+
+            registerDefaultCommands(new Map());
             initCommandPalette();
 
             updateSplashProgress('Welcome to WinTool', 100);
             setTimeout(hideSplashScreen, 500);
         }
-
     } catch (error) {
         console.error('Error during normal startup:', error);
         hideSplashScreen();
     }
 }
-
 
 window.closeModal = closeModal;
 window.showHelpModal = showHelpModal;
@@ -172,7 +230,6 @@ window.showFromTray = showFromTray;
 window.quitApplication = quitApplication;
 window.showSplashScreen = showSplashScreen;
 window.updateSplashProgress = updateSplashProgress;
-
 
 window.hideSplashScreen = hideSplashScreen;
 window.refreshCurrentTab = refreshCurrentTab;
@@ -196,6 +253,3 @@ window.hideFpsCounter = hideFpsCounter;
 import('./modules/offline-status.js').then(module => {
     module.initOfflineStatusIndicator();
 });
-
-
-

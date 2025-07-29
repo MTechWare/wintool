@@ -7,22 +7,34 @@ const { BrowserWindow, screen, ipcMain } = require('electron');
 const path = require('path');
 
 class WindowManager {
+    /**
+     * Creates a new WindowManager instance.
+     * Initializes window references, creation attempt tracking, and sets up IPC handlers.
+     *
+     * @constructor
+     */
     constructor() {
         this.mainWindow = null;
         this.logViewerWindow = null;
         this.windowCreationAttempts = 0;
         this.MAX_WINDOW_CREATION_ATTEMPTS = 3;
-        
+
         // Bind methods to preserve context
         this.createWindow = this.createWindow.bind(this);
         this.showWindow = this.showWindow.bind(this);
         this.hideWindow = this.hideWindow.bind(this);
         this.createLogViewerWindow = this.createLogViewerWindow.bind(this);
         this.createPerformanceSettingsWindow = this.createPerformanceSettingsWindow.bind(this);
-        
+
         this.setupIpcHandlers();
     }
 
+    /**
+     * Set up IPC handlers for window management operations.
+     * Handles window minimize, maximize, close, and other window control operations.
+     *
+     * @returns {void}
+     */
     setupIpcHandlers() {
         // Window control IPC handlers
         ipcMain.handle('minimize-window', async () => {
@@ -37,7 +49,8 @@ class WindowManager {
                         this.systemTray.displayBalloon({
                             iconType: 'info',
                             title: 'WinTool',
-                            content: 'Application was minimized to tray. Click the tray icon to restore.'
+                            content:
+                                'Application was minimized to tray. Click the tray icon to restore.',
                         });
                     }
                     settingsStore.set('trayNotificationShown', true);
@@ -103,10 +116,7 @@ class WindowManager {
         try {
             // Get screen dimensions for responsive sizing
             const primaryDisplay = screen.getPrimaryDisplay();
-            const {
-                width: screenWidth,
-                height: screenHeight
-            } = primaryDisplay.workAreaSize;
+            const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
 
             // Validate screen dimensions
             if (screenWidth < 800 || screenHeight < 600) {
@@ -121,7 +131,9 @@ class WindowManager {
             // Get transparency setting before creating the window
             const settingsStore = await this.getStore();
             let opacity = settingsStore ? settingsStore.get('transparency', 1) : 1;
-            let useTransparent = settingsStore ? settingsStore.get('useTransparentWindow', false) : false;
+            let useTransparent = settingsStore
+                ? settingsStore.get('useTransparentWindow', false)
+                : false;
 
             // If we've had multiple failed attempts, disable transparency
             if (this.windowCreationAttempts > 1) {
@@ -167,7 +179,7 @@ class WindowManager {
                     enableBlinkFeatures: '',
                     disableBlinkFeatures: 'Auxclick',
                     backgroundThrottling: false,
-                    offscreen: false
+                    offscreen: false,
                 },
                 frame: false,
                 transparent: useTransparent,
@@ -177,11 +189,10 @@ class WindowManager {
                 backgroundColor: useTransparent ? undefined : '#1a1a1a',
                 titleBarStyle: 'hidden',
                 skipTaskbar: false,
-                alwaysOnTop: false
+                alwaysOnTop: false,
             };
 
             this.mainWindow = new BrowserWindow(windowOptions);
-
         } catch (error) {
             console.error('Error creating BrowserWindow:', error);
 
@@ -193,7 +204,9 @@ class WindowManager {
                 }
                 return await this.createWindow();
             } else {
-                throw new Error(`Failed to create window after ${this.MAX_WINDOW_CREATION_ATTEMPTS} attempts: ${error.message}`);
+                throw new Error(
+                    `Failed to create window after ${this.MAX_WINDOW_CREATION_ATTEMPTS} attempts: ${error.message}`
+                );
             }
         }
 
@@ -213,7 +226,7 @@ class WindowManager {
         });
 
         // Handle window close event (always hide to tray instead of closing)
-        this.mainWindow.on('close', async (event) => {
+        this.mainWindow.on('close', async event => {
             if (!this.app.isQuiting) {
                 event.preventDefault();
                 this.hideWindow();
@@ -225,7 +238,8 @@ class WindowManager {
                         this.systemTray.displayBalloon({
                             iconType: 'info',
                             title: 'WinTool',
-                            content: 'Application was minimized to tray. Click the tray icon to restore.'
+                            content:
+                                'Application was minimized to tray. Click the tray icon to restore.',
                         });
                     }
                     settingsStore.set('trayNotificationShown', true);
@@ -272,7 +286,6 @@ class WindowManager {
                     }
                 }
             }, 200);
-
         } catch (error) {
             console.error('Error in ready-to-show handler:', error);
             this.handleShowFallback();
@@ -295,7 +308,6 @@ class WindowManager {
                     this.mainWindow.moveTop();
                 }
             }, 100);
-
         } catch (recoveryError) {
             console.error('Recovery attempt failed:', recoveryError);
         }
@@ -354,7 +366,6 @@ class WindowManager {
                         }
                     }
                 }, 200);
-
             } catch (error) {
                 console.error('Error showing existing window:', error);
                 // Try to recreate window if showing fails
@@ -395,7 +406,7 @@ class WindowManager {
                 enableRemoteModule: false,
                 webSecurity: true,
                 sandbox: false,
-                devTools: process.env.NODE_ENV !== 'production'
+                devTools: process.env.NODE_ENV !== 'production',
             },
         });
 
@@ -408,7 +419,7 @@ class WindowManager {
                     theme: settingsStore.get('theme', 'classic-dark'),
                     primaryColor: settingsStore.get('primaryColor', '#ff9800'),
                     customTheme: settingsStore.get('customTheme', {}),
-                    rainbowMode: settingsStore.get('rainbowMode', false)
+                    rainbowMode: settingsStore.get('rainbowMode', false),
                 };
                 this.logViewerWindow.webContents.send('theme-data', themeSettings);
             }
@@ -434,7 +445,7 @@ class WindowManager {
                 enableRemoteModule: false,
                 webSecurity: true,
                 sandbox: false,
-                devTools: process.env.NODE_ENV !== 'production'
+                devTools: process.env.NODE_ENV !== 'production',
             },
             parent: this.mainWindow,
             modal: true,
