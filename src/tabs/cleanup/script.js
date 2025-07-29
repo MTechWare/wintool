@@ -1,13 +1,8 @@
 /**
- * Advanced System Cleanup Tab JavaScript
- * Professional-grade system optimization and cleanup functionality
- * Enhanced with advanced features, security validations, and modern UI
+ * System Cleanup Tab JavaScript
  */
 
-// Initialize lazy loading helper
 const lazyHelper = new LazyLoadingHelper('cleanup');
-
-// Enhanced cleanup state management
 let cleanupState = {
     isRunning: false,
     isPaused: false,
@@ -15,25 +10,33 @@ let cleanupState = {
     currentCategory: null,
     totalCategories: 0,
     completedCategories: 0,
-    selectedCategories: new Set(['temp', 'cache', 'browser']), // Default selections
-    lastCleanupResults: [], // Store detailed results from last cleanup
-    lastCleanupSummary: { // Store summary from last cleanup
+    selectedCategories: new Set(['temp', 'cache', 'browser']),
+    lastCleanupResults: [],
+    lastCleanupSummary: {
         totalFilesRemoved: 0,
         totalSpaceFreed: 0,
         duration: 0,
-        timestamp: null
+        timestamp: null,
     },
     settings: {
         confirmBeforeDelete: true,
         skipRecentFiles: true,
         createRestorePoint: false,
-        cleanupThreads: 1
-    }
+        cleanupThreads: 1,
+    },
 };
 
-// Enhanced security configuration
 const CLEANUP_SECURITY_CONFIG = {
-    allowedCategories: ['temp', 'cache', 'browser', 'updates', 'logs', 'recycle', 'registry', 'dumps'],
+    allowedCategories: [
+        'temp',
+        'cache',
+        'browser',
+        'updates',
+        'logs',
+        'recycle',
+        'registry',
+        'dumps',
+    ],
     maxConcurrentOperations: 1,
     confirmationRequired: true,
     safetyChecks: true,
@@ -45,7 +48,7 @@ const CLEANUP_SECURITY_CONFIG = {
         'C:\\Users\\Default',
         'C:\\ProgramData\\Microsoft\\Windows\\Start Menu',
         'C:\\Windows\\Boot',
-        'C:\\Windows\\System32\\drivers'
+        'C:\\Windows\\System32\\drivers',
     ],
     categoryInfo: {
         temp: { name: 'Temporary Files', icon: 'file-alt', risk: 'low' },
@@ -55,8 +58,8 @@ const CLEANUP_SECURITY_CONFIG = {
         logs: { name: 'System Logs', icon: 'file-text', risk: 'medium' },
         recycle: { name: 'Recycle Bin', icon: 'trash', risk: 'high' },
         registry: { name: 'Registry Cleanup', icon: 'cogs', risk: 'high' },
-        dumps: { name: 'Memory Dumps', icon: 'bug', risk: 'medium' }
-    }
+        dumps: { name: 'Memory Dumps', icon: 'bug', risk: 'medium' },
+    },
 };
 
 // Security validation functions
@@ -92,9 +95,14 @@ function showNotification(message, type = 'info', duration = 5000) {
         animation: slideInRight 0.3s ease-out;
     `;
 
-    const icon = type === 'success' ? 'check-circle' :
-                 type === 'error' ? 'exclamation-triangle' :
-                 type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+    const icon =
+        type === 'success'
+            ? 'check-circle'
+            : type === 'error'
+              ? 'exclamation-triangle'
+              : type === 'warning'
+                ? 'exclamation-triangle'
+                : 'info-circle';
 
     notification.innerHTML = `<i class="fas fa-${icon}"></i> ${escapeHtml(message)}`;
 
@@ -117,7 +125,7 @@ function escapeHtml(text) {
 }
 
 // Initialize cleanup tab when loaded
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initAdvancedCleanupTab();
 });
 
@@ -128,34 +136,58 @@ if (typeof tabContainer !== 'undefined' && tabContainer) {
 
 /**
  * Initialize the advanced cleanup tab
+ *
+ * This function implements the standard tab initialization pattern used throughout
+ * the application. It demonstrates the lazy loading architecture and proper
+ * initialization sequencing for optimal performance.
+ *
+ * Initialization Pattern:
+ * 1. Lazy Loading Check - Determines if tab should initialize now or later
+ * 2. Script Execution Marking - Prevents duplicate initialization
+ * 3. DOM Readiness Validation - Ensures required elements are available
+ * 4. Component Initialization - Sets up tab-specific functionality
+ * 5. Event Handler Registration - Connects user interactions
+ * 6. Initial Data Loading - Populates tab with current system state
+ * 7. Ready State Signaling - Notifies system that tab is operational
+ *
+ * Lazy Loading Integration:
+ * The function integrates with the LazyLoadingHelper to support deferred
+ * initialization. This allows the tab system to load quickly while deferring
+ * expensive operations until the user actually visits the tab.
+ *
+ * Error Handling:
+ * Includes retry logic for DOM readiness and graceful degradation if
+ * components fail to initialize properly.
+ *
+ * @returns {void}
  */
 function initAdvancedCleanupTab() {
     // Check if should initialize (lazy loading support)
+    // This prevents unnecessary initialization if the tab isn't being viewed
     if (!lazyHelper.shouldInitialize()) {
         lazyHelper.markTabReady();
         return;
     }
 
-    // Mark script as executed
+    // Mark script as executed to prevent duplicate initialization
     lazyHelper.markScriptExecuted();
 
-    // Check if we're in the cleanup tab
+    // Check if we're in the cleanup tab and DOM is ready
     const cleanupContent = document.querySelector('.cleanup-content');
     if (!cleanupContent) {
+        // Retry initialization after a delay if DOM isn't ready
         setTimeout(initAdvancedCleanupTab, 500);
         return;
     }
 
+    // Initialize core components in proper sequence
+    loadDiskSpace(); // Load current disk usage information
+    initializeCategoryCards(); // Set up cleanup category UI components
+    loadCleanupSettings(); // Load user preferences and settings
+    setupEventListeners(); // Register event handlers for user interactions
+    startInitialScan(); // Begin scanning for cleanable items
 
-
-    // Initialize components
-    loadDiskSpace();
-    initializeCategoryCards();
-    loadCleanupSettings();
-    setupEventListeners();
-    startInitialScan();
-
-    // Signal that this tab is ready
+    // Signal that this tab is ready for user interaction
     lazyHelper.markTabReady();
 }
 
@@ -170,7 +202,7 @@ function initializeCategoryCards() {
         const category = card.dataset.category;
 
         // Set up click handler for the entire card
-        card.addEventListener('click', (e) => {
+        card.addEventListener('click', e => {
             if (e.target.type !== 'checkbox') {
                 checkbox.checked = !checkbox.checked;
                 checkbox.dispatchEvent(new Event('change'));
@@ -197,8 +229,6 @@ function initializeCategoryCards() {
  * Setup event listeners for various UI elements
  */
 function setupEventListeners() {
-
-
     // Category selection buttons
     const selectAllBtn = document.querySelector('[onclick="selectAllCategories()"]');
     const deselectAllBtn = document.querySelector('[onclick="deselectAllCategories()"]');
@@ -222,10 +252,7 @@ function handleKeyboardShortcuts(e) {
 /**
  * Start initial scan of selected categories
  */
-function startInitialScan() {
-
-
-}
+function startInitialScan() {}
 
 /**
  * Load disk space information
@@ -239,8 +266,8 @@ async function loadDiskSpace() {
             // Fallback for browser testing
             const mockData = {
                 total: 1000000000000, // 1TB
-                used: 600000000000,   // 600GB
-                free: 400000000000    // 400GB
+                used: 600000000000, // 600GB
+                free: 400000000000, // 400GB
             };
             updateDiskSpaceDisplay(mockData);
         }
@@ -264,8 +291,6 @@ function updateDiskSpaceDisplay(diskData) {
     document.getElementById('used-space').textContent = formatBytes(used);
     document.getElementById('free-space').textContent = formatBytes(free);
 
-
-
     // Update progress bars
     const usedPercentage = (used / total) * 100;
     const freePercentage = (free / total) * 100;
@@ -273,8 +298,6 @@ function updateDiskSpaceDisplay(diskData) {
     document.getElementById('total-space-bar').style.width = '100%';
     document.getElementById('used-space-bar').style.width = `${usedPercentage}%`;
     document.getElementById('free-space-bar').style.width = `${freePercentage}%`;
-
-
 
     // Color coding for used space bar
     const usedBar = document.getElementById('used-space-bar');
@@ -313,8 +336,6 @@ function updateDiskDetails(diskData) {
         const freePercentage = ((free / total) * 100).toFixed(1);
         freeDetails.textContent = `${freePercentage}% available`;
     }
-
-
 }
 
 /**
@@ -391,8 +412,6 @@ function updateCleanupSummary() {
     }
 }
 
-
-
 /**
  * Start the cleanup process with enhanced security
  */
@@ -405,14 +424,14 @@ async function startCleanupSecure() {
     // Enhanced confirmation with detailed warning
     const confirmed = confirm(
         'SYSTEM CLEANUP WARNING\n\n' +
-        'This operation will permanently delete:\n' +
-        '• Temporary files and folders\n' +
-        '• System cache and log files\n' +
-        '• Browser cache and temporary data\n' +
-        '• Windows update cache files\n\n' +
-        'This action CANNOT be undone.\n\n' +
-        'Important: Close all running applications before proceeding.\n\n' +
-        'Do you want to continue with the cleanup?'
+            'This operation will permanently delete:\n' +
+            '• Temporary files and folders\n' +
+            '• System cache and log files\n' +
+            '• Browser cache and temporary data\n' +
+            '• Windows update cache files\n\n' +
+            'This action CANNOT be undone.\n\n' +
+            'Important: Close all running applications before proceeding.\n\n' +
+            'Do you want to continue with the cleanup?'
     );
 
     if (!confirmed) {
@@ -423,8 +442,8 @@ async function startCleanupSecure() {
     if (CLEANUP_SECURITY_CONFIG.safetyChecks) {
         const finalConfirm = confirm(
             'FINAL CONFIRMATION\n\n' +
-            'You are about to perform a system cleanup that will permanently delete files.\n\n' +
-            'Are you absolutely sure you want to proceed?'
+                'You are about to perform a system cleanup that will permanently delete files.\n\n' +
+                'Are you absolutely sure you want to proceed?'
         );
 
         if (!finalConfirm) {
@@ -443,7 +462,6 @@ async function startCleanupSecure() {
     try {
         await performCleanupProcessSecure();
         showNotification('System cleanup completed successfully', 'success');
-
     } catch (error) {
         console.error('Cleanup failed:', error);
         showNotification(`Cleanup failed: ${error.message}`, 'error');
@@ -488,19 +506,17 @@ async function quickCleanup() {
     // Quick confirmation
     const confirmed = confirm(
         'Quick Cleanup\n\n' +
-        'This will clean safe categories:\n' +
-        '• Temporary files\n' +
-        '• System cache\n' +
-        '• Windows update cache\n\n' +
-        'Continue with quick cleanup?'
+            'This will clean safe categories:\n' +
+            '• Temporary files\n' +
+            '• System cache\n' +
+            '• Windows update cache\n\n' +
+            'Continue with quick cleanup?'
     );
 
     if (confirmed) {
         await startAdvancedCleanup();
     }
 }
-
-
 
 /**
  * Start advanced cleanup process
@@ -537,7 +553,6 @@ async function startAdvancedCleanup() {
     try {
         await performAdvancedCleanupProcess();
         showNotification('Advanced cleanup completed successfully', 'success');
-
     } catch (error) {
         console.error('Advanced cleanup failed:', error);
         showNotification(`Cleanup failed: ${error.message}`, 'error');
@@ -574,17 +589,18 @@ function calculateRiskLevel() {
  */
 async function showAdvancedConfirmation(riskLevel) {
     const selectedCategories = Array.from(cleanupState.selectedCategories);
-    const categoryNames = selectedCategories.map(cat =>
-        CLEANUP_SECURITY_CONFIG.categoryInfo[cat]?.name || cat
-    ).join('\n• ');
+    const categoryNames = selectedCategories
+        .map(cat => CLEANUP_SECURITY_CONFIG.categoryInfo[cat]?.name || cat)
+        .join('\n• ');
 
     const riskMessages = {
         low: 'This is a low-risk cleanup operation.',
         medium: 'This cleanup includes medium-risk categories. Please review carefully.',
-        high: '⚠️ HIGH RISK OPERATION ⚠️\nThis cleanup includes high-risk categories that may affect system functionality.'
+        high: '⚠️ HIGH RISK OPERATION ⚠️\nThis cleanup includes high-risk categories that may affect system functionality.',
     };
 
-    const message = `Advanced System Cleanup\n\n` +
+    const message =
+        `Advanced System Cleanup\n\n` +
         `Selected categories:\n• ${categoryNames}\n\n` +
         `${riskMessages[riskLevel]}\n\n` +
         `This action cannot be undone.\n\n` +
@@ -593,12 +609,6 @@ async function showAdvancedConfirmation(riskLevel) {
     return confirm(message);
 }
 
-
-
-
-
-
-
 /**
  * Perform the actual cleanup process with security validation
  */
@@ -606,7 +616,7 @@ async function performCleanupProcessSecure() {
     const categories = [
         { name: 'temp', label: 'Temporary Files' },
         { name: 'system', label: 'System Files' },
-        { name: 'cache', label: 'Cache Files' }
+        { name: 'cache', label: 'Cache Files' },
     ];
 
     // Validate all categories before starting
@@ -650,13 +660,12 @@ async function performCleanupProcessSecure() {
                 // Sanitize numeric results
                 result.filesRemoved = Math.max(0, parseInt(result.filesRemoved) || 0);
                 result.sizeFreed = Math.max(0, parseInt(result.sizeFreed) || 0);
-
             } else {
                 // Simulate cleanup for browser testing
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 result = {
                     filesRemoved: Math.floor(Math.random() * 500) + 100,
-                    sizeFreed: Math.floor(Math.random() * 100000000) + 10000000 // 10-110MB
+                    sizeFreed: Math.floor(Math.random() * 100000000) + 10000000, // 10-110MB
                 };
             }
 
@@ -668,9 +677,8 @@ async function performCleanupProcessSecure() {
                 label: category.label,
                 filesRemoved: result.filesRemoved || 0,
                 sizeFreed: result.sizeFreed || 0,
-                success: true
+                success: true,
             });
-
         } catch (error) {
             results.push({
                 category: category.name,
@@ -678,7 +686,7 @@ async function performCleanupProcessSecure() {
                 filesRemoved: 0,
                 sizeFreed: 0,
                 success: false,
-                error: error.message
+                error: error.message,
             });
             // Continue with other categories
         }
@@ -691,7 +699,7 @@ async function performCleanupProcessSecure() {
         totalFilesRemoved: totalFilesRemoved,
         totalSpaceFreed: totalSpaceFreed,
         duration: timeTaken,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     };
 
     // Show results
@@ -715,7 +723,8 @@ async function performAdvancedCleanupProcess() {
         const categoryInfo = CLEANUP_SECURITY_CONFIG.categoryInfo[categoryName];
         return {
             name: categoryName,
-            label: categoryInfo?.name || categoryName.charAt(0).toUpperCase() + categoryName.slice(1)
+            label:
+                categoryInfo?.name || categoryName.charAt(0).toUpperCase() + categoryName.slice(1),
         };
     });
 
@@ -773,13 +782,12 @@ async function performAdvancedCleanupProcess() {
                 // Sanitize numeric results
                 result.filesRemoved = Math.max(0, parseInt(result.filesRemoved) || 0);
                 result.sizeFreed = Math.max(0, parseInt(result.sizeFreed) || 0);
-
             } else {
                 // Simulate cleanup for browser testing
                 await new Promise(resolve => setTimeout(resolve, 1500));
                 result = {
                     filesRemoved: Math.floor(Math.random() * 500) + 100,
-                    sizeFreed: Math.floor(Math.random() * 100000000) + 10000000 // 10-110MB
+                    sizeFreed: Math.floor(Math.random() * 100000000) + 10000000, // 10-110MB
                 };
             }
 
@@ -791,11 +799,13 @@ async function performAdvancedCleanupProcess() {
                 label: category.label,
                 filesRemoved: result.filesRemoved || 0,
                 sizeFreed: result.sizeFreed || 0,
-                success: true
+                success: true,
             });
 
-            addLogEntry(`${category.label}: ${result.filesRemoved || 0} files, ${formatBytes(result.sizeFreed || 0)} freed`, 'success');
-
+            addLogEntry(
+                `${category.label}: ${result.filesRemoved || 0} files, ${formatBytes(result.sizeFreed || 0)} freed`,
+                'success'
+            );
         } catch (error) {
             addLogEntry(`Failed to clean ${category.label}: ${error.message}`, 'error');
 
@@ -805,7 +815,7 @@ async function performAdvancedCleanupProcess() {
                 filesRemoved: 0,
                 sizeFreed: 0,
                 success: false,
-                error: error.message
+                error: error.message,
             });
             // Continue with other categories
         }
@@ -828,7 +838,7 @@ async function performAdvancedCleanupProcess() {
         totalFilesRemoved: totalFilesRemoved,
         totalSpaceFreed: totalSpaceFreed,
         duration: timeTaken,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     };
 
     // Show results
@@ -1031,7 +1041,8 @@ function updateProgress(text, percentage) {
     if (progressText) progressText.textContent = text;
     if (progressPercentage) progressPercentage.textContent = `${Math.round(percentage)}%`;
     if (progressFill) progressFill.style.width = `${percentage}%`;
-    if (progressDetails) progressDetails.textContent = `Processing... ${Math.round(percentage)}% complete`;
+    if (progressDetails)
+        progressDetails.textContent = `Processing... ${Math.round(percentage)}% complete`;
 }
 
 /**
@@ -1100,9 +1111,10 @@ function showResultsSecure(filesRemoved, spaceFreed, timeTaken, detailedResults 
                     <span class="detail-status">${statusText}</span>
                 </div>
                 <div class="detail-stats">
-                    ${result.success ?
-                        `Files: ${result.filesRemoved.toLocaleString()} | Space: ${formatBytes(result.sizeFreed)}` :
-                        `Error: ${escapeHtml(result.error || 'Unknown error')}`
+                    ${
+                        result.success
+                            ? `Files: ${result.filesRemoved.toLocaleString()} | Space: ${formatBytes(result.sizeFreed)}`
+                            : `Error: ${escapeHtml(result.error || 'Unknown error')}`
                     }
                 </div>
             `;
@@ -1183,24 +1195,29 @@ function showAdvancedResults(filesRemoved, spaceFreed, timeTaken, detailedResult
                         <span class="stat-label">Successful:</span>
                         <span class="stat-value success">${successfulResults.length}</span>
                     </div>
-                    ${failedResults.length > 0 ? `
+                    ${
+                        failedResults.length > 0
+                            ? `
                     <div class="stat-item">
                         <span class="stat-label">Failed:</span>
                         <span class="stat-value error">${failedResults.length}</span>
                     </div>
-                    ` : ''}
+                    `
+                            : ''
+                    }
                 </div>
             </div>
 
             <div class="results-details">
                 <h4>Detailed Results</h4>
-                ${detailedResults.map(result => {
-                    const statusIcon = result.success ?
-                        '<i class="fas fa-check-circle success"></i>' :
-                        '<i class="fas fa-exclamation-circle error"></i>';
-                    const statusText = result.success ? 'Success' : 'Failed';
+                ${detailedResults
+                    .map(result => {
+                        const statusIcon = result.success
+                            ? '<i class="fas fa-check-circle success"></i>'
+                            : '<i class="fas fa-exclamation-circle error"></i>';
+                        const statusText = result.success ? 'Success' : 'Failed';
 
-                    return `
+                        return `
                         <div class="detail-item ${result.success ? 'success' : 'error'}">
                             <div class="detail-header">
                                 ${statusIcon}
@@ -1208,14 +1225,16 @@ function showAdvancedResults(filesRemoved, spaceFreed, timeTaken, detailedResult
                                 <span class="detail-status">${statusText}</span>
                             </div>
                             <div class="detail-stats">
-                                ${result.success ?
-                                    `Files: ${result.filesRemoved.toLocaleString()} | Space: ${formatBytes(result.sizeFreed)}` :
-                                    `Error: ${escapeHtml(result.error || 'Unknown error')}`
+                                ${
+                                    result.success
+                                        ? `Files: ${result.filesRemoved.toLocaleString()} | Space: ${formatBytes(result.sizeFreed)}`
+                                        : `Error: ${escapeHtml(result.error || 'Unknown error')}`
                                 }
                             </div>
                         </div>
                     `;
-                }).join('')}
+                    })
+                    .join('')}
             </div>
         `;
     }
@@ -1225,7 +1244,10 @@ function showAdvancedResults(filesRemoved, spaceFreed, timeTaken, detailedResult
     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     // Add to log
-    addLogEntry(`Results displayed: ${safeFilesRemoved} files, ${formatBytes(safeSpaceFreed)} freed`, 'success');
+    addLogEntry(
+        `Results displayed: ${safeFilesRemoved} files, ${formatBytes(safeSpaceFreed)} freed`,
+        'success'
+    );
 }
 
 // Legacy function for backward compatibility (deprecated)
@@ -1251,8 +1273,6 @@ function showError(message) {
 
     // Use notification system instead of alert
     showNotification(`Cleanup Error: ${sanitizedMessage}`, 'error', 10000);
-
-
 }
 
 /**
@@ -1378,12 +1398,6 @@ if (!document.querySelector('#cleanup-notification-styles')) {
     document.head.appendChild(notificationStyles);
 }
 
-
-
-
-
-
-
 /**
  * Save cleanup settings
  */
@@ -1397,7 +1411,7 @@ function saveCleanupSettings() {
         confirmBeforeDelete: confirmBeforeDelete?.checked || true,
         skipRecentFiles: skipRecentFiles?.checked || true,
         createRestorePoint: createRestorePoint?.checked || false,
-        cleanupThreads: parseInt(cleanupThreads?.value) || 1
+        cleanupThreads: parseInt(cleanupThreads?.value) || 1,
     };
 
     // Save to localStorage
@@ -1422,7 +1436,7 @@ function resetCleanupSettings() {
         confirmBeforeDelete: true,
         skipRecentFiles: true,
         createRestorePoint: false,
-        cleanupThreads: 1
+        cleanupThreads: 1,
     };
 
     loadSettingsToModal();
@@ -1442,16 +1456,6 @@ function loadCleanupSettings() {
         // Failed to load settings
     }
 }
-
-
-
-
-
-
-
-
-
-
 
 /**
  * Export cleanup results
@@ -1483,29 +1487,35 @@ function generateCleanupReport() {
     const lastSummary = cleanupState.lastCleanupSummary;
 
     // Use stored duration if available, otherwise calculate from current time
-    const duration = lastSummary.duration ||
+    const duration =
+        lastSummary.duration ||
         (cleanupState.startTime ? Math.round((Date.now() - cleanupState.startTime) / 1000) : 0);
 
     // Generate detailed results section
     let detailedResults = '';
     if (lastResults.length > 0) {
-        detailedResults = lastResults.map(result => {
-            const status = result.success ? 'SUCCESS' : 'FAILED';
-            const files = result.filesRemoved || 0;
-            const size = formatBytes(result.sizeFreed || 0);
-            const error = result.error ? ` (Error: ${result.error})` : '';
-            return `${result.label || result.category}: ${status} - ${files} files, ${size} freed${error}`;
-        }).join('\n');
+        detailedResults = lastResults
+            .map(result => {
+                const status = result.success ? 'SUCCESS' : 'FAILED';
+                const files = result.filesRemoved || 0;
+                const size = formatBytes(result.sizeFreed || 0);
+                const error = result.error ? ` (Error: ${result.error})` : '';
+                return `${result.label || result.category}: ${status} - ${files} files, ${size} freed${error}`;
+            })
+            .join('\n');
     } else {
         // Fallback to selected categories if no detailed results available
         const categories = Array.from(cleanupState.selectedCategories);
-        detailedResults = categories.map(cat => `${cat.toUpperCase()}: No detailed results available`).join('\n');
+        detailedResults = categories
+            .map(cat => `${cat.toUpperCase()}: No detailed results available`)
+            .join('\n');
     }
 
     // Generate categories list
-    const categoriesCleaned = lastResults.length > 0
-        ? lastResults.map(r => r.label || r.category).join(', ')
-        : Array.from(cleanupState.selectedCategories).join(', ');
+    const categoriesCleaned =
+        lastResults.length > 0
+            ? lastResults.map(r => r.label || r.category).join(', ')
+            : Array.from(cleanupState.selectedCategories).join(', ');
 
     return `WinTool System Cleanup Report
 Generated: ${timestamp}
@@ -1545,13 +1555,20 @@ function calculateTotalFilesDeleted() {
     return cleanupState.lastCleanupSummary.totalFilesRemoved || 0;
 }
 
-
-
 /**
  * Initialize category displays with ready state
  */
 function initializeCategoryDisplays() {
-    const categories = ['temp', 'cache', 'browser', 'updates', 'logs', 'recycle', 'registry', 'dumps'];
+    const categories = [
+        'temp',
+        'cache',
+        'browser',
+        'updates',
+        'logs',
+        'recycle',
+        'registry',
+        'dumps',
+    ];
 
     categories.forEach(category => {
         const sizeEl = document.getElementById(`${category}-size`);
@@ -1570,19 +1587,16 @@ function initializeCategoryDisplays() {
 }
 
 // Initialize cleanup tab when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-
+document.addEventListener('DOMContentLoaded', function () {
     // Initialize category displays
     initializeCategoryDisplays();
 
     // Initialize disk space display
     updateDiskSpaceDisplay({
         total: 1000000000000, // 1TB
-        used: 600000000000,   // 600GB
-        free: 400000000000    // 400GB
+        used: 600000000000, // 600GB
+        free: 400000000000, // 400GB
     });
-
-
 
     // Initialize cleanup summary
     updateCleanupSummary();
@@ -1604,5 +1618,3 @@ window.resetCleanupSettings = resetCleanupSettings;
 
 window.exportResults = exportResults;
 window.openDiskCleanup = openDiskCleanup;
-
-

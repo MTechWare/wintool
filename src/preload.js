@@ -23,37 +23,44 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Settings
     getSetting: (key, defaultValue) => ipcRenderer.invoke('get-setting', key, defaultValue),
     setSetting: (key, value) => ipcRenderer.invoke('set-setting', key, value),
-    setWindowOpacity: (opacity) => ipcRenderer.invoke('set-window-opacity', opacity),
-    setStartupBehavior: (shouldStartOnBoot) => ipcRenderer.invoke('set-startup-behavior', shouldStartOnBoot),
+    setWindowOpacity: opacity => ipcRenderer.invoke('set-window-opacity', opacity),
+    setStartupBehavior: shouldStartOnBoot =>
+        ipcRenderer.invoke('set-startup-behavior', shouldStartOnBoot),
 
     // Enhanced Log Viewer
     openLogViewer: () => ipcRenderer.invoke('open-log-viewer'),
-    onLogMessage: (callback) => ipcRenderer.on('log-message', (event, level, message, source) => callback(level, message, source)),
-    onThemeData: (callback) => ipcRenderer.on('theme-data', (event, themeData) => callback(themeData)),
+    onLogMessage: callback =>
+        ipcRenderer.on('log-message', (event, level, message, source) =>
+            callback(level, message, source)
+        ),
+    onThemeData: callback =>
+        ipcRenderer.on('theme-data', (event, themeData) => callback(themeData)),
 
     // Custom logging methods for plugins and tabs
     logInfo: (message, source) => ipcRenderer.invoke('log-custom-message', 'info', message, source),
     logWarn: (message, source) => ipcRenderer.invoke('log-custom-message', 'warn', message, source),
-    logError: (message, source) => ipcRenderer.invoke('log-custom-message', 'error', message, source),
-    logDebug: (message, source) => ipcRenderer.invoke('log-custom-message', 'debug', message, source),
-    logSuccess: (message, source) => ipcRenderer.invoke('log-custom-message', 'success', message, source),
-
-
+    logError: (message, source) =>
+        ipcRenderer.invoke('log-custom-message', 'error', message, source),
+    logDebug: (message, source) =>
+        ipcRenderer.invoke('log-custom-message', 'debug', message, source),
+    logSuccess: (message, source) =>
+        ipcRenderer.invoke('log-custom-message', 'success', message, source),
 
     // Performance Monitoring
     startPerformanceUpdates: () => ipcRenderer.invoke('start-performance-updates'),
     stopPerformanceUpdates: () => ipcRenderer.invoke('stop-performance-updates'),
-    onPerformanceUpdate: (callback) => ipcRenderer.on('performance-update', (event, metrics) => callback(metrics)),
+    onPerformanceUpdate: callback =>
+        ipcRenderer.on('performance-update', (event, metrics) => callback(metrics)),
 
     // Performance Settings
     getPerformanceMode: () => ipcRenderer.invoke('get-performance-mode'),
-    setPerformanceMode: (mode) => ipcRenderer.invoke('set-performance-mode', mode),
+    setPerformanceMode: mode => ipcRenderer.invoke('set-performance-mode', mode),
     getSystemCapabilities: () => ipcRenderer.invoke('get-system-capabilities'),
     openPerformanceSettings: () => ipcRenderer.invoke('open-performance-settings'),
 
     // Generic command execution
     runCommand: (command, asAdmin = false) => ipcRenderer.invoke('run-command', command, asAdmin),
-    runAdminCommand: (command) => ipcRenderer.invoke('run-admin-command', command),
+    runAdminCommand: command => ipcRenderer.invoke('run-admin-command', command),
 
     // Settings management
     clearAllSettings: () => ipcRenderer.invoke('clear-all-settings'),
@@ -64,13 +71,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getSystemHealthInfo: () => ipcRenderer.invoke('get-system-health-info'),
     getNetworkStats: () => ipcRenderer.invoke('get-network-stats'),
 
-
     // Tab folder management
     getTabFolders: () => ipcRenderer.invoke('get-tab-folders'),
-    getTabContent: (tabFolder) => ipcRenderer.invoke('get-tab-content', tabFolder),
+    getTabContent: tabFolder => ipcRenderer.invoke('get-tab-content', tabFolder),
 
     // Winget package management
-    executeWingetCommand: (command) => ipcRenderer.invoke('execute-winget-command', command),
+    executeWingetCommand: command => ipcRenderer.invoke('execute-winget-command', command),
     executeWingetCommandWithProgress: (command, progressCallback) => {
         return new Promise((resolve, reject) => {
             // Set up progress listener
@@ -81,12 +87,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
             ipcRenderer.on('winget-progress', progressHandler);
 
             // Execute the command
-            ipcRenderer.invoke('execute-winget-command-with-progress', command)
-                .then((result) => {
+            ipcRenderer
+                .invoke('execute-winget-command-with-progress', command)
+                .then(result => {
                     ipcRenderer.removeListener('winget-progress', progressHandler);
                     resolve(result);
                 })
-                .catch((error) => {
+                .catch(error => {
                     ipcRenderer.removeListener('winget-progress', progressHandler);
                     reject(error);
                 });
@@ -95,7 +102,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Chocolatey package management
     checkChocoAvailability: () => ipcRenderer.invoke('check-choco-availability'),
-    executeChocoCommand: (command) => ipcRenderer.invoke('execute-choco-command', command),
+    executeChocoCommand: command => ipcRenderer.invoke('execute-choco-command', command),
     executeChocoCommandWithProgress: (command, progressCallback) => {
         return new Promise((resolve, reject) => {
             // Set up progress listener
@@ -106,12 +113,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
             ipcRenderer.on('choco-progress', progressHandler);
 
             // Execute the command
-            ipcRenderer.invoke('execute-choco-command-with-progress', command)
-                .then((result) => {
+            ipcRenderer
+                .invoke('execute-choco-command-with-progress', command)
+                .then(result => {
                     ipcRenderer.removeListener('choco-progress', progressHandler);
                     resolve(result);
                 })
-                .catch((error) => {
+                .catch(error => {
                     ipcRenderer.removeListener('choco-progress', progressHandler);
                     reject(error);
                 });
@@ -122,33 +130,39 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Cleanup functionality
     getDiskSpace: () => ipcRenderer.invoke('get-disk-space'),
-    executeCleanup: (category) => ipcRenderer.invoke('execute-cleanup', category),
+    executeCleanup: category => ipcRenderer.invoke('execute-cleanup', category),
     openDiskCleanup: () => ipcRenderer.invoke('open-disk-cleanup'),
 
     // Services management
     getServices: () => ipcRenderer.invoke('get-services'),
-    controlService: (serviceName, action) => ipcRenderer.invoke('control-service', serviceName, action),
-    getServiceDetails: (serviceName) => ipcRenderer.invoke('get-service-details', serviceName),
+    controlService: (serviceName, action) =>
+        ipcRenderer.invoke('control-service', serviceName, action),
+    getServiceDetails: serviceName => ipcRenderer.invoke('get-service-details', serviceName),
 
     // System utilities
-    launchSystemUtility: (utilityCommand) => ipcRenderer.invoke('launch-system-utility', utilityCommand),
+    launchSystemUtility: utilityCommand =>
+        ipcRenderer.invoke('launch-system-utility', utilityCommand),
 
     // Environment variables management
     getEnvironmentVariables: () => ipcRenderer.invoke('get-environment-variables'),
-    setEnvironmentVariable: (name, value, target) => ipcRenderer.invoke('set-environment-variable', name, value, target),
-    deleteEnvironmentVariable: (name, target) => ipcRenderer.invoke('delete-environment-variable', name, target),
+    setEnvironmentVariable: (name, value, target) =>
+        ipcRenderer.invoke('set-environment-variable', name, value, target),
+    deleteEnvironmentVariable: (name, target) =>
+        ipcRenderer.invoke('delete-environment-variable', name, target),
 
     // File operations
-    showOpenDialog: (options) => ipcRenderer.invoke('show-open-dialog', options),
+    showOpenDialog: options => ipcRenderer.invoke('show-open-dialog', options),
     writeFile: (filePath, content) => ipcRenderer.invoke('write-file', filePath, content),
-    readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),
-    saveFile: (content, options) => ipcRenderer.invoke('save-file-dialog-and-write', content, options),
+    readFile: filePath => ipcRenderer.invoke('read-file', filePath),
+    saveFile: (content, options) =>
+        ipcRenderer.invoke('save-file-dialog-and-write', content, options),
     openFileDialog: () => ipcRenderer.invoke('open-file-dialog'),
 
     // Event listeners (for future use)
-    onMessage: (callback) => ipcRenderer.on('message', callback),
-    onDisplayNotification: (callback) => ipcRenderer.on('display-notification', (event, ...args) => callback(...args)),
-    removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel),
+    onMessage: callback => ipcRenderer.on('message', callback),
+    onDisplayNotification: callback =>
+        ipcRenderer.on('display-notification', (event, ...args) => callback(...args)),
+    removeAllListeners: channel => ipcRenderer.removeAllListeners(channel),
     send: (channel, data) => {
         ipcRenderer.send(channel, data);
     },
@@ -158,25 +172,25 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Editor functions
     executeScript: (script, shell) => ipcRenderer.invoke('execute-script', { script, shell }),
-    executePowerShell: (command) => ipcRenderer.invoke('execute-powershell', command),
-    executeCmd: (command) => ipcRenderer.invoke('execute-cmd', command),
+    executePowerShell: command => ipcRenderer.invoke('execute-powershell', command),
+    executeCmd: command => ipcRenderer.invoke('execute-cmd', command),
     finishStartupPhase: () => ipcRenderer.invoke('finish-startup-phase'),
-    showSaveDialog: (options) => ipcRenderer.invoke('show-save-dialog', options),
+    showSaveDialog: options => ipcRenderer.invoke('show-save-dialog', options),
 
     // Event Viewer functions
-    getEventLogs: (logName) => ipcRenderer.invoke('get-event-logs', logName),
+    getEventLogs: logName => ipcRenderer.invoke('get-event-logs', logName),
 
     // Plugin Management
     getAllPlugins: () => ipcRenderer.invoke('get-all-plugins'),
     installPlugin: () => ipcRenderer.invoke('install-plugin'),
     openPluginsDirectory: () => ipcRenderer.invoke('open-plugins-directory'),
     openAppDirectory: () => ipcRenderer.invoke('open-app-directory'),
-    togglePluginState: (pluginId) => ipcRenderer.invoke('toggle-plugin-state', pluginId),
-    deletePlugin: (pluginId) => ipcRenderer.invoke('delete-plugin', pluginId),
+    togglePluginState: pluginId => ipcRenderer.invoke('toggle-plugin-state', pluginId),
+    deletePlugin: pluginId => ipcRenderer.invoke('delete-plugin', pluginId),
     refreshVerifiedPlugins: () => ipcRenderer.invoke('refresh-verified-plugins'),
     getVerifiedPlugins: () => ipcRenderer.invoke('get-verified-plugins'),
     toggleDevTools: () => ipcRenderer.invoke('toggle-dev-tools'),
-    openSpecialFolder: (folderKey) => ipcRenderer.invoke('open-special-folder', folderKey),
+    openSpecialFolder: folderKey => ipcRenderer.invoke('open-special-folder', folderKey),
 });
 
 // Expose a dedicated API for plugins
@@ -187,14 +201,15 @@ contextBridge.exposeInMainWorld('wintoolAPI', {
      * @param {string} scriptPath - The relative path to the script within the plugin's folder.
      * @returns {Promise<string>} A promise that resolves with the script's output.
      */
-    runPluginScript: (pluginId, scriptPath) => ipcRenderer.invoke('run-plugin-script', pluginId, scriptPath),
+    runPluginScript: (pluginId, scriptPath) =>
+        ipcRenderer.invoke('run-plugin-script', pluginId, scriptPath),
 
     /**
      * Requests system information from the main process.
      * @param {string} type - The specific type of system information needed (e.g., 'time', 'cpu').
      * @returns {Promise<object>} A promise that resolves with the requested system information.
      */
-    getSystemInfo: (type) => ipcRenderer.invoke('get-system-info', type),
+    getSystemInfo: type => ipcRenderer.invoke('get-system-info', type),
 
     /**
      * Shows a native-style notification to the user.
@@ -217,8 +232,20 @@ contextBridge.exposeInMainWorld('wintoolAPI', {
      * @param {boolean} [options.persistent=false] - Whether critical notifications should persist.
      * @returns {Promise<object>} A promise that resolves with the result.
      */
-    showNativeNotification: ({ title, body, urgency = 'normal', silent = false, persistent = false }) => {
-        return ipcRenderer.invoke('show-native-notification', { title, body, urgency, silent, persistent });
+    showNativeNotification: ({
+        title,
+        body,
+        urgency = 'normal',
+        silent = false,
+        persistent = false,
+    }) => {
+        return ipcRenderer.invoke('show-native-notification', {
+            title,
+            body,
+            urgency,
+            silent,
+            persistent,
+        });
     },
 
     /**
@@ -247,9 +274,10 @@ contextBridge.exposeInMainWorld('wintoolAPI', {
          * @param {any} value - The value to store.
          * @returns {Promise<boolean>} A promise that resolves when the data is saved.
          */
-        set: (pluginId, key, value) => ipcRenderer.invoke('plugin-storage-set', pluginId, key, value)
+        set: (pluginId, key, value) =>
+            ipcRenderer.invoke('plugin-storage-set', pluginId, key, value),
     },
-    
+
     /**
      * Functions for interacting with the file system via secure dialogs.
      */
@@ -259,14 +287,15 @@ contextBridge.exposeInMainWorld('wintoolAPI', {
          * @param {object} options - Electron showOpenDialog options.
          * @returns {Promise<{canceled: boolean, file: {path: string, content: string}|null}>}
          */
-        showOpenDialog: (options) => ipcRenderer.invoke('plugin-show-open-dialog', options),
+        showOpenDialog: options => ipcRenderer.invoke('plugin-show-open-dialog', options),
         /**
          * Shows a dialog to save a file.
          * @param {object} options - Electron showSaveDialog options.
          * @param {string} content - The content to write to the file if saved.
          * @returns {Promise<{canceled: boolean, path: string|null}>}
          */
-        showSaveDialog: (options, content) => ipcRenderer.invoke('plugin-show-save-dialog', options, content)
+        showSaveDialog: (options, content) =>
+            ipcRenderer.invoke('plugin-show-save-dialog', options, content),
     },
 
     /**
@@ -292,7 +321,7 @@ contextBridge.exposeInMainWorld('wintoolAPI', {
             if (window.tabEventManager) {
                 window.tabEventManager.removeEventListener(eventName, callback);
             }
-        }
+        },
     },
 
     /**
@@ -302,8 +331,8 @@ contextBridge.exposeInMainWorld('wintoolAPI', {
      * @param {...any} args - Arguments to pass to the backend handler.
      * @returns {Promise<any>} A promise that resolves with the return value from the backend handler.
      */
-    invoke: (pluginId, handlerName, ...args) => ipcRenderer.invoke('plugin-invoke', pluginId, handlerName, ...args)
+    invoke: (pluginId, handlerName, ...args) =>
+        ipcRenderer.invoke('plugin-invoke', pluginId, handlerName, ...args),
 });
-
 
 console.log('WinTool preload script loaded');

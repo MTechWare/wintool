@@ -1,6 +1,5 @@
 /**
- * Packages Tab - Windows Package Manager using winget
- * Enhanced with security validations and XSS protection
+ * Packages Tab
  */
 
 class PackageManager {
@@ -11,15 +10,13 @@ class PackageManager {
         this.currentCategory = 'all';
         this.searchTerm = '';
         this.currentOperation = null;
-        this.currentPackageManager = 'winget'; // Default to winget
-        this.chocoAvailable = false; // Will be checked during init
-        this.installedPackages = new Set(); // Track installed packages
-        this.packagesWithUpdates = new Set(); // Track packages with available updates
-        this.currentStatusFilter = 'all'; // all, installed, available, updates
-        this.currentOperationPackage = null; // Track package being operated on
-        this.currentOperationType = null; // Track operation type (install, uninstall, update)
-
-        // Security configuration
+        this.currentPackageManager = 'winget';
+        this.chocoAvailable = false;
+        this.installedPackages = new Set();
+        this.packagesWithUpdates = new Set();
+        this.currentStatusFilter = 'all';
+        this.currentOperationPackage = null;
+        this.currentOperationType = null;
         this.securityConfig = {
             allowedWingetCommands: ['install', 'uninstall', 'search', 'list', 'show', 'upgrade'],
             allowedChocoCommands: ['install', 'uninstall', 'search', 'list', 'info', 'upgrade'],
@@ -27,23 +24,13 @@ class PackageManager {
             packageIdPattern: /^[a-zA-Z0-9._-]+$/,
             chocoPackageIdPattern: /^[a-zA-Z0-9._-]+$/,
             maxConcurrentOperations: 3,
-            trustedPublishers: [
-                'Microsoft Corporation',
-                'Microsoft',
-                'Google LLC',
-                'Mozilla',
-                'Adobe Inc.',
-                'Oracle Corporation'
-            ]
         };
 
-        // Initialize lazy loading helper
         this.lazyHelper = new LazyLoadingHelper('packages');
 
         this.init();
     }
 
-    // Security validation methods
     validatePackageId(packageId) {
         if (!packageId || typeof packageId !== 'string') {
             return false;
@@ -76,14 +63,10 @@ class PackageManager {
         return div.innerHTML;
     }
 
-    isTrustedPublisher(publisher) {
-        return this.securityConfig.trustedPublishers.includes(publisher);
-    }
-
     ensureAllCategoryActive() {
         // Ensure the "All" category is selected and active when packages are loaded
         this.currentCategory = 'all';
-        
+
         // Update the UI to reflect the active state
         const categoryButtons = document.querySelectorAll('.category-btn');
         categoryButtons.forEach(btn => {
@@ -92,18 +75,16 @@ class PackageManager {
                 btn.classList.add('active');
             }
         });
-        
+
         // Update the total package count to reflect all packages
         const totalPackages = Object.keys(this.packages).length;
         this.updateTotalPackageCount(totalPackages);
-        
-
     }
 
     setupTabActivationListener() {
         // Listen for custom tab-switched events (if available)
         if (window.electronAPI && window.electronAPI.addTabListener) {
-            window.electronAPI.addTabListener('tab-switched', (event) => {
+            window.electronAPI.addTabListener('tab-switched', event => {
                 const { tabId } = event.detail;
                 if (tabId === 'packages' || tabId === 'folder-packages') {
                     this.ensureAllCategoryActive();
@@ -160,8 +141,6 @@ class PackageManager {
 
             // Listen for tab activation events to ensure All category is loaded
             this.setupTabActivationListener();
-
-
 
             // Signal that this tab is ready
             this.lazyHelper.markTabReady();
@@ -252,8 +231,6 @@ class PackageManager {
                 }
             }
         }
-
-
     }
 
     parseChocoList(output) {
@@ -261,7 +238,11 @@ class PackageManager {
 
         for (const line of lines) {
             // Skip non-package lines
-            if (!line.trim() || line.includes('Chocolatey v') || line.includes('packages installed')) {
+            if (
+                !line.trim() ||
+                line.includes('Chocolatey v') ||
+                line.includes('packages installed')
+            ) {
                 continue;
             }
 
@@ -269,13 +250,12 @@ class PackageManager {
             const parts = line.trim().split(' ');
             if (parts.length >= 1) {
                 const packageId = parts[0].trim();
-                if (packageId && !packageId.includes('=')) { // Skip summary lines
+                if (packageId && !packageId.includes('=')) {
+                    // Skip summary lines
                     this.installedPackages.add(packageId.toLowerCase());
                 }
             }
         }
-
-
     }
 
     updatePackageManagerSelector() {
@@ -305,8 +285,11 @@ class PackageManager {
             if (window.electronAPI && window.electronAPI.getApplicationsData) {
                 this.packages = await window.electronAPI.getApplicationsData();
                 const packageCount = Object.keys(this.packages).length;
-                this.showStatus(`Successfully loaded ${packageCount} packages from applications.json`, 'success');
-                
+                this.showStatus(
+                    `Successfully loaded ${packageCount} packages from applications.json`,
+                    'success'
+                );
+
                 // Refresh installed packages and updates after loading
                 await this.refreshPackageData();
                 return;
@@ -319,7 +302,7 @@ class PackageManager {
                 './src/tabs/packages/applications.json',
                 '../packages/applications.json',
                 './tabs/packages/applications.json',
-                'src/tabs/packages/applications.json'
+                'src/tabs/packages/applications.json',
             ];
 
             for (const path of possiblePaths) {
@@ -330,8 +313,11 @@ class PackageManager {
                         this.packages = await response.json();
                         const packageCount = Object.keys(this.packages).length;
                         console.log('Loaded packages via fetch:', packageCount);
-                        this.showStatus(`Successfully loaded ${packageCount} packages from applications.json`, 'success');
-                        
+                        this.showStatus(
+                            `Successfully loaded ${packageCount} packages from applications.json`,
+                            'success'
+                        );
+
                         // Refresh installed packages and updates after loading
                         await this.refreshPackageData();
                         return;
@@ -342,7 +328,6 @@ class PackageManager {
             }
 
             throw new Error('Could not load applications.json from any source');
-
         } catch (error) {
             console.error('Error loading packages:', error);
             this.showStatus(`Failed to load packages: ${error.message}`, 'error');
@@ -358,14 +343,14 @@ class PackageManager {
         try {
             // Get installed packages
             await this.getInstalledPackages();
-            
+
             // Check for updates
             await this.checkForUpdates();
-            
+
             // Apply current filters (including "All" category) after refreshing
             this.ensureAllCategoryActive();
             this.filterPackages();
-            
+
             console.log('Package data refreshed successfully');
         } catch (error) {
             console.error('Error refreshing package data:', error);
@@ -379,7 +364,7 @@ class PackageManager {
         // Package manager selector
         const packageManagerSelect = document.getElementById('package-manager-select');
         if (packageManagerSelect) {
-            packageManagerSelect.addEventListener('change', async (e) => {
+            packageManagerSelect.addEventListener('change', async e => {
                 await this.switchPackageManager(e.target.value);
             });
         }
@@ -387,7 +372,7 @@ class PackageManager {
         // Package status filter
         const packageStatusSelect = document.getElementById('package-status-select');
         if (packageStatusSelect) {
-            packageStatusSelect.addEventListener('change', (e) => {
+            packageStatusSelect.addEventListener('change', e => {
                 this.currentStatusFilter = e.target.value;
                 this.filterPackages();
             });
@@ -412,7 +397,7 @@ class PackageManager {
         // Search input
         const searchInput = document.getElementById('package-search');
         if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
+            searchInput.addEventListener('input', e => {
                 this.searchTerm = e.target.value.toLowerCase();
                 this.filterPackages();
             });
@@ -421,12 +406,12 @@ class PackageManager {
         // Category buttons
         const categoryButtons = document.querySelectorAll('.category-btn');
         categoryButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', e => {
                 // Remove active class from all buttons
                 categoryButtons.forEach(b => b.classList.remove('active'));
                 // Add active class to clicked button
                 e.target.classList.add('active');
-                
+
                 this.currentCategory = e.target.dataset.category;
                 this.filterPackages();
             });
@@ -435,7 +420,7 @@ class PackageManager {
         // Select all checkbox
         const selectAllCheckbox = document.getElementById('select-all');
         if (selectAllCheckbox) {
-            selectAllCheckbox.addEventListener('change', (e) => {
+            selectAllCheckbox.addEventListener('change', e => {
                 this.toggleSelectAll(e.target.checked);
             });
         }
@@ -449,7 +434,7 @@ class PackageManager {
         if (installBtn) {
             installBtn.addEventListener('click', () => this.installSelected());
         }
-        
+
         if (uninstallBtn) {
             uninstallBtn.addEventListener('click', () => this.uninstallSelected());
         }
@@ -468,7 +453,10 @@ class PackageManager {
     async switchPackageManager(packageManager) {
         // Check if trying to switch to Chocolatey when it's not available
         if (packageManager === 'choco' && !this.chocoAvailable) {
-            this.showStatus('Chocolatey is not installed. Please install Chocolatey first: https://chocolatey.org/install', 'error');
+            this.showStatus(
+                'Chocolatey is not installed. Please install Chocolatey first: https://chocolatey.org/install',
+                'error'
+            );
 
             // Reset selector to winget
             const packageManagerSelect = document.getElementById('package-manager-select');
@@ -514,16 +502,20 @@ class PackageManager {
         this.filteredPackages = {};
 
         // Log current filter state for debugging
-        console.log(`Filtering packages with category: ${this.currentCategory}, search: "${this.searchTerm}", status: ${this.currentStatusFilter}`);
+        console.log(
+            `Filtering packages with category: ${this.currentCategory}, search: "${this.searchTerm}", status: ${this.currentStatusFilter}`
+        );
 
         Object.keys(this.packages).forEach(key => {
             const pkg = this.packages[key];
 
             // Category filter
-            const categoryMatch = this.currentCategory === 'all' || pkg.category === this.currentCategory;
+            const categoryMatch =
+                this.currentCategory === 'all' || pkg.category === this.currentCategory;
 
             // Search filter
-            const searchMatch = this.searchTerm === '' ||
+            const searchMatch =
+                this.searchTerm === '' ||
                 pkg.content.toLowerCase().includes(this.searchTerm) ||
                 pkg.description.toLowerCase().includes(this.searchTerm);
 
@@ -546,8 +538,10 @@ class PackageManager {
             }
         });
 
-        console.log(`Filtered ${Object.keys(this.filteredPackages).length} packages out of ${Object.keys(this.packages).length} total packages`);
-        
+        console.log(
+            `Filtered ${Object.keys(this.filteredPackages).length} packages out of ${Object.keys(this.packages).length} total packages`
+        );
+
         this.renderPackages();
         this.updateTotalPackageCount(Object.keys(this.filteredPackages).length);
     }
@@ -562,9 +556,15 @@ class PackageManager {
             const installedCount = this.installedPackages.size;
 
             if (updateCount > 0) {
-                this.showStatus(`Found ${installedCount} installed packages with ${updateCount} updates available`, 'success');
+                this.showStatus(
+                    `Found ${installedCount} installed packages with ${updateCount} updates available`,
+                    'success'
+                );
             } else {
-                this.showStatus(`Found ${installedCount} installed packages - all up to date`, 'success');
+                this.showStatus(
+                    `Found ${installedCount} installed packages - all up to date`,
+                    'success'
+                );
             }
         } catch (error) {
             console.error('Error refreshing installed packages:', error);
@@ -636,7 +636,8 @@ class PackageManager {
             const parts = line.trim().split(/\s{2,}/); // Split on multiple spaces
             if (parts.length >= 4) {
                 const packageId = parts[1].trim();
-                if (packageId && packageId !== 'Id') { // Skip header row
+                if (packageId && packageId !== 'Id') {
+                    // Skip header row
                     this.packagesWithUpdates.add(packageId.toLowerCase());
                 }
             }
@@ -650,7 +651,12 @@ class PackageManager {
 
         for (const line of lines) {
             // Skip non-package lines
-            if (!line.trim() || line.includes('Chocolatey v') || line.includes('packages have newer') || line.includes('Output is package name')) {
+            if (
+                !line.trim() ||
+                line.includes('Chocolatey v') ||
+                line.includes('packages have newer') ||
+                line.includes('Output is package name')
+            ) {
                 continue;
             }
 
@@ -687,7 +693,9 @@ class PackageManager {
         const nameContainer = packageItem.querySelector('.package-name-container');
         if (nameContainer) {
             // Remove existing badges
-            const existingBadges = nameContainer.querySelectorAll('.update-badge, .installed-badge');
+            const existingBadges = nameContainer.querySelectorAll(
+                '.update-badge, .installed-badge'
+            );
             existingBadges.forEach(badge => badge.remove());
 
             // Add appropriate badge
@@ -752,9 +760,9 @@ class PackageManager {
         if (!packagesList) return;
 
         packagesList.innerHTML = '';
-        
+
         const packageKeys = Object.keys(this.filteredPackages);
-        
+
         if (packageKeys.length === 0) {
             packagesList.innerHTML = `
                 <div style="padding: 40px; text-align: center; color: #b0b0b0;">
@@ -768,11 +776,12 @@ class PackageManager {
         packageKeys.forEach(key => {
             const pkg = this.filteredPackages[key];
             const packageItem = this.createPackageItem(key, pkg);
-            if (packageItem) { // Ensure item is valid before appending
+            if (packageItem) {
+                // Ensure item is valid before appending
                 packagesList.appendChild(packageItem);
             }
         });
-        
+
         this.updateSelectionInfo();
     }
 
@@ -782,7 +791,12 @@ class PackageManager {
 
         // Validate package data
         if (!pkg || !packageId) {
-            console.warn('Invalid package data or missing package ID:', key, pkg, this.currentPackageManager);
+            console.warn(
+                'Invalid package data or missing package ID:',
+                key,
+                pkg,
+                this.currentPackageManager
+            );
             return null;
         }
 
@@ -790,7 +804,7 @@ class PackageManager {
             console.warn('Invalid package ID detected:', packageId);
             return null;
         }
-        
+
         const isSelected = this.selectedPackages.has(key);
 
         const item = document.createElement('div');
@@ -818,7 +832,8 @@ class PackageManager {
         let iconClass = 'fas fa-cube';
         const contentLower = (pkg.content || '').toLowerCase();
         if (contentLower.includes('password')) iconClass = 'fas fa-key';
-        else if (contentLower.includes('zip') || contentLower.includes('archive')) iconClass = 'fas fa-file-archive';
+        else if (contentLower.includes('zip') || contentLower.includes('archive'))
+            iconClass = 'fas fa-file-archive';
         else if (pkg.category === 'Browsers') iconClass = 'fas fa-globe';
         else if (pkg.category === 'Development') iconClass = 'fas fa-code';
         else if (pkg.category === 'Multimedia Tools') iconClass = 'fas fa-music';
@@ -928,7 +943,7 @@ class PackageManager {
         item.appendChild(actions);
 
         // Add checkbox event listener
-        checkbox.addEventListener('change', (e) => {
+        checkbox.addEventListener('change', e => {
             if (e.target.checked) {
                 this.selectedPackages.add(key);
                 item.classList.add('selected');
@@ -948,7 +963,7 @@ class PackageManager {
             checkbox.checked = checked;
             const packageKey = checkbox.dataset.package;
             const packageItem = checkbox.closest('.package-item');
-            
+
             if (checked) {
                 this.selectedPackages.add(packageKey);
                 packageItem.classList.add('selected');
@@ -957,7 +972,7 @@ class PackageManager {
                 packageItem.classList.remove('selected');
             }
         });
-        
+
         this.updateSelectionInfo();
     }
 
@@ -971,7 +986,7 @@ class PackageManager {
         if (countElement) {
             countElement.textContent = `${count} package${count !== 1 ? 's' : ''} selected`;
         }
-        
+
         if (installBtn) installBtn.disabled = count === 0;
         if (uninstallBtn) uninstallBtn.disabled = count === 0;
         if (exportBtn) exportBtn.disabled = count === 0;
@@ -979,7 +994,7 @@ class PackageManager {
         // Update select all checkbox state
         const selectAllCheckbox = document.getElementById('select-all');
         const totalVisible = Object.keys(this.filteredPackages).length;
-        
+
         if (selectAllCheckbox && totalVisible > 0) {
             selectAllCheckbox.indeterminate = count > 0 && count < totalVisible;
             selectAllCheckbox.checked = count === totalVisible;
@@ -1008,37 +1023,29 @@ class PackageManager {
             return;
         }
 
-        // Confirm installation for untrusted publishers
-        if (pkg.publisher && !this.isTrustedPublisher(pkg.publisher)) {
-            const confirmed = confirm(
-                `Warning: This package is from "${pkg.publisher}" which is not in the trusted publishers list.\n\n` +
-                `Package: ${pkg.content}\n` +
-                `Publisher: ${pkg.publisher}\n\n` +
-                `Do you want to continue with the installation?`
-            );
-
-            if (!confirmed) {
-                return;
-            }
-        }
-
         const sanitizedPackageId = this.sanitizePackageId(packageId);
 
         // Set operation tracking
         this.currentOperationPackage = { key: packageKey, id: sanitizedPackageId };
         this.currentOperationType = 'install';
 
-        this.showProgress('Installing Package', `Installing ${this.escapeHtml(pkg.content)}...`, 'installing');
+        this.showProgress(
+            'Installing Package',
+            `Installing ${this.escapeHtml(pkg.content)}...`,
+            'installing'
+        );
 
         try {
             if (this.currentPackageManager === 'choco') {
                 // Execute chocolatey install command
-                await this.executeChocoCommandWithProgressSecure('install', sanitizedPackageId, ['-y']);
+                await this.executeChocoCommandWithProgressSecure('install', sanitizedPackageId, [
+                    '-y',
+                ]);
             } else {
                 // Execute winget install command with validated parameters
                 await this.executeWingetCommandWithProgressSecure('install', sanitizedPackageId, [
                     '--accept-package-agreements',
-                    '--accept-source-agreements'
+                    '--accept-source-agreements',
                 ]);
             }
         } catch (error) {
@@ -1076,17 +1083,23 @@ class PackageManager {
         this.currentOperationPackage = { key: packageKey, id: sanitizedPackageId };
         this.currentOperationType = 'update';
 
-        this.showProgress('Updating Package', `Updating ${this.escapeHtml(pkg.content)}...`, 'updating');
+        this.showProgress(
+            'Updating Package',
+            `Updating ${this.escapeHtml(pkg.content)}...`,
+            'updating'
+        );
 
         try {
             if (this.currentPackageManager === 'choco') {
                 // Execute chocolatey upgrade command
-                await this.executeChocoCommandWithProgressSecure('upgrade', sanitizedPackageId, ['-y']);
+                await this.executeChocoCommandWithProgressSecure('upgrade', sanitizedPackageId, [
+                    '-y',
+                ]);
             } else {
                 // Execute winget upgrade command with validated parameters
                 await this.executeWingetCommandWithProgressSecure('upgrade', sanitizedPackageId, [
                     '--accept-package-agreements',
-                    '--accept-source-agreements'
+                    '--accept-source-agreements',
                 ]);
             }
         } catch (error) {
@@ -1121,7 +1134,7 @@ class PackageManager {
         // Confirm uninstallation
         const confirmed = confirm(
             `Are you sure you want to uninstall "${pkg.content}"?\n\n` +
-            `This action cannot be undone.`
+                `This action cannot be undone.`
         );
 
         if (!confirmed) {
@@ -1134,15 +1147,25 @@ class PackageManager {
         this.currentOperationPackage = { key: packageKey, id: sanitizedPackageId };
         this.currentOperationType = 'uninstall';
 
-        this.showProgress('Uninstalling Package', `Uninstalling ${this.escapeHtml(pkg.content)}...`, 'uninstalling');
+        this.showProgress(
+            'Uninstalling Package',
+            `Uninstalling ${this.escapeHtml(pkg.content)}...`,
+            'uninstalling'
+        );
 
         try {
             if (this.currentPackageManager === 'choco') {
                 // Execute chocolatey uninstall command
-                await this.executeChocoCommandWithProgressSecure('uninstall', sanitizedPackageId, ['-y']);
+                await this.executeChocoCommandWithProgressSecure('uninstall', sanitizedPackageId, [
+                    '-y',
+                ]);
             } else {
                 // Execute winget uninstall command with validated parameters
-                await this.executeWingetCommandWithProgressSecure('uninstall', sanitizedPackageId, []);
+                await this.executeWingetCommandWithProgressSecure(
+                    'uninstall',
+                    sanitizedPackageId,
+                    []
+                );
             }
         } catch (error) {
             this.updateProgressError(`Error: ${error.message}`);
@@ -1185,7 +1208,10 @@ class PackageManager {
         }
 
         if (invalidPackages.length > 0) {
-            this.showStatus(`${invalidPackages.length} packages have invalid IDs and will be skipped`, 'warning');
+            this.showStatus(
+                `${invalidPackages.length} packages have invalid IDs and will be skipped`,
+                'warning'
+            );
         }
 
         if (validPackages.length === 0) {
@@ -1196,14 +1222,18 @@ class PackageManager {
         // Confirm batch installation
         const confirmed = confirm(
             `Install ${validPackages.length} selected packages?\n\n` +
-            `This operation may take several minutes to complete.`
+                `This operation may take several minutes to complete.`
         );
 
         if (!confirmed) {
             return;
         }
 
-        this.showProgress('Installing Selected Packages', `Installing ${validPackages.length} packages`, 'installing');
+        this.showProgress(
+            'Installing Selected Packages',
+            `Installing ${validPackages.length} packages`,
+            'installing'
+        );
 
         let completed = 0;
         const total = validPackages.length;
@@ -1220,7 +1250,7 @@ class PackageManager {
                     publisher: pkg.publisher || 'Unknown Publisher',
                     version: pkg.version || 'Latest',
                     status: 'Installing',
-                    statusClass: ''
+                    statusClass: '',
                 });
 
                 this.updateProgressMessage(`Installing ${this.escapeHtml(pkg.content)}...`);
@@ -1230,12 +1260,17 @@ class PackageManager {
                 const sanitizedPackageId = this.sanitizePackageId(packageId);
 
                 if (this.currentPackageManager === 'choco') {
-                    await this.executeChocoCommandWithProgressSecure('install', sanitizedPackageId, ['-y']);
+                    await this.executeChocoCommandWithProgressSecure(
+                        'install',
+                        sanitizedPackageId,
+                        ['-y']
+                    );
                 } else {
-                    await this.executeWingetCommandWithProgressSecure('install', sanitizedPackageId, [
-                        '--accept-package-agreements',
-                        '--accept-source-agreements'
-                    ]);
+                    await this.executeWingetCommandWithProgressSecure(
+                        'install',
+                        sanitizedPackageId,
+                        ['--accept-package-agreements', '--accept-source-agreements']
+                    );
                 }
 
                 // Update package status to completed
@@ -1244,7 +1279,7 @@ class PackageManager {
                     publisher: pkg.publisher || 'Unknown Publisher',
                     version: pkg.version || 'Latest',
                     status: 'Installed',
-                    statusClass: 'success'
+                    statusClass: 'success',
                 });
 
                 completed++;
@@ -1256,7 +1291,7 @@ class PackageManager {
                     publisher: pkg.publisher || 'Unknown Publisher',
                     version: pkg.version || 'Latest',
                     status: 'Error',
-                    statusClass: 'error'
+                    statusClass: 'error',
                 });
 
                 this.appendProgressOutput(`Error installing ${pkg.content}: ${error.message}`);
@@ -1291,7 +1326,10 @@ class PackageManager {
         }
 
         if (invalidPackages.length > 0) {
-            this.showStatus(`${invalidPackages.length} packages have invalid IDs and will be skipped`, 'warning');
+            this.showStatus(
+                `${invalidPackages.length} packages have invalid IDs and will be skipped`,
+                'warning'
+            );
         }
 
         if (validPackages.length === 0) {
@@ -1302,14 +1340,18 @@ class PackageManager {
         // Confirm batch uninstallation
         const confirmed = confirm(
             `Uninstall ${validPackages.length} selected packages?\n\n` +
-            `This action cannot be undone and may take several minutes to complete.`
+                `This action cannot be undone and may take several minutes to complete.`
         );
 
         if (!confirmed) {
             return;
         }
 
-        this.showProgress('Uninstalling Selected Packages', `Uninstalling ${validPackages.length} packages`, 'uninstalling');
+        this.showProgress(
+            'Uninstalling Selected Packages',
+            `Uninstalling ${validPackages.length} packages`,
+            'uninstalling'
+        );
 
         let completed = 0;
         const total = validPackages.length;
@@ -1327,9 +1369,17 @@ class PackageManager {
                 const sanitizedPackageId = this.sanitizePackageId(packageId);
 
                 if (this.currentPackageManager === 'choco') {
-                    await this.executeChocoCommandWithProgressSecure('uninstall', sanitizedPackageId, ['-y']);
+                    await this.executeChocoCommandWithProgressSecure(
+                        'uninstall',
+                        sanitizedPackageId,
+                        ['-y']
+                    );
                 } else {
-                    await this.executeWingetCommandWithProgressSecure('uninstall', sanitizedPackageId, []);
+                    await this.executeWingetCommandWithProgressSecure(
+                        'uninstall',
+                        sanitizedPackageId,
+                        []
+                    );
                 }
 
                 completed++;
@@ -1350,9 +1400,11 @@ class PackageManager {
                 return result.output;
             } else {
                 // Fallback to simulation for browser testing
-                return new Promise((resolve) => {
+                return new Promise(resolve => {
                     setTimeout(() => {
-                        resolve(`Simulated execution of: winget ${command}\n\nThis is a demo - actual winget integration would require Electron main process communication.`);
+                        resolve(
+                            `Simulated execution of: winget ${command}\n\nThis is a demo - actual winget integration would require Electron main process communication.`
+                        );
                     }, 1000);
                 });
             }
@@ -1375,8 +1427,8 @@ class PackageManager {
         // Sanitize inputs
         const sanitizedCommand = command;
         const sanitizedPackageId = this.sanitizePackageId(packageId);
-        const sanitizedArgs = additionalArgs.filter(arg =>
-            typeof arg === 'string' && (arg.startsWith('-') || arg.startsWith('--'))
+        const sanitizedArgs = additionalArgs.filter(
+            arg => typeof arg === 'string' && (arg.startsWith('-') || arg.startsWith('--'))
         );
 
         this.currentOperation = { cancelled: false };
@@ -1384,26 +1436,32 @@ class PackageManager {
         try {
             if (window.electronAPI && window.electronAPI.executeChocoCommandWithProgress) {
                 // Use chocolatey command execution with progress
-                const commandString = `${sanitizedCommand} ${sanitizedPackageId} ${sanitizedArgs.join(' ')}`.trim();
-                await window.electronAPI.executeChocoCommandWithProgress(commandString, (progressData) => {
-                    if (this.currentOperation && this.currentOperation.cancelled) return;
+                const commandString =
+                    `${sanitizedCommand} ${sanitizedPackageId} ${sanitizedArgs.join(' ')}`.trim();
+                await window.electronAPI.executeChocoCommandWithProgress(
+                    commandString,
+                    progressData => {
+                        if (this.currentOperation && this.currentOperation.cancelled) return;
 
-                    if (progressData.type === 'progress') {
-                        this.updateProgressPercentage(progressData.percentage);
-                        if (progressData.message) {
-                            this.updateProgressDetails(progressData.message);
+                        if (progressData.type === 'progress') {
+                            this.updateProgressPercentage(progressData.percentage);
+                            if (progressData.message) {
+                                this.updateProgressDetails(progressData.message);
+                            }
+                        } else if (progressData.type === 'output') {
+                            this.appendProgressOutput(progressData.message);
+                        } else if (progressData.type === 'error') {
+                            this.updateProgressError(progressData.message);
+                        } else if (progressData.type === 'complete') {
+                            this.completeProgress(progressData.message || 'Operation completed');
                         }
-                    } else if (progressData.type === 'output') {
-                        this.appendProgressOutput(progressData.message);
-                    } else if (progressData.type === 'error') {
-                        this.updateProgressError(progressData.message);
-                    } else if (progressData.type === 'complete') {
-                        this.completeProgress(progressData.message || 'Operation completed');
                     }
-                });
+                );
             } else {
                 // Fallback to simulation for browser testing
-                await this.simulateProgressOperation(`choco ${sanitizedCommand} ${sanitizedPackageId}`);
+                await this.simulateProgressOperation(
+                    `choco ${sanitizedCommand} ${sanitizedPackageId}`
+                );
             }
         } catch (error) {
             if (this.currentOperation && !this.currentOperation.cancelled) {
@@ -1426,8 +1484,8 @@ class PackageManager {
         // Sanitize inputs
         const sanitizedCommand = command;
         const sanitizedPackageId = this.sanitizePackageId(packageId);
-        const sanitizedArgs = additionalArgs.filter(arg =>
-            typeof arg === 'string' && arg.startsWith('--')
+        const sanitizedArgs = additionalArgs.filter(
+            arg => typeof arg === 'string' && arg.startsWith('--')
         );
 
         this.currentOperation = { cancelled: false };
@@ -1439,7 +1497,7 @@ class PackageManager {
                     sanitizedCommand,
                     sanitizedPackageId,
                     sanitizedArgs,
-                    (progressData) => {
+                    progressData => {
                         if (this.currentOperation && this.currentOperation.cancelled) return;
 
                         if (progressData.type === 'progress') {
@@ -1458,23 +1516,27 @@ class PackageManager {
                 );
             } else if (window.electronAPI && window.electronAPI.executeWingetCommandWithProgress) {
                 // Fallback to legacy method with command string validation
-                const commandString = `${sanitizedCommand} ${sanitizedPackageId} ${sanitizedArgs.join(' ')}`.trim();
-                await window.electronAPI.executeWingetCommandWithProgress(commandString, (progressData) => {
-                    if (this.currentOperation && this.currentOperation.cancelled) return;
+                const commandString =
+                    `${sanitizedCommand} ${sanitizedPackageId} ${sanitizedArgs.join(' ')}`.trim();
+                await window.electronAPI.executeWingetCommandWithProgress(
+                    commandString,
+                    progressData => {
+                        if (this.currentOperation && this.currentOperation.cancelled) return;
 
-                    if (progressData.type === 'progress') {
-                        this.updateProgressPercentage(progressData.percentage);
-                        if (progressData.message) {
-                            this.updateProgressDetails(progressData.message);
+                        if (progressData.type === 'progress') {
+                            this.updateProgressPercentage(progressData.percentage);
+                            if (progressData.message) {
+                                this.updateProgressDetails(progressData.message);
+                            }
+                        } else if (progressData.type === 'output') {
+                            this.appendProgressOutput(progressData.data);
+                        } else if (progressData.type === 'error') {
+                            this.updateProgressError(progressData.message);
+                        } else if (progressData.type === 'complete') {
+                            this.completeProgress(progressData.message || 'Operation completed');
                         }
-                    } else if (progressData.type === 'output') {
-                        this.appendProgressOutput(progressData.data);
-                    } else if (progressData.type === 'error') {
-                        this.updateProgressError(progressData.message);
-                    } else if (progressData.type === 'complete') {
-                        this.completeProgress(progressData.message || 'Operation completed');
                     }
-                });
+                );
             } else {
                 // Fallback to simulation for browser testing
                 await this.simulateProgressOperation(`${sanitizedCommand} ${sanitizedPackageId}`);
@@ -1488,7 +1550,9 @@ class PackageManager {
 
     // Legacy function for backward compatibility (deprecated)
     async executeWingetCommandWithProgress(command) {
-        console.warn('executeWingetCommandWithProgress is deprecated, use executeWingetCommandWithProgressSecure instead');
+        console.warn(
+            'executeWingetCommandWithProgress is deprecated, use executeWingetCommandWithProgressSecure instead'
+        );
 
         // Parse legacy command string for security
         const parts = command.split(' ');
@@ -1505,7 +1569,7 @@ class PackageManager {
             { message: 'Downloading package...', percentage: 30 },
             { message: 'Verifying package...', percentage: 60 },
             { message: 'Installing package...', percentage: 80 },
-            { message: 'Finalizing...', percentage: 95 }
+            { message: 'Finalizing...', percentage: 95 },
         ];
 
         for (const step of steps) {
@@ -1519,7 +1583,9 @@ class PackageManager {
         }
 
         if (this.currentOperation && !this.currentOperation.cancelled) {
-            this.appendProgressOutput(`Simulated execution of: winget ${command}\n\nThis is a demo - actual winget integration would require Electron main process communication.`);
+            this.appendProgressOutput(
+                `Simulated execution of: winget ${command}\n\nThis is a demo - actual winget integration would require Electron main process communication.`
+            );
             this.completeProgress('Operation completed successfully');
         }
     }
@@ -1621,10 +1687,10 @@ class PackageManager {
 
     getOperationSubtitle(operationType) {
         const subtitles = {
-            'install': 'Installing packages to your system',
-            'uninstall': 'Removing packages from your system',
-            'update': 'Updating packages to latest versions',
-            'upgrade': 'Upgrading packages to latest versions'
+            install: 'Installing packages to your system',
+            uninstall: 'Removing packages from your system',
+            update: 'Updating packages to latest versions',
+            upgrade: 'Upgrading packages to latest versions',
         };
         return subtitles[operationType] || 'Processing package operation';
     }
@@ -1634,10 +1700,10 @@ class PackageManager {
         if (!iconElement) return;
 
         const icons = {
-            'install': 'fas fa-download',
-            'uninstall': 'fas fa-trash',
-            'update': 'fas fa-sync-alt',
-            'upgrade': 'fas fa-arrow-up'
+            install: 'fas fa-download',
+            uninstall: 'fas fa-trash',
+            update: 'fas fa-sync-alt',
+            upgrade: 'fas fa-arrow-up',
         };
 
         const iconClass = icons[operationType] || 'fas fa-cog';
@@ -1704,7 +1770,7 @@ class PackageManager {
         // Add click-outside-to-close functionality
         const modal = document.getElementById('packages-progress-modal');
         if (modal) {
-            modal.onclick = (e) => {
+            modal.onclick = e => {
                 if (e.target === modal) {
                     this.hideProgress();
                 }
@@ -1712,7 +1778,7 @@ class PackageManager {
         }
 
         // Add escape key to close
-        const escapeHandler = (e) => {
+        const escapeHandler = e => {
             if (e.key === 'Escape') {
                 this.hideProgress();
                 document.removeEventListener('keydown', escapeHandler);
@@ -1725,7 +1791,7 @@ class PackageManager {
         const closeBtn = document.getElementById('packages-close-modal');
         if (closeBtn && !closeBtn.hasAttribute('data-listener-attached')) {
             console.log('Setting up close button event listener');
-            closeBtn.addEventListener('click', (e) => {
+            closeBtn.addEventListener('click', e => {
                 console.log('Close button clicked');
                 e.preventDefault();
                 e.stopPropagation();
@@ -1850,7 +1916,7 @@ class PackageManager {
 
         const rect = element.getBoundingClientRect();
         tooltip.style.left = rect.left + 'px';
-        tooltip.style.top = (rect.top - 30) + 'px';
+        tooltip.style.top = rect.top - 30 + 'px';
 
         document.body.appendChild(tooltip);
         setTimeout(() => tooltip.remove(), 2000);
@@ -1934,8 +2000,10 @@ class PackageManager {
             currentPackageSection.style.display = 'block';
 
             if (nameElement) nameElement.textContent = packageInfo.name || 'Unknown Package';
-            if (publisherElement) publisherElement.textContent = packageInfo.publisher || 'Unknown Publisher';
-            if (versionElement) versionElement.textContent = packageInfo.version || 'Unknown Version';
+            if (publisherElement)
+                publisherElement.textContent = packageInfo.publisher || 'Unknown Publisher';
+            if (versionElement)
+                versionElement.textContent = packageInfo.version || 'Unknown Version';
             if (statusElement) {
                 statusElement.textContent = packageInfo.status || 'Processing';
                 statusElement.className = `status-badge ${packageInfo.statusClass || ''}`;
@@ -2028,7 +2096,8 @@ class PackageManager {
             const textElement = document.getElementById('packages-progress-text');
 
             if (progressBar) {
-                progressBar.style.background = 'linear-gradient(90deg, var(--primary-color), rgba(var(--primary-rgb), 0.8))';
+                progressBar.style.background =
+                    'linear-gradient(90deg, var(--primary-color), rgba(var(--primary-rgb), 0.8))';
                 progressBar.style.width = '0%';
             }
 
@@ -2185,7 +2254,6 @@ class PackageManager {
 
                 console.log('Package refresh completed');
                 this.appendProgressOutput('Package list refreshed successfully\n');
-
             } catch (error) {
                 console.error('Error refreshing packages:', error);
                 this.appendProgressOutput(`Error refreshing packages: ${error.message}\n`);
@@ -2233,7 +2301,8 @@ class PackageManager {
         const progressBar = document.getElementById('packages-progress-bar');
         if (progressBar) {
             progressBar.style.width = '0%';
-            progressBar.style.background = 'linear-gradient(90deg, var(--primary-color), rgba(var(--primary-rgb), 0.8))';
+            progressBar.style.background =
+                'linear-gradient(90deg, var(--primary-color), rgba(var(--primary-rgb), 0.8))';
         }
 
         // Reset text elements
@@ -2294,7 +2363,12 @@ class PackageManager {
         }
 
         const container = document.getElementById('progress-container');
-        if (container && (container.classList.contains('completed') || container.classList.contains('error') || container.classList.contains('cancelled'))) {
+        if (
+            container &&
+            (container.classList.contains('completed') ||
+                container.classList.contains('error') ||
+                container.classList.contains('cancelled'))
+        ) {
             this.hideProgress();
         }
     }
@@ -2324,16 +2398,25 @@ class PackageManager {
                     defaultPath: 'wintool-packages.json',
                     filters: [
                         { name: 'JSON Files', extensions: ['json'] },
-                        { name: 'All Files', extensions: ['*'] }
-                    ]
+                        { name: 'All Files', extensions: ['*'] },
+                    ],
                 });
 
                 if (!result.canceled && result.filePath) {
-                    await window.electronAPI.writeFile(result.filePath, JSON.stringify(packagesToExport, null, 2));
-                    this.showStatus(`Successfully exported ${Object.keys(packagesToExport).length} packages to ${result.filePath}`, 'success');
+                    await window.electronAPI.writeFile(
+                        result.filePath,
+                        JSON.stringify(packagesToExport, null, 2)
+                    );
+                    this.showStatus(
+                        `Successfully exported ${Object.keys(packagesToExport).length} packages to ${result.filePath}`,
+                        'success'
+                    );
                 }
             } else {
-                this.showStatus('Export functionality is not available in this environment.', 'error');
+                this.showStatus(
+                    'Export functionality is not available in this environment.',
+                    'error'
+                );
             }
         } catch (error) {
             this.showStatus(`Error exporting packages: ${error.message}`, 'error');
@@ -2349,8 +2432,8 @@ class PackageManager {
                     properties: ['openFile'],
                     filters: [
                         { name: 'JSON Files', extensions: ['json'] },
-                        { name: 'All Files', extensions: ['*'] }
-                    ]
+                        { name: 'All Files', extensions: ['*'] },
+                    ],
                 });
 
                 if (!result.canceled && result.filePaths.length > 0) {
@@ -2368,16 +2451,24 @@ class PackageManager {
                             this.selectedPackages.add(packageKey);
                             importedCount++;
                         } else {
-                            console.warn(`Imported package key "${packageKey}" not found in the current package list. Skipping.`);
+                            console.warn(
+                                `Imported package key "${packageKey}" not found in the current package list. Skipping.`
+                            );
                         }
                     }
 
                     this.renderPackages(); // Re-render to update selection visuals
                     this.updateSelectionInfo();
-                    this.showStatus(`Successfully imported and selected ${importedCount} packages.`, 'success');
+                    this.showStatus(
+                        `Successfully imported and selected ${importedCount} packages.`,
+                        'success'
+                    );
                 }
             } else {
-                this.showStatus('Import functionality is not available in this environment.', 'error');
+                this.showStatus(
+                    'Import functionality is not available in this environment.',
+                    'error'
+                );
             }
         } catch (error) {
             this.showStatus(`Error importing packages: ${error.message}`, 'error');
@@ -2407,13 +2498,13 @@ if (document.readyState === 'loading') {
 }
 
 // Expose package manager methods to the command palette
-window.installPackage = (packageName) => {
+window.installPackage = packageName => {
     if (packageManager) {
         packageManager.installPackage(packageName);
     }
 };
 
-window.uninstallPackage = (packageName) => {
+window.uninstallPackage = packageName => {
     if (packageManager) {
         packageManager.uninstallPackage(packageName);
     }
@@ -2426,12 +2517,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const allCategoryBtn = document.querySelector('.category-btn[data-category="all"]');
         if (allCategoryBtn && !allCategoryBtn.classList.contains('active')) {
             // Remove active from all buttons first
-            document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
+            document
+                .querySelectorAll('.category-btn')
+                .forEach(btn => btn.classList.remove('active'));
             // Add active to All button
             allCategoryBtn.classList.add('active');
             console.log('Ensured "All" category button is active on DOM ready');
         }
     }, 100);
 });
-
-

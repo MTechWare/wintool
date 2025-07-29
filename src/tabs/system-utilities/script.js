@@ -1,48 +1,42 @@
-/**
- * System Utilities Tab JavaScript
- *
- * This script handles launching Windows system utilities and administrative tools
- */
-
-console.log('System Utilities tab script loaded');
-
-/**
- * Launch a system utility
- * @param {string} utilityCommand - The command or utility to launch
- */
 async function launchUtility(utilityCommand) {
     try {
-        // Add loading state to the clicked card
         const clickedCard = event.target.closest('.utility-card');
         if (clickedCard) {
             clickedCard.classList.add('loading');
         }
 
         if (window.electronAPI && window.electronAPI.launchSystemUtility) {
-            // Use real system utility launcher
             const result = await window.electronAPI.launchSystemUtility(utilityCommand);
             if (result.success) {
-                // Special message for Windows 11 Settings app
                 if (utilityCommand.startsWith('ms-settings:')) {
-                    showStatusMessage('success', `Opened Windows Settings: ${utilityCommand.replace('ms-settings:', '')}`);
+                    showStatusMessage(
+                        'success',
+                        `Opened Windows Settings: ${utilityCommand.replace('ms-settings:', '')}`
+                    );
                 } else {
                     showStatusMessage('success', result.message);
                 }
             }
         } else {
-            // Fallback for browser testing
             if (utilityCommand.startsWith('ms-settings:')) {
-                showStatusMessage('warning', `This would open Windows Settings: ${utilityCommand.replace('ms-settings:', '')}\n\nIn the full implementation, this would open the actual Windows Settings page.`);
+                showStatusMessage(
+                    'warning',
+                    `This would open Windows Settings: ${utilityCommand.replace('ms-settings:', '')}\n\nIn the full implementation, this would open the actual Windows Settings page.`
+                );
             } else {
-                showStatusMessage('warning', `This would launch: ${utilityCommand}\n\nIn the full implementation, this would open the actual Windows utility.`);
+                showStatusMessage(
+                    'warning',
+                    `This would launch: ${utilityCommand}\n\nIn the full implementation, this would open the actual Windows utility.`
+                );
             }
         }
-
     } catch (error) {
-        console.error('Error launching utility:', error);
+        window.electronAPI.logError(
+            `Error launching utility: ${error.message}`,
+            'SystemUtilitiesTab'
+        );
         showStatusMessage('error', `Failed to launch ${utilityCommand}: ${error.message}`);
     } finally {
-        // Remove loading state
         const clickedCard = event.target.closest('.utility-card');
         if (clickedCard) {
             clickedCard.classList.remove('loading');
@@ -65,29 +59,39 @@ async function launchDiskCheck() {
         if (window.electronAPI && window.electronAPI.launchSystemUtility) {
             const result = await window.electronAPI.launchSystemUtility('cmd');
             if (result.success) {
-                showStatusMessage('success', 'Command Prompt opened. Use "chkdsk C: /f" to check C: drive (requires admin privileges)');
+                showStatusMessage(
+                    'success',
+                    'Command Prompt opened. Use "chkdsk C: /f" to check C: drive (requires admin privileges)'
+                );
             }
         } else {
-            showStatusMessage('warning', 'This would open Command Prompt for disk checking.\n\nUse "chkdsk C: /f" to check C: drive.');
+            showStatusMessage(
+                'warning',
+                'This would open Command Prompt for disk checking.\n\nUse "chkdsk C: /f" to check C: drive.'
+            );
         }
 
         // Also suggest Windows 11 alternative
         if (window.electronAPI && window.electronAPI.getSystemInfo) {
             const sysInfo = await window.electronAPI.getSystemInfo();
-            const isWindows11 = sysInfo.osInfo && (
-                sysInfo.osInfo.distro.includes('Windows 11') ||
-                sysInfo.osInfo.build >= 22000
-            );
+            const isWindows11 =
+                sysInfo.osInfo &&
+                (sysInfo.osInfo.distro.includes('Windows 11') || sysInfo.osInfo.build >= 22000);
 
             if (isWindows11) {
                 setTimeout(() => {
-                    showStatusMessage('info', 'Tip: On Windows 11, you can also use Settings > System > Storage > Advanced storage settings > Disks & volumes for disk management.');
+                    showStatusMessage(
+                        'info',
+                        'Tip: On Windows 11, you can also use Settings > System > Storage > Advanced storage settings > Disks & volumes for disk management.'
+                    );
                 }, 3000);
             }
         }
-
     } catch (error) {
-        console.error('Error launching disk check:', error);
+        window.electronAPI.logError(
+            `Error launching disk check: ${error.message}`,
+            'SystemUtilitiesTab'
+        );
         showStatusMessage('error', `Failed to launch disk check: ${error.message}`);
     } finally {
         const clickedCard = event.target.closest('.utility-card');
@@ -136,9 +140,8 @@ function searchUtilities(searchTerm) {
         cards.forEach(card => {
             const utilityName = card.querySelector('h4').textContent.toLowerCase();
             const utilityDescription = card.querySelector('p').textContent.toLowerCase();
-            const isMatch = term === '' ||
-                           utilityName.includes(term) ||
-                           utilityDescription.includes(term);
+            const isMatch =
+                term === '' || utilityName.includes(term) || utilityDescription.includes(term);
 
             if (isMatch) {
                 card.classList.remove('hidden');
@@ -191,17 +194,15 @@ function updateUtilityCount(visibleCount, searchTerm) {
  * Initialize the System Utilities tab
  */
 function initSystemUtilities() {
-    console.log('Initializing System Utilities tab');
-
     // Setup search functionality
     const searchInput = document.getElementById('utilities-search');
     if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
+        searchInput.addEventListener('input', e => {
             searchUtilities(e.target.value);
         });
 
         // Clear search on Escape key
-        searchInput.addEventListener('keydown', (e) => {
+        searchInput.addEventListener('keydown', e => {
             if (e.key === 'Escape') {
                 searchInput.value = '';
                 searchUtilities('');
@@ -211,9 +212,11 @@ function initSystemUtilities() {
     }
 
     // Add keyboard shortcuts for common utilities
-    document.addEventListener('keydown', (event) => {
+    document.addEventListener('keydown', event => {
         // Only handle shortcuts when this tab is active
-        const activeTab = document.querySelector('.tab-content.active[data-tab*="system-utilities"]');
+        const activeTab = document.querySelector(
+            '.tab-content.active[data-tab*="system-utilities"]'
+        );
         if (!activeTab) return;
 
         // Ctrl+Shift+T for Task Manager
@@ -263,11 +266,8 @@ function initSystemUtilities() {
     // Check Windows version for appropriate utilities
     checkWindowsVersion();
 
-    console.log('System Utilities tab initialized successfully');
-
     // Signal that this tab is ready
     if (window.markTabAsReady) {
-        console.log('Marking system-utilities tab as ready');
         window.markTabAsReady('system-utilities');
     }
 }
@@ -279,10 +279,9 @@ async function checkWindowsVersion() {
     try {
         if (window.electronAPI && window.electronAPI.getSystemInfo) {
             const sysInfo = await window.electronAPI.getSystemInfo();
-            const isWindows11 = sysInfo.osInfo && (
-                sysInfo.osInfo.distro.includes('Windows 11') ||
-                sysInfo.osInfo.build >= 22000
-            );
+            const isWindows11 =
+                sysInfo.osInfo &&
+                (sysInfo.osInfo.distro.includes('Windows 11') || sysInfo.osInfo.build >= 22000);
 
             // Find Windows 11 Settings section
             const sections = document.querySelectorAll('.utilities-section');
@@ -305,11 +304,9 @@ async function checkWindowsVersion() {
             if (countElement) {
                 countElement.textContent = `${totalCount} utilities available`;
             }
-
-            console.log(`Windows version detected: ${isWindows11 ? 'Windows 11' : 'Windows 10 or earlier'}`);
         }
     } catch (error) {
-        console.log('Could not detect Windows version, showing all utilities');
+        // Could not detect Windows version, showing all utilities
     }
 }
 

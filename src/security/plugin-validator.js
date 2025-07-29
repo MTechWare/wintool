@@ -21,31 +21,75 @@ class PluginValidator {
                     icon: 'string',
                     backend: 'string',
                     permissions: 'array',
-                    dependencies: 'object'
-                }
+                    dependencies: 'object',
+                },
             },
             files: {
                 required: ['plugin.json', 'index.html', 'script.js'],
-                optional: ['styles.css', 'backend.js', 'package.json', 'README.md']
+                optional: ['styles.css', 'backend.js', 'package.json', 'README.md'],
             },
             security: {
                 dangerousPatterns: [
                     { pattern: /eval\s*\(/, severity: 'high', message: 'Use of eval() function' },
-                    { pattern: /Function\s*\(/, severity: 'high', message: 'Use of Function constructor' },
-                    { pattern: /innerHTML\s*=/, severity: 'medium', message: 'Direct innerHTML assignment' },
-                    { pattern: /document\.write\s*\(/, severity: 'medium', message: 'Use of document.write()' },
-                    { pattern: /window\.location\s*=/, severity: 'medium', message: 'Direct location assignment' },
-                    { pattern: /require\s*\(['"](?!\.\/|\.\.\/)[^'"]*['"]\)/, severity: 'medium', message: 'Direct require() of external modules' },
-                    { pattern: /<script[^>]*src\s*=\s*['"]https?:\/\//, severity: 'high', message: 'External script inclusion' },
-                    { pattern: /on\w+\s*=\s*['"][^'"]*['"]/, severity: 'medium', message: 'Inline event handlers' },
-                    { pattern: /javascript\s*:/, severity: 'high', message: 'JavaScript protocol usage' }
+                    {
+                        pattern: /Function\s*\(/,
+                        severity: 'high',
+                        message: 'Use of Function constructor',
+                    },
+                    {
+                        pattern: /innerHTML\s*=/,
+                        severity: 'medium',
+                        message: 'Direct innerHTML assignment',
+                    },
+                    {
+                        pattern: /document\.write\s*\(/,
+                        severity: 'medium',
+                        message: 'Use of document.write()',
+                    },
+                    {
+                        pattern: /window\.location\s*=/,
+                        severity: 'medium',
+                        message: 'Direct location assignment',
+                    },
+                    {
+                        pattern: /require\s*\(['"](?!\.\/|\.\.\/)[^'"]*['"]\)/,
+                        severity: 'medium',
+                        message: 'Direct require() of external modules',
+                    },
+                    {
+                        pattern: /<script[^>]*src\s*=\s*['"]https?:\/\//,
+                        severity: 'high',
+                        message: 'External script inclusion',
+                    },
+                    {
+                        pattern: /on\w+\s*=\s*['"][^'"]*['"]/,
+                        severity: 'medium',
+                        message: 'Inline event handlers',
+                    },
+                    {
+                        pattern: /javascript\s*:/,
+                        severity: 'high',
+                        message: 'JavaScript protocol usage',
+                    },
                 ],
                 allowedGlobals: [
-                    'window', 'document', 'console', 'setTimeout', 'setInterval',
-                    'clearTimeout', 'clearInterval', 'JSON', 'Date', 'Math',
-                    'Array', 'Object', 'String', 'Number', 'Boolean'
-                ]
-            }
+                    'window',
+                    'document',
+                    'console',
+                    'setTimeout',
+                    'setInterval',
+                    'clearTimeout',
+                    'clearInterval',
+                    'JSON',
+                    'Date',
+                    'Math',
+                    'Array',
+                    'Object',
+                    'String',
+                    'Number',
+                    'Boolean',
+                ],
+            },
         };
     }
 
@@ -62,8 +106,8 @@ class PluginValidator {
             metadata: {
                 pluginPath,
                 validatedAt: new Date().toISOString(),
-                hash: null
-            }
+                hash: null,
+            },
         };
 
         try {
@@ -97,8 +141,9 @@ class PluginValidator {
         result.metadata.hash = await this.calculatePluginHash(pluginPath);
 
         // Final validation status
-        result.isValid = result.errors.length === 0 && 
-                        result.securityIssues.filter(issue => issue.severity === 'high').length === 0;
+        result.isValid =
+            result.errors.length === 0 &&
+            result.securityIssues.filter(issue => issue.severity === 'high').length === 0;
 
         return result;
     }
@@ -109,7 +154,7 @@ class PluginValidator {
     async validateFileStructure(pluginPath, result) {
         try {
             const files = await fs.readdir(pluginPath);
-            
+
             // Check required files
             for (const requiredFile of this.validationRules.files.required) {
                 if (!files.includes(requiredFile)) {
@@ -119,14 +164,14 @@ class PluginValidator {
 
             // Check for suspicious files
             const suspiciousExtensions = ['.exe', '.bat', '.cmd', '.ps1', '.sh'];
-            const suspiciousFiles = files.filter(file => 
+            const suspiciousFiles = files.filter(file =>
                 suspiciousExtensions.some(ext => file.toLowerCase().endsWith(ext))
             );
 
             if (suspiciousFiles.length > 0) {
                 result.securityIssues.push({
                     severity: 'high',
-                    message: `Suspicious executable files found: ${suspiciousFiles.join(', ')}`
+                    message: `Suspicious executable files found: ${suspiciousFiles.join(', ')}`,
                 });
             }
 
@@ -135,7 +180,6 @@ class PluginValidator {
             if (hiddenFiles.length > 0) {
                 result.warnings.push(`Hidden files found: ${hiddenFiles.join(', ')}`);
             }
-
         } catch (error) {
             result.errors.push(`Failed to read plugin directory: ${error.message}`);
         }
@@ -146,7 +190,7 @@ class PluginValidator {
      */
     async validateManifest(pluginPath, result) {
         const manifestPath = path.join(pluginPath, 'plugin.json');
-        
+
         try {
             const manifestContent = await fs.readFile(manifestPath, 'utf8');
             const manifest = JSON.parse(manifestContent);
@@ -159,11 +203,17 @@ class PluginValidator {
             }
 
             // Validate field types
-            for (const [field, expectedType] of Object.entries(this.validationRules.manifest.types)) {
+            for (const [field, expectedType] of Object.entries(
+                this.validationRules.manifest.types
+            )) {
                 if (manifest[field] !== undefined) {
-                    const actualType = Array.isArray(manifest[field]) ? 'array' : typeof manifest[field];
+                    const actualType = Array.isArray(manifest[field])
+                        ? 'array'
+                        : typeof manifest[field];
                     if (actualType !== expectedType) {
-                        result.errors.push(`Invalid type for ${field}: expected ${expectedType}, got ${actualType}`);
+                        result.errors.push(
+                            `Invalid type for ${field}: expected ${expectedType}, got ${actualType}`
+                        );
                     }
                 }
             }
@@ -174,7 +224,11 @@ class PluginValidator {
             }
 
             // Validate icon format
-            if (manifest.icon && !manifest.icon.startsWith('fas fa-') && !manifest.icon.startsWith('far fa-')) {
+            if (
+                manifest.icon &&
+                !manifest.icon.startsWith('fas fa-') &&
+                !manifest.icon.startsWith('far fa-')
+            ) {
                 result.warnings.push('Icon should be a Font Awesome class (e.g., "fas fa-cog")');
             }
 
@@ -191,17 +245,20 @@ class PluginValidator {
             // Validate permissions
             if (manifest.permissions) {
                 const validPermissions = [
-                    'storage.read', 'storage.write', 'notifications.show',
-                    'network.request', 'fs.readUserFile', 'system.info'
+                    'storage.read',
+                    'storage.write',
+                    'notifications.show',
+                    'network.request',
+                    'fs.readUserFile',
+                    'system.info',
                 ];
-                
+
                 for (const permission of manifest.permissions) {
                     if (!validPermissions.includes(permission)) {
                         result.warnings.push(`Unknown permission: ${permission}`);
                     }
                 }
             }
-
         } catch (error) {
             if (error instanceof SyntaxError) {
                 result.errors.push('Invalid JSON in plugin.json');
@@ -216,7 +273,7 @@ class PluginValidator {
      */
     async validateHTML(pluginPath, result) {
         const htmlPath = path.join(pluginPath, 'index.html');
-        
+
         try {
             const htmlContent = await fs.readFile(htmlPath, 'utf8');
 
@@ -239,16 +296,18 @@ class PluginValidator {
             if (htmlContent.includes('<script>') && htmlContent.includes('eval(')) {
                 result.securityIssues.push({
                     severity: 'high',
-                    message: 'Inline script with eval() detected in HTML'
+                    message: 'Inline script with eval() detected in HTML',
                 });
             }
 
             // Check for external resources
-            const externalResources = htmlContent.match(/(?:src|href)\s*=\s*['"]https?:\/\/[^'"]+['"]/g);
+            const externalResources = htmlContent.match(
+                /(?:src|href)\s*=\s*['"]https?:\/\/[^'"]+['"]/g
+            );
             if (externalResources) {
                 result.securityIssues.push({
                     severity: 'medium',
-                    message: `External resources detected: ${externalResources.length} found`
+                    message: `External resources detected: ${externalResources.length} found`,
                 });
             }
 
@@ -256,7 +315,6 @@ class PluginValidator {
             if (!htmlContent.includes('Content-Security-Policy')) {
                 result.recommendations.push('Consider adding Content-Security-Policy meta tag');
             }
-
         } catch (error) {
             // HTML file existence already checked in file structure validation
         }
@@ -270,17 +328,18 @@ class PluginValidator {
 
         for (const jsFile of jsFiles) {
             const jsPath = path.join(pluginPath, jsFile);
-            
+
             try {
                 const jsContent = await fs.readFile(jsPath, 'utf8');
 
                 // Check for dangerous patterns
-                for (const { pattern, severity, message } of this.validationRules.security.dangerousPatterns) {
+                for (const { pattern, severity, message } of this.validationRules.security
+                    .dangerousPatterns) {
                     if (pattern.test(jsContent)) {
                         result.securityIssues.push({
                             severity,
                             message: `${jsFile}: ${message}`,
-                            file: jsFile
+                            file: jsFile,
                         });
                     }
                 }
@@ -292,11 +351,15 @@ class PluginValidator {
                     }
 
                     if (!jsContent.includes('markTabAsReady')) {
-                        result.warnings.push('script.js should call markTabAsReady() when initialized');
+                        result.warnings.push(
+                            'script.js should call markTabAsReady() when initialized'
+                        );
                     }
 
                     if (!jsContent.includes('window.wintoolAPI')) {
-                        result.recommendations.push('Use window.wintoolAPI for better compatibility');
+                        result.recommendations.push(
+                            'Use window.wintoolAPI for better compatibility'
+                        );
                     }
                 }
 
@@ -317,7 +380,6 @@ class PluginValidator {
                 } catch (syntaxError) {
                     result.errors.push(`Syntax error in ${jsFile}: ${syntaxError.message}`);
                 }
-
             } catch (error) {
                 if (jsFile === 'script.js') {
                     // script.js is required, error already added in file structure validation
@@ -328,36 +390,26 @@ class PluginValidator {
         }
     }
 
-    /**
-     * Validate CSS
-     */
     async validateCSS(pluginPath, result) {
         const cssPath = path.join(pluginPath, 'styles.css');
-        
+
         try {
             const cssContent = await fs.readFile(cssPath, 'utf8');
 
-            // Check for CSS variables usage
             if (!cssContent.includes('var(--')) {
                 result.recommendations.push('Consider using CSS variables for theming consistency');
             }
 
-            // Check for responsive design
             if (!cssContent.includes('@media')) {
                 result.recommendations.push('Consider adding responsive design with media queries');
             }
-
-            // Security check for CSS injection
             if (cssContent.includes('expression(') || cssContent.includes('javascript:')) {
                 result.securityIssues.push({
                     severity: 'high',
-                    message: 'Potentially dangerous CSS expressions detected'
+                    message: 'Potentially dangerous CSS expressions detected',
                 });
             }
-
-        } catch (error) {
-            // CSS file is optional
-        }
+        } catch (error) {}
     }
 
     /**
@@ -383,7 +435,7 @@ class PluginValidator {
                         if (packageJson.dependencies[pkg]) {
                             result.securityIssues.push({
                                 severity: 'high',
-                                message: `Potentially dangerous dependency: ${pkg}`
+                                message: `Potentially dangerous dependency: ${pkg}`,
                             });
                         }
                     }
@@ -401,16 +453,21 @@ class PluginValidator {
                 totalSize += stats.size;
 
                 // Check for unusually large files
-                if (stats.size > 1024 * 1024) { // 1MB
-                    result.warnings.push(`Large file detected: ${path.relative(pluginPath, file)} (${Math.round(stats.size / 1024)}KB)`);
+                if (stats.size > 1024 * 1024) {
+                    // 1MB
+                    result.warnings.push(
+                        `Large file detected: ${path.relative(pluginPath, file)} (${Math.round(stats.size / 1024)}KB)`
+                    );
                 }
             }
 
             // Check total plugin size
-            if (totalSize > 10 * 1024 * 1024) { // 10MB
-                result.warnings.push(`Plugin size is large: ${Math.round(totalSize / (1024 * 1024))}MB`);
+            if (totalSize > 10 * 1024 * 1024) {
+                // 10MB
+                result.warnings.push(
+                    `Plugin size is large: ${Math.round(totalSize / (1024 * 1024))}MB`
+                );
             }
-
         } catch (error) {
             result.warnings.push(`Security scan incomplete: ${error.message}`);
         }
@@ -423,7 +480,7 @@ class PluginValidator {
         try {
             const hash = crypto.createHash('sha256');
             const files = await this.getAllFiles(pluginPath);
-            
+
             // Sort files for consistent hashing
             files.sort();
 
@@ -479,9 +536,9 @@ class PluginValidator {
                 errorCount: validationResult.errors.length,
                 warningCount: validationResult.warnings.length,
                 securityIssueCount: validationResult.securityIssues.length,
-                recommendationCount: validationResult.recommendations.length
+                recommendationCount: validationResult.recommendations.length,
             },
-            details: validationResult
+            details: validationResult,
         };
 
         return report;

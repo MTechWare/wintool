@@ -1,26 +1,22 @@
 let healthUpdateInterval;
 let memoryChart;
 let memoryHistory = [];
-const maxHistoryPoints = 60; // 1 minute of data at 1-second intervals
-let isHealthDashboardActive = false; // Track if dashboard is currently active
+const maxHistoryPoints = 60;
+let isHealthDashboardActive = false;
 
-// Cache for reducing redundant API calls
 let lastHealthDataFetch = 0;
-const HEALTH_DATA_CACHE_DURATION = 20000; // Cache for 20 seconds
+const HEALTH_DATA_CACHE_DURATION = 20000;
 let cachedHealthData = null;
 
-// Debounce for refresh button
 let refreshDebounceTimer = null;
-const REFRESH_DEBOUNCE_DELAY = 2000; // 2 seconds
+const REFRESH_DEBOUNCE_DELAY = 2000;
 
-// Health thresholds - now configurable
 let HEALTH_THRESHOLDS = {
     memory: { warning: 80, critical: 95 },
     disk: { warning: 85, critical: 95 },
-    temperature: { warning: 70, critical: 85 }
+    temperature: { warning: 70, critical: 85 },
 };
 
-// Alert system variables
 let activeAlerts = new Map();
 let alertHistory = [];
 let alertSettings = {
@@ -29,25 +25,22 @@ let alertSettings = {
     autoDismissInfo: true,
     enableNativeNotifications: true,
     persistentCriticalAlerts: true,
-    refreshInterval: 15 // Default refresh interval in seconds
+    refreshInterval: 15,
 };
 
-// Alert severity levels
 const ALERT_SEVERITY = {
     INFO: 'info',
     WARNING: 'warning',
-    CRITICAL: 'critical'
+    CRITICAL: 'critical',
 };
 
-// Alert icons
 const ALERT_ICONS = {
     info: 'fas fa-info-circle',
     warning: 'fas fa-exclamation-triangle',
-    critical: 'fas fa-exclamation-circle'
+    critical: 'fas fa-exclamation-circle',
 };
 
 async function loadSystemHealth(container) {
-
     try {
         // Initialize alert system (this loads settings including refresh interval)
         initializeAlertSystem();
@@ -64,14 +57,15 @@ async function loadSystemHealth(container) {
         // Start real-time updates (now uses loaded refresh interval setting)
         startHealthUpdates();
 
-
-
         // Signal that the tab is ready
         if (window.markTabAsReady) {
             window.markTabAsReady('system-health');
         }
     } catch (error) {
-        console.error('Error loading system health dashboard:', error);
+        window.electronAPI.logError(
+            `Error loading system health dashboard: ${error.message}`,
+            'SystemHealthTab'
+        );
 
         // Still mark as ready even if there's an error to prevent blocking
         if (window.markTabAsReady) {
@@ -97,20 +91,22 @@ function drawChart(chart, data, label, color) {
     const { canvas, ctx } = chart;
     const width = canvas.width;
     const height = canvas.height;
-    
+
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
-    
+
     // Draw background
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--background-dark');
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue(
+        '--background-dark'
+    );
     ctx.fillRect(0, 0, width, height);
-    
+
     if (data.length < 2) return;
-    
+
     // Draw grid
     ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border-color');
     ctx.lineWidth = 1;
-    
+
     // Horizontal grid lines
     for (let i = 0; i <= 4; i++) {
         const y = (height / 4) * i;
@@ -119,28 +115,28 @@ function drawChart(chart, data, label, color) {
         ctx.lineTo(width, y);
         ctx.stroke();
     }
-    
+
     // Draw data line
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.beginPath();
-    
+
     const stepX = width / (maxHistoryPoints - 1);
     const maxY = 100; // Percentage
-    
+
     data.forEach((value, index) => {
         const x = index * stepX;
         const y = height - (value / maxY) * height;
-        
+
         if (index === 0) {
             ctx.moveTo(x, y);
         } else {
             ctx.lineTo(x, y);
         }
     });
-    
+
     ctx.stroke();
-    
+
     // Draw current value
     if (data.length > 0) {
         const currentValue = data[data.length - 1];
@@ -170,9 +166,7 @@ function startHealthUpdates() {
         let lastPerformanceUpdate = 0;
         const performanceThrottleMs = (alertSettings.refreshInterval || 15) * 1000;
 
-
-
-        window.electronAPI.onPerformanceUpdate((metrics) => {
+        window.electronAPI.onPerformanceUpdate(metrics => {
             const now = Date.now();
             if (now - lastPerformanceUpdate >= performanceThrottleMs) {
                 updateRealTimeMetrics(metrics);
@@ -191,8 +185,12 @@ function updateRealTimeMetrics(metrics) {
     const memValue = parseFloat(metrics.mem);
     updateCircularProgress('memory-progress', memValue);
     document.getElementById('memory-percentage').textContent = `${memValue.toFixed(1)}%`;
-    document.getElementById('memory-status').textContent = getHealthStatus(memValue, HEALTH_THRESHOLDS.memory);
-    document.getElementById('memory-status').className = `metric-status ${getHealthStatusClass(memValue, HEALTH_THRESHOLDS.memory)}`;
+    document.getElementById('memory-status').textContent = getHealthStatus(
+        memValue,
+        HEALTH_THRESHOLDS.memory
+    );
+    document.getElementById('memory-status').className =
+        `metric-status ${getHealthStatusClass(memValue, HEALTH_THRESHOLDS.memory)}`;
 
     // Check memory thresholds for alerts
     checkMetricThresholds('memory', memValue, '%');
@@ -214,25 +212,21 @@ function updateRealTimeMetrics(metrics) {
 async function updateHealthMetrics() {
     try {
         if (!window.electronAPI) {
-            console.warn('electronAPI not available');
+            console.warn('[SystemHealthTab] electronAPI not available');
             return;
         }
 
         const now = Date.now();
 
         // Check if we can use cached data to reduce CPU load
-        if (cachedHealthData && (now - lastHealthDataFetch) < HEALTH_DATA_CACHE_DURATION) {
-            console.log('Using cached health data to reduce CPU usage');
+        if (cachedHealthData && now - lastHealthDataFetch < HEALTH_DATA_CACHE_DURATION) {
             const { systemInfo } = cachedHealthData;
             updateSystemDetails(systemInfo);
             await updateDiskInfo(systemInfo);
             return;
         }
 
-        console.log('Fetching fresh lightweight system health info...');
         const systemInfo = await window.electronAPI.getSystemHealthInfo();
-
-        console.log('System health info received:', systemInfo);
 
         // Cache the data
         cachedHealthData = { systemInfo };
@@ -243,15 +237,15 @@ async function updateHealthMetrics() {
 
         // Update disk information
         await updateDiskInfo(systemInfo);
-
     } catch (error) {
-        console.error('Error updating health metrics:', error);
+        window.electronAPI.logError(
+            `Error updating health metrics: ${error.message}`,
+            'SystemHealthTab'
+        );
     }
 }
 
 function updateSystemDetails(systemInfo) {
-    console.log('Updating system details with:', systemInfo);
-
     // Memory details - use the formatted memory values
     const memUsedElement = document.getElementById('memory-used');
     if (memUsedElement) {
@@ -311,8 +305,12 @@ async function updateDiskInfo(systemInfo) {
             // Update progress circle and percentage
             updateCircularProgress('disk-progress', diskUsage);
             document.getElementById('disk-percentage').textContent = `${diskUsage}%`;
-            document.getElementById('disk-status').textContent = getHealthStatus(diskUsage, HEALTH_THRESHOLDS.disk);
-            document.getElementById('disk-status').className = `metric-status ${getHealthStatusClass(diskUsage, HEALTH_THRESHOLDS.disk)}`;
+            document.getElementById('disk-status').textContent = getHealthStatus(
+                diskUsage,
+                HEALTH_THRESHOLDS.disk
+            );
+            document.getElementById('disk-status').className =
+                `metric-status ${getHealthStatusClass(diskUsage, HEALTH_THRESHOLDS.disk)}`;
 
             // Check disk thresholds for alerts
             checkMetricThresholds('disk', diskUsage, '%');
@@ -326,8 +324,12 @@ async function updateDiskInfo(systemInfo) {
             const diskUsage = 65; // Mock percentage
             updateCircularProgress('disk-progress', diskUsage);
             document.getElementById('disk-percentage').textContent = `${diskUsage}%`;
-            document.getElementById('disk-status').textContent = getHealthStatus(diskUsage, HEALTH_THRESHOLDS.disk);
-            document.getElementById('disk-status').className = `metric-status ${getHealthStatusClass(diskUsage, HEALTH_THRESHOLDS.disk)}`;
+            document.getElementById('disk-status').textContent = getHealthStatus(
+                diskUsage,
+                HEALTH_THRESHOLDS.disk
+            );
+            document.getElementById('disk-status').className =
+                `metric-status ${getHealthStatusClass(diskUsage, HEALTH_THRESHOLDS.disk)}`;
 
             // Check disk thresholds for alerts (even in fallback mode)
             checkMetricThresholds('disk', diskUsage, '%');
@@ -337,7 +339,10 @@ async function updateDiskInfo(systemInfo) {
             document.getElementById('disk-total').textContent = '1 TB';
         }
     } catch (error) {
-        console.error('Error updating disk info:', error);
+        window.electronAPI.logError(
+            `Error updating disk info: ${error.message}`,
+            'SystemHealthTab'
+        );
         // Show error state
         document.getElementById('disk-percentage').textContent = 'Error';
         document.getElementById('disk-status').textContent = 'Error';
@@ -347,21 +352,17 @@ async function updateDiskInfo(systemInfo) {
     }
 }
 
-
-
-
-
 function updateCircularProgress(elementId, percentage) {
     const element = document.getElementById(elementId);
     if (!element) return;
-    
+
     const circle = element.querySelector('.progress-circle');
     const degrees = (percentage / 100) * 360;
-    
+
     let color = '#10b981'; // Green
     if (percentage > 70) color = '#f59e0b'; // Yellow
     if (percentage > 90) color = '#ef4444'; // Red
-    
+
     circle.style.background = `conic-gradient(${color} ${degrees}deg, var(--background-dark) ${degrees}deg)`;
 }
 
@@ -388,8 +389,6 @@ function formatBytes(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
-
-
 function updateOverallStatus() {
     const memValue = parseFloat(document.getElementById('memory-percentage').textContent);
 
@@ -408,10 +407,10 @@ function updateOverallStatus() {
     } else if (memValue > 60) {
         overallStatus = 'Good';
     }
-    
+
     const statusIcon = document.querySelector('.status-icon i');
     const statusText = document.getElementById('overall-status-text');
-    
+
     if (statusIcon && statusText) {
         statusIcon.className = iconClass;
         statusIcon.parentElement.className = `status-icon ${statusClass}`;
@@ -440,11 +439,8 @@ function setupEventListeners(container) {
         refreshBtn.addEventListener('click', async () => {
             // Debounce rapid clicks to prevent CPU spikes
             if (refreshDebounceTimer) {
-                console.log('Refresh button clicked too quickly, ignoring...');
                 return;
             }
-
-            console.log('Refresh button clicked');
             refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             refreshBtn.disabled = true;
 
@@ -454,9 +450,11 @@ function setupEventListeners(container) {
 
             try {
                 await updateHealthMetrics();
-                console.log('Health metrics updated successfully');
             } catch (error) {
-                console.error('Error updating health metrics:', error);
+                window.electronAPI.logError(
+                    `Error updating health metrics: ${error.message}`,
+                    'SystemHealthTab'
+                );
             } finally {
                 refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
                 refreshBtn.disabled = false;
@@ -510,8 +508,6 @@ function setupEventListeners(container) {
 
 async function exportHealthReport() {
     try {
-        console.log('Exporting health report...');
-
         // Gather current system health data
         const healthData = await gatherHealthReportData();
 
@@ -525,9 +521,11 @@ async function exportHealthReport() {
         if (window.showNotification) {
             window.showNotification('Health report exported successfully!', 'success');
         }
-
     } catch (error) {
-        console.error('Error exporting health report:', error);
+        window.electronAPI.logError(
+            `Error exporting health report: ${error.message}`,
+            'SystemHealthTab'
+        );
         if (window.showNotification) {
             window.showNotification('Failed to export health report', 'error');
         }
@@ -543,12 +541,12 @@ async function gatherHealthReportData() {
         healthMetrics: {},
         alerts: {
             active: Array.from(activeAlerts.values()),
-            history: alertHistory.slice(0, 50) // Last 50 alerts
+            history: alertHistory.slice(0, 50), // Last 50 alerts
         },
         settings: {
             thresholds: HEALTH_THRESHOLDS,
-            alertSettings: alertSettings
-        }
+            alertSettings: alertSettings,
+        },
     };
 
     try {
@@ -563,13 +561,13 @@ async function gatherHealthReportData() {
                 memory: {
                     total: systemInfo.totalMemory,
                     used: systemInfo.usedMemory,
-                    usagePercent: systemInfo.memoryUsagePercent
+                    usagePercent: systemInfo.memoryUsagePercent,
                 },
                 cpu: {
                     model: systemInfo.cpuModel,
                     cores: systemInfo.cpuCores,
-                    speed: systemInfo.cpuSpeed
-                }
+                    speed: systemInfo.cpuSpeed,
+                },
             };
 
             // Get current performance metrics
@@ -578,12 +576,18 @@ async function gatherHealthReportData() {
                 data.healthMetrics = {
                     memory: {
                         usage: parseFloat(performanceData.mem),
-                        status: getHealthStatus(parseFloat(performanceData.mem), HEALTH_THRESHOLDS.memory)
+                        status: getHealthStatus(
+                            parseFloat(performanceData.mem),
+                            HEALTH_THRESHOLDS.memory
+                        ),
                     },
                     disk: {
                         usage: parseFloat(performanceData.disk || 0),
-                        status: getHealthStatus(parseFloat(performanceData.disk || 0), HEALTH_THRESHOLDS.disk)
-                    }
+                        status: getHealthStatus(
+                            parseFloat(performanceData.disk || 0),
+                            HEALTH_THRESHOLDS.disk
+                        ),
+                    },
                 };
             }
         }
@@ -591,16 +595,19 @@ async function gatherHealthReportData() {
         // Get current UI values
         const memoryPercentage = document.getElementById('memory-percentage')?.textContent || 'N/A';
         const diskPercentage = document.getElementById('disk-percentage')?.textContent || 'N/A';
-        const overallStatus = document.getElementById('overall-status-text')?.textContent || 'Unknown';
+        const overallStatus =
+            document.getElementById('overall-status-text')?.textContent || 'Unknown';
 
         data.currentStatus = {
             overall: overallStatus,
             memory: memoryPercentage,
-            disk: diskPercentage
+            disk: diskPercentage,
         };
-
     } catch (error) {
-        console.warn('Some health data could not be gathered:', error);
+        window.electronAPI.logWarn(
+            `Some health data could not be gathered: ${error.message}`,
+            'SystemHealthTab'
+        );
     }
 
     return data;
@@ -609,10 +616,10 @@ async function gatherHealthReportData() {
 function generateHealthReportContent(data) {
     const report = {
         metadata: {
-            title: "System Health Report",
+            title: 'System Health Report',
             exportTime: data.exportTime,
             timestamp: data.timestamp,
-            version: "2.4.0"
+            version: '2.4.0',
         },
         systemInformation: data.systemInfo,
         currentStatus: data.currentStatus,
@@ -620,12 +627,12 @@ function generateHealthReportContent(data) {
         alerts: {
             activeCount: data.alerts.active.length,
             activeAlerts: data.alerts.active,
-            recentHistory: data.alerts.history
+            recentHistory: data.alerts.history,
         },
         configuration: {
             healthThresholds: data.settings.thresholds,
-            alertSettings: data.settings.alertSettings
-        }
+            alertSettings: data.settings.alertSettings,
+        },
     };
 
     return JSON.stringify(report, null, 2);
@@ -653,14 +660,10 @@ function downloadHealthReport(content, timestamp) {
 
     // Clean up the URL object
     URL.revokeObjectURL(url);
-
-    console.log(`Health report exported as: ${filename}`);
 }
 
 // Alert System Functions
 function initializeAlertSystem() {
-    console.log('Initializing alert system...');
-
     // Load saved settings
     loadAlertSettings();
 
@@ -669,45 +672,31 @@ function initializeAlertSystem() {
 
     // Update alerts display
     updateAlertsDisplay();
-
-    console.log('Alert system initialized');
 }
 
 function loadAlertSettings() {
     try {
-        console.log('Loading alert settings from localStorage...');
-
         const savedSettings = localStorage.getItem('healthDashboard_alertSettings');
         if (savedSettings) {
             const settings = JSON.parse(savedSettings);
             alertSettings = { ...alertSettings, ...settings };
-            console.log('Loaded alert settings:', alertSettings);
-            console.log('Refresh interval from settings:', alertSettings.refreshInterval);
-        } else {
-            console.log('No saved alert settings found, using defaults');
-            console.log('Default refresh interval:', alertSettings.refreshInterval);
         }
 
         const savedThresholds = localStorage.getItem('healthDashboard_thresholds');
         if (savedThresholds) {
             const thresholds = JSON.parse(savedThresholds);
             HEALTH_THRESHOLDS = { ...HEALTH_THRESHOLDS, ...thresholds };
-            console.log('Loaded thresholds:', HEALTH_THRESHOLDS);
-        } else {
-            console.log('No saved thresholds found, using defaults');
         }
-
-        console.log('Alert settings loading completed');
     } catch (error) {
-        console.error('Error loading alert settings:', error);
-        console.log('Using default settings due to error');
+        window.electronAPI.logError(
+            `Error loading alert settings: ${error.message}`,
+            'SystemHealthTab'
+        );
     }
 }
 
 function saveAlertSettingsToStorage() {
     try {
-        console.log('Saving alert settings to localStorage...');
-
         const settingsToSave = JSON.stringify(alertSettings);
         const thresholdsToSave = JSON.stringify(HEALTH_THRESHOLDS);
 
@@ -716,7 +705,7 @@ function saveAlertSettingsToStorage() {
 
         console.log('Alert settings saved successfully:', {
             alertSettings: alertSettings,
-            thresholds: HEALTH_THRESHOLDS
+            thresholds: HEALTH_THRESHOLDS,
         });
 
         // Verify the save worked
@@ -726,11 +715,11 @@ function saveAlertSettingsToStorage() {
         if (!savedSettings || !savedThresholds) {
             throw new Error('Failed to verify saved settings in localStorage');
         }
-
-        console.log('Settings verification successful');
-
     } catch (error) {
-        console.error('Error saving alert settings:', error);
+        window.electronAPI.logError(
+            `Error saving alert settings: ${error.message}`,
+            'SystemHealthTab'
+        );
         throw error; // Re-throw so calling function can handle it
     }
 }
@@ -742,7 +731,10 @@ function loadAlertHistory() {
             alertHistory = JSON.parse(savedHistory);
         }
     } catch (error) {
-        console.error('Error loading alert history:', error);
+        window.electronAPI.logError(
+            `Error loading alert history: ${error.message}`,
+            'SystemHealthTab'
+        );
     }
 }
 
@@ -754,7 +746,10 @@ function saveAlertHistory() {
         }
         localStorage.setItem('healthDashboard_alertHistory', JSON.stringify(alertHistory));
     } catch (error) {
-        console.error('Error saving alert history:', error);
+        window.electronAPI.logError(
+            `Error saving alert history: ${error.message}`,
+            'SystemHealthTab'
+        );
     }
 }
 
@@ -768,7 +763,7 @@ function createAlert(id, severity, title, message, metric = null, value = null) 
         metric,
         value,
         timestamp,
-        dismissed: false
+        dismissed: false,
     };
 
     // Add to active alerts
@@ -795,22 +790,18 @@ function createAlert(id, severity, title, message, metric = null, value = null) 
 
     // Update display
     updateAlertsDisplay();
-
-    console.log(`Alert created: ${severity} - ${title}`);
 }
 
 function dismissAlert(id) {
     if (activeAlerts.has(id)) {
         activeAlerts.delete(id);
         updateAlertsDisplay();
-        console.log(`Alert dismissed: ${id}`);
     }
 }
 
 function clearAllAlerts() {
     activeAlerts.clear();
     updateAlertsDisplay();
-    console.log('All alerts cleared');
 }
 
 function checkMetricThresholds(metric, value, unit = '') {
@@ -919,32 +910,41 @@ function createAlertElement(alert) {
 async function showDesktopNotification(alert) {
     try {
         // Check if native notifications are enabled and available
-        if (alertSettings.enableNativeNotifications &&
+        if (
+            alertSettings.enableNativeNotifications &&
             window.electronAPI &&
-            window.electronAPI.showNativeNotification) {
-
-            const urgency = alert.severity === ALERT_SEVERITY.CRITICAL ? 'critical' :
-                           alert.severity === ALERT_SEVERITY.WARNING ? 'normal' : 'low';
+            window.electronAPI.showNativeNotification
+        ) {
+            const urgency =
+                alert.severity === ALERT_SEVERITY.CRITICAL
+                    ? 'critical'
+                    : alert.severity === ALERT_SEVERITY.WARNING
+                      ? 'normal'
+                      : 'low';
 
             // Determine if notification should be silent
             const silent = !alertSettings.enableSound || alert.severity === ALERT_SEVERITY.INFO;
 
             // Determine if notification should be persistent
-            const persistent = alertSettings.persistentCriticalAlerts && alert.severity === ALERT_SEVERITY.CRITICAL;
+            const persistent =
+                alertSettings.persistentCriticalAlerts &&
+                alert.severity === ALERT_SEVERITY.CRITICAL;
 
             const result = await window.electronAPI.showNativeNotification({
                 title: `System Health: ${alert.title}`,
                 body: alert.message,
                 urgency: urgency,
                 silent: silent,
-                persistent: persistent
+                persistent: persistent,
             });
 
             if (result.success) {
-                console.log('Native notification shown successfully');
                 return;
             } else {
-                console.warn('Failed to show native notification:', result.error);
+                window.electronAPI.logWarn(
+                    `Failed to show native notification: ${result.error}`,
+                    'SystemHealthTab'
+                );
                 // Fallback to browser notification
                 showBrowserNotification(alert);
             }
@@ -953,7 +953,10 @@ async function showDesktopNotification(alert) {
             showBrowserNotification(alert);
         }
     } catch (error) {
-        console.error('Error showing desktop notification:', error);
+        window.electronAPI.logError(
+            `Error showing desktop notification: ${error.message}`,
+            'SystemHealthTab'
+        );
         // Fallback to browser notification
         showBrowserNotification(alert);
     }
@@ -966,14 +969,14 @@ function showBrowserNotification(alert) {
     if (Notification.permission === 'granted') {
         new Notification(`System Health: ${alert.title}`, {
             body: alert.message,
-            icon: '/assets/icon.png'
+            icon: '/assets/icon.png',
         });
     } else if (Notification.permission !== 'denied') {
         Notification.requestPermission().then(permission => {
             if (permission === 'granted') {
                 new Notification(`System Health: ${alert.title}`, {
                     body: alert.message,
-                    icon: '/assets/icon.png'
+                    icon: '/assets/icon.png',
                 });
             }
         });
@@ -999,7 +1002,10 @@ function playAlertSound() {
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 0.5);
     } catch (error) {
-        console.warn('Could not play alert sound:', error);
+        window.electronAPI.logWarn(
+            `Could not play alert sound: ${error.message}`,
+            'SystemHealthTab'
+        );
     }
 }
 
@@ -1013,12 +1019,14 @@ function openAlertSettings() {
     document.getElementById('disk-warning').value = HEALTH_THRESHOLDS.disk.warning;
     document.getElementById('disk-critical').value = HEALTH_THRESHOLDS.disk.critical;
 
-
     document.getElementById('enable-sound-alerts').checked = alertSettings.enableSound;
-    document.getElementById('enable-desktop-notifications').checked = alertSettings.enableDesktopNotifications;
+    document.getElementById('enable-desktop-notifications').checked =
+        alertSettings.enableDesktopNotifications;
     document.getElementById('auto-dismiss-info').checked = alertSettings.autoDismissInfo;
-    document.getElementById('enable-native-notifications').checked = alertSettings.enableNativeNotifications;
-    document.getElementById('persistent-critical-alerts').checked = alertSettings.persistentCriticalAlerts;
+    document.getElementById('enable-native-notifications').checked =
+        alertSettings.enableNativeNotifications;
+    document.getElementById('persistent-critical-alerts').checked =
+        alertSettings.persistentCriticalAlerts;
     document.getElementById('refresh-interval').value = alertSettings.refreshInterval || 15;
 
     modal.style.display = 'flex';
@@ -1049,13 +1057,13 @@ function updateAlertHistoryDisplay(severityFilter = 'all', timeFilter = '24h') {
         '24h': 24 * 60 * 60 * 1000,
         '7d': 7 * 24 * 60 * 60 * 1000,
         '30d': 30 * 24 * 60 * 60 * 1000,
-        'all': Infinity
+        all: Infinity,
     };
 
     if (timeFilter !== 'all') {
         const cutoff = now.getTime() - timeFilters[timeFilter];
-        filteredHistory = filteredHistory.filter(alert =>
-            new Date(alert.timestamp).getTime() > cutoff
+        filteredHistory = filteredHistory.filter(
+            alert => new Date(alert.timestamp).getTime() > cutoff
         );
     }
 
@@ -1096,11 +1104,8 @@ function updateAlertHistoryDisplay(severityFilter = 'all', timeFilter = '24h') {
 // Cleanup function
 function cleanupHealthDashboard() {
     if (!isHealthDashboardActive) {
-        console.log('System Health Dashboard already cleaned up, skipping...');
         return;
     }
-
-    console.log('Cleaning up System Health Dashboard...');
     isHealthDashboardActive = false;
 
     // Clear the health metrics interval
@@ -1121,8 +1126,6 @@ function cleanupHealthDashboard() {
     if (window.electronAPI && window.electronAPI.stopPerformanceUpdates) {
         window.electronAPI.stopPerformanceUpdates();
     }
-
-    console.log('System Health Dashboard cleanup completed');
 }
 
 function setupModalEventListeners() {
@@ -1140,15 +1143,12 @@ function setupModalEventListeners() {
 
     if (saveAlertSettings) {
         saveAlertSettings.addEventListener('click', () => {
-            console.log('Save Alert Settings button clicked');
-
             try {
                 // Validate and save threshold settings
                 const memoryWarning = parseInt(document.getElementById('memory-warning').value);
                 const memoryCritical = parseInt(document.getElementById('memory-critical').value);
                 const diskWarning = parseInt(document.getElementById('disk-warning').value);
                 const diskCritical = parseInt(document.getElementById('disk-critical').value);
-
 
                 // Validation
                 if (memoryWarning >= memoryCritical) {
@@ -1160,38 +1160,38 @@ function setupModalEventListeners() {
                     return;
                 }
 
-
                 // Apply validated settings
                 HEALTH_THRESHOLDS.memory.warning = memoryWarning;
                 HEALTH_THRESHOLDS.memory.critical = memoryCritical;
                 HEALTH_THRESHOLDS.disk.warning = diskWarning;
                 HEALTH_THRESHOLDS.disk.critical = diskCritical;
 
-
                 // Save alert preferences
                 alertSettings.enableSound = document.getElementById('enable-sound-alerts').checked;
-                alertSettings.enableDesktopNotifications = document.getElementById('enable-desktop-notifications').checked;
-                alertSettings.autoDismissInfo = document.getElementById('auto-dismiss-info').checked;
-                alertSettings.enableNativeNotifications = document.getElementById('enable-native-notifications').checked;
-                alertSettings.persistentCriticalAlerts = document.getElementById('persistent-critical-alerts').checked;
+                alertSettings.enableDesktopNotifications = document.getElementById(
+                    'enable-desktop-notifications'
+                ).checked;
+                alertSettings.autoDismissInfo =
+                    document.getElementById('auto-dismiss-info').checked;
+                alertSettings.enableNativeNotifications = document.getElementById(
+                    'enable-native-notifications'
+                ).checked;
+                alertSettings.persistentCriticalAlerts = document.getElementById(
+                    'persistent-critical-alerts'
+                ).checked;
 
                 // Save refresh interval and restart monitoring if changed
-                const newRefreshInterval = parseInt(document.getElementById('refresh-interval').value);
+                const newRefreshInterval = parseInt(
+                    document.getElementById('refresh-interval').value
+                );
                 const intervalChanged = alertSettings.refreshInterval !== newRefreshInterval;
                 alertSettings.refreshInterval = newRefreshInterval;
-
-                console.log('Settings to save:', {
-                    thresholds: HEALTH_THRESHOLDS,
-                    alertSettings: alertSettings
-                });
 
                 // Persist settings
                 saveAlertSettingsToStorage();
 
                 // Restart monitoring with new interval if it changed
                 if (intervalChanged && isHealthDashboardActive) {
-                    console.log(`Refresh interval changed to ${newRefreshInterval} seconds, restarting monitoring...`);
-
                     // Clear existing interval
                     if (healthUpdateInterval) {
                         clearInterval(healthUpdateInterval);
@@ -1211,9 +1211,7 @@ function setupModalEventListeners() {
                         let lastPerformanceUpdate = 0;
                         const performanceThrottleMs = newRefreshInterval * 1000;
 
-                        console.log(`Restarting performance updates with ${newRefreshInterval}s throttling`);
-
-                        window.electronAPI.onPerformanceUpdate((metrics) => {
+                        window.electronAPI.onPerformanceUpdate(metrics => {
                             const now = Date.now();
                             if (now - lastPerformanceUpdate >= performanceThrottleMs) {
                                 updateRealTimeMetrics(metrics);
@@ -1221,8 +1219,6 @@ function setupModalEventListeners() {
                             }
                         });
                     }
-
-                    console.log(`All monitoring restarted with ${newRefreshInterval}s interval`);
                 }
 
                 alertSettingsModal.style.display = 'none';
@@ -1234,8 +1230,6 @@ function setupModalEventListeners() {
                     'Settings Saved',
                     'Alert settings have been updated successfully'
                 );
-
-                console.log('Alert settings saved successfully');
             } catch (error) {
                 console.error('Error saving alert settings:', error);
                 alert('Error saving settings: ' + error.message);
@@ -1248,7 +1242,6 @@ function setupModalEventListeners() {
             // Reset to defaults
             HEALTH_THRESHOLDS.memory = { warning: 80, critical: 95 };
             HEALTH_THRESHOLDS.disk = { warning: 85, critical: 95 };
-
 
             alertSettings.enableSound = true;
             alertSettings.enableDesktopNotifications = true;
@@ -1263,7 +1256,6 @@ function setupModalEventListeners() {
             document.getElementById('disk-warning').value = 85;
             document.getElementById('disk-critical').value = 95;
 
-
             document.getElementById('enable-sound-alerts').checked = true;
             document.getElementById('enable-desktop-notifications').checked = true;
             document.getElementById('auto-dismiss-info').checked = true;
@@ -1272,8 +1264,6 @@ function setupModalEventListeners() {
             document.getElementById('refresh-interval').value = 15;
         });
     }
-
-
 
     // Alert History Modal
     const alertHistoryModal = document.getElementById('alert-history-modal');
@@ -1299,14 +1289,14 @@ function setupModalEventListeners() {
     }
 
     if (historySeverityFilter) {
-        historySeverityFilter.addEventListener('change', (e) => {
+        historySeverityFilter.addEventListener('change', e => {
             const timeFilter = historyTimeFilter ? historyTimeFilter.value : '24h';
             updateAlertHistoryDisplay(e.target.value, timeFilter);
         });
     }
 
     if (historyTimeFilter) {
-        historyTimeFilter.addEventListener('change', (e) => {
+        historyTimeFilter.addEventListener('change', e => {
             const severityFilter = historySeverityFilter ? historySeverityFilter.value : 'all';
             updateAlertHistoryDisplay(severityFilter, e.target.value);
         });
@@ -1315,7 +1305,7 @@ function setupModalEventListeners() {
     // Close modals when clicking outside
     [alertSettingsModal, alertHistoryModal].forEach(modal => {
         if (modal) {
-            modal.addEventListener('click', (e) => {
+            modal.addEventListener('click', e => {
                 if (e.target === modal) {
                     modal.style.display = 'none';
                 }
@@ -1334,20 +1324,17 @@ if (typeof module !== 'undefined' && module.exports) {
 
 // Listen for tab changes to manage performance monitoring
 if (window.tabEventManager) {
-    window.tabEventManager.addEventListener('tabChanged', (event) => {
+    window.tabEventManager.addEventListener('tabChanged', event => {
         const { tabId } = event.detail;
         if (tabId === 'system-health') {
             // Tab became active, start monitoring if not already started
-            console.log('System Health tab activated');
             if (!isHealthDashboardActive) {
-                console.log('Starting System Health monitoring...');
                 // Ensure settings are loaded before starting
                 loadAlertSettings();
                 startHealthUpdates();
             }
         } else if (isHealthDashboardActive) {
             // Tab became inactive and we're currently active, stop monitoring to prevent CPU spikes
-            console.log('System Health tab deactivated, stopping monitoring...');
             cleanupHealthDashboard();
         }
     });
@@ -1357,24 +1344,20 @@ if (window.tabEventManager) {
 function initializeSystemHealth() {
     const container = document.querySelector('.folder-tab-container[data-tab="system-health"]');
     if (container) {
-        console.log('System health container found, initializing...');
         loadSystemHealth(container);
     } else {
-        console.log('System health container not found, retrying in 500ms...');
         setTimeout(initializeSystemHealth, 500);
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing system health...');
     setTimeout(initializeSystemHealth, 100);
 });
 
 // Also try to initialize immediately if DOM is already loaded
 if (document.readyState === 'loading') {
-    console.log('DOM still loading, waiting for DOMContentLoaded...');
+    // DOM still loading, waiting for DOMContentLoaded
 } else {
-    console.log('DOM already loaded, initializing system health...');
     setTimeout(initializeSystemHealth, 100);
 }
 
@@ -1384,20 +1367,15 @@ window.addEventListener('beforeunload', cleanupHealthDashboard);
 // Clean up when page becomes hidden (e.g., minimized)
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-        console.log('Page hidden, stopping System Health monitoring...');
         cleanupHealthDashboard();
     }
 });
 
 // Demo function for testing alerts (remove in production)
 async function createDemoAlerts() {
-    console.log('Creating demo alerts...');
-
     // Test simple notification first
     if (window.electronAPI && window.electronAPI.testNotification) {
-        console.log('Testing simple notification...');
         const testResult = await window.electronAPI.testNotification();
-        console.log('Test notification result:', testResult);
     }
 
     // Create different types of alerts for testing

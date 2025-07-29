@@ -1,5 +1,5 @@
 /* Windows Unattend Tab Styles - System Health Dashboard Theme */
-/* Universal tab header styles are now consolidated in main styles.css */
+@import url('../../css/universal-tab-header.css');
 
 .windows-unattend-content {
     max-width: 1400px;
@@ -211,7 +211,7 @@
     font-style: italic;
 }
 
-/* Section Headers */
+
 .section-content h4 {
     font-size: 16px;
     font-weight: 600;
@@ -225,7 +225,7 @@
     margin-top: 0;
 }
 
-/* Checkbox Groups */
+
 .checkbox-group {
     display: flex;
     align-items: center;
@@ -245,7 +245,7 @@
     user-select: none;
 }
 
-/* Features Grid */
+
 .features-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -935,7 +935,7 @@
     font-weight: 600;
 }
 
-/* Dark Theme Support */
+
 [data-theme="dark"] {
     --background-main: #1a1a1a;
     --background-card: #2d2d2d;
@@ -957,7 +957,7 @@
     border-color: var(--border-color);
 }
 
-/* Responsive Design Improvements */
+
 @media (max-width: 768px) {
 
     .large-modal {

@@ -1,5 +1,5 @@
 /* AppX Packages Tab Styles - System Health Dashboard Theme */
-/* Universal tab header styles are now consolidated in main styles.css */
+@import url('../../css/universal-tab-header.css');
 .appx-packages-container {
     padding: 20px;
     color: var(--text-primary);
@@ -64,18 +64,35 @@
     color: var(--primary-color);
 }
 
-/* Search styling now uses universal styles from main CSS */
+/* Search Container */
 .search-container {
-    /* Uses universal search container styles */
-    margin-bottom: 15px; /* Keep specific margin for this tab */
+    position: relative;
+    margin-bottom: 15px;
 }
 
 .search-input {
-    /* Uses universal search input styles */
+    width: 100%;
+    padding: 12px 45px 12px 15px;
+    background: var(--background-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.search-input:focus {
+    border-color: var(--primary-color);
 }
 
 .search-icon {
-    /* Uses universal search icon styles */
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    font-size: 16px;
 }
 
 /* Filter Buttons */

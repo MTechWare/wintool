@@ -1,12 +1,3 @@
-/**
- * Windows Unattend Tab JavaScript
- *
- * This script handles creating and exporting Windows unattend.xml files
- */
-
-console.log('Windows Unattend tab script loaded');
-
-// Preset configurations
 const presets = {
     basic: {
         name: 'Basic Setup',
@@ -101,7 +92,7 @@ const presets = {
         enableAdvancedPasses: false,
         passOrder: 'standard',
         restartBehavior: 'auto',
-        enablePassValidation: false
+        enablePassValidation: false,
     },
     enterprise: {
         name: 'Enterprise Setup',
@@ -198,7 +189,7 @@ const presets = {
         enableAdvancedPasses: true,
         passOrder: 'standard',
         restartBehavior: 'auto',
-        enablePassValidation: true
+        enablePassValidation: true,
     },
     secure: {
         name: 'Secure Setup',
@@ -293,8 +284,8 @@ const presets = {
         enableAdvancedPasses: true,
         passOrder: 'standard',
         restartBehavior: 'auto',
-        enablePassValidation: true
-    }
+        enablePassValidation: true,
+    },
 };
 
 /**
@@ -314,27 +305,27 @@ function loadPreset(presetName) {
     document.getElementById('user-password').value = preset.userPassword;
     document.getElementById('auto-logon').checked = preset.autoLogon;
     document.getElementById('hide-admin').checked = preset.hideAdmin;
-    
+
     document.getElementById('timezone').value = preset.timezone;
     document.getElementById('language').value = preset.language;
     document.getElementById('keyboard').value = preset.keyboard;
     document.getElementById('locale').value = preset.locale;
-    
+
     document.getElementById('computer-name').value = preset.computerName;
     document.getElementById('workgroup').value = preset.workgroup;
     document.getElementById('organization').value = preset.organization;
     document.getElementById('owner').value = preset.owner;
     document.getElementById('description').value = preset.description;
-    
+
     document.getElementById('windows-edition').value = preset.windowsEdition;
     document.getElementById('architecture').value = preset.architecture;
     document.getElementById('accept-eula').checked = preset.acceptEula;
     document.getElementById('skip-oem').checked = preset.skipOem;
-    
+
     document.getElementById('enable-network').checked = preset.enableNetwork;
     document.getElementById('skip-network-setup').checked = preset.skipNetworkSetup;
     document.getElementById('join-domain').checked = preset.joinDomain;
-    
+
     if (preset.joinDomain && preset.domainName) {
         document.getElementById('domain-name').value = preset.domainName;
         document.getElementById('domain-username').value = preset.domainUsername || '';
@@ -342,7 +333,7 @@ function loadPreset(presetName) {
     } else {
         document.getElementById('domain-settings').style.display = 'none';
     }
-    
+
     // Load feature checkboxes
     document.getElementById('feature-defender').checked = preset.featureDefender;
     document.getElementById('feature-firewall').checked = preset.featureFirewall;
@@ -356,7 +347,7 @@ function loadPreset(presetName) {
     document.getElementById('feature-hibernation').checked = preset.featureHibernation;
     document.getElementById('feature-remote-desktop').checked = preset.featureRemoteDesktop;
     document.getElementById('feature-powershell').checked = preset.featurePowershell;
-    
+
     // Load OOBE settings
     document.getElementById('oobe-skip-machine-oobe').checked = preset.oobeSkipMachine;
     document.getElementById('oobe-skip-user-oobe').checked = preset.oobeSkipUser;
@@ -370,11 +361,14 @@ function loadPreset(presetName) {
         document.getElementById('enable-disk-config').checked = preset.enableDiskConfig;
         document.getElementById('disk-id').value = preset.diskId || '0';
         document.getElementById('partition-style').value = preset.partitionStyle || 'GPT';
-        document.getElementById('system-partition-size').value = preset.systemPartitionSize || '260';
+        document.getElementById('system-partition-size').value =
+            preset.systemPartitionSize || '260';
         document.getElementById('os-partition-size').value = preset.osPartitionSize || 'remaining';
         document.getElementById('os-partition-label').value = preset.osPartitionLabel || 'Windows';
-        document.getElementById('enable-recovery-partition').checked = preset.enableRecoveryPartition !== false;
-        document.getElementById('recovery-partition-size').value = preset.recoveryPartitionSize || '1000';
+        document.getElementById('enable-recovery-partition').checked =
+            preset.enableRecoveryPartition !== false;
+        document.getElementById('recovery-partition-size').value =
+            preset.recoveryPartitionSize || '1000';
 
         // Update dependent fields
         toggleDiskConfigSettings();
@@ -395,17 +389,23 @@ function loadPreset(presetName) {
         document.getElementById('bypass-cpu-check').checked = preset.bypassCpuCheck || false;
         document.getElementById('bypass-ram-check').checked = preset.bypassRamCheck || false;
 
-        document.getElementById('enable-bitlocker-config').checked = preset.enableBitLockerConfig || false;
+        document.getElementById('enable-bitlocker-config').checked =
+            preset.enableBitLockerConfig || false;
         document.getElementById('bitlocker-mode').value = preset.bitlockerMode || 'disabled';
 
-        document.getElementById('enable-windows-hello').checked = preset.enableWindowsHello !== false;
-        document.getElementById('enable-biometric-service').checked = preset.enableBiometricService !== false;
-        document.getElementById('disable-password-reveal').checked = preset.disablePasswordReveal || false;
+        document.getElementById('enable-windows-hello').checked =
+            preset.enableWindowsHello !== false;
+        document.getElementById('enable-biometric-service').checked =
+            preset.enableBiometricService !== false;
+        document.getElementById('disable-password-reveal').checked =
+            preset.disablePasswordReveal || false;
 
-        document.getElementById('enable-credential-guard').checked = preset.enableCredentialGuard || false;
+        document.getElementById('enable-credential-guard').checked =
+            preset.enableCredentialGuard || false;
         document.getElementById('enable-device-guard').checked = preset.enableDeviceGuard || false;
         document.getElementById('enable-hvci').checked = preset.enableHvci || false;
-        document.getElementById('disable-admin-shares').checked = preset.disableAdminShares || false;
+        document.getElementById('disable-admin-shares').checked =
+            preset.disableAdminShares || false;
 
         // Update dependent fields
         toggleBitLockerSettings();
@@ -414,26 +414,37 @@ function loadPreset(presetName) {
     // Load privacy and debloating settings
     if (preset.disableTelemetry !== undefined) {
         document.getElementById('disable-telemetry').checked = preset.disableTelemetry;
-        document.getElementById('disable-error-reporting').checked = preset.disableErrorReporting || false;
-        document.getElementById('disable-customer-experience').checked = preset.disableCustomerExperience || false;
-        document.getElementById('disable-app-diagnostics').checked = preset.disableAppDiagnostics || false;
+        document.getElementById('disable-error-reporting').checked =
+            preset.disableErrorReporting || false;
+        document.getElementById('disable-customer-experience').checked =
+            preset.disableCustomerExperience || false;
+        document.getElementById('disable-app-diagnostics').checked =
+            preset.disableAppDiagnostics || false;
 
-        document.getElementById('disable-edge-telemetry').checked = preset.disableEdgeTelemetry || false;
+        document.getElementById('disable-edge-telemetry').checked =
+            preset.disableEdgeTelemetry || false;
         document.getElementById('disable-edge-sync').checked = preset.disableEdgeSync || false;
-        document.getElementById('disable-edge-shopping').checked = preset.disableEdgeShopping || false;
+        document.getElementById('disable-edge-shopping').checked =
+            preset.disableEdgeShopping || false;
         document.getElementById('set-edge-privacy').checked = preset.setEdgePrivacy || false;
 
         document.getElementById('enable-app-removal').checked = preset.enableAppRemoval || false;
 
-        document.getElementById('disable-activity-history').checked = preset.disableActivityHistory || false;
-        document.getElementById('disable-clipboard-sync').checked = preset.disableClipboardSync || false;
+        document.getElementById('disable-activity-history').checked =
+            preset.disableActivityHistory || false;
+        document.getElementById('disable-clipboard-sync').checked =
+            preset.disableClipboardSync || false;
         document.getElementById('disable-wifi-sense').checked = preset.disableWifiSense || false;
-        document.getElementById('disable-feedback-notifications').checked = preset.disableFeedbackNotifications || false;
+        document.getElementById('disable-feedback-notifications').checked =
+            preset.disableFeedbackNotifications || false;
 
         document.getElementById('disable-web-search').checked = preset.disableWebSearch || false;
-        document.getElementById('disable-suggested-apps').checked = preset.disableSuggestedApps || false;
-        document.getElementById('disable-taskbar-widgets').checked = preset.disableTaskbarWidgets || false;
-        document.getElementById('disable-chat-taskbar').checked = preset.disableChatTaskbar || false;
+        document.getElementById('disable-suggested-apps').checked =
+            preset.disableSuggestedApps || false;
+        document.getElementById('disable-taskbar-widgets').checked =
+            preset.disableTaskbarWidgets || false;
+        document.getElementById('disable-chat-taskbar').checked =
+            preset.disableChatTaskbar || false;
 
         // Update dependent fields
         toggleAppRemovalSettings();
@@ -455,7 +466,8 @@ function loadPreset(presetName) {
         document.getElementById('enable-advanced-passes').checked = preset.enableAdvancedPasses;
         document.getElementById('pass-order').value = preset.passOrder || 'standard';
         document.getElementById('restart-behavior').value = preset.restartBehavior || 'auto';
-        document.getElementById('enable-pass-validation').checked = preset.enablePassValidation || false;
+        document.getElementById('enable-pass-validation').checked =
+            preset.enablePassValidation || false;
 
         // Update dependent fields
         toggleAdvancedPassSettings();
@@ -513,12 +525,34 @@ function generateWifiProfileXml(profile) {
 }
 
 /**
- * Generate XML for a specific configuration pass
+ * Generate XML for a specific Windows installation configuration pass
+ *
+ * This function is the core of the Windows Unattend XML generation system.
+ * It implements the Windows Setup configuration pass architecture, where
+ * different installation phases require different configuration components.
+ *
+ * Windows Setup Passes (in execution order):
+ * 1. windowsPE - Pre-installation environment configuration
+ * 2. offlineServicing - Offline image servicing (updates, drivers)
+ * 3. generalize - System preparation for imaging (sysprep)
+ * 4. specialize - Hardware-specific configuration
+ * 5. auditSystem - System-level audit mode configuration
+ * 6. auditUser - User-level audit mode configuration
+ * 7. oobeSystem - Out-of-box experience configuration
+ *
+ * Each pass has specific components and settings that are valid only
+ * during that phase of Windows installation. This function routes
+ * the XML generation to the appropriate pass-specific generator.
+ *
+ * @param {string} passName - The Windows Setup pass name
+ * @param {Object} settings - Configuration settings for the pass
+ * @returns {string} Generated XML for the specified pass
  */
 function generatePassXML(passName, settings) {
     let xml = `
     <settings pass="${passName}">`;
 
+    // Route to the appropriate pass-specific XML generator
     switch (passName) {
         case 'windowsPE':
             xml += generateWindowsPEXML(settings);
@@ -622,8 +656,10 @@ function generateUnattendXML() {
     const osCustomSize = document.getElementById('os-custom-size')?.value || '100';
     const osPartitionLabel = document.getElementById('os-partition-label')?.value || 'Windows';
     const osPartitionActive = document.getElementById('os-partition-active')?.checked || true;
-    const enableRecoveryPartition = document.getElementById('enable-recovery-partition')?.checked || true;
-    const recoveryPartitionSize = document.getElementById('recovery-partition-size')?.value || '1000';
+    const enableRecoveryPartition =
+        document.getElementById('enable-recovery-partition')?.checked || true;
+    const recoveryPartitionSize =
+        document.getElementById('recovery-partition-size')?.value || '1000';
 
     // Get script execution settings
     const enableScripts = document.getElementById('enable-scripts')?.checked || false;
@@ -642,7 +678,7 @@ function generateUnattendXML() {
                     order: index + 1,
                     command: command.trim(),
                     description: description || `Command ${index + 1}`,
-                    pass: pass || 'specialize'
+                    pass: pass || 'specialize',
                 });
             }
         });
@@ -654,8 +690,9 @@ function generateUnattendXML() {
     // Always add WinTool installer as the first command
     firstLogonCommands.push({
         order: 1,
-        command: 'powershell.exe -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/MTechWare/wintool/refs/heads/main/WinTool_Installer.ps1 | iex"',
-        description: 'Install WinTool - Professional Windows System Management Suite'
+        command:
+            'powershell.exe -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/MTechWare/wintool/refs/heads/main/WinTool_Installer.ps1 | iex"',
+        description: 'Install WinTool - Professional Windows System Management Suite',
     });
 
     if (enableScripts) {
@@ -668,7 +705,7 @@ function generateUnattendXML() {
                 firstLogonCommands.push({
                     order: index + 2, // Start from order 2 since WinTool installer is order 1
                     command: command.trim(),
-                    description: description || `FirstLogon Command ${index + 2}`
+                    description: description || `FirstLogon Command ${index + 2}`,
                 });
             }
         });
@@ -689,7 +726,7 @@ function generateUnattendXML() {
                     path: path.trim(),
                     name: name.trim(),
                     type: type || 'REG_DWORD',
-                    value: value.trim()
+                    value: value.trim(),
                 });
             }
         });
@@ -701,28 +738,37 @@ function generateUnattendXML() {
     const bypassCpuCheck = document.getElementById('bypass-cpu-check')?.checked || false;
     const bypassRamCheck = document.getElementById('bypass-ram-check')?.checked || false;
 
-    const enableBitLockerConfig = document.getElementById('enable-bitlocker-config')?.checked || false;
+    const enableBitLockerConfig =
+        document.getElementById('enable-bitlocker-config')?.checked || false;
     const bitlockerMode = document.getElementById('bitlocker-mode')?.value || 'disabled';
     const bitlockerMethod = document.getElementById('bitlocker-method')?.value || 'AES128';
-    const bitlockerSkipHardwareTest = document.getElementById('bitlocker-skip-hardware-test')?.checked || false;
+    const bitlockerSkipHardwareTest =
+        document.getElementById('bitlocker-skip-hardware-test')?.checked || false;
     const bitlockerUseTpm = document.getElementById('bitlocker-use-tpm')?.checked || false;
 
     const enableWindowsHello = document.getElementById('enable-windows-hello')?.checked || false;
-    const enableBiometricService = document.getElementById('enable-biometric-service')?.checked || false;
-    const disablePasswordReveal = document.getElementById('disable-password-reveal')?.checked || false;
+    const enableBiometricService =
+        document.getElementById('enable-biometric-service')?.checked || false;
+    const disablePasswordReveal =
+        document.getElementById('disable-password-reveal')?.checked || false;
 
-    const enableCredentialGuard = document.getElementById('enable-credential-guard')?.checked || false;
+    const enableCredentialGuard =
+        document.getElementById('enable-credential-guard')?.checked || false;
     const enableDeviceGuard = document.getElementById('enable-device-guard')?.checked || false;
     const enableHvci = document.getElementById('enable-hvci')?.checked || false;
     const disableAdminShares = document.getElementById('disable-admin-shares')?.checked || false;
 
     // Get privacy and debloating settings
     const disableTelemetry = document.getElementById('disable-telemetry')?.checked || false;
-    const disableErrorReporting = document.getElementById('disable-error-reporting')?.checked || false;
-    const disableCustomerExperience = document.getElementById('disable-customer-experience')?.checked || false;
-    const disableAppDiagnostics = document.getElementById('disable-app-diagnostics')?.checked || false;
+    const disableErrorReporting =
+        document.getElementById('disable-error-reporting')?.checked || false;
+    const disableCustomerExperience =
+        document.getElementById('disable-customer-experience')?.checked || false;
+    const disableAppDiagnostics =
+        document.getElementById('disable-app-diagnostics')?.checked || false;
 
-    const disableEdgeTelemetry = document.getElementById('disable-edge-telemetry')?.checked || false;
+    const disableEdgeTelemetry =
+        document.getElementById('disable-edge-telemetry')?.checked || false;
     const disableEdgeSync = document.getElementById('disable-edge-sync')?.checked || false;
     const disableEdgeShopping = document.getElementById('disable-edge-shopping')?.checked || false;
     const setEdgePrivacy = document.getElementById('set-edge-privacy')?.checked || false;
@@ -733,22 +779,29 @@ function generateUnattendXML() {
     const removeXboxApps = document.getElementById('remove-xbox-apps')?.checked || false;
     const removeOfficeApps = document.getElementById('remove-office-apps')?.checked || false;
     const removeMediaApps = document.getElementById('remove-media-apps')?.checked || false;
-    const removeCommunicationApps = document.getElementById('remove-communication-apps')?.checked || false;
+    const removeCommunicationApps =
+        document.getElementById('remove-communication-apps')?.checked || false;
     const removeStoreApps = document.getElementById('remove-store-apps')?.checked || false;
     const removeNewsWeather = document.getElementById('remove-news-weather')?.checked || false;
 
-    const disableActivityHistory = document.getElementById('disable-activity-history')?.checked || false;
-    const disableClipboardSync = document.getElementById('disable-clipboard-sync')?.checked || false;
+    const disableActivityHistory =
+        document.getElementById('disable-activity-history')?.checked || false;
+    const disableClipboardSync =
+        document.getElementById('disable-clipboard-sync')?.checked || false;
     const disableWifiSense = document.getElementById('disable-wifi-sense')?.checked || false;
-    const disableFeedbackNotifications = document.getElementById('disable-feedback-notifications')?.checked || false;
+    const disableFeedbackNotifications =
+        document.getElementById('disable-feedback-notifications')?.checked || false;
 
     const disableWebSearch = document.getElementById('disable-web-search')?.checked || false;
-    const disableSuggestedApps = document.getElementById('disable-suggested-apps')?.checked || false;
-    const disableTaskbarWidgets = document.getElementById('disable-taskbar-widgets')?.checked || false;
+    const disableSuggestedApps =
+        document.getElementById('disable-suggested-apps')?.checked || false;
+    const disableTaskbarWidgets =
+        document.getElementById('disable-taskbar-widgets')?.checked || false;
     const disableChatTaskbar = document.getElementById('disable-chat-taskbar')?.checked || false;
 
     // Get advanced network settings
-    const enableNetworkDiscovery = document.getElementById('enable-network-discovery')?.checked || false;
+    const enableNetworkDiscovery =
+        document.getElementById('enable-network-discovery')?.checked || false;
     const enableWifiConfig = document.getElementById('enable-wifi-config')?.checked || false;
     const enableProxyConfig = document.getElementById('enable-proxy-config')?.checked || false;
 
@@ -769,7 +822,7 @@ function generateUnattendXML() {
                     security: security || 'WPA2PSK',
                     password: password || '',
                     autoConnect: autoConnect !== false,
-                    hidden: hidden || false
+                    hidden: hidden || false,
                 });
             }
         });
@@ -784,15 +837,18 @@ function generateUnattendXML() {
     // Get advanced domain settings
     const domainOu = document.getElementById('domain-ou')?.value || '';
     const domainCreateAccount = document.getElementById('domain-create-account')?.checked || false;
-    const domainRestartRequired = document.getElementById('domain-restart-required')?.checked || false;
+    const domainRestartRequired =
+        document.getElementById('domain-restart-required')?.checked || false;
     const domainDnsSuffix = document.getElementById('domain-dns-suffix')?.value || '';
     const domainNetbios = document.getElementById('domain-netbios')?.value || '';
 
     // Get configuration pass settings
-    const enableAdvancedPasses = document.getElementById('enable-advanced-passes')?.checked || false;
+    const enableAdvancedPasses =
+        document.getElementById('enable-advanced-passes')?.checked || false;
     const passOrder = document.getElementById('pass-order')?.value || 'standard';
     const restartBehavior = document.getElementById('restart-behavior')?.value || 'auto';
-    const enablePassValidation = document.getElementById('enable-pass-validation')?.checked || false;
+    const enablePassValidation =
+        document.getElementById('enable-pass-validation')?.checked || false;
 
     // Validate configuration passes if enabled
     if (enablePassValidation && !validateConfigurationPasses()) {
@@ -808,7 +864,8 @@ function generateUnattendXML() {
     const oobeHideEula = document.getElementById('oobe-hide-eula')?.checked || false;
     const oobeHideWireless = document.getElementById('oobe-hide-wireless')?.checked || false;
     const oobeProtectPc = document.getElementById('oobe-protect-pc')?.checked || false;
-    const oobeHideOnlineAccount = document.getElementById('oobe-hide-online-account')?.checked || false;
+    const oobeHideOnlineAccount =
+        document.getElementById('oobe-hide-online-account')?.checked || false;
 
     // Generate XML content
     let xml = `<?xml version="1.0" encoding="utf-8"?>
@@ -1195,28 +1252,28 @@ function generateUnattendXML() {
     if (bypassTpmCheck) {
         securityRegistryEntries.push({
             command: `reg add "HKLM\\SYSTEM\\Setup\\LabConfig" /v "BypassTPMCheck" /t REG_DWORD /d 1 /f`,
-            description: "Bypass TPM 2.0 requirement check"
+            description: 'Bypass TPM 2.0 requirement check',
         });
     }
 
     if (bypassSecureBoot) {
         securityRegistryEntries.push({
             command: `reg add "HKLM\\SYSTEM\\Setup\\LabConfig" /v "BypassSecureBootCheck" /t REG_DWORD /d 1 /f`,
-            description: "Bypass Secure Boot requirement check"
+            description: 'Bypass Secure Boot requirement check',
         });
     }
 
     if (bypassCpuCheck) {
         securityRegistryEntries.push({
             command: `reg add "HKLM\\SYSTEM\\Setup\\LabConfig" /v "BypassCPUCheck" /t REG_DWORD /d 1 /f`,
-            description: "Bypass CPU compatibility check"
+            description: 'Bypass CPU compatibility check',
         });
     }
 
     if (bypassRamCheck) {
         securityRegistryEntries.push({
             command: `reg add "HKLM\\SYSTEM\\Setup\\LabConfig" /v "BypassRAMCheck" /t REG_DWORD /d 1 /f`,
-            description: "Bypass RAM requirement check"
+            description: 'Bypass RAM requirement check',
         });
     }
 
@@ -1224,35 +1281,35 @@ function generateUnattendXML() {
     if (disablePasswordReveal) {
         securityRegistryEntries.push({
             command: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CredUI" /v "DisablePasswordReveal" /t REG_DWORD /d 1 /f`,
-            description: "Disable password reveal button"
+            description: 'Disable password reveal button',
         });
     }
 
     if (disableAdminShares) {
         securityRegistryEntries.push({
             command: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\lanmanserver\\parameters" /v "AutoShareWks" /t REG_DWORD /d 0 /f`,
-            description: "Disable administrative shares"
+            description: 'Disable administrative shares',
         });
     }
 
     if (enableCredentialGuard) {
         securityRegistryEntries.push({
             command: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v "RequirePlatformSecurityFeatures" /t REG_DWORD /d 1 /f`,
-            description: "Enable Credential Guard"
+            description: 'Enable Credential Guard',
         });
     }
 
     if (enableDeviceGuard) {
         securityRegistryEntries.push({
             command: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v "EnableVirtualizationBasedSecurity" /t REG_DWORD /d 1 /f`,
-            description: "Enable Device Guard"
+            description: 'Enable Device Guard',
         });
     }
 
     if (enableHvci) {
         securityRegistryEntries.push({
             command: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity" /v "Enabled" /t REG_DWORD /d 1 /f`,
-            description: "Enable HVCI"
+            description: 'Enable HVCI',
         });
     }
 
@@ -1260,63 +1317,63 @@ function generateUnattendXML() {
     if (disableTelemetry) {
         securityRegistryEntries.push({
             command: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v "AllowTelemetry" /t REG_DWORD /d 0 /f`,
-            description: "Disable telemetry completely"
+            description: 'Disable telemetry completely',
         });
     }
 
     if (disableErrorReporting) {
         securityRegistryEntries.push({
             command: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting" /v "Disabled" /t REG_DWORD /d 1 /f`,
-            description: "Disable Windows Error Reporting"
+            description: 'Disable Windows Error Reporting',
         });
     }
 
     if (disableCustomerExperience) {
         securityRegistryEntries.push({
             command: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\SQMClient\\Windows" /v "CEIPEnable" /t REG_DWORD /d 0 /f`,
-            description: "Disable Customer Experience Improvement Program"
+            description: 'Disable Customer Experience Improvement Program',
         });
     }
 
     if (disableActivityHistory) {
         securityRegistryEntries.push({
             command: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v "EnableActivityFeed" /t REG_DWORD /d 0 /f`,
-            description: "Disable activity history"
+            description: 'Disable activity history',
         });
     }
 
     if (disableWebSearch) {
         securityRegistryEntries.push({
             command: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v "DisableWebSearch" /t REG_DWORD /d 1 /f`,
-            description: "Disable web search in Start menu"
+            description: 'Disable web search in Start menu',
         });
     }
 
     if (disableTaskbarWidgets) {
         securityRegistryEntries.push({
             command: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v "AllowNewsAndInterests" /t REG_DWORD /d 0 /f`,
-            description: "Disable taskbar widgets"
+            description: 'Disable taskbar widgets',
         });
     }
 
     if (disableChatTaskbar) {
         securityRegistryEntries.push({
             command: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Chat" /v "ChatIcon" /t REG_DWORD /d 3 /f`,
-            description: "Disable Teams chat in taskbar"
+            description: 'Disable Teams chat in taskbar',
         });
     }
 
     if (disableEdgeTelemetry) {
         securityRegistryEntries.push({
             command: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v "MetricsReportingEnabled" /t REG_DWORD /d 0 /f`,
-            description: "Disable Edge telemetry"
+            description: 'Disable Edge telemetry',
         });
     }
 
     if (disableEdgeSync) {
         securityRegistryEntries.push({
             command: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v "SyncDisabled" /t REG_DWORD /d 1 /f`,
-            description: "Disable Edge sync"
+            description: 'Disable Edge sync',
         });
     }
 
@@ -1400,11 +1457,15 @@ function generateUnattendXML() {
         const appRemovalCommands = [];
 
         if (removeCortana) {
-            appRemovalCommands.push('Get-AppxPackage *Microsoft.549981C3F5F10* | Remove-AppxPackage');
+            appRemovalCommands.push(
+                'Get-AppxPackage *Microsoft.549981C3F5F10* | Remove-AppxPackage'
+            );
         }
 
         if (removeOnedrive) {
-            appRemovalCommands.push('Get-AppxPackage *Microsoft.OneDriveSync* | Remove-AppxPackage');
+            appRemovalCommands.push(
+                'Get-AppxPackage *Microsoft.OneDriveSync* | Remove-AppxPackage'
+            );
         }
 
         if (removeXboxApps) {
@@ -1414,23 +1475,33 @@ function generateUnattendXML() {
 
         if (removeOfficeApps) {
             appRemovalCommands.push('Get-AppxPackage *Microsoft.Office* | Remove-AppxPackage');
-            appRemovalCommands.push('Get-AppxPackage *Microsoft.MicrosoftOfficeHub* | Remove-AppxPackage');
+            appRemovalCommands.push(
+                'Get-AppxPackage *Microsoft.MicrosoftOfficeHub* | Remove-AppxPackage'
+            );
         }
 
         if (removeMediaApps) {
             appRemovalCommands.push('Get-AppxPackage *Microsoft.ZuneMusic* | Remove-AppxPackage');
             appRemovalCommands.push('Get-AppxPackage *Microsoft.ZuneVideo* | Remove-AppxPackage');
-            appRemovalCommands.push('Get-AppxPackage *Microsoft.WindowsMediaPlayer* | Remove-AppxPackage');
+            appRemovalCommands.push(
+                'Get-AppxPackage *Microsoft.WindowsMediaPlayer* | Remove-AppxPackage'
+            );
         }
 
         if (removeCommunicationApps) {
-            appRemovalCommands.push('Get-AppxPackage *microsoft.windowscommunicationsapps* | Remove-AppxPackage');
+            appRemovalCommands.push(
+                'Get-AppxPackage *microsoft.windowscommunicationsapps* | Remove-AppxPackage'
+            );
             appRemovalCommands.push('Get-AppxPackage *Microsoft.People* | Remove-AppxPackage');
         }
 
         if (removeStoreApps) {
-            appRemovalCommands.push('Get-AppxPackage *Microsoft.WindowsStore* | Remove-AppxPackage');
-            appRemovalCommands.push('Get-AppxPackage *Microsoft.StorePurchaseApp* | Remove-AppxPackage');
+            appRemovalCommands.push(
+                'Get-AppxPackage *Microsoft.WindowsStore* | Remove-AppxPackage'
+            );
+            appRemovalCommands.push(
+                'Get-AppxPackage *Microsoft.StorePurchaseApp* | Remove-AppxPackage'
+            );
         }
 
         if (removeNewsWeather) {
@@ -1443,7 +1514,7 @@ function generateUnattendXML() {
             firstLogonCommands.push({
                 order: firstLogonCommands.length + 1,
                 command: `powershell.exe -ExecutionPolicy Bypass -Command "${powershellScript}"`,
-                description: 'Remove selected Windows apps'
+                description: 'Remove selected Windows apps',
             });
         }
     }
@@ -1529,14 +1600,17 @@ async function exportUnattendXML() {
                 defaultPath: 'unattend.xml',
                 filters: [
                     { name: 'XML Files', extensions: ['xml'] },
-                    { name: 'All Files', extensions: ['*'] }
-                ]
+                    { name: 'All Files', extensions: ['*'] },
+                ],
             });
 
             if (!result.canceled && result.filePath) {
                 // Write file
                 await window.electronAPI.writeFile(result.filePath, xmlContent);
-                showStatusMessage('success', `Unattend.xml file saved successfully to: ${result.filePath}`);
+                showStatusMessage(
+                    'success',
+                    `Unattend.xml file saved successfully to: ${result.filePath}`
+                );
             }
         } else {
             // Fallback for browser testing - download file
@@ -1551,9 +1625,11 @@ async function exportUnattendXML() {
             URL.revokeObjectURL(url);
             showStatusMessage('success', 'Unattend.xml file downloaded successfully');
         }
-
     } catch (error) {
-        console.error('Error exporting unattend XML:', error);
+        window.electronAPI.logError(
+            `Error exporting unattend XML: ${error.message}`,
+            'UnattendTab'
+        );
         showStatusMessage('error', `Failed to export unattend.xml: ${error.message}`);
     } finally {
         const exportBtn = document.getElementById('export-unattend');
@@ -1577,7 +1653,10 @@ function showXMLPreview() {
             modal.style.display = 'flex';
         }
     } catch (error) {
-        console.error('Error generating XML preview:', error);
+        window.electronAPI.logError(
+            `Error generating XML preview: ${error.message}`,
+            'UnattendTab'
+        );
         showStatusMessage('error', `Failed to generate XML preview: ${error.message}`);
     }
 }
@@ -1613,7 +1692,7 @@ async function copyXMLToClipboard() {
             showStatusMessage('success', 'XML content copied to clipboard');
         }
     } catch (error) {
-        console.error('Error copying to clipboard:', error);
+        window.electronAPI.logError(`Error copying to clipboard: ${error.message}`, 'UnattendTab');
         showStatusMessage('error', 'Failed to copy XML to clipboard');
     }
 }
@@ -1718,8 +1797,14 @@ function loadPartitionPreset(presetType) {
     const enableRecoveryPartition = document.getElementById('enable-recovery-partition');
     const recoveryPartitionSize = document.getElementById('recovery-partition-size');
 
-    if (!partitionStyle || !systemPartitionSize || !osPartitionSize || !osPartitionLabel ||
-        !enableRecoveryPartition || !recoveryPartitionSize) {
+    if (
+        !partitionStyle ||
+        !systemPartitionSize ||
+        !osPartitionSize ||
+        !osPartitionLabel ||
+        !enableRecoveryPartition ||
+        !recoveryPartitionSize
+    ) {
         return;
     }
 
@@ -1752,7 +1837,10 @@ function loadPartitionPreset(presetType) {
 
         case 'custom':
             // Custom layout - let user configure
-            showStatusMessage('info', 'Custom layout selected. Configure partitions manually below.');
+            showStatusMessage(
+                'info',
+                'Custom layout selected. Configure partitions manually below.'
+            );
             break;
     }
 
@@ -2028,7 +2116,8 @@ function toggleAdvancedPassSettings() {
  * Validate configuration pass settings
  */
 function validateConfigurationPasses() {
-    const enablePassValidation = document.getElementById('enable-pass-validation')?.checked || false;
+    const enablePassValidation =
+        document.getElementById('enable-pass-validation')?.checked || false;
 
     if (!enablePassValidation) {
         return true;
@@ -2046,7 +2135,10 @@ function validateConfigurationPasses() {
     });
 
     if (missingPasses.length > 0) {
-        showStatusMessage('error', `Required configuration passes missing: ${missingPasses.join(', ')}`);
+        showStatusMessage(
+            'error',
+            `Required configuration passes missing: ${missingPasses.join(', ')}`
+        );
         return false;
     }
 
@@ -2064,7 +2156,7 @@ function getEnabledPasses() {
         'specialize',
         'auditSystem',
         'auditUser',
-        'oobeSystem'
+        'oobeSystem',
     ];
 
     const enabledPasses = [];
@@ -2095,7 +2187,7 @@ function updatePassOrder() {
                 'offlineServicing',
                 'generalize',
                 'specialize',
-                'oobeSystem'
+                'oobeSystem',
             ].filter(pass => enabledPasses.includes(pass));
             break;
 
@@ -2107,7 +2199,7 @@ function updatePassOrder() {
                 'specialize',
                 'auditSystem',
                 'auditUser',
-                'oobeSystem'
+                'oobeSystem',
             ].filter(pass => enabledPasses.includes(pass));
             break;
 
@@ -2150,7 +2242,7 @@ function setupImportMethodToggle() {
     const textSection = document.getElementById('import-text-section');
 
     methodRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
+        radio.addEventListener('change', function () {
             if (this.value === 'file') {
                 fileSection.style.display = 'block';
                 textSection.style.display = 'none';
@@ -2193,12 +2285,12 @@ function processXMLImport() {
         const file = fileInput.files[0];
         const reader = new FileReader();
 
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             xmlContent = e.target.result;
             processXMLContent(xmlContent, mergeSettings, validateXml);
         };
 
-        reader.onerror = function() {
+        reader.onerror = function () {
             showImportStatus('error', 'Error reading the selected file.');
         };
 
@@ -2242,14 +2334,19 @@ function processXMLContent(xmlContent, mergeSettings, validateXml) {
         const success = parseUnattendXML(xmlContent, mergeSettings);
 
         if (success) {
-            showImportStatus('success', 'XML imported successfully! Form fields have been populated.');
+            showImportStatus(
+                'success',
+                'XML imported successfully! Form fields have been populated.'
+            );
             setTimeout(() => {
                 closeImportModal();
             }, 2000);
         } else {
-            showImportStatus('warning', 'XML imported with some issues. Please review the form fields.');
+            showImportStatus(
+                'warning',
+                'XML imported with some issues. Please review the form fields.'
+            );
         }
-
     } catch (error) {
         showImportStatus('error', `Error processing XML: ${error.message}`);
     }
@@ -2266,26 +2363,56 @@ function showImportStatus(type, message) {
 
 /**
  * Parse unattend.xml and populate form fields
+ *
+ * This function implements the reverse engineering process for Windows Unattend XML files.
+ * It parses existing XML configurations and populates the form fields, enabling users
+ * to edit existing unattend files or merge configurations.
+ *
+ * XML Parsing Algorithm:
+ * 1. Parse XML content using DOM parser with error handling
+ * 2. Extract configuration values using XPath-like queries
+ * 3. Map XML elements to corresponding form fields
+ * 4. Handle merge vs replace logic based on user preference
+ * 5. Validate extracted values before populating fields
+ * 6. Provide feedback on parsing success/failure
+ *
+ * Supported Configuration Elements:
+ * - Computer identification (name, workgroup, domain)
+ * - User accounts (administrator, standard users)
+ * - Regional settings (language, timezone, locale)
+ * - Product activation (product keys)
+ * - Network configuration
+ * - Security settings
+ * - Custom scripts and commands
+ *
+ * The parser is designed to be robust and handle various XML formats
+ * and versions of Windows unattend files.
+ *
+ * @param {string} xmlContent - The XML content to parse
+ * @param {boolean} mergeSettings - Whether to merge with existing form data
+ * @returns {void}
  */
 function parseUnattendXML(xmlContent, mergeSettings) {
     try {
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
 
-        // Extract basic settings
+        // Extract basic configuration settings from XML
         const computerName = getXMLValue(xmlDoc, 'ComputerName');
         const adminPassword = getXMLValue(xmlDoc, 'AdministratorPassword');
         const productKey = getXMLValue(xmlDoc, 'ProductKey Key');
         const timezone = getXMLValue(xmlDoc, 'TimeZone');
         const language = getXMLValue(xmlDoc, 'UILanguage');
 
-        // Populate form fields if not merging or if field is empty
+        // Populate form fields based on merge settings
+        // If merging, only populate empty fields; if replacing, populate all fields
         if (!mergeSettings || !document.getElementById('computer-name').value) {
             if (computerName) document.getElementById('computer-name').value = computerName;
         }
 
         if (!mergeSettings || !document.getElementById('admin-password').value) {
-            if (adminPassword) document.getElementById('admin-password').value = atob(adminPassword);
+            if (adminPassword)
+                document.getElementById('admin-password').value = atob(adminPassword);
         }
 
         if (!mergeSettings || !document.getElementById('product-key').value) {
@@ -2302,7 +2429,7 @@ function parseUnattendXML(xmlContent, mergeSettings) {
 
         return true;
     } catch (error) {
-        console.error('Error parsing XML:', error);
+        window.electronAPI.logError(`Error parsing XML: ${error.message}`, 'UnattendTab');
         return false;
     }
 }
@@ -2327,7 +2454,7 @@ function showValidationModal() {
             performValidation();
         }, 100);
     } else {
-        console.error('Validation modal not found');
+        window.electronAPI.logError('Validation modal not found', 'UnattendTab');
         showStatusMessage('error', 'Validation modal not found');
     }
 }
@@ -2349,16 +2476,18 @@ function performValidation() {
     const resultsDiv = document.getElementById('validation-results');
     const validationResults = [];
 
-    console.log('Starting validation...', { resultsDiv });
-
     if (!resultsDiv) {
-        console.error('validation-results div not found in performValidation');
+        window.electronAPI.logError(
+            'validation-results div not found in performValidation',
+            'UnattendTab'
+        );
         showStatusMessage('error', 'Validation results container not found');
         return;
     }
 
     // Get configuration pass validation setting
-    const enablePassValidation = document.getElementById('enable-pass-validation')?.checked || false;
+    const enablePassValidation =
+        document.getElementById('enable-pass-validation')?.checked || false;
 
     // Validate user accounts
     const adminUsername = document.getElementById('admin-username')?.value;
@@ -2370,7 +2499,7 @@ function performValidation() {
         validationResults.push({
             type: 'error',
             title: 'Administrator Username Required',
-            message: 'Administrator username cannot be empty.'
+            message: 'Administrator username cannot be empty.',
         });
     }
 
@@ -2378,7 +2507,7 @@ function performValidation() {
         validationResults.push({
             type: 'warning',
             title: 'Weak Administrator Password',
-            message: 'Administrator password should be at least 8 characters long for security.'
+            message: 'Administrator password should be at least 8 characters long for security.',
         });
     }
 
@@ -2388,7 +2517,7 @@ function performValidation() {
             validationResults.push({
                 type: 'warning',
                 title: 'Weak User Password',
-                message: 'User password should be at least 6 characters long.'
+                message: 'User password should be at least 6 characters long.',
             });
         }
     }
@@ -2399,7 +2528,7 @@ function performValidation() {
         validationResults.push({
             type: 'error',
             title: 'Computer Name Too Long',
-            message: 'Computer name must be 15 characters or less for Windows compatibility.'
+            message: 'Computer name must be 15 characters or less for Windows compatibility.',
         });
     }
 
@@ -2414,7 +2543,7 @@ function performValidation() {
             validationResults.push({
                 type: 'error',
                 title: 'Domain Name Required',
-                message: 'Domain name is required when domain join is enabled.'
+                message: 'Domain name is required when domain join is enabled.',
             });
         }
 
@@ -2422,7 +2551,7 @@ function performValidation() {
             validationResults.push({
                 type: 'error',
                 title: 'Domain Credentials Required',
-                message: 'Domain username and password are required for domain join.'
+                message: 'Domain username and password are required for domain join.',
             });
         }
     }
@@ -2433,7 +2562,8 @@ function performValidation() {
         validationResults.push({
             type: 'warning',
             title: 'Disk Configuration Enabled',
-            message: 'Disk partitioning will erase all data on the target disk. Ensure you have backups.'
+            message:
+                'Disk partitioning will erase all data on the target disk. Ensure you have backups.',
         });
     }
 
@@ -2445,7 +2575,7 @@ function performValidation() {
             validationResults.push({
                 type: 'warning',
                 title: 'Invalid Product Key Format',
-                message: 'Product key should be in format XXXXX-XXXXX-XXXXX-XXXXX-XXXXX.'
+                message: 'Product key should be in format XXXXX-XXXXX-XXXXX-XXXXX-XXXXX.',
             });
         }
     }
@@ -2456,7 +2586,7 @@ function performValidation() {
         validationResults.push({
             type: 'warning',
             title: 'No Timezone Selected',
-            message: 'Please select a timezone for proper system configuration.'
+            message: 'Please select a timezone for proper system configuration.',
         });
     }
 
@@ -2466,7 +2596,7 @@ function performValidation() {
         validationResults.push({
             type: 'warning',
             title: 'No Language Selected',
-            message: 'Please select a system language.'
+            message: 'Please select a system language.',
         });
     }
 
@@ -2475,7 +2605,7 @@ function performValidation() {
         validationResults.push({
             type: 'error',
             title: 'Configuration Pass Validation Failed',
-            message: 'Required configuration passes are missing or invalid.'
+            message: 'Required configuration passes are missing or invalid.',
         });
     }
 
@@ -2484,7 +2614,7 @@ function performValidation() {
         validationResults.push({
             type: 'success',
             title: 'Configuration Valid',
-            message: 'All settings appear to be valid and ready for XML generation.'
+            message: 'All settings appear to be valid and ready for XML generation.',
         });
     }
 
@@ -2497,10 +2627,9 @@ function performValidation() {
  */
 function displayValidationResults(results) {
     const resultsDiv = document.getElementById('validation-results');
-    console.log('Displaying validation results:', { results, resultsDiv });
 
     if (!resultsDiv) {
-        console.error('validation-results div not found');
+        window.electronAPI.logError('validation-results div not found', 'UnattendTab');
         return;
     }
 
@@ -2516,7 +2645,6 @@ function displayValidationResults(results) {
 
     html += '</div>';
     resultsDiv.innerHTML = html;
-    console.log('Validation results HTML set:', html);
 }
 
 /**
@@ -2614,7 +2742,7 @@ function showTooltip(event) {
 
     // Position tooltip
     const rect = event.target.getBoundingClientRect();
-    tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
+    tooltip.style.left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
     tooltip.style.top = rect.top - tooltip.offsetHeight - 10 + 'px';
 
     // Show tooltip with animation
@@ -2640,7 +2768,7 @@ function moveTooltip(event) {
     const tooltip = document.getElementById('active-tooltip');
     if (tooltip) {
         const rect = event.target.getBoundingClientRect();
-        tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
+        tooltip.style.left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
         tooltip.style.top = rect.top - tooltip.offsetHeight - 10 + 'px';
     }
 }
@@ -2660,13 +2788,16 @@ class UnattendErrorHandler {
             message: error.message || error,
             context: context,
             timestamp: new Date().toISOString(),
-            stack: error.stack || new Error().stack
+            stack: error.stack || new Error().stack,
         };
 
         this.errors.push(errorObj);
 
         if (this.debugMode) {
-            console.error('Unattend Error:', errorObj);
+            window.electronAPI.logError(
+                `Unattend Error: ${JSON.stringify(errorObj)}`,
+                'UnattendTab-Debug'
+            );
         }
 
         // Show user-friendly error message
@@ -2677,13 +2808,16 @@ class UnattendErrorHandler {
         const warningObj = {
             message: message,
             context: context,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
         };
 
         this.warnings.push(warningObj);
 
         if (this.debugMode) {
-            console.warn('Unattend Warning:', warningObj);
+            window.electronAPI.logWarn(
+                `Unattend Warning: ${JSON.stringify(warningObj)}`,
+                'UnattendTab-Debug'
+            );
         }
     }
 
@@ -2693,7 +2827,7 @@ class UnattendErrorHandler {
             warnings: this.warnings,
             timestamp: new Date().toISOString(),
             userAgent: navigator.userAgent,
-            url: window.location.href
+            url: window.location.href,
         };
     }
 
@@ -2732,7 +2866,7 @@ class UnattendTester {
         this.tests.push({
             name: name,
             test: testFunction,
-            description: description
+            description: description,
         });
     }
 
@@ -2751,7 +2885,7 @@ class UnattendTester {
                     passed: result === true,
                     result: result,
                     duration: endTime - startTime,
-                    error: null
+                    error: null,
                 });
             } catch (error) {
                 this.results.push({
@@ -2760,7 +2894,7 @@ class UnattendTester {
                     passed: false,
                     result: null,
                     duration: 0,
-                    error: error.message
+                    error: error.message,
                 });
             }
         }
@@ -2776,9 +2910,10 @@ class UnattendTester {
             total: this.results.length,
             passed: passed,
             failed: failed,
-            passRate: this.results.length > 0 ? (passed / this.results.length * 100).toFixed(2) : 0,
+            passRate:
+                this.results.length > 0 ? ((passed / this.results.length) * 100).toFixed(2) : 0,
             results: this.results,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
         };
     }
 }
@@ -2791,67 +2926,87 @@ const tester = new UnattendTester();
  */
 function initializeTests() {
     // Test XML generation
-    tester.addTest('XML Generation', () => {
-        try {
-            const xml = generateUnattendXML();
-            return xml && xml.includes('<unattend') && xml.includes('</unattend>');
-        } catch (error) {
-            errorHandler.logError(error, 'XML Generation Test');
-            return false;
-        }
-    }, 'Tests basic XML generation functionality');
+    tester.addTest(
+        'XML Generation',
+        () => {
+            try {
+                const xml = generateUnattendXML();
+                return xml && xml.includes('<unattend') && xml.includes('</unattend>');
+            } catch (error) {
+                errorHandler.logError(error, 'XML Generation Test');
+                return false;
+            }
+        },
+        'Tests basic XML generation functionality'
+    );
 
     // Test form validation
-    tester.addTest('Form Validation', () => {
-        try {
-            // Set some test values
-            document.getElementById('admin-username').value = 'TestAdmin';
-            document.getElementById('admin-password').value = 'TestPassword123';
-            document.getElementById('computer-name').value = 'TEST-PC';
+    tester.addTest(
+        'Form Validation',
+        () => {
+            try {
+                // Set some test values
+                document.getElementById('admin-username').value = 'TestAdmin';
+                document.getElementById('admin-password').value = 'TestPassword123';
+                document.getElementById('computer-name').value = 'TEST-PC';
 
-            return validateCurrentConfig();
-        } catch (error) {
-            errorHandler.logError(error, 'Form Validation Test');
-            return false;
-        }
-    }, 'Tests form validation functionality');
+                return validateCurrentConfig();
+            } catch (error) {
+                errorHandler.logError(error, 'Form Validation Test');
+                return false;
+            }
+        },
+        'Tests form validation functionality'
+    );
 
     // Test preset loading
-    tester.addTest('Preset Loading', () => {
-        try {
-            loadPreset('basic');
-            const adminUsername = document.getElementById('admin-username').value;
-            return adminUsername === 'Administrator';
-        } catch (error) {
-            errorHandler.logError(error, 'Preset Loading Test');
-            return false;
-        }
-    }, 'Tests preset loading functionality');
+    tester.addTest(
+        'Preset Loading',
+        () => {
+            try {
+                loadPreset('basic');
+                const adminUsername = document.getElementById('admin-username').value;
+                return adminUsername === 'Administrator';
+            } catch (error) {
+                errorHandler.logError(error, 'Preset Loading Test');
+                return false;
+            }
+        },
+        'Tests preset loading functionality'
+    );
 
     // Test help modal functionality
-    tester.addTest('Help Modal', () => {
-        try {
-            showHelpModal();
-            const modal = document.getElementById('help-modal');
-            const isVisible = modal && modal.style.display === 'block';
-            closeHelpModal();
-            return isVisible;
-        } catch (error) {
-            errorHandler.logError(error, 'Help Modal Test');
-            return false;
-        }
-    }, 'Tests help modal functionality');
+    tester.addTest(
+        'Help Modal',
+        () => {
+            try {
+                showHelpModal();
+                const modal = document.getElementById('help-modal');
+                const isVisible = modal && modal.style.display === 'block';
+                closeHelpModal();
+                return isVisible;
+            } catch (error) {
+                errorHandler.logError(error, 'Help Modal Test');
+                return false;
+            }
+        },
+        'Tests help modal functionality'
+    );
 
     // Test configuration pass validation
-    tester.addTest('Configuration Passes', () => {
-        try {
-            const passes = getEnabledPasses();
-            return Array.isArray(passes) && passes.length > 0;
-        } catch (error) {
-            errorHandler.logError(error, 'Configuration Passes Test');
-            return false;
-        }
-    }, 'Tests configuration pass management');
+    tester.addTest(
+        'Configuration Passes',
+        () => {
+            try {
+                const passes = getEnabledPasses();
+                return Array.isArray(passes) && passes.length > 0;
+            } catch (error) {
+                errorHandler.logError(error, 'Configuration Passes Test');
+                return false;
+            }
+        },
+        'Tests configuration pass management'
+    );
 }
 
 /**
@@ -2864,12 +3019,13 @@ async function runComprehensiveTests() {
         const results = await tester.runAllTests();
         const report = tester.getTestReport();
 
-        console.log('Test Report:', report);
-
         if (report.failed === 0) {
             showStatusMessage('success', `All ${report.total} tests passed! (${report.passRate}%)`);
         } else {
-            showStatusMessage('warning', `${report.passed}/${report.total} tests passed (${report.passRate}%). ${report.failed} tests failed.`);
+            showStatusMessage(
+                'warning',
+                `${report.passed}/${report.total} tests passed (${report.passRate}%). ${report.failed} tests failed.`
+            );
         }
 
         return report;
@@ -2892,7 +3048,7 @@ function validateCurrentConfig() {
             { id: 'admin-username', name: 'Administrator Username' },
             { id: 'admin-password', name: 'Administrator Password' },
             { id: 'timezone', name: 'Time Zone' },
-            { id: 'language', name: 'System Language' }
+            { id: 'language', name: 'System Language' },
         ];
 
         requiredFields.forEach(field => {
@@ -2901,7 +3057,7 @@ function validateCurrentConfig() {
                 validationResults.push({
                     type: 'error',
                     field: field.id,
-                    message: `${field.name} is required`
+                    message: `${field.name} is required`,
                 });
             }
         });
@@ -2912,7 +3068,7 @@ function validateCurrentConfig() {
             validationResults.push({
                 type: 'warning',
                 field: 'admin-password',
-                message: 'Administrator password should be at least 8 characters long'
+                message: 'Administrator password should be at least 8 characters long',
             });
         }
 
@@ -2922,7 +3078,7 @@ function validateCurrentConfig() {
             validationResults.push({
                 type: 'error',
                 field: 'computer-name',
-                message: 'Computer name must be 15 characters or less'
+                message: 'Computer name must be 15 characters or less',
             });
         }
 
@@ -2934,7 +3090,31 @@ function validateCurrentConfig() {
 }
 
 /**
- * Validate form inputs
+ * Validate form inputs for Windows Unattend configuration
+ *
+ * This function implements comprehensive validation logic for the unattend
+ * configuration form. It ensures that the generated XML will be valid and
+ * that the Windows installation will proceed without errors.
+ *
+ * Validation Rules:
+ * 1. Auto-logon dependency validation - requires user account setup
+ * 2. Computer name format validation - Windows naming conventions
+ * 3. Password complexity validation - security requirements
+ * 4. Product key format validation - proper key structure
+ * 5. Network configuration validation - domain vs workgroup
+ * 6. Regional settings validation - valid locale/timezone combinations
+ * 7. Disk configuration validation - partition sizes and types
+ *
+ * Business Logic:
+ * - Auto-logon requires both username and password to be configured
+ * - Domain join requires domain credentials and proper network setup
+ * - Custom partition sizes must be realistic and properly formatted
+ * - Product keys must match the selected Windows edition
+ *
+ * The validation provides immediate feedback to users and prevents
+ * generation of invalid unattend files that would cause installation failures.
+ *
+ * @returns {boolean} True if validation passes, false otherwise
  */
 function validateForm() {
     const adminPassword = document.getElementById('admin-password')?.value;
@@ -2944,9 +3124,13 @@ function validateForm() {
     const computerName = document.getElementById('computer-name')?.value;
     const productKey = document.getElementById('product-key')?.value;
 
-    // Check if auto-logon is enabled but user account is not set up
+    // Validate auto-logon configuration dependency
+    // Auto-logon requires a user account to be properly configured
     if (autoLogon && (!userUsername || !userPassword)) {
-        showStatusMessage('warning', 'Auto-logon requires a user account with username and password');
+        showStatusMessage(
+            'warning',
+            'Auto-logon requires a user account with username and password'
+        );
         return false;
     }
 
@@ -2954,7 +3138,10 @@ function validateForm() {
     if (productKey && productKey.trim()) {
         const productKeyPattern = /^[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}$/;
         if (!productKeyPattern.test(productKey.trim().toUpperCase())) {
-            showStatusMessage('error', 'Product key must be in format: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX');
+            showStatusMessage(
+                'error',
+                'Product key must be in format: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX'
+            );
             return false;
         }
     }
@@ -2963,7 +3150,10 @@ function validateForm() {
     if (computerName && computerName.trim()) {
         const computerNamePattern = /^[a-zA-Z0-9-]{1,15}$/;
         if (!computerNamePattern.test(computerName.trim())) {
-            showStatusMessage('error', 'Computer name must be 1-15 characters and contain only letters, numbers, and hyphens');
+            showStatusMessage(
+                'error',
+                'Computer name must be 1-15 characters and contain only letters, numbers, and hyphens'
+            );
             return false;
         }
     }
@@ -2972,14 +3162,21 @@ function validateForm() {
     if (userUsername && userUsername.trim()) {
         const usernamePattern = /^[a-zA-Z0-9_-]{1,20}$/;
         if (!usernamePattern.test(userUsername.trim())) {
-            showStatusMessage('error', 'Username must be 1-20 characters and contain only letters, numbers, underscores, and hyphens');
+            showStatusMessage(
+                'error',
+                'Username must be 1-20 characters and contain only letters, numbers, underscores, and hyphens'
+            );
             return false;
         }
     }
 
     // Warn if no administrator password is set
     if (!adminPassword) {
-        if (!confirm('No administrator password is set. This may create a security risk. Continue anyway?')) {
+        if (
+            !confirm(
+                'No administrator password is set. This may create a security risk. Continue anyway?'
+            )
+        ) {
             return false;
         }
     }
@@ -2992,33 +3189,58 @@ let isInitialized = false;
 
 /**
  * Initialize the Windows Unattend tab
+ *
+ * This function demonstrates the comprehensive initialization pattern for
+ * complex tabs with multiple interactive components. It showcases proper
+ * event handler registration and feature initialization sequencing.
+ *
+ * Initialization Components:
+ * 1. Duplicate Prevention - Uses isInitialized flag to prevent re-initialization
+ * 2. Core Button Setup - Registers primary action handlers (export, preview, reset)
+ * 3. Advanced Features - Sets up tooltips, validation, testing framework
+ * 4. Keyboard Shortcuts - Registers debug and testing hotkeys
+ * 5. Form Validation - Sets up real-time validation for critical inputs
+ * 6. Theme Integration - Initializes theme support and persistence
+ * 7. Ready State Signaling - Notifies system of completion
+ *
+ * Business Logic:
+ * The Windows Unattend tab enables users to create automated Windows installation
+ * configurations. The initialization sets up a complex form with validation,
+ * XML generation, preview capabilities, and testing features.
+ *
+ * Event Handler Strategy:
+ * Uses a defensive programming approach where each element is checked for
+ * existence before adding event listeners, ensuring robustness across
+ * different DOM states and configurations.
+ *
+ * @returns {void}
  */
 function initWindowsUnattend() {
+    // Prevent duplicate initialization using a module-level flag
     if (isInitialized) {
-        console.log('Windows Unattend tab already initialized, skipping...');
         return;
     }
 
-    console.log('Initializing Windows Unattend tab');
     isInitialized = true;
 
-    // Setup export button
+    // Setup primary action buttons with validation integration
     const exportBtn = document.getElementById('export-unattend');
     if (exportBtn) {
         exportBtn.addEventListener('click', async () => {
+            // Validate form before allowing export to prevent invalid XML generation
             if (validateForm()) {
                 await exportUnattendXML();
             }
         });
     }
 
-    // Setup preview button
+    // Setup XML preview functionality
     const previewBtn = document.getElementById('preview-xml');
     if (previewBtn) {
         previewBtn.addEventListener('click', showXMLPreview);
     }
 
-    // Setup reset button
+    // Setup form reset functionality
     const resetBtn = document.getElementById('reset-form');
     if (resetBtn) {
         resetBtn.addEventListener('click', resetForm);
@@ -3106,7 +3328,7 @@ function initWindowsUnattend() {
     initializeTests();
 
     // Add debug mode toggle (Ctrl+Shift+D)
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         if (e.ctrlKey && e.shiftKey && e.key === 'D') {
             const debugMode = !errorHandler.debugMode;
             errorHandler.debugMode = debugMode;
@@ -3120,17 +3342,32 @@ function initWindowsUnattend() {
         }
     });
 
-    // Setup form validation on key inputs
+    // Setup real-time form validation on critical inputs
+    // These inputs have interdependencies that require immediate validation feedback
     const criticalInputs = ['admin-password', 'user-username', 'user-password'];
     criticalInputs.forEach(inputId => {
         const input = document.getElementById(inputId);
         if (input) {
+            /**
+             * Real-time validation handler for critical form inputs
+             *
+             * User Interaction: Triggered when user leaves a critical input field (blur event)
+             * Business Logic: Validates interdependent fields to prevent configuration errors
+             *
+             * Validation Rules:
+             * - Auto-logon feature requires both username and password to be configured
+             * - Provides immediate feedback to prevent invalid configurations
+             * - Helps users understand feature dependencies before form submission
+             *
+             * User Experience: Immediate feedback prevents frustration at export time
+             */
             input.addEventListener('blur', () => {
-                // Validate when user leaves the field
+                // Validate when user leaves the field - check auto-logon dependencies
                 const autoLogon = document.getElementById('auto-logon')?.checked;
                 const userUsername = document.getElementById('user-username')?.value;
                 const userPassword = document.getElementById('user-password')?.value;
 
+                // Auto-logon dependency validation
                 if (autoLogon && (!userUsername || !userPassword)) {
                     showStatusMessage('warning', 'Auto-logon requires both username and password');
                 }
@@ -3138,11 +3375,8 @@ function initWindowsUnattend() {
         }
     });
 
-    console.log('Windows Unattend tab initialized successfully');
-
     // Signal that this tab is ready
     if (window.markTabAsReady) {
-        console.log('Marking windows-unattend tab as ready');
         window.markTabAsReady('windows-unattend');
     }
 }

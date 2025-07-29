@@ -1,5 +1,5 @@
 /* System Health Dashboard Styles - System Health Dashboard Theme */
-/* Universal tab header styles are now consolidated in main styles.css */
+@import url('../../css/universal-tab-header.css');
 
 .action-btn:hover,
 #refresh-health-btn:hover,

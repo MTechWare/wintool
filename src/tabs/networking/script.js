@@ -1,8 +1,4 @@
-// Networking Tab JavaScript
-
 function initNetworkingTab() {
-    
-    // Find the container
     let container = null;
     if (typeof tabContainer !== 'undefined') {
         container = tabContainer;
@@ -13,16 +9,13 @@ function initNetworkingTab() {
     if (!container) {
         container = document.querySelector('.folder-tab-container');
     }
-    
+
     if (container) {
         loadNetworkingInfo(container);
     } else {
-        // Try to load anyway using global selectors
         loadNetworkingInfo(document);
     }
 }
-
-// Initialize when the script is loaded
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initNetworkingTab);
 } else {
@@ -95,13 +88,12 @@ async function loadNetworkingInfo(container) {
 
             // Process network interfaces
             const networkInterfaces = sysInfo.networkInterfaces || [];
-            
+
             // Update overview cards
             updateNetworkOverview(container, networkInterfaces);
-            
+
             // Display network interfaces
             displayNetworkInterfaces(container, networkInterfaces);
-
         } else {
             updateElement(container, 'total-interfaces', 'Browser Mode');
             updateElement(container, 'active-interfaces', 'N/A');
@@ -113,7 +105,6 @@ async function loadNetworkingInfo(container) {
         if (window.markTabAsReady) {
             window.markTabAsReady('networking');
         }
-
     } catch (error) {
         console.error('Error loading networking info:', error);
         // Still signal ready even if there was an error
@@ -127,29 +118,38 @@ function updateNetworkOverview(container, networkInterfaces) {
     const totalInterfaces = networkInterfaces.length;
     const activeInterfaces = networkInterfaces.filter(iface => iface.operstate === 'up').length;
     const primaryInterface = networkInterfaces.find(iface => iface.operstate === 'up');
-    
+
     updateElement(container, 'total-interfaces', totalInterfaces.toString());
     updateElement(container, 'active-interfaces', activeInterfaces.toString());
-    updateElement(container, 'primary-interface', primaryInterface ? primaryInterface.name : 'None');
-    updateElement(container, 'connection-status', activeInterfaces > 0 ? 'Connected' : 'Disconnected');
+    updateElement(
+        container,
+        'primary-interface',
+        primaryInterface ? primaryInterface.name : 'None'
+    );
+    updateElement(
+        container,
+        'connection-status',
+        activeInterfaces > 0 ? 'Connected' : 'Disconnected'
+    );
 }
 
 function displayNetworkInterfaces(container, networkInterfaces) {
-    const interfacesContainer = container.querySelector('#network-interfaces-container') || 
-                               document.querySelector('#network-interfaces-container');
-    
+    const interfacesContainer =
+        container.querySelector('#network-interfaces-container') ||
+        document.querySelector('#network-interfaces-container');
+
     if (!interfacesContainer) {
         return;
     }
-    
+
     // Clear existing content
     interfacesContainer.innerHTML = '';
-    
+
     if (networkInterfaces.length === 0) {
         interfacesContainer.innerHTML = '<p class="no-interfaces">No network interfaces found</p>';
         return;
     }
-    
+
     networkInterfaces.forEach(iface => {
         const interfaceCard = createInterfaceCard(iface);
         interfacesContainer.appendChild(interfaceCard);
@@ -159,7 +159,7 @@ function displayNetworkInterfaces(container, networkInterfaces) {
 function createInterfaceCard(iface) {
     const card = document.createElement('div');
     card.className = 'interface-card';
-    
+
     // Determine interface icon based on type
     let icon = 'fas fa-network-wired';
     if (iface.type && iface.type.toLowerCase().includes('wireless')) {
@@ -169,7 +169,7 @@ function createInterfaceCard(iface) {
     } else if (iface.type && iface.type.toLowerCase().includes('bluetooth')) {
         icon = 'fab fa-bluetooth';
     }
-    
+
     card.innerHTML = `
         <div class="interface-header">
             <i class="${icon} interface-icon"></i>
@@ -204,11 +204,9 @@ function createInterfaceCard(iface) {
             </div>
         </div>
     `;
-    
+
     return card;
 }
-
-
 
 // Helper function to update elements
 function updateElement(container, id, value) {

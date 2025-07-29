@@ -1,6 +1,3 @@
-// Services Manager Tab Script
-
-// Global variables
 let allServices = [];
 let filteredServices = [];
 let currentFilter = { status: 'all', type: 'all', search: '' };
@@ -8,18 +5,25 @@ let quickAccessServices = [];
 let availableServicesForModal = [];
 let modalSearchFilter = '';
 
-// Security configuration
 const SECURITY_CONFIG = {
     allowedServiceActions: ['start', 'stop', 'restart'],
     serviceNameMaxLength: 100,
     serviceNamePattern: /^[a-zA-Z0-9_.-]+$/,
     criticalServices: [
-        'winlogon', 'csrss', 'wininit', 'services', 'lsass', 'svchost',
-        'explorer', 'dwm', 'audiodg', 'conhost', 'smss'
-    ]
+        'winlogon',
+        'csrss',
+        'wininit',
+        'services',
+        'lsass',
+        'svchost',
+        'explorer',
+        'dwm',
+        'audiodg',
+        'conhost',
+        'smss',
+    ],
 };
 
-// Security validation functions
 function validateServiceName(serviceName) {
     if (!serviceName || typeof serviceName !== 'string') {
         return false;
@@ -63,58 +67,78 @@ function createSecureButton(text, onclick, className = '', title = '') {
 
 // Default common services for quick access
 const defaultCommonServiceNames = [
-    'wuauserv',      // Windows Update
-    'spooler',       // Print Spooler
-    'BITS',          // Background Intelligent Transfer Service
-    'Themes',        // Themes
-    'AudioSrv',      // Windows Audio
-    'Dhcp',          // DHCP Client
-    'Dnscache',      // DNS Client
-    'EventLog',      // Windows Event Log
-    'LanmanServer',  // Server
+    'wuauserv', // Windows Update
+    'spooler', // Print Spooler
+    'BITS', // Background Intelligent Transfer Service
+    'Themes', // Themes
+    'AudioSrv', // Windows Audio
+    'Dhcp', // DHCP Client
+    'Dnscache', // DNS Client
+    'EventLog', // Windows Event Log
+    'LanmanServer', // Server
     'LanmanWorkstation', // Workstation
-    'RpcSs',         // Remote Procedure Call (RPC)
-    'Schedule',      // Task Scheduler
-    'W32Time',       // Windows Time
-    'Winmgmt',       // Windows Management Instrumentation
-    'wscsvc',        // Security Center
-    'MpsSvc',        // Windows Defender Firewall
-    'WinDefend',     // Windows Defender Antivirus Service
-    'Netman',        // Network Connections
-    'NlaSvc',        // Network Location Awareness
-    'PlugPlay'       // Plug and Play
+    'RpcSs', // Remote Procedure Call (RPC)
+    'Schedule', // Task Scheduler
+    'W32Time', // Windows Time
+    'Winmgmt', // Windows Management Instrumentation
+    'wscsvc', // Security Center
+    'MpsSvc', // Windows Defender Firewall
+    'WinDefend', // Windows Defender Antivirus Service
+    'Netman', // Network Connections
+    'NlaSvc', // Network Location Awareness
+    'PlugPlay', // Plug and Play
 ];
 
 // Initialize lazy loading helper
 const lazyHelper = new LazyLoadingHelper('services');
 
+/**
+ * Initialize the Services Management tab
+ *
+ * This function demonstrates the flexible container discovery pattern used
+ * for tabs that may have different container structures. It showcases how
+ * the initialization system adapts to various DOM configurations.
+ *
+ * Container Discovery Pattern:
+ * 1. Try specific data-tab selectors (primary method)
+ * 2. Try folder-based tab selectors (dynamic tabs)
+ * 3. Try class-based selectors (fallback)
+ * 4. Use document as last resort (global initialization)
+ *
+ * This pattern ensures the tab works regardless of how it's loaded:
+ * - As a static tab with fixed container
+ * - As a dynamic folder-based tab
+ * - As a plugin or embedded component
+ *
+ * Business Logic:
+ * The Services tab manages Windows services, providing users with the ability
+ * to view, start, stop, and configure system services. The initialization
+ * sets up the service management interface and loads current service states.
+ *
+ * @returns {void}
+ */
 function initServicesTab() {
-    console.log('=== Services Tab Initialization Started ===');
-    
     // Check if should initialize (lazy loading support)
     if (!lazyHelper.shouldInitialize()) {
-        console.log('Services tab already initialized, skipping');
         lazyHelper.markTabReady();
         return;
     }
 
-    // Mark script as executed
+    // Mark script as executed to prevent duplicate initialization
     lazyHelper.markScriptExecuted();
 
-    // Find the container for this tab
-    const container = document.querySelector('[data-tab="services"]') ||
-                     document.querySelector('[data-tab="folder-services"]') ||
-                     document.querySelector('.services-container') ||
-                     document;
-
-    console.log('Services container found:', container);
+    // Find the appropriate container for this tab using multiple strategies
+    const container =
+        document.querySelector('[data-tab="services"]') || // Static tab container
+        document.querySelector('[data-tab="folder-services"]') || // Dynamic folder tab
+        document.querySelector('.services-container') || // Class-based container
+        document; // Global fallback
 
     if (container) {
-        console.log('Initializing services manager with container');
+        // Initialize with the discovered container
         initializeServicesManager(container);
     } else {
-        console.log('No specific container found, using document');
-        // Try to initialize anyway using global selectors
+        // Fallback: try to initialize anyway using global selectors
         initializeServicesManager(document);
     }
 }
@@ -131,21 +155,19 @@ lazyHelper.createGlobalResetFunction();
 
 async function initializeServicesManager(container) {
     try {
-        console.log('Setting up services manager with container:', container);
-        
         // Set up event listeners
-        console.log('Setting up event listeners...');
         setupEventListeners(container);
 
         // Load services
-        console.log('Loading services...');
         await loadServices(container);
 
         // Signal that this tab is ready
         lazyHelper.markTabReady();
-
     } catch (error) {
-        console.error('Error initializing Services Manager:', error);
+        window.electronAPI.logError(
+            `Error initializing Services Manager: ${error.message}`,
+            'ServicesTab'
+        );
         showError(container, 'Failed to initialize Services Manager: ' + error.message);
         // Still signal ready even if there was an error
         lazyHelper.markTabReady();
@@ -156,30 +178,30 @@ function setupEventListeners(container) {
     // Search input
     const searchInput = getElement(container, 'service-search');
     if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
+        searchInput.addEventListener('input', e => {
             currentFilter.search = e.target.value.toLowerCase();
             applyFilters(container);
         });
     }
-    
+
     // Status filter
     const statusFilter = getElement(container, 'status-filter');
     if (statusFilter) {
-        statusFilter.addEventListener('change', (e) => {
+        statusFilter.addEventListener('change', e => {
             currentFilter.status = e.target.value;
             applyFilters(container);
         });
     }
-    
+
     // Type filter
     const typeFilter = getElement(container, 'type-filter');
     if (typeFilter) {
-        typeFilter.addEventListener('change', (e) => {
+        typeFilter.addEventListener('change', e => {
             currentFilter.type = e.target.value;
             applyFilters(container);
         });
     }
-    
+
     // Refresh button
     const refreshBtn = getElement(container, 'refresh-services');
     if (refreshBtn) {
@@ -195,7 +217,7 @@ function setupEventListeners(container) {
             loadServices(container);
         });
     }
-    
+
     // Modal close buttons
     const closeDetailsModal = getElement(container, 'close-details-modal');
     if (closeDetailsModal) {
@@ -203,7 +225,7 @@ function setupEventListeners(container) {
             hideModal(container, 'service-details-modal');
         });
     }
-    
+
     // Customize quick access button
     const customizeBtn = getElement(container, 'customize-quick-access');
     if (customizeBtn) {
@@ -239,7 +261,7 @@ function setupEventListeners(container) {
     // Modal search input
     const modalSearchInput = getElement(container, 'service-search-modal');
     if (modalSearchInput) {
-        modalSearchInput.addEventListener('input', (e) => {
+        modalSearchInput.addEventListener('input', e => {
             modalSearchFilter = e.target.value.toLowerCase();
             renderAvailableServices(container);
         });
@@ -248,7 +270,7 @@ function setupEventListeners(container) {
     // Close modal when clicking outside
     const detailsModal = getElement(container, 'service-details-modal');
     if (detailsModal) {
-        detailsModal.addEventListener('click', (e) => {
+        detailsModal.addEventListener('click', e => {
             if (e.target === detailsModal) {
                 hideModal(container, 'service-details-modal');
             }
@@ -257,7 +279,7 @@ function setupEventListeners(container) {
 
     const progressModal = getElement(container, 'progress-modal');
     if (progressModal) {
-        progressModal.addEventListener('click', (e) => {
+        progressModal.addEventListener('click', e => {
             if (e.target === progressModal) {
                 // Don't allow closing progress modal by clicking outside
             }
@@ -266,7 +288,7 @@ function setupEventListeners(container) {
 
     const customizeModal = getElement(container, 'customize-modal');
     if (customizeModal) {
-        customizeModal.addEventListener('click', (e) => {
+        customizeModal.addEventListener('click', e => {
             if (e.target === customizeModal) {
                 hideModal(container, 'customize-modal');
             }
@@ -277,22 +299,20 @@ function setupEventListeners(container) {
 async function loadServices(container) {
     try {
         showLoading(container, true);
-        
+
         if (window && window.electronAPI) {
             const services = await window.electronAPI.getServices();
-            
+
             allServices = services;
             await loadQuickAccessPreferences();
             applyFilters(container);
             updateServiceCount(container);
             renderQuickAccessServices(container);
-            
         } else {
             showError(container, 'Services management requires the desktop application');
         }
-        
     } catch (error) {
-        console.error('Error loading services:', error);
+        window.electronAPI.logError(`Error loading services: ${error.message}`, 'ServicesTab');
         showError(container, 'Failed to load services: ' + error.message);
     } finally {
         showLoading(container, false);
@@ -305,7 +325,7 @@ function applyFilters(container) {
         if (currentFilter.status !== 'all' && service.Status !== currentFilter.status) {
             return false;
         }
-        
+
         // Type filter
         if (currentFilter.type === 'common' && !service.isCommonService) {
             return false;
@@ -313,17 +333,19 @@ function applyFilters(container) {
         if (currentFilter.type === 'system' && service.isCommonService) {
             return false;
         }
-        
+
         // Search filter
         if (currentFilter.search) {
             const searchTerm = currentFilter.search;
-            return service.Name.toLowerCase().includes(searchTerm) ||
-                   service.DisplayName.toLowerCase().includes(searchTerm);
+            return (
+                service.Name.toLowerCase().includes(searchTerm) ||
+                service.DisplayName.toLowerCase().includes(searchTerm)
+            );
         }
-        
+
         return true;
     });
-    
+
     renderServicesTable(container);
     updateServiceCount(container);
 }
@@ -348,7 +370,10 @@ function renderQuickAccessServices(container) {
     // Create service cards securely using DOM methods
     quickAccessServices.forEach(service => {
         if (!validateServiceName(service.Name)) {
-            console.warn('Invalid service name detected:', service.Name);
+            window.electronAPI.logWarn(
+                `Invalid service name detected: ${service.Name}`,
+                'ServicesTab'
+            );
             return;
         }
 
@@ -430,7 +455,10 @@ function renderServicesTable(container) {
     // Create table rows securely using DOM methods
     filteredServices.forEach(service => {
         if (!validateServiceName(service.Name)) {
-            console.warn('Invalid service name detected:', service.Name);
+            window.electronAPI.logWarn(
+                `Invalid service name detected: ${service.Name}`,
+                'ServicesTab'
+            );
             return;
         }
 
@@ -542,8 +570,8 @@ async function controlServiceSecure(serviceName, action) {
         if (isCriticalService(serviceName) && (action === 'stop' || action === 'restart')) {
             const confirmed = confirm(
                 `WARNING: "${serviceName}" is a critical system service.\n\n` +
-                `Stopping this service may cause system instability or prevent Windows from functioning properly.\n\n` +
-                `Are you absolutely sure you want to ${action} this service?`
+                    `Stopping this service may cause system instability or prevent Windows from functioning properly.\n\n` +
+                    `Are you absolutely sure you want to ${action} this service?`
             );
 
             if (!confirmed) {
@@ -562,7 +590,6 @@ async function controlServiceSecure(serviceName, action) {
 
         if (window && window.electronAPI) {
             const result = await window.electronAPI.controlService(sanitizedServiceName, action);
-            console.log('Service control result:', result);
 
             hideModal(container, 'progress-modal');
 
@@ -571,13 +598,11 @@ async function controlServiceSecure(serviceName, action) {
 
             // Show success message
             showNotification(`Service ${action} successful: ${result.message}`, 'success');
-
         } else {
             throw new Error('Desktop application required for service control');
         }
-
     } catch (error) {
-        console.error(`Error ${action}ing service:`, error);
+        window.electronAPI.logError(`Error ${action}ing service: ${error.message}`, 'ServicesTab');
         const container = document.querySelector('[data-tab="folder-services"]') || document;
         hideModal(container, 'progress-modal');
         showError(container, `Failed to ${action} service: ${error.message}`);
@@ -598,21 +623,25 @@ async function showServiceDetailsSecure(serviceName) {
         const container = document.querySelector('[data-tab="folder-services"]') || document;
         const sanitizedServiceName = sanitizeServiceName(serviceName);
 
-        showProgressModal(container, 'Loading service details...', `Getting detailed information for "${sanitizedServiceName}"`);
+        showProgressModal(
+            container,
+            'Loading service details...',
+            `Getting detailed information for "${sanitizedServiceName}"`
+        );
 
         if (window && window.electronAPI) {
             const details = await window.electronAPI.getServiceDetails(sanitizedServiceName);
-            console.log('Service details received:', details);
 
             hideModal(container, 'progress-modal');
             displayServiceDetailsSecure(container, details);
-
         } else {
             throw new Error('Desktop application required for service details');
         }
-
     } catch (error) {
-        console.error('Error getting service details:', error);
+        window.electronAPI.logError(
+            `Error getting service details: ${error.message}`,
+            'ServicesTab'
+        );
         const container = document.querySelector('[data-tab="folder-services"]') || document;
         hideModal(container, 'progress-modal');
         showError(container, 'Failed to get service details: ' + error.message);
@@ -651,7 +680,7 @@ function displayServiceDetailsSecure(container, details) {
         { label: 'Display Name', value: details.DisplayName || 'Unknown' },
         { label: 'Status', value: details.Status || 'Unknown', isStatus: true },
         { label: 'Start Type', value: details.StartType || 'Unknown' },
-        { label: 'Service Type', value: details.ServiceType || 'Unknown' }
+        { label: 'Service Type', value: details.ServiceType || 'Unknown' },
     ]);
     detailGrid.appendChild(basicCard);
 
@@ -659,7 +688,7 @@ function displayServiceDetailsSecure(container, details) {
     const capabilitiesData = [
         { label: 'Can Stop', value: details.CanStop ? 'Yes' : 'No' },
         { label: 'Can Pause', value: details.CanPauseAndContinue ? 'Yes' : 'No' },
-        { label: 'Can Shutdown', value: details.CanShutdown ? 'Yes' : 'No' }
+        { label: 'Can Shutdown', value: details.CanShutdown ? 'Yes' : 'No' },
     ];
 
     if (details.ProcessId) {
@@ -689,7 +718,8 @@ function displayServiceDetailsSecure(container, details) {
     if (details.PathName) {
         const pathCard = createDetailCard('Executable Path');
         const pathPara = document.createElement('p');
-        pathPara.style.cssText = 'margin: 0; color: var(--text-primary); font-family: "Courier New", monospace; font-size: 12px; word-break: break-all;';
+        pathPara.style.cssText =
+            'margin: 0; color: var(--text-primary); font-family: "Courier New", monospace; font-size: 12px; word-break: break-all;';
         pathPara.textContent = details.PathName;
         pathCard.appendChild(pathPara);
         modalContent.appendChild(pathCard);
@@ -714,7 +744,9 @@ function displayServiceDetailsSecure(container, details) {
 
     // Dependent Services Card
     if (details.DependentServices && details.DependentServices.length > 0) {
-        const dependentCard = createDetailCard(`Dependent Services (${details.DependentServices.length})`);
+        const dependentCard = createDetailCard(
+            `Dependent Services (${details.DependentServices.length})`
+        );
         const dependentList = document.createElement('div');
         dependentList.className = 'dependency-list';
 
@@ -788,8 +820,9 @@ function updateElement(container, id, content) {
 
 function showLoading(container, show) {
     const loadingContainer = getElement(container, 'loading-container');
-    const servicesContainer = container.querySelector('.services-list-section') ||
-                             document.querySelector('.services-list-section');
+    const servicesContainer =
+        container.querySelector('.services-list-section') ||
+        document.querySelector('.services-list-section');
 
     if (loadingContainer) {
         loadingContainer.style.display = show ? 'flex' : 'none';
@@ -800,7 +833,7 @@ function showLoading(container, show) {
 }
 
 function showError(container, message) {
-    console.error('Services Manager Error:', message);
+    window.electronAPI.logError(`Services Manager Error: ${message}`, 'ServicesTab');
     // You could implement a toast notification system here
     alert('Error: ' + message);
 }
@@ -841,13 +874,6 @@ function showProgressModal(container, title, message) {
     showModal(container, 'progress-modal');
 }
 
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
 // Notification system for better user feedback
 function showNotification(message, type = 'info', duration = 5000) {
     // Remove existing notifications
@@ -871,7 +897,12 @@ function showNotification(message, type = 'info', duration = 5000) {
         animation: slideInRight 0.3s ease-out;
     `;
 
-    const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle';
+    const icon =
+        type === 'success'
+            ? 'check-circle'
+            : type === 'error'
+              ? 'exclamation-triangle'
+              : 'info-circle';
     notification.innerHTML = `<i class="fas fa-${icon}"></i> ${escapeHtml(message)}`;
 
     document.body.appendChild(notification);
@@ -956,8 +987,8 @@ async function saveQuickAccessPreferences() {
 
 function openCustomizeModal(container) {
     // Prepare available services (exclude already added ones)
-    availableServicesForModal = allServices.filter(service =>
-        !quickAccessServices.some(qa => qa.Name === service.Name)
+    availableServicesForModal = allServices.filter(
+        service => !quickAccessServices.some(qa => qa.Name === service.Name)
     );
 
     modalSearchFilter = '';
@@ -1036,9 +1067,10 @@ function renderAvailableServices(container) {
     let filteredAvailable = availableServicesForModal;
 
     if (modalSearchFilter) {
-        filteredAvailable = availableServicesForModal.filter(service =>
-            service.Name.toLowerCase().includes(modalSearchFilter) ||
-            service.DisplayName.toLowerCase().includes(modalSearchFilter)
+        filteredAvailable = availableServicesForModal.filter(
+            service =>
+                service.Name.toLowerCase().includes(modalSearchFilter) ||
+                service.DisplayName.toLowerCase().includes(modalSearchFilter)
         );
     }
 
@@ -1101,7 +1133,9 @@ function removeFromQuickAccessSecure(serviceName) {
     }
 
     const sanitizedServiceName = sanitizeServiceName(serviceName);
-    quickAccessServices = quickAccessServices.filter(service => service.Name !== sanitizedServiceName);
+    quickAccessServices = quickAccessServices.filter(
+        service => service.Name !== sanitizedServiceName
+    );
 
     // Add back to available services
     const serviceToAdd = allServices.find(service => service.Name === sanitizedServiceName);
@@ -1127,7 +1161,9 @@ function addToQuickAccessSecure(serviceName) {
         quickAccessServices.push(serviceToAdd);
 
         // Remove from available services
-        availableServicesForModal = availableServicesForModal.filter(service => service.Name !== sanitizedServiceName);
+        availableServicesForModal = availableServicesForModal.filter(
+            service => service.Name !== sanitizedServiceName
+        );
 
         const container = document.querySelector('[data-tab="folder-services"]') || document;
         renderCurrentServices(container);
@@ -1146,8 +1182,6 @@ async function saveQuickAccessChanges(container) {
         hideModal(container, 'customize-modal');
 
         // Show success message (you could implement a toast notification here)
-        console.log('Quick access services saved successfully');
-
     } catch (error) {
         console.error('Error saving quick access changes:', error);
         showError(container, 'Failed to save quick access changes: ' + error.message);
@@ -1159,8 +1193,8 @@ function resetToDefaults(container) {
         defaultCommonServiceNames.includes(service.Name)
     );
 
-    availableServicesForModal = allServices.filter(service =>
-        !quickAccessServices.some(qa => qa.Name === service.Name)
+    availableServicesForModal = allServices.filter(
+        service => !quickAccessServices.some(qa => qa.Name === service.Name)
     );
 
     renderCurrentServices(container);

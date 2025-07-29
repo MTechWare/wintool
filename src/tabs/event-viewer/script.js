@@ -1,4 +1,3 @@
-// Global variables for live tail mode and notifications
 let liveTailInterval = null;
 let liveTailEnabled = false;
 let notificationsEnabled = false;
@@ -6,18 +5,13 @@ let lastEventTime = null;
 let isInitialized = false;
 
 async function initEventViewerTab() {
-    // Prevent double initialization
     if (isInitialized) {
         return;
     }
 
     isInitialized = true;
-
     setupEventViewerEventListeners();
-
-    // Load saved settings
     await loadEventViewerSettings();
-
     refreshEvents();
 
     if (window.markTabAsReady) {
@@ -31,7 +25,6 @@ function setupEventViewerEventListeners() {
         refreshBtn.addEventListener('click', refreshEvents);
     }
 
-    // Header refresh button
     const refreshBtnHeader = document.getElementById('refresh-events-btn-header');
     if (refreshBtnHeader) {
         refreshBtnHeader.addEventListener('click', refreshEvents);
@@ -172,11 +165,12 @@ function showEventDetails(event) {
     const detailContent = document.getElementById('event-detail-content');
 
     if (detailPane && detailContent) {
-        detailContent.textContent = `Time: ${new Date(event.TimeCreated).toLocaleString()}\n` +
-                                  `Level: ${event.LevelDisplayName || 'Information'}\n` +
-                                  `Source: ${event.ProviderName || 'N/A'}\n` +
-                                  `Event ID: ${event.Id || 'N/A'}\n\n` +
-                                  `Message:\n${event.Message || ''}`;
+        detailContent.textContent =
+            `Time: ${new Date(event.TimeCreated).toLocaleString()}\n` +
+            `Level: ${event.LevelDisplayName || 'Information'}\n` +
+            `Source: ${event.ProviderName || 'N/A'}\n` +
+            `Event ID: ${event.Id || 'N/A'}\n\n` +
+            `Message:\n${event.Message || ''}`;
         detailPane.style.display = 'block';
     }
 }
@@ -216,7 +210,9 @@ async function exportEvents() {
     for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
         if (row.style.display === 'none') continue; // Skip hidden rows
-        const cols = Array.from(row.querySelectorAll('td')).map(td => `"${td.innerText.replace(/"/g, '""')}"`);
+        const cols = Array.from(row.querySelectorAll('td')).map(
+            td => `"${td.innerText.replace(/"/g, '""')}"`
+        );
         csvContent += cols.join(',') + '\r\n';
     }
 
@@ -228,8 +224,8 @@ async function exportEvents() {
             defaultPath: defaultPath,
             filters: [
                 { name: 'CSV Files', extensions: ['csv'] },
-                { name: 'All Files', extensions: ['*'] }
-            ]
+                { name: 'All Files', extensions: ['*'] },
+            ],
         });
         if (result.success) {
             // File saved successfully
@@ -244,7 +240,10 @@ async function loadEventViewerSettings() {
     try {
         if (window.electronAPI) {
             // Load live tail setting
-            liveTailEnabled = await window.electronAPI.getSetting('eventViewer.liveTailEnabled', false);
+            liveTailEnabled = await window.electronAPI.getSetting(
+                'eventViewer.liveTailEnabled',
+                false
+            );
             const liveTailToggle = document.getElementById('live-tail-toggle');
             if (liveTailToggle) {
                 // Temporarily remove event listener to prevent triggering during initialization
@@ -252,14 +251,17 @@ async function loadEventViewerSettings() {
                 liveTailToggle.checked = liveTailEnabled;
                 // Re-add event listener
                 liveTailToggle.addEventListener('change', toggleLiveTail);
-                
+
                 if (liveTailEnabled) {
                     startLiveTail();
                 }
             }
 
             // Load notifications setting
-            notificationsEnabled = await window.electronAPI.getSetting('eventViewer.notificationsEnabled', false);
+            notificationsEnabled = await window.electronAPI.getSetting(
+                'eventViewer.notificationsEnabled',
+                false
+            );
             const notificationsToggle = document.getElementById('notifications-toggle');
             if (notificationsToggle) {
                 // Temporarily remove event listener to prevent triggering during initialization
@@ -268,8 +270,6 @@ async function loadEventViewerSettings() {
                 // Re-add event listener
                 notificationsToggle.addEventListener('change', toggleNotifications);
             }
-
-
         }
     } catch (error) {
         console.error('Error loading Event Viewer settings:', error);
@@ -280,8 +280,10 @@ async function saveEventViewerSettings() {
     try {
         if (window.electronAPI) {
             await window.electronAPI.setSetting('eventViewer.liveTailEnabled', liveTailEnabled);
-            await window.electronAPI.setSetting('eventViewer.notificationsEnabled', notificationsEnabled);
-
+            await window.electronAPI.setSetting(
+                'eventViewer.notificationsEnabled',
+                notificationsEnabled
+            );
         }
     } catch (error) {
         console.error('Error saving Event Viewer settings:', error);
@@ -382,7 +384,7 @@ function showDesktopNotification(event) {
         window.electronAPI.showNotification({
             title: title,
             body: body,
-            type: level.toLowerCase() === 'critical' ? 'error' : 'warning'
+            type: level.toLowerCase() === 'critical' ? 'error' : 'warning',
         });
     }
 }
@@ -414,7 +416,7 @@ document.addEventListener('visibilitychange', () => {
 
 // Listen for tab changes to pause/resume live tail appropriately
 if (window.tabEventManager) {
-    window.tabEventManager.addEventListener('tabChanged', (event) => {
+    window.tabEventManager.addEventListener('tabChanged', event => {
         const { tabId } = event.detail;
         if (tabId === 'event-viewer' && liveTailEnabled) {
             // Tab became active, start live tail

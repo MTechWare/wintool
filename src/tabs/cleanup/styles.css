@@ -1,5 +1,5 @@
 /* Enhanced Cleanup Tab Styles - System Health Dashboard Theme */
-/* Universal tab header styles are now consolidated in main styles.css */
+@import url('../../css/universal-tab-header.css');
 
 .cleanup-content {
     max-width: 1400px;

@@ -1,6 +1,5 @@
 /**
- * AppX Packages Tab - Windows AppX Package Manager
- * Allows users to uninstall Microsoft apps and AppX packages
+ * AppX Packages Tab
  */
 
 class AppXPackageManager {
@@ -12,8 +11,7 @@ class AppXPackageManager {
         this.searchTerm = '';
         this.currentOperation = null;
         this.packageType = 'all';
-        
-        // Safe to remove packages list based on the article
+
         this.safeToRemovePackages = [
             'Microsoft.WindowsStore',
             'Microsoft.GetHelp',
@@ -58,7 +56,7 @@ class AppXPackageManager {
             'Microsoft.Microsoft3DViewer',
             'Microsoft.MSPaint',
             'Microsoft.WindowsCommunicationsApps',
-            'Microsoft.WindowsMaps'
+            'Microsoft.WindowsMaps',
         ];
     }
 
@@ -83,7 +81,7 @@ class AppXPackageManager {
         } catch (error) {
             console.error('Error initializing AppX Package Manager:', error);
             this.showStatus('Error initializing AppX Package Manager: ' + error.message, 'error');
-            
+
             // Still signal ready even if there was an error
             if (window.markTabAsReady) {
                 window.markTabAsReady('appx-packages');
@@ -98,7 +96,7 @@ class AppXPackageManager {
         // Search input
         const searchInput = document.getElementById('appx-package-search');
         if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
+            searchInput.addEventListener('input', e => {
                 this.searchTerm = e.target.value.toLowerCase();
                 this.filterPackages();
                 this.renderPackages();
@@ -108,7 +106,7 @@ class AppXPackageManager {
         // Package type selector
         const packageTypeSelect = document.getElementById('package-type-select');
         if (packageTypeSelect) {
-            packageTypeSelect.addEventListener('change', (e) => {
+            packageTypeSelect.addEventListener('change', e => {
                 this.packageType = e.target.value;
                 this.filterPackages();
                 this.renderPackages();
@@ -118,7 +116,7 @@ class AppXPackageManager {
         // Filter buttons
         const filterButtons = document.querySelectorAll('.filter-btn');
         filterButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', e => {
                 const filter = e.currentTarget.getAttribute('data-filter');
                 this.setFilter(filter);
             });
@@ -127,13 +125,12 @@ class AppXPackageManager {
         // Select all checkbox
         const selectAllCheckbox = document.getElementById('select-all-appx');
         if (selectAllCheckbox) {
-            selectAllCheckbox.addEventListener('change', (e) => {
+            selectAllCheckbox.addEventListener('change', e => {
                 this.toggleSelectAll(e.target.checked);
             });
         }
 
         // Action buttons
-
 
         const uninstallSelectedBtn = document.getElementById('uninstall-selected-appx');
         if (uninstallSelectedBtn) {
@@ -208,7 +205,7 @@ class AppXPackageManager {
         // Close modal when clicking outside
         const detailsModal = document.getElementById('appx-details-modal');
         if (detailsModal) {
-            detailsModal.addEventListener('click', (e) => {
+            detailsModal.addEventListener('click', e => {
                 if (e.target === detailsModal) {
                     this.hideDetailsModal();
                 }
@@ -241,10 +238,11 @@ class AppXPackageManager {
                 // Normalize package type to user or system only
                 const normalizedType = pkgDef.type === 'user' ? 'user' : 'system';
 
-                if (this.packageType === 'all' ||
+                if (
+                    this.packageType === 'all' ||
                     (this.packageType === 'user' && normalizedType === 'user') ||
-                    (this.packageType === 'system' && normalizedType === 'system')) {
-
+                    (this.packageType === 'system' && normalizedType === 'system')
+                ) {
                     this.packages[packageKey] = {
                         name: pkgDef.name,
                         packageName: pkgDef.packageName,
@@ -257,17 +255,19 @@ class AppXPackageManager {
                         safeToRemove: pkgDef.safeToRemove,
                         consequences: pkgDef.consequences,
                         isInstalled: isInstalled,
-                        version: null // Will be updated if detected
+                        version: null, // Will be updated if detected
                     };
                 }
             });
 
             this.filterPackages();
             this.showStatus(`Loaded ${Object.keys(this.packages).length} AppX packages`, 'success');
-
         } catch (error) {
             console.error('Error loading packages:', error);
-            this.showStatus('Error loading packages: ' + error.message + '. Loading sample data...', 'error');
+            this.showStatus(
+                'Error loading packages: ' + error.message + '. Loading sample data...',
+                'error'
+            );
             this.loadSampleData();
         } finally {
             this.showLoading(false);
@@ -298,7 +298,8 @@ class AppXPackageManager {
             console.warn('Enhanced AppX command failed, trying basic command:', error.message);
             // Fallback to basic command if enhanced fails
             try {
-                const basicCommand = 'Get-AppxPackage | Select-Object Name, PackageFullName, Version, Publisher, Architecture | ConvertTo-Json -Depth 3';
+                const basicCommand =
+                    'Get-AppxPackage | Select-Object Name, PackageFullName, Version, Publisher, Architecture | ConvertTo-Json -Depth 3';
                 const basicResult = await window.electronAPI.executePowerShell(basicCommand);
 
                 if (basicResult && basicResult.trim()) {
@@ -325,10 +326,11 @@ class AppXPackageManager {
             return true; // Assume installed if we can't check
         }
 
-        return installedPackages.some(pkg =>
-            pkg.Name === packageKey ||
-            pkg.PackageFullName?.includes(packageKey) ||
-            pkg.Name?.includes(packageKey.split('.').pop())
+        return installedPackages.some(
+            pkg =>
+                pkg.Name === packageKey ||
+                pkg.PackageFullName?.includes(packageKey) ||
+                pkg.Name?.includes(packageKey.split('.').pop())
         );
     }
 
@@ -337,9 +339,11 @@ class AppXPackageManager {
      */
     determinePackageType(pkg) {
         // Check if it's a system package
-        if (pkg.IsFramework ||
+        if (
+            pkg.IsFramework ||
             (pkg.InstallLocation && pkg.InstallLocation.includes('SystemApps')) ||
-            (pkg.Publisher && pkg.Publisher.includes('Microsoft Corporation'))) {
+            (pkg.Publisher && pkg.Publisher.includes('Microsoft Corporation'))
+        ) {
             return 'system';
         }
 
@@ -358,14 +362,17 @@ class AppXPackageManager {
 
             // Search filter
             if (this.searchTerm) {
-                const searchableText = `${pkg.name} ${pkg.publisher} ${pkg.description || ''}`.toLowerCase();
+                const searchableText =
+                    `${pkg.name} ${pkg.publisher} ${pkg.description || ''}`.toLowerCase();
                 include = include && searchableText.includes(this.searchTerm);
             }
 
             // Category filter
             if (this.currentFilter === 'microsoft') {
-                include = include && (pkg.publisher.toLowerCase().includes('microsoft') ||
-                                    pkg.name.toLowerCase().includes('microsoft'));
+                include =
+                    include &&
+                    (pkg.publisher.toLowerCase().includes('microsoft') ||
+                        pkg.name.toLowerCase().includes('microsoft'));
             } else if (this.currentFilter === 'removable') {
                 include = include && pkg.safeToRemove === true;
             }
@@ -383,13 +390,13 @@ class AppXPackageManager {
      */
     setFilter(filter) {
         this.currentFilter = filter;
-        
+
         // Update filter button states
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.classList.remove('active');
         });
         document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
-        
+
         this.filterPackages();
         this.renderPackages();
     }
@@ -402,9 +409,9 @@ class AppXPackageManager {
         if (!packagesList) return;
 
         packagesList.innerHTML = '';
-        
+
         const packageKeys = Object.keys(this.filteredPackages);
-        
+
         if (packageKeys.length === 0) {
             packagesList.innerHTML = `
                 <div style="padding: 40px; text-align: center; color: #b0b0b0;">
@@ -422,7 +429,7 @@ class AppXPackageManager {
                 packagesList.appendChild(packageItem);
             }
         });
-        
+
         this.updateSelectionInfo();
     }
 
@@ -443,7 +450,7 @@ class AppXPackageManager {
         const checkboxInput = document.createElement('input');
         checkboxInput.type = 'checkbox';
         checkboxInput.checked = this.selectedPackages.has(key);
-        checkboxInput.addEventListener('change', (e) => {
+        checkboxInput.addEventListener('change', e => {
             this.togglePackageSelection(key, e.target.checked);
         });
         checkbox.appendChild(checkboxInput);
@@ -673,8 +680,6 @@ class AppXPackageManager {
         }
     }
 
-
-
     /**
      * Uninstall a single package
      */
@@ -691,8 +696,6 @@ class AppXPackageManager {
 
         await this.executeUninstall([packageKey]);
     }
-
-
 
     /**
      * Uninstall selected packages
@@ -711,9 +714,9 @@ class AppXPackageManager {
             return;
         }
 
-        const packageNames = packagesToUninstall.map(key =>
-            this.packages[key]?.name || key
-        ).join(', ');
+        const packageNames = packagesToUninstall
+            .map(key => this.packages[key]?.name || key)
+            .join(', ');
 
         const confirmed = await this.showConfirmDialog(
             'Uninstall Selected Packages',
@@ -725,15 +728,17 @@ class AppXPackageManager {
         await this.executeUninstall(packagesToUninstall);
     }
 
-
-
     /**
      * Execute package uninstallation
      */
     async executeUninstall(packageKeys) {
         if (packageKeys.length === 0) return;
 
-        this.showProgress('Uninstalling Packages', 'Preparing to uninstall packages...', 'uninstalling');
+        this.showProgress(
+            'Uninstalling Packages',
+            'Preparing to uninstall packages...',
+            'uninstalling'
+        );
 
         try {
             for (let i = 0; i < packageKeys.length; i++) {
@@ -748,18 +753,25 @@ class AppXPackageManager {
                     publisher: pkg.publisher || 'Microsoft Corporation',
                     version: pkg.version || 'Unknown',
                     status: 'Uninstalling',
-                    statusClass: ''
+                    statusClass: '',
                 });
 
-                this.updateProgress(`Uninstalling ${pkg.name}...`, ((i + 1) / packageKeys.length) * 100);
+                this.updateProgress(
+                    `Uninstalling ${pkg.name}...`,
+                    ((i + 1) / packageKeys.length) * 100
+                );
 
                 // Check if package is safe to remove
                 if (!pkg.safeToRemove) {
-                    this.appendProgressOutput(`⚠ Warning: ${pkg.name} is not recommended for removal\n`);
+                    this.appendProgressOutput(
+                        `⚠ Warning: ${pkg.name} is not recommended for removal\n`
+                    );
                     this.appendProgressOutput(`Consequences: ${pkg.consequences}\n`);
                 }
 
-                this.appendProgressOutput(`Attempting to uninstall: ${pkg.name} (${pkg.packageName})\n`);
+                this.appendProgressOutput(
+                    `Attempting to uninstall: ${pkg.name} (${pkg.packageName})\n`
+                );
 
                 // Use standard PowerShell command for all packages
                 const packageIdentifier = pkg.packageName || pkg.name;
@@ -779,7 +791,7 @@ class AppXPackageManager {
                         publisher: pkg.publisher || 'Microsoft Corporation',
                         version: pkg.version || 'Unknown',
                         status: 'Uninstalled',
-                        statusClass: 'success'
+                        statusClass: 'success',
                     });
 
                     // Remove from local data
@@ -787,7 +799,9 @@ class AppXPackageManager {
                     this.selectedPackages.delete(packageKey);
                 } catch (error) {
                     // Try alternative command if the first one failed
-                    this.appendProgressOutput(`First attempt failed, trying alternative method...\n`);
+                    this.appendProgressOutput(
+                        `First attempt failed, trying alternative method...\n`
+                    );
                     const packageIdentifier = pkg.packageName || pkg.name;
                     const escapedPackageName = packageIdentifier.replace(/'/g, "''");
                     // Use a simpler alternative command
@@ -796,25 +810,36 @@ class AppXPackageManager {
 
                     try {
                         let result = await window.electronAPI.executePowerShell(altCommand);
-                        this.appendProgressOutput(`✓ Successfully uninstalled ${pkg.name} (alternative method)\n`);
+                        this.appendProgressOutput(
+                            `✓ Successfully uninstalled ${pkg.name} (alternative method)\n`
+                        );
                         // Remove from local data
                         delete this.packages[packageKey];
                         this.selectedPackages.delete(packageKey);
                     } catch (error) {
                         // Try third method with wildcard
-                        this.appendProgressOutput(`Second attempt failed, trying wildcard method...\n`);
+                        this.appendProgressOutput(
+                            `Second attempt failed, trying wildcard method...\n`
+                        );
                         const wildcardCommand = `Get-AppxPackage '*${escapedPackageName}*' | Remove-AppxPackage`;
                         this.appendProgressOutput(`Executing wildcard: ${wildcardCommand}\n`);
 
                         try {
-                            let result = await window.electronAPI.executePowerShell(wildcardCommand);
-                            this.appendProgressOutput(`✓ Successfully uninstalled ${pkg.name} (wildcard method)\n`);
+                            let result =
+                                await window.electronAPI.executePowerShell(wildcardCommand);
+                            this.appendProgressOutput(
+                                `✓ Successfully uninstalled ${pkg.name} (wildcard method)\n`
+                            );
                             // Remove from local data
                             delete this.packages[packageKey];
                             this.selectedPackages.delete(packageKey);
                         } catch (error) {
-                            this.appendProgressOutput(`✗ Failed to uninstall ${pkg.name}: ${error.message || 'Unknown error'}\n`);
-                            this.appendProgressOutput(`Package may not be installed or may require administrator privileges\n`);
+                            this.appendProgressOutput(
+                                `✗ Failed to uninstall ${pkg.name}: ${error.message || 'Unknown error'}\n`
+                            );
+                            this.appendProgressOutput(
+                                `Package may not be installed or may require administrator privileges\n`
+                            );
 
                             // Update package status to error
                             this.updateCurrentPackage({
@@ -822,7 +847,7 @@ class AppXPackageManager {
                                 publisher: pkg.publisher || 'Microsoft Corporation',
                                 version: pkg.version || 'Unknown',
                                 status: 'Error',
-                                statusClass: 'error'
+                                statusClass: 'error',
                             });
                         }
                     }
@@ -838,7 +863,6 @@ class AppXPackageManager {
                 this.renderPackages();
                 this.showStatus('Package uninstallation completed', 'success');
             }, 1000);
-
         } catch (error) {
             this.updateProgressError(`Error during uninstallation: ${error.message}`);
         }
@@ -865,7 +889,7 @@ class AppXPackageManager {
                     fullName: pkg.fullName,
                     version: pkg.version,
                     publisher: pkg.publisher,
-                    type: pkg.type
+                    type: pkg.type,
                 };
             });
 
@@ -902,14 +926,14 @@ class AppXPackageManager {
         title.textContent = `${pkg.name} - Details`;
 
         // Format size
-        const formatSize = (sizeGB) => {
+        const formatSize = sizeGB => {
             if (!sizeGB || sizeGB === 0) return 'Not Available';
             if (sizeGB < 0.01) return '< 10 MB';
             return `${sizeGB.toFixed(2)} GB`;
         };
 
         // Format date
-        const formatDate = (dateStr) => {
+        const formatDate = dateStr => {
             if (!dateStr) return 'Not Available';
             try {
                 return new Date(dateStr).toLocaleDateString();
@@ -989,14 +1013,20 @@ class AppXPackageManager {
                 </div>
             </div>
 
-            ${pkg.description ? `
+            ${
+                pkg.description
+                    ? `
             <div class="detail-section">
                 <h4>Description</h4>
                 <div class="detail-value">${this.escapeHtml(pkg.description)}</div>
             </div>
-            ` : ''}
+            `
+                    : ''
+            }
 
-            ${pkg.consequences ? `
+            ${
+                pkg.consequences
+                    ? `
             <div class="detail-section">
                 <h4>Removal Consequences</h4>
                 <div class="detail-value" style="color: var(--warning-color);">
@@ -1004,7 +1034,9 @@ class AppXPackageManager {
                     ${this.escapeHtml(pkg.consequences)}
                 </div>
             </div>
-            ` : ''}
+            `
+                    : ''
+            }
         `;
 
         // Show/hide uninstall button based on installation status
@@ -1047,7 +1079,7 @@ class AppXPackageManager {
                         architecture: pkg.architecture,
                         installLocation: pkg.installLocation,
                         backupDate: new Date().toISOString(),
-                        restoreCommand: `Get-AppxPackage -Name "${pkg.packageName}" | Remove-AppxPackage`
+                        restoreCommand: `Get-AppxPackage -Name "${pkg.packageName}" | Remove-AppxPackage`,
                     };
                 });
 
@@ -1058,16 +1090,16 @@ class AppXPackageManager {
                     totalPackages: installedPackages.length,
                     systemInfo: {
                         userAgent: navigator.userAgent,
-                        platform: navigator.platform
-                    }
+                        platform: navigator.platform,
+                    },
                 },
                 packages: installedPackages,
                 restoreInstructions: [
-                    "This backup contains a list of AppX packages that were installed at the time of backup.",
-                    "To restore packages, you would need to reinstall them from the Microsoft Store or other sources.",
-                    "The restoreCommand field shows the PowerShell command that was used to uninstall each package.",
-                    "Note: This backup does not contain the actual package files, only the list and metadata."
-                ]
+                    'This backup contains a list of AppX packages that were installed at the time of backup.',
+                    'To restore packages, you would need to reinstall them from the Microsoft Store or other sources.',
+                    'The restoreCommand field shows the PowerShell command that was used to uninstall each package.',
+                    'Note: This backup does not contain the actual package files, only the list and metadata.',
+                ],
             };
 
             // Create and download backup file
@@ -1083,7 +1115,10 @@ class AppXPackageManager {
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
 
-            this.showStatus(`Backup created successfully! ${installedPackages.length} packages backed up.`, 'success');
+            this.showStatus(
+                `Backup created successfully! ${installedPackages.length} packages backed up.`,
+                'success'
+            );
         } catch (error) {
             console.error('Error creating backup:', error);
             this.showStatus('Error creating backup: ' + error.message, 'error');
@@ -1114,7 +1149,7 @@ class AppXPackageManager {
      * Show confirmation dialog
      */
     async showConfirmDialog(title, message) {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             const confirmed = confirm(`${title}\n\n${message}`);
             resolve(confirmed);
         });
@@ -1183,8 +1218,8 @@ class AppXPackageManager {
 
     getOperationSubtitle(operationType) {
         const subtitles = {
-            'uninstalling': 'Removing AppX packages from your system',
-            'refreshing': 'Refreshing package information'
+            uninstalling: 'Removing AppX packages from your system',
+            refreshing: 'Refreshing package information',
         };
         return subtitles[operationType] || 'Processing AppX package operation';
     }
@@ -1194,8 +1229,8 @@ class AppXPackageManager {
         if (!iconElement) return;
 
         const icons = {
-            'uninstalling': 'fas fa-trash',
-            'refreshing': 'fas fa-sync-alt'
+            uninstalling: 'fas fa-trash',
+            refreshing: 'fas fa-sync-alt',
         };
 
         const iconClass = icons[operationType] || 'fab fa-microsoft';
@@ -1262,7 +1297,7 @@ class AppXPackageManager {
         // Add click-outside-to-close functionality
         const modal = document.getElementById('appx-progress-modal');
         if (modal) {
-            modal.onclick = (e) => {
+            modal.onclick = e => {
                 if (e.target === modal) {
                     this.hideProgress();
                 }
@@ -1270,7 +1305,7 @@ class AppXPackageManager {
         }
 
         // Add escape key to close
-        const escapeHandler = (e) => {
+        const escapeHandler = e => {
             if (e.key === 'Escape') {
                 this.hideProgress();
                 document.removeEventListener('keydown', escapeHandler);
@@ -1393,7 +1428,7 @@ class AppXPackageManager {
 
         const rect = element.getBoundingClientRect();
         tooltip.style.left = rect.left + 'px';
-        tooltip.style.top = (rect.top - 30) + 'px';
+        tooltip.style.top = rect.top - 30 + 'px';
 
         document.body.appendChild(tooltip);
         setTimeout(() => tooltip.remove(), 2000);
@@ -1440,8 +1475,10 @@ class AppXPackageManager {
             currentPackageSection.style.display = 'block';
 
             if (nameElement) nameElement.textContent = packageInfo.name || 'Unknown Package';
-            if (publisherElement) publisherElement.textContent = packageInfo.publisher || 'Unknown Publisher';
-            if (versionElement) versionElement.textContent = packageInfo.version || 'Unknown Version';
+            if (publisherElement)
+                publisherElement.textContent = packageInfo.publisher || 'Unknown Publisher';
+            if (versionElement)
+                versionElement.textContent = packageInfo.version || 'Unknown Version';
             if (statusElement) {
                 statusElement.textContent = packageInfo.status || 'Processing';
                 statusElement.className = `status-badge ${packageInfo.statusClass || ''}`;
@@ -1604,7 +1641,8 @@ class AppXPackageManager {
         const progressBar = document.getElementById('appx-progress-bar');
         if (progressBar) {
             progressBar.style.width = '0%';
-            progressBar.style.background = 'linear-gradient(90deg, var(--primary-color), rgba(var(--primary-rgb), 0.8))';
+            progressBar.style.background =
+                'linear-gradient(90deg, var(--primary-color), rgba(var(--primary-rgb), 0.8))';
         }
 
         // Reset text elements
@@ -1694,9 +1732,9 @@ class AppXPackageManager {
                 icon: 'fas fa-store',
                 type: 'system',
                 safeToRemove: true,
-                consequences: 'You won\'t be able to install apps from Microsoft Store',
+                consequences: "You won't be able to install apps from Microsoft Store",
                 isInstalled: true,
-                version: '12011.1001.113.0'
+                version: '12011.1001.113.0',
             },
             'Microsoft.XboxGamingOverlay': {
                 name: 'Xbox Game Bar',
@@ -1710,7 +1748,7 @@ class AppXPackageManager {
                 safeToRemove: true,
                 consequences: 'Game recording and Xbox features will be unavailable',
                 isInstalled: true,
-                version: '7.124.4152.0'
+                version: '7.124.4152.0',
             },
             'Microsoft.BingWeather': {
                 name: 'Weather',
@@ -1724,7 +1762,7 @@ class AppXPackageManager {
                 safeToRemove: true,
                 consequences: 'Weather app will be removed',
                 isInstalled: true,
-                version: '4.53.52321.0'
+                version: '4.53.52321.0',
             },
             'Microsoft.WindowsCalculator': {
                 name: 'Calculator',
@@ -1738,7 +1776,7 @@ class AppXPackageManager {
                 safeToRemove: false,
                 consequences: 'Calculator app will be unavailable',
                 isInstalled: true,
-                version: '11.2401.0.0'
+                version: '11.2401.0.0',
             },
             'Microsoft.MicrosoftSolitaireCollection': {
                 name: 'Microsoft Solitaire Collection',
@@ -1752,7 +1790,7 @@ class AppXPackageManager {
                 safeToRemove: true,
                 consequences: 'Solitaire games will be removed',
                 isInstalled: true,
-                version: '4.19.4060.0'
+                version: '4.19.4060.0',
             },
             'Microsoft.YourPhone': {
                 name: 'Phone Link',
@@ -1766,15 +1804,16 @@ class AppXPackageManager {
                 safeToRemove: true,
                 consequences: 'Phone integration features will be removed',
                 isInstalled: true,
-                version: '1.24032.147.0'
-            }
+                version: '1.24032.147.0',
+            },
         };
 
         this.filterPackages();
-        this.showStatus(`Loaded ${Object.keys(this.packages).length} sample AppX packages for demonstration`, 'info');
+        this.showStatus(
+            `Loaded ${Object.keys(this.packages).length} sample AppX packages for demonstration`,
+            'info'
+        );
     }
-
-
 
     /**
      * Escape HTML to prevent XSS
@@ -1807,5 +1846,3 @@ if (document.readyState === 'loading') {
     appxPackageManager = new AppXPackageManager();
     appxPackageManager.init();
 }
-
-

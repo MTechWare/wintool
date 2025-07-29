@@ -44,22 +44,22 @@ class SecurityIntegration {
      */
     setupEventListeners() {
         // Security violation handling
-        this.securityManager.on('securityViolation', (event) => {
+        this.securityManager.on('securityViolation', event => {
             console.warn('Security violation detected:', event);
-            
+
             // Notify main application
             if (this.mainApp.emit) {
                 this.mainApp.emit('pluginSecurityViolation', event);
             }
-            
+
             // Take appropriate action
             this.handleSecurityViolation(event);
         });
 
         // Plugin termination
-        this.securityManager.on('pluginTerminated', (event) => {
+        this.securityManager.on('pluginTerminated', event => {
             console.log('Plugin terminated due to security violation:', event);
-            
+
             // Notify UI to remove plugin tab
             if (this.mainApp.webContents) {
                 this.mainApp.webContents.send('plugin-terminated', event);
@@ -67,19 +67,19 @@ class SecurityIntegration {
         });
 
         // Suspicious activity monitoring
-        this.securityManager.on('suspiciousActivity', (event) => {
+        this.securityManager.on('suspiciousActivity', event => {
             console.warn('Suspicious plugin activity:', event);
-            
+
             // Log for analysis
             this.logSecurityEvent('suspicious_activity', event);
         });
 
         // Sandbox creation/destruction
-        this.securityManager.on('sandboxCreated', (event) => {
+        this.securityManager.on('sandboxCreated', event => {
             console.log(`Sandbox created for plugin: ${event.pluginId}`);
         });
 
-        this.securityManager.on('sandboxDestroyed', (event) => {
+        this.securityManager.on('sandboxDestroyed', event => {
             console.log(`Sandbox destroyed for plugin: ${event.pluginId}`);
         });
     }
@@ -90,9 +90,9 @@ class SecurityIntegration {
     integrateWithPluginLoader() {
         // Override the original plugin loading function
         const originalLoadPluginBackends = this.mainApp.loadPluginBackends;
-        
+
         if (originalLoadPluginBackends) {
-            this.mainApp.loadPluginBackends = async (pluginMap) => {
+            this.mainApp.loadPluginBackends = async pluginMap => {
                 return await this.secureLoadPluginBackends(pluginMap, originalLoadPluginBackends);
             };
         }
@@ -110,7 +110,7 @@ class SecurityIntegration {
             try {
                 // Validate plugin before loading
                 const validation = await this.validator.validatePlugin(pluginPath);
-                
+
                 if (!validation.isValid) {
                     console.error(`Plugin ${pluginId} failed validation:`, validation.errors);
                     continue;
@@ -120,9 +120,12 @@ class SecurityIntegration {
                 const highSeverityIssues = validation.securityIssues.filter(
                     issue => issue.severity === 'high'
                 );
-                
+
                 if (highSeverityIssues.length > 0) {
-                    console.error(`Plugin ${pluginId} has high-severity security issues:`, highSeverityIssues);
+                    console.error(
+                        `Plugin ${pluginId} has high-severity security issues:`,
+                        highSeverityIssues
+                    );
                     continue;
                 }
 
@@ -131,23 +134,23 @@ class SecurityIntegration {
 
                 // Load backend with secure API
                 const backendScriptPath = path.join(pluginPath, 'backend.js');
-                
+
                 try {
                     await fs.access(backendScriptPath);
-                    
+
                     // Clear module cache if needed
                     const settingsStore = await this.mainApp.getStore();
                     if (settingsStore && settingsStore.get('clearPluginCache', false)) {
                         delete require.cache[require.resolve(backendScriptPath)];
                     }
-                    
+
                     const pluginModule = require(backendScriptPath);
-                    
+
                     if (pluginModule && typeof pluginModule.initialize === 'function') {
                         // Initialize with secure API instead of original API
                         pluginModule.initialize(secureAPI);
                         loadedPluginBackends.set(pluginId, secureAPI);
-                        
+
                         console.log(`Securely loaded backend for: ${pluginId}`);
                     }
                 } catch (e) {
@@ -155,7 +158,6 @@ class SecurityIntegration {
                         console.error(`Error loading secure backend for plugin ${pluginId}:`, e);
                     }
                 }
-
             } catch (error) {
                 console.error(`Failed to securely load plugin ${pluginId}:`, error);
             }
@@ -190,16 +192,16 @@ class SecurityIntegration {
      */
     handleResourceViolation(pluginId, data) {
         console.warn(`Resource violation by ${pluginId}:`, data);
-        
+
         // Log the violation
         this.logSecurityEvent('resource_violation', { pluginId, data });
-        
+
         // Notify user
         if (this.mainApp.webContents) {
             this.mainApp.webContents.send('plugin-resource-violation', {
                 pluginId,
                 type: data.type,
-                message: `Plugin "${pluginId}" exceeded ${data.type} limit`
+                message: `Plugin "${pluginId}" exceeded ${data.type} limit`,
             });
         }
     }
@@ -209,10 +211,10 @@ class SecurityIntegration {
      */
     handleAPIViolation(pluginId, data) {
         console.warn(`API violation by ${pluginId}:`, data);
-        
+
         // Log the violation
         this.logSecurityEvent('api_violation', { pluginId, data });
-        
+
         // Consider blocking plugin after repeated violations
         // This could be implemented with a violation counter
     }
@@ -222,19 +224,19 @@ class SecurityIntegration {
      */
     handleMaliciousActivity(pluginId, data) {
         console.error(`Malicious activity detected in ${pluginId}:`, data);
-        
+
         // Log the violation
         this.logSecurityEvent('malicious_activity', { pluginId, data });
-        
+
         // Block plugin immediately
         this.securityManager.blockPlugin(pluginId);
-        
+
         // Notify user
         if (this.mainApp.webContents) {
             this.mainApp.webContents.send('plugin-blocked', {
                 pluginId,
                 reason: 'Malicious activity detected',
-                data
+                data,
             });
         }
     }
@@ -246,7 +248,7 @@ class SecurityIntegration {
         const logEntry = {
             timestamp: new Date().toISOString(),
             eventType,
-            data
+            data,
         };
 
         try {

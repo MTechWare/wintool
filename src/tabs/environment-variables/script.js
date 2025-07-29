@@ -1,56 +1,41 @@
 /**
  * Environment Variables Tab Script
- * Manages system and user environment variables
  */
-
-// Global variables for the environment variables tab
 let environmentVariables = {
     user: {},
-    system: {}
+    system: {},
 };
 let currentEditingVariable = null;
 let currentPathTarget = null;
 let confirmCallback = null;
 
-// Initialize the environment variables tab
 function initEnvironmentVariablesTab() {
-    
-    // Set up event listeners
     setupEventListeners();
-    
-    // Load environment variables
     refreshEnvironmentVariables();
-    
-    // Mark tab as ready
+
     if (window.markTabAsReady) {
         window.markTabAsReady(tabId);
     }
 }
 
-// Set up event listeners
 function setupEventListeners() {
-    // Search functionality
     const searchInput = document.getElementById('env-search');
     if (searchInput) {
         searchInput.addEventListener('input', filterEnvironmentVariables);
     }
-    
-    // Filter functionality
+
     const filterSelect = document.getElementById('env-filter');
     if (filterSelect) {
         filterSelect.addEventListener('change', filterEnvironmentVariables);
     }
-    
-    // Form validation
+
     const nameInput = document.getElementById('env-var-name');
     if (nameInput) {
         nameInput.addEventListener('input', validateVariableName);
     }
-    
-    // Modal close on background click
     const modals = document.querySelectorAll('.modal');
     modals.forEach(modal => {
-        modal.addEventListener('click', (e) => {
+        modal.addEventListener('click', e => {
             if (e.target === modal) {
                 closeAllModals();
             }
@@ -63,27 +48,26 @@ async function refreshEnvironmentVariables() {
     const loadingEl = document.getElementById('env-loading');
     const contentEl = document.getElementById('env-content');
     const errorEl = document.getElementById('env-error');
-    
+
     // Show loading state
     if (loadingEl) loadingEl.style.display = 'block';
     if (contentEl) contentEl.style.display = 'none';
     if (errorEl) errorEl.style.display = 'none';
-    
+
     try {
         const envVars = await window.electronAPI.getEnvironmentVariables();
 
         environmentVariables = envVars;
-        
+
         // Populate the tables
         populateEnvironmentVariables();
-        
+
         // Show content
         if (loadingEl) loadingEl.style.display = 'none';
         if (contentEl) contentEl.style.display = 'block';
-        
     } catch (error) {
         console.error('Error loading environment variables:', error);
-        
+
         // Show error state
         if (loadingEl) loadingEl.style.display = 'none';
         if (errorEl) {
@@ -100,7 +84,7 @@ async function refreshEnvironmentVariables() {
 function populateEnvironmentVariables() {
     populateVariableTable('user', environmentVariables.user);
     populateVariableTable('system', environmentVariables.system);
-    
+
     // Update counts
     updateVariableCounts();
 }
@@ -109,12 +93,12 @@ function populateEnvironmentVariables() {
 function populateVariableTable(type, variables) {
     const tbody = document.getElementById(`${type}-env-tbody`);
     if (!tbody) return;
-    
+
     tbody.innerHTML = '';
-    
+
     // Sort variables by name
     const sortedVars = Object.entries(variables).sort(([a], [b]) => a.localeCompare(b));
-    
+
     sortedVars.forEach(([name, value]) => {
         const row = createVariableRow(name, value, type);
         tbody.appendChild(row);
@@ -126,16 +110,16 @@ function createVariableRow(name, value, type) {
     const row = document.createElement('tr');
     row.setAttribute('data-var-name', name.toLowerCase());
     row.setAttribute('data-var-type', type);
-    
+
     // Variable name cell
     const nameCell = document.createElement('td');
     nameCell.className = 'var-name';
     nameCell.textContent = name;
-    
+
     // Variable value cell
     const valueCell = document.createElement('td');
     valueCell.className = 'var-value';
-    
+
     const isLongValue = value && value.length > 100;
     if (isLongValue) {
         valueCell.classList.add('truncated');
@@ -146,15 +130,15 @@ function createVariableRow(name, value, type) {
     } else {
         valueCell.textContent = value || '';
     }
-    
+
     // Actions cell
     const actionsCell = document.createElement('td');
     actionsCell.innerHTML = createActionButtons(name, type);
-    
+
     row.appendChild(nameCell);
     row.appendChild(valueCell);
     row.appendChild(actionsCell);
-    
+
     return row;
 }
 
@@ -193,14 +177,14 @@ function createActionButtons(name, type) {
 function updateVariableCounts() {
     const userCount = Object.keys(environmentVariables.user).length;
     const systemCount = Object.keys(environmentVariables.system).length;
-    
+
     const userCountEl = document.getElementById('user-count');
     const systemCountEl = document.getElementById('system-count');
-    
+
     if (userCountEl) {
         userCountEl.textContent = `${userCount} variable${userCount !== 1 ? 's' : ''}`;
     }
-    
+
     if (systemCountEl) {
         systemCountEl.textContent = `${systemCount} variable${systemCount !== 1 ? 's' : ''}`;
     }
@@ -210,23 +194,22 @@ function updateVariableCounts() {
 function filterEnvironmentVariables() {
     const searchTerm = document.getElementById('env-search')?.value.toLowerCase() || '';
     const filterType = document.getElementById('env-filter')?.value || 'all';
-    
+
     // Get all variable rows
     const allRows = document.querySelectorAll('.env-table tbody tr');
-    
+
     allRows.forEach(row => {
         const varName = row.getAttribute('data-var-name') || '';
         const varType = row.getAttribute('data-var-type') || '';
         const varValue = row.querySelector('.var-value')?.textContent.toLowerCase() || '';
-        
+
         // Check search criteria
-        const matchesSearch = !searchTerm || 
-            varName.includes(searchTerm) || 
-            varValue.includes(searchTerm);
-        
+        const matchesSearch =
+            !searchTerm || varName.includes(searchTerm) || varValue.includes(searchTerm);
+
         // Check filter criteria
         const matchesFilter = filterType === 'all' || varType === filterType;
-        
+
         // Show/hide row
         if (matchesSearch && matchesFilter) {
             row.classList.remove('hidden');
@@ -234,7 +217,7 @@ function filterEnvironmentVariables() {
             row.classList.add('hidden');
         }
     });
-    
+
     // Update section visibility
     updateSectionVisibility();
 }
@@ -242,16 +225,18 @@ function filterEnvironmentVariables() {
 // Update section visibility based on filtered results
 function updateSectionVisibility() {
     const filterType = document.getElementById('env-filter')?.value || 'all';
-    
+
     const userSection = document.getElementById('user-section');
     const systemSection = document.getElementById('system-section');
-    
+
     if (userSection) {
-        userSection.style.display = (filterType === 'all' || filterType === 'user') ? 'block' : 'none';
+        userSection.style.display =
+            filterType === 'all' || filterType === 'user' ? 'block' : 'none';
     }
-    
+
     if (systemSection) {
-        systemSection.style.display = (filterType === 'all' || filterType === 'system') ? 'block' : 'none';
+        systemSection.style.display =
+            filterType === 'all' || filterType === 'system' ? 'block' : 'none';
     }
 }
 
@@ -259,18 +244,18 @@ function updateSectionVisibility() {
 function toggleValueExpansion(button) {
     const valueCell = button.closest('.var-value');
     const valueContent = valueCell.querySelector('.value-content');
-    
+
     if (valueCell.classList.contains('truncated')) {
         // Expand
         valueCell.classList.remove('truncated');
         button.textContent = 'Show less';
-        
+
         // Get full value
         const row = button.closest('tr');
         const varName = row.querySelector('.var-name').textContent;
         const varType = row.getAttribute('data-var-type');
         const fullValue = environmentVariables[varType][varName];
-        
+
         if (valueContent) {
             valueContent.textContent = fullValue;
         }
@@ -278,13 +263,13 @@ function toggleValueExpansion(button) {
         // Collapse
         valueCell.classList.add('truncated');
         button.textContent = 'Show more';
-        
+
         // Get truncated value
         const row = button.closest('tr');
         const varName = row.querySelector('.var-name').textContent;
         const varType = row.getAttribute('data-var-type');
         const fullValue = environmentVariables[varType][varName];
-        
+
         if (valueContent) {
             valueContent.textContent = fullValue.substring(0, 100);
         }
@@ -294,13 +279,13 @@ function toggleValueExpansion(button) {
 // Show add variable modal
 function showAddVariableModal() {
     currentEditingVariable = null;
-    
+
     const modal = document.getElementById('env-var-modal');
     const title = document.getElementById('env-modal-title');
     const nameInput = document.getElementById('env-var-name');
     const valueInput = document.getElementById('env-var-value');
     const targetSelect = document.getElementById('env-var-target');
-    
+
     if (title) title.innerHTML = '<i class="fas fa-plus"></i> Add Environment Variable';
     if (nameInput) {
         nameInput.value = '';
@@ -308,9 +293,9 @@ function showAddVariableModal() {
     }
     if (valueInput) valueInput.value = '';
     if (targetSelect) targetSelect.value = 'User';
-    
+
     if (modal) modal.style.display = 'flex';
-    
+
     // Focus on name input
     setTimeout(() => {
         if (nameInput) nameInput.focus();
@@ -320,16 +305,16 @@ function showAddVariableModal() {
 // Edit environment variable
 function editEnvironmentVariable(name, target) {
     currentEditingVariable = { name, target };
-    
+
     const modal = document.getElementById('env-var-modal');
     const title = document.getElementById('env-modal-title');
     const nameInput = document.getElementById('env-var-name');
     const valueInput = document.getElementById('env-var-value');
     const targetSelect = document.getElementById('env-var-target');
-    
+
     const varType = target === 'User' ? 'user' : 'system';
     const currentValue = environmentVariables[varType][name] || '';
-    
+
     if (title) title.innerHTML = '<i class="fas fa-edit"></i> Edit Environment Variable';
     if (nameInput) {
         nameInput.value = name;
@@ -340,9 +325,9 @@ function editEnvironmentVariable(name, target) {
         targetSelect.value = target;
         targetSelect.disabled = true; // Don't allow changing target when editing
     }
-    
+
     if (modal) modal.style.display = 'flex';
-    
+
     // Focus on value input
     setTimeout(() => {
         if (valueInput) valueInput.focus();
@@ -401,7 +386,6 @@ function deleteEnvironmentVariable(name, target) {
             const result = await window.electronAPI.deleteEnvironmentVariable(name, target);
 
             if (result.success) {
-
                 // Refresh the variables
                 await refreshEnvironmentVariables();
 
@@ -518,7 +502,7 @@ function validatePathEntrySecure(input) {
         'C:\\Windows\\System32',
         'C:\\Windows',
         'C:\\Program Files',
-        'C:\\Program Files (x86)'
+        'C:\\Program Files (x86)',
     ];
 
     if (dangerousPaths.some(dangerous => path.toLowerCase().startsWith(dangerous.toLowerCase()))) {
@@ -528,14 +512,17 @@ function validatePathEntrySecure(input) {
 
     // Check if path exists (visual feedback only)
     if (window.electronAPI && window.electronAPI.pathExists) {
-        window.electronAPI.pathExists(path).then(exists => {
-            if (!exists) {
-                entry.classList.add('warning');
-                entry.title = 'Warning: This path does not exist';
-            }
-        }).catch(() => {
-            // Ignore errors in path checking
-        });
+        window.electronAPI
+            .pathExists(path)
+            .then(exists => {
+                if (!exists) {
+                    entry.classList.add('warning');
+                    entry.title = 'Warning: This path does not exist';
+                }
+            })
+            .catch(() => {
+                // Ignore errors in path checking
+            });
     }
 }
 
@@ -551,8 +538,8 @@ function removePathEntrySecure(button) {
     if (path && (path.includes('System32') || path.includes('Windows'))) {
         const confirmed = confirm(
             `Warning: You are about to remove a system path:\n\n"${path}"\n\n` +
-            `Removing this path may prevent system programs from running correctly.\n\n` +
-            `Are you sure you want to remove this path?`
+                `Removing this path may prevent system programs from running correctly.\n\n` +
+                `Are you sure you want to remove this path?`
         );
 
         if (!confirmed) {
@@ -619,7 +606,11 @@ async function savePathVariable() {
     const newPathValue = paths.join(';');
 
     try {
-        const result = await window.electronAPI.setEnvironmentVariable('PATH', newPathValue, currentPathTarget);
+        const result = await window.electronAPI.setEnvironmentVariable(
+            'PATH',
+            newPathValue,
+            currentPathTarget
+        );
 
         if (result.success) {
             closePathEditorModal();
@@ -641,7 +632,7 @@ function exportEnvironmentVariables() {
     const data = {
         user: environmentVariables.user,
         system: environmentVariables.system,
-        exported: new Date().toISOString()
+        exported: new Date().toISOString(),
     };
 
     const jsonString = JSON.stringify(data, null, 2);
@@ -845,17 +836,35 @@ const ENV_SECURITY_CONFIG = {
     variableNamePattern: /^[a-zA-Z_][a-zA-Z0-9_]*$/,
     pathEntryMaxLength: 260, // Windows MAX_PATH
     criticalVariables: [
-        'PATH', 'PATHEXT', 'WINDIR', 'SYSTEMROOT', 'PROGRAMFILES', 'PROGRAMFILES(X86)',
-        'PROGRAMDATA', 'USERPROFILE', 'ALLUSERSPROFILE', 'APPDATA', 'LOCALAPPDATA',
-        'TEMP', 'TMP', 'COMSPEC', 'PROCESSOR_ARCHITECTURE', 'NUMBER_OF_PROCESSORS'
+        'PATH',
+        'PATHEXT',
+        'WINDIR',
+        'SYSTEMROOT',
+        'PROGRAMFILES',
+        'PROGRAMFILES(X86)',
+        'PROGRAMDATA',
+        'USERPROFILE',
+        'ALLUSERSPROFILE',
+        'APPDATA',
+        'LOCALAPPDATA',
+        'TEMP',
+        'TMP',
+        'COMSPEC',
+        'PROCESSOR_ARCHITECTURE',
+        'NUMBER_OF_PROCESSORS',
     ],
     systemOnlyVariables: [
-        'WINDIR', 'SYSTEMROOT', 'PROGRAMFILES', 'PROGRAMFILES(X86)', 'PROGRAMDATA',
-        'PROCESSOR_ARCHITECTURE', 'NUMBER_OF_PROCESSORS'
-    ]
+        'WINDIR',
+        'SYSTEMROOT',
+        'PROGRAMFILES',
+        'PROGRAMFILES(X86)',
+        'PROGRAMDATA',
+        'PROCESSOR_ARCHITECTURE',
+        'NUMBER_OF_PROCESSORS',
+    ],
 };
 
-function validateVariableNameString(name) {
+function validateVariableNameStringSecurity(name) {
     if (!name || typeof name !== 'string') {
         return false;
     }
@@ -876,7 +885,7 @@ function isSystemOnlyVariable(name) {
 }
 
 // Notification system for environment variables
-function showNotification(message, type = 'info', duration = 5000) {
+function showEnvNotification(message, type = 'info', duration = 5000) {
     // Remove existing notifications
     const existingNotifications = document.querySelectorAll('.env-notification');
     existingNotifications.forEach(notification => notification.remove());
@@ -898,9 +907,14 @@ function showNotification(message, type = 'info', duration = 5000) {
         animation: slideInRight 0.3s ease-out;
     `;
 
-    const icon = type === 'success' ? 'check-circle' :
-                 type === 'error' ? 'exclamation-triangle' :
-                 type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+    const icon =
+        type === 'success'
+            ? 'check-circle'
+            : type === 'error'
+              ? 'exclamation-triangle'
+              : type === 'warning'
+                ? 'exclamation-triangle'
+                : 'info-circle';
 
     notification.innerHTML = `<i class="fas fa-${icon}"></i> ${message}`;
 

@@ -20,15 +20,15 @@ class PluginSecurityManager extends EventEmitter {
             global: {
                 maxPlugins: 50,
                 maxTotalMemory: 500 * 1024 * 1024, // 500MB
-                maxConcurrentNetworkRequests: 10
-            }
+                maxConcurrentNetworkRequests: 10,
+            },
         };
         this.currentResourceUsage = {
             totalMemory: 0,
             activePlugins: 0,
-            networkRequests: 0
+            networkRequests: 0,
         };
-        
+
         this.setupGlobalMonitoring();
     }
 
@@ -37,13 +37,13 @@ class PluginSecurityManager extends EventEmitter {
      */
     async initialize() {
         console.log('Initializing Plugin Security Manager...');
-        
+
         // Load security policies
         await this.loadSecurityPolicies();
-        
+
         // Load trusted/blocked plugin lists
         await this.loadPluginLists();
-        
+
         console.log('Plugin Security Manager initialized');
     }
 
@@ -71,19 +71,19 @@ class PluginSecurityManager extends EventEmitter {
 
         // Create sandbox
         const sandbox = new PluginSandbox(pluginId, pluginPath, config);
-        
+
         // Set up event listeners
         this.setupSandboxEventListeners(sandbox);
-        
+
         // Initialize sandbox
         const secureAPI = await sandbox.initialize();
-        
+
         // Store sandbox
         this.sandboxes.set(pluginId, sandbox);
         this.currentResourceUsage.activePlugins++;
-        
+
         this.emit('sandboxCreated', { pluginId, sandbox });
-        
+
         return secureAPI;
     }
 
@@ -96,7 +96,7 @@ class PluginSecurityManager extends EventEmitter {
             sandbox.destroy();
             this.sandboxes.delete(pluginId);
             this.currentResourceUsage.activePlugins--;
-            
+
             this.emit('sandboxDestroyed', { pluginId });
         }
     }
@@ -128,17 +128,24 @@ class PluginSecurityManager extends EventEmitter {
             maxExecutionTime: 30000, // 30 seconds
             allowedDomains: [],
             restrictedAPIs: [
-                'require', 'process', 'fs', 'child_process', 'os', 'cluster',
-                'vm', 'eval', 'Function'
+                'require',
+                'process',
+                'fs',
+                'child_process',
+                'os',
+                'cluster',
+                'vm',
+                'eval',
+                'Function',
             ],
             allowedAPIs: [
-                'wintoolAPI.store', 'wintoolAPI.tabs', 'wintoolAPI.invoke', 
-                'wintoolAPI.notifications'
+                'wintoolAPI.store',
+                'wintoolAPI.tabs',
+                'wintoolAPI.invoke',
+                'wintoolAPI.notifications',
             ],
-            permissions: [
-                'storage.read', 'storage.write', 'notifications.show'
-            ],
-            cspPolicy: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';"
+            permissions: ['storage.read', 'storage.write', 'notifications.show'],
+            cspPolicy: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';",
         };
     }
 
@@ -150,18 +157,24 @@ class PluginSecurityManager extends EventEmitter {
             maxMemoryUsage: 100 * 1024 * 1024, // 100MB
             maxExecutionTime: 60000, // 60 seconds
             allowedDomains: ['*'], // All domains allowed
-            restrictedAPIs: [
-                'require', 'process', 'child_process', 'cluster'
-            ],
+            restrictedAPIs: ['require', 'process', 'child_process', 'cluster'],
             allowedAPIs: [
-                'wintoolAPI.store', 'wintoolAPI.tabs', 'wintoolAPI.invoke', 
-                'wintoolAPI.notifications', 'wintoolAPI.fs', 'wintoolAPI.http'
+                'wintoolAPI.store',
+                'wintoolAPI.tabs',
+                'wintoolAPI.invoke',
+                'wintoolAPI.notifications',
+                'wintoolAPI.fs',
+                'wintoolAPI.http',
             ],
             permissions: [
-                'storage.read', 'storage.write', 'notifications.show',
-                'network.request', 'fs.readUserFile'
+                'storage.read',
+                'storage.write',
+                'notifications.show',
+                'network.request',
+                'fs.readUserFile',
             ],
-            cspPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+            cspPolicy:
+                "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';",
         };
     }
 
@@ -169,24 +182,24 @@ class PluginSecurityManager extends EventEmitter {
      * Set up event listeners for sandbox
      */
     setupSandboxEventListeners(sandbox) {
-        sandbox.on('resourceLimitExceeded', (data) => {
+        sandbox.on('resourceLimitExceeded', data => {
             console.warn(`Resource limit exceeded for ${sandbox.pluginId}:`, data);
             this.emit('securityViolation', {
                 pluginId: sandbox.pluginId,
                 type: 'resourceLimit',
-                data
+                data,
             });
-            
+
             // Take action based on violation
             this.handleSecurityViolation(sandbox.pluginId, 'resourceLimit', data);
         });
 
-        sandbox.on('apiCall', (logEntry) => {
+        sandbox.on('apiCall', logEntry => {
             // Monitor API usage patterns
             this.monitorAPIUsage(logEntry);
         });
 
-        sandbox.on('destroyed', (pluginId) => {
+        sandbox.on('destroyed', pluginId => {
             console.log(`Sandbox destroyed for ${pluginId}`);
         });
     }
@@ -196,7 +209,7 @@ class PluginSecurityManager extends EventEmitter {
      */
     handleSecurityViolation(pluginId, violationType, data) {
         console.error(`Security violation by ${pluginId}: ${violationType}`, data);
-        
+
         switch (violationType) {
             case 'resourceLimit':
                 if (data.type === 'memory' || data.type === 'executionTime') {
@@ -205,12 +218,12 @@ class PluginSecurityManager extends EventEmitter {
                     this.emit('pluginTerminated', { pluginId, reason: violationType });
                 }
                 break;
-                
+
             case 'unauthorizedAPI':
                 // Log and potentially block plugin
                 this.logSecurityEvent(pluginId, violationType, data);
                 break;
-                
+
             case 'maliciousActivity':
                 // Block plugin immediately
                 this.blockPlugin(pluginId);
@@ -229,19 +242,20 @@ class PluginSecurityManager extends EventEmitter {
 
         const recentCalls = sandbox.getAPICallLog().slice(-10);
         const callCounts = {};
-        
+
         recentCalls.forEach(call => {
             callCounts[call.method] = (callCounts[call.method] || 0) + 1;
         });
 
         // Check for suspicious patterns
         Object.entries(callCounts).forEach(([method, count]) => {
-            if (count > 5) { // More than 5 calls to same method in last 10 calls
+            if (count > 5) {
+                // More than 5 calls to same method in last 10 calls
                 this.emit('suspiciousActivity', {
                     pluginId: logEntry.pluginId,
                     method,
                     count,
-                    pattern: 'rapidAPICalls'
+                    pattern: 'rapidAPICalls',
                 });
             }
         });
@@ -308,15 +322,18 @@ class PluginSecurityManager extends EventEmitter {
      */
     enforceGlobalMemoryLimit() {
         // Sort plugins by memory usage (highest first)
-        const pluginsByMemory = Array.from(this.sandboxes.entries())
-            .sort((a, b) => b[1].getResourceUsage().memory - a[1].getResourceUsage().memory);
+        const pluginsByMemory = Array.from(this.sandboxes.entries()).sort(
+            (a, b) => b[1].getResourceUsage().memory - a[1].getResourceUsage().memory
+        );
 
         // Terminate plugins until under limit
         for (const [pluginId, sandbox] of pluginsByMemory) {
-            if (this.currentResourceUsage.totalMemory <= this.resourceLimits.global.maxTotalMemory) {
+            if (
+                this.currentResourceUsage.totalMemory <= this.resourceLimits.global.maxTotalMemory
+            ) {
                 break;
             }
-            
+
             if (!this.trustedPlugins.has(pluginId)) {
                 console.log(`Terminating ${pluginId} due to global memory limit`);
                 this.destroySandbox(pluginId);
@@ -332,11 +349,11 @@ class PluginSecurityManager extends EventEmitter {
             const policiesPath = path.join(__dirname, '..', 'config', 'security-policies.json');
             const policiesContent = await fs.readFile(policiesPath, 'utf8');
             const policies = JSON.parse(policiesContent);
-            
+
             Object.entries(policies).forEach(([pluginId, policy]) => {
                 this.securityPolicies.set(pluginId, policy);
             });
-            
+
             console.log(`Loaded ${this.securityPolicies.size} security policies`);
         } catch (error) {
             console.log('No custom security policies found, using defaults');
@@ -351,16 +368,18 @@ class PluginSecurityManager extends EventEmitter {
             const listsPath = path.join(__dirname, '..', 'config', 'plugin-lists.json');
             const listsContent = await fs.readFile(listsPath, 'utf8');
             const lists = JSON.parse(listsContent);
-            
+
             if (lists.trusted) {
                 lists.trusted.forEach(pluginId => this.trustedPlugins.add(pluginId));
             }
-            
+
             if (lists.blocked) {
                 lists.blocked.forEach(pluginId => this.blockedPlugins.add(pluginId));
             }
-            
-            console.log(`Loaded ${this.trustedPlugins.size} trusted and ${this.blockedPlugins.size} blocked plugins`);
+
+            console.log(
+                `Loaded ${this.trustedPlugins.size} trusted and ${this.blockedPlugins.size} blocked plugins`
+            );
         } catch (error) {
             console.log('No plugin lists found, starting with empty lists');
         }
@@ -374,9 +393,9 @@ class PluginSecurityManager extends EventEmitter {
             const listsPath = path.join(__dirname, '..', 'config', 'plugin-lists.json');
             const lists = {
                 trusted: Array.from(this.trustedPlugins),
-                blocked: Array.from(this.blockedPlugins)
+                blocked: Array.from(this.blockedPlugins),
             };
-            
+
             await fs.mkdir(path.dirname(listsPath), { recursive: true });
             await fs.writeFile(listsPath, JSON.stringify(lists, null, 2));
         } catch (error) {
@@ -392,9 +411,9 @@ class PluginSecurityManager extends EventEmitter {
             timestamp: Date.now(),
             pluginId,
             eventType,
-            data
+            data,
         };
-        
+
         console.log('Security event:', event);
         this.emit('securityEvent', event);
     }
@@ -408,9 +427,9 @@ class PluginSecurityManager extends EventEmitter {
             trustedPlugins: this.trustedPlugins.size,
             blockedPlugins: this.blockedPlugins.size,
             resourceUsage: this.currentResourceUsage,
-            resourceLimits: this.resourceLimits.global
+            resourceLimits: this.resourceLimits.global,
         };
-        
+
         return status;
     }
 
@@ -419,11 +438,11 @@ class PluginSecurityManager extends EventEmitter {
      */
     async cleanup() {
         console.log('Cleaning up Plugin Security Manager...');
-        
+
         for (const [pluginId, sandbox] of this.sandboxes) {
             await this.destroySandbox(pluginId);
         }
-        
+
         console.log('Plugin Security Manager cleanup complete');
     }
 }

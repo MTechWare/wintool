@@ -18,22 +18,32 @@ class PluginSandbox extends EventEmitter {
             maxExecutionTime: config.maxExecutionTime || 30000, // 30 seconds
             allowedDomains: config.allowedDomains || [],
             restrictedAPIs: config.restrictedAPIs || [
-                'require', 'process', 'fs', 'child_process', 'os', 'cluster'
+                'require',
+                'process',
+                'fs',
+                'child_process',
+                'os',
+                'cluster',
             ],
             allowedAPIs: config.allowedAPIs || [
-                'wintoolAPI.store', 'wintoolAPI.tabs', 'wintoolAPI.invoke', 'wintoolAPI.notifications'
+                'wintoolAPI.store',
+                'wintoolAPI.tabs',
+                'wintoolAPI.invoke',
+                'wintoolAPI.notifications',
             ],
-            cspPolicy: config.cspPolicy || "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';",
-            ...config
+            cspPolicy:
+                config.cspPolicy ||
+                "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';",
+            ...config,
         };
-        
+
         this.resourceUsage = {
             memory: 0,
             executionTime: 0,
             apiCalls: 0,
-            networkRequests: 0
+            networkRequests: 0,
         };
-        
+
         this.permissions = new Set();
         this.apiCallLog = [];
         this.isActive = false;
@@ -45,19 +55,19 @@ class PluginSandbox extends EventEmitter {
      */
     async initialize() {
         console.log(`Initializing sandbox for plugin: ${this.pluginId}`);
-        
+
         // Load plugin permissions
         await this.loadPermissions();
-        
+
         // Set up resource monitoring
         this.setupResourceMonitoring();
-        
+
         // Create secure API wrapper
         this.secureAPI = this.createSecureAPI();
-        
+
         this.isActive = true;
         this.startTime = Date.now();
-        
+
         this.emit('initialized', this.pluginId);
         return this.secureAPI;
     }
@@ -70,19 +80,18 @@ class PluginSandbox extends EventEmitter {
             const manifestPath = path.join(this.pluginPath, 'plugin.json');
             const manifestContent = await fs.readFile(manifestPath, 'utf8');
             const manifest = JSON.parse(manifestContent);
-            
+
             // Load permissions from manifest
             if (manifest.permissions) {
                 manifest.permissions.forEach(permission => {
                     this.permissions.add(permission);
                 });
             }
-            
+
             // Default permissions for all plugins
             this.permissions.add('storage.read');
             this.permissions.add('storage.write');
             this.permissions.add('notifications.show');
-            
         } catch (error) {
             console.warn(`Failed to load permissions for ${this.pluginId}:`, error.message);
         }
@@ -96,12 +105,12 @@ class PluginSandbox extends EventEmitter {
         this.memoryMonitor = setInterval(() => {
             const usage = process.memoryUsage();
             this.resourceUsage.memory = usage.heapUsed;
-            
+
             if (this.resourceUsage.memory > this.config.maxMemoryUsage) {
                 this.emit('resourceLimitExceeded', {
                     type: 'memory',
                     current: this.resourceUsage.memory,
-                    limit: this.config.maxMemoryUsage
+                    limit: this.config.maxMemoryUsage,
                 });
             }
         }, 1000);
@@ -110,12 +119,12 @@ class PluginSandbox extends EventEmitter {
         this.executionMonitor = setInterval(() => {
             if (this.startTime) {
                 this.resourceUsage.executionTime = Date.now() - this.startTime;
-                
+
                 if (this.resourceUsage.executionTime > this.config.maxExecutionTime) {
                     this.emit('resourceLimitExceeded', {
                         type: 'executionTime',
                         current: this.resourceUsage.executionTime,
-                        limit: this.config.maxExecutionTime
+                        limit: this.config.maxExecutionTime,
                     });
                 }
             }
@@ -127,7 +136,7 @@ class PluginSandbox extends EventEmitter {
      */
     createSecureAPI() {
         const sandbox = this;
-        
+
         return {
             // Secure storage API
             storage: {
@@ -135,31 +144,31 @@ class PluginSandbox extends EventEmitter {
                     if (!sandbox.checkPermission('storage.read')) {
                         throw new Error('Permission denied: storage.read');
                     }
-                    
+
                     sandbox.logAPICall('storage.get', { key });
                     const store = await sandbox.getStore();
                     return store.get(`${sandbox.pluginId}_${key}`);
                 },
-                
+
                 async set(key, value) {
                     if (!sandbox.checkPermission('storage.write')) {
                         throw new Error('Permission denied: storage.write');
                     }
-                    
+
                     sandbox.logAPICall('storage.set', { key, valueType: typeof value });
                     const store = await sandbox.getStore();
                     return store.set(`${sandbox.pluginId}_${key}`, value);
                 },
-                
+
                 async delete(key) {
                     if (!sandbox.checkPermission('storage.write')) {
                         throw new Error('Permission denied: storage.write');
                     }
-                    
+
                     sandbox.logAPICall('storage.delete', { key });
                     const store = await sandbox.getStore();
                     return store.delete(`${sandbox.pluginId}_${key}`);
-                }
+                },
             },
 
             // Secure HTTP API
@@ -168,23 +177,23 @@ class PluginSandbox extends EventEmitter {
                     if (!sandbox.checkPermission('network.request')) {
                         throw new Error('Permission denied: network.request');
                     }
-                    
+
                     if (!sandbox.isAllowedDomain(url)) {
                         throw new Error(`Domain not allowed: ${new URL(url).hostname}`);
                     }
-                    
+
                     sandbox.logAPICall('http.request', { url, method: options.method || 'GET' });
                     sandbox.resourceUsage.networkRequests++;
-                    
+
                     // Use the existing axios instance with additional security
                     const axios = require('axios');
                     return await axios({
                         url,
                         timeout: 10000, // 10 second timeout
                         maxRedirects: 3,
-                        ...options
+                        ...options,
                     });
-                }
+                },
             },
 
             // Secure notifications API
@@ -193,17 +202,20 @@ class PluginSandbox extends EventEmitter {
                     if (!sandbox.checkPermission('notifications.show')) {
                         throw new Error('Permission denied: notifications.show');
                     }
-                    
-                    sandbox.logAPICall('notifications.show', { type, messageLength: message.length });
-                    
+
+                    sandbox.logAPICall('notifications.show', {
+                        type,
+                        messageLength: message.length,
+                    });
+
                     // Sanitize message
                     const sanitizedMessage = sandbox.sanitizeString(message);
-                    
+
                     // Call the original notification system
                     if (global.showNotification) {
                         global.showNotification(sanitizedMessage, type);
                     }
-                }
+                },
             },
 
             // Secure file system API (limited)
@@ -212,35 +224,35 @@ class PluginSandbox extends EventEmitter {
                     if (!sandbox.checkPermission('fs.readUserFile')) {
                         throw new Error('Permission denied: fs.readUserFile');
                     }
-                    
+
                     // This would open a file dialog for user to select a file
                     sandbox.logAPICall('fs.readUserFile');
-                    
+
                     // Implementation would use Electron's dialog API
                     const { dialog } = require('electron');
                     const result = await dialog.showOpenDialog({
                         properties: ['openFile'],
                         filters: [
                             { name: 'Text Files', extensions: ['txt', 'json', 'csv'] },
-                            { name: 'All Files', extensions: ['*'] }
-                        ]
+                            { name: 'All Files', extensions: ['*'] },
+                        ],
                     });
-                    
+
                     if (!result.canceled && result.filePaths.length > 0) {
                         const filePath = result.filePaths[0];
                         return await fs.readFile(filePath, 'utf8');
                     }
-                    
+
                     return null;
-                }
+                },
             },
 
             // Utility functions
             utils: {
-                sanitize: (input) => sandbox.sanitizeString(input),
-                hash: (input) => sandbox.hashString(input),
-                validateInput: (input, rules) => sandbox.validateInput(input, rules)
-            }
+                sanitize: input => sandbox.sanitizeString(input),
+                hash: input => sandbox.hashString(input),
+                validateInput: (input, rules) => sandbox.validateInput(input, rules),
+            },
         };
     }
 
@@ -258,7 +270,7 @@ class PluginSandbox extends EventEmitter {
         if (this.config.allowedDomains.length === 0) {
             return true; // No restrictions
         }
-        
+
         try {
             const hostname = new URL(url).hostname;
             return this.config.allowedDomains.some(domain => {
@@ -277,17 +289,17 @@ class PluginSandbox extends EventEmitter {
             timestamp: Date.now(),
             method,
             params,
-            pluginId: this.pluginId
+            pluginId: this.pluginId,
         };
-        
+
         this.apiCallLog.push(logEntry);
         this.resourceUsage.apiCalls++;
-        
+
         // Keep only last 100 calls
         if (this.apiCallLog.length > 100) {
             this.apiCallLog.shift();
         }
-        
+
         this.emit('apiCall', logEntry);
     }
 
@@ -298,7 +310,7 @@ class PluginSandbox extends EventEmitter {
         if (typeof input !== 'string') {
             return String(input);
         }
-        
+
         return input
             .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
             .replace(/<[^>]*>/g, '')
@@ -318,26 +330,26 @@ class PluginSandbox extends EventEmitter {
      */
     validateInput(input, rules) {
         const errors = [];
-        
+
         if (rules.required && (!input || input.trim() === '')) {
             errors.push('Input is required');
         }
-        
+
         if (rules.minLength && input.length < rules.minLength) {
             errors.push(`Input must be at least ${rules.minLength} characters`);
         }
-        
+
         if (rules.maxLength && input.length > rules.maxLength) {
             errors.push(`Input must be no more than ${rules.maxLength} characters`);
         }
-        
+
         if (rules.pattern && !rules.pattern.test(input)) {
             errors.push('Input format is invalid');
         }
-        
+
         return {
             isValid: errors.length === 0,
-            errors
+            errors,
         };
     }
 
@@ -348,9 +360,9 @@ class PluginSandbox extends EventEmitter {
         // This would return the actual electron-store instance
         // For now, return a mock
         return {
-            get: (key) => global.pluginStore?.get(key),
+            get: key => global.pluginStore?.get(key),
             set: (key, value) => global.pluginStore?.set(key, value),
-            delete: (key) => global.pluginStore?.delete(key)
+            delete: key => global.pluginStore?.delete(key),
         };
     }
 
@@ -359,15 +371,15 @@ class PluginSandbox extends EventEmitter {
      */
     destroy() {
         console.log(`Destroying sandbox for plugin: ${this.pluginId}`);
-        
+
         if (this.memoryMonitor) {
             clearInterval(this.memoryMonitor);
         }
-        
+
         if (this.executionMonitor) {
             clearInterval(this.executionMonitor);
         }
-        
+
         this.isActive = false;
         this.emit('destroyed', this.pluginId);
     }
