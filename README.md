@@ -2,9 +2,11 @@
 
 <div align="center">
 
-![WinTool Version](https://img.shields.io/badge/WinTool-v0.2.6wb-orange?style=for-the-badge&logo=windows&logoColor=white)
-![Platform](https://img.shields.io/badge/Platform-Windows_10/11-blue?style=for-the-badge&logo=windows)
+![WinTool Version](https://img.shields.io/badge/WinTool-v0.2.7wb-orange?style=for-the-badge&logo=windows&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Windows_11-blue?style=for-the-badge&logo=windows)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=for-the-badge)
+![GitHub Stars](https://img.shields.io/github/stars/MTechWare/wintool?style=for-the-badge&logo=github)
+![GitHub Issues](https://img.shields.io/github/issues/MTechWare/wintool?style=for-the-badge&logo=github)
 [![Plugin Marketplace](https://img.shields.io/badge/🔌_Plugin-Marketplace-4CAF50?style=for-the-badge&logo=puzzle-piece)](https://mtechware.github.io/plugins.html)
 [![Discord Community](https://img.shields.io/badge/💬_Join-Discord-7289DA?style=for-the-badge&logo=discord)](https://discord.gg/GSTEfkxhmD)
 
@@ -14,10 +16,18 @@
 
 WinTool is a powerful and intuitive application for Windows system management, designed for IT professionals, system administrators, and power users. It offers a unified interface for managing all aspects of a Windows system, with real-time data, a comprehensive set of utilities, and seamless administration tools, all wrapped in a secure, extensible platform.
 
+## 🆕 What's New
+
+# Version: v0.2.7wb
+
+- **ESLint Integration**: Enhanced ESLint configuration with separate rules for Node.js and browser environments
+- **Docs**: Updated documentation through out the tabs
+
 ---
 
 ## 📋 Table of Contents
 
+- [🆕 What's New](#-whats-new)
 - [🚀 Features](#-features)
   - [Core Features](#-core-features)
   - [Extensibility and Customization](#-extensibility-and-customization)
@@ -25,12 +35,14 @@ WinTool is a powerful and intuitive application for Windows system management, d
 - [🏗️ System Requirements & Architecture Support](#️-system-requirements--architecture-support)
 - [🔌 Plugin System](#-plugin-system)
 - [🎯 Quick Start](#-quick-start)
-- [🧩 Modular Architecture](#-modular-architecture)
 - [🔧 Configuration](#-configuration)
+- [🧩 Modular Architecture](#-modular-architecture)
 - [🤝 Support](#-support)
+- [🔒 Security & Privacy](#-security--privacy)
 - [🏗 Built With](#-built-with)
 - [📄 License](#-license)
 - [🙏 Acknowledgments](#-acknowledgments)
+- [🤝 Contributing](#-contributing)
 
 ---
 
@@ -87,8 +99,6 @@ irm https://raw.githubusercontent.com/MTechWare/wintool/refs/heads/main/WinTool_
 
 **Installation Location**: `%LOCALAPPDATA%\MTechWare\WinTool\` (typically `C:\Users\[Username]\AppData\Local\MTechWare\WinTool\`)
 
-**Installation Location**: `%LOCALAPPDATA%\MTechWare\WinTool\` (typically `C:\Users\[Username]\AppData\Local\MTechWare\WinTool\`)
-
 ### Option 2: Portable Executable
 1. Download the latest `WinTool.exe` from the [releases page](https://github.com/MTechWare/wintool/releases).
 2. Place the executable in your desired directory.
@@ -127,8 +137,16 @@ WinTool provides comprehensive support for modern Windows architectures:
 
 ### System Requirements
 - **Operating System**: Windows 10 (version 1903+) or Windows 11
-- **Memory**: 4 GB RAM minimum, 8 GB recommended
-- **Storage**: 100 MB available disk space
+- **Architecture**: x64 (64-bit) systems supported
+- **Memory**: 4 GB RAM minimum, 8 GB recommended for optimal performance
+- **Storage**: 100 MB available disk space (additional space for plugins)
+- **Permissions**: Standard user account (Administrator privileges for some system tools RECOMMENDED)
+
+### Performance Characteristics
+- **Startup Time**: < 5-10 seconds on modern systems
+- **Memory Footprint**: ~150-200 MB RAM usage
+- **CPU Usage**: Minimal background processing.
+- **Real-time Updates**: Live system monitoring with configurable refresh rates
 
 ---
 
@@ -148,7 +166,7 @@ Extend WinTool's functionality with a simple and powerful plugin system. Plugins
 2.  Click **"Install Plugin"** and select your plugin's `.zip` package.
 3.  The application will prompt for a restart to complete the installation.
 
-For developers, see the [Plugin Development Guide](https://github.com/MTechWare/wintool-plugins).
+For developers, see the [Plugin Development Guide](https://github.com/MTechWare/wintool/blob/main/PLUGIN_DEVELOPMENT.md).
 
 ---
 
@@ -161,6 +179,18 @@ For developers, see the [Plugin Development Guide](https://github.com/MTechWare/
 
 ---
 
+## 🔧 Configuration
+
+WinTool stores its configuration in `%LOCALAPPDATA%\MTechWare\WinTool\config.json`. This file contains:
+
+- **Theme Settings**: Color schemes, opacity, and UI preferences
+- **Plugin Configuration**: Enabled plugins and their settings
+- **Tool Preferences**: Customized layouts, quick access configurations, performance settings, and more
+
+The configuration file is automatically created on first launch with sensible defaults.
+
+---
+
 ## 🧩 Modular Architecture
 
 WinTool is designed with a modular architecture, separating the core tools from community-driven plugins.
@@ -170,9 +200,39 @@ WinTool is designed with a modular architecture, separating the core tools from 
 
 ## 🤝 Support
 
-- 🐛 [Issue Tracker](https://github.com/MTechWare/wintool/issues)
-- 🚀 [Discord](https://discord.gg/GSTEfkxhmD)
+Need help or have questions? We're here to assist you:
 
+- **🐛 Bug Reports & Feature Requests**: [GitHub Issues](https://github.com/MTechWare/wintool/issues)
+- **� Community Support**: [Discord Server](https://discord.gg/GSTEfkxhmD)
+- **📖 Documentation**: [Plugin Development Guide](https://github.com/MTechWare/wintool-plugins)
+- **🔌 Plugin Marketplace**: [Browse Plugins](https://mtechware.github.io/plugins.html)
+
+### Reporting Issues
+
+When reporting bugs, please include:
+- Your Windows version and architecture
+- WinTool version (found in Settings → About)
+- Steps to reproduce the issue
+- Any error messages or screenshots
+
+
+---
+
+## 🔒 Security & Privacy
+
+WinTool is built with security as a core principle:
+
+### Plugin Security
+- **Sandboxed Execution**: Plugins run in isolated environments
+- **Permission-Based Access**: Plugins must request access to system resources
+- **Code Validation**: All plugin code is validated before execution
+- **User-Controlled Permissions**: Users have full control over plugin capabilities
+
+### Data Privacy
+- **Local Storage Only**: All data remains on your local machine
+- **No Telemetry**: WinTool does not collect or transmit user data
+- **Transparent Operations**: All system operations are logged and visible
+- **Open Source**: Full source code available for security auditing
 
 ---
 
@@ -203,9 +263,38 @@ This project is licensed under the GPL-3.0-or-later License.
 
 ---
 
+## 🤝 Contributing
+
+We welcome contributions from the community! Here's how you can help:
+
+- **🐛 Report Bugs**: Use our [Issue Tracker](https://github.com/MTechWare/wintool/issues)
+- **💡 Suggest Features**: Share your ideas for new tools and improvements
+- **🔌 Create Plugins**: Extend WinTool with custom functionality
+- **📖 Improve Documentation**: Help make our guides clearer and more comprehensive
+- **🌐 Translations**: Help localize WinTool for different languages
+
+### Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/MTechWare/wintool.git
+cd wintool
+
+# Install dependencies
+npm install
+
+# Start development mode
+npm run dev
+```
+
+---
+
 <div align="center">
 
 **Made with ❤️ by MTechWare**
+
+[![GitHub](https://img.shields.io/badge/GitHub-MTechWare-181717?style=flat&logo=github)](https://github.com/MTechWare)
+[![Discord](https://img.shields.io/badge/Discord-Community-7289DA?style=flat&logo=discord)](https://discord.gg/GSTEfkxhmD)
 
 [⬆ Back to Top](#div-aligncenterwintool)
 
