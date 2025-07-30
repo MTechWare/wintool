@@ -36,15 +36,11 @@ class PluginSecurityManager extends EventEmitter {
      * Initialize security manager
      */
     async initialize() {
-        console.log('Initializing Plugin Security Manager...');
-
         // Load security policies
         await this.loadSecurityPolicies();
 
         // Load trusted/blocked plugin lists
         await this.loadPluginLists();
-
-        console.log('Plugin Security Manager initialized');
     }
 
     /**
@@ -56,7 +52,6 @@ class PluginSecurityManager extends EventEmitter {
         }
 
         if (this.sandboxes.has(pluginId)) {
-            console.warn(`Sandbox for ${pluginId} already exists, destroying old one`);
             await this.destroySandbox(pluginId);
         }
 
@@ -183,7 +178,6 @@ class PluginSecurityManager extends EventEmitter {
      */
     setupSandboxEventListeners(sandbox) {
         sandbox.on('resourceLimitExceeded', data => {
-            console.warn(`Resource limit exceeded for ${sandbox.pluginId}:`, data);
             this.emit('securityViolation', {
                 pluginId: sandbox.pluginId,
                 type: 'resourceLimit',
@@ -200,7 +194,7 @@ class PluginSecurityManager extends EventEmitter {
         });
 
         sandbox.on('destroyed', pluginId => {
-            console.log(`Sandbox destroyed for ${pluginId}`);
+            // Sandbox destroyed
         });
     }
 
@@ -208,7 +202,6 @@ class PluginSecurityManager extends EventEmitter {
      * Handle security violations
      */
     handleSecurityViolation(pluginId, violationType, data) {
-        console.error(`Security violation by ${pluginId}: ${violationType}`, data);
 
         switch (violationType) {
             case 'resourceLimit':
@@ -267,7 +260,6 @@ class PluginSecurityManager extends EventEmitter {
     blockPlugin(pluginId) {
         this.blockedPlugins.add(pluginId);
         this.savePluginLists();
-        console.log(`Plugin ${pluginId} has been blocked`);
     }
 
     /**
@@ -277,7 +269,6 @@ class PluginSecurityManager extends EventEmitter {
         this.trustedPlugins.add(pluginId);
         this.blockedPlugins.delete(pluginId);
         this.savePluginLists();
-        console.log(`Plugin ${pluginId} has been trusted`);
     }
 
     /**
@@ -312,7 +303,6 @@ class PluginSecurityManager extends EventEmitter {
      */
     checkGlobalLimits() {
         if (this.currentResourceUsage.totalMemory > this.resourceLimits.global.maxTotalMemory) {
-            console.warn('Global memory limit exceeded, terminating least important plugins');
             this.enforceGlobalMemoryLimit();
         }
     }
@@ -335,7 +325,6 @@ class PluginSecurityManager extends EventEmitter {
             }
 
             if (!this.trustedPlugins.has(pluginId)) {
-                console.log(`Terminating ${pluginId} due to global memory limit`);
                 this.destroySandbox(pluginId);
             }
         }
@@ -354,9 +343,8 @@ class PluginSecurityManager extends EventEmitter {
                 this.securityPolicies.set(pluginId, policy);
             });
 
-            console.log(`Loaded ${this.securityPolicies.size} security policies`);
         } catch (error) {
-            console.log('No custom security policies found, using defaults');
+            // No custom security policies found, using defaults
         }
     }
 
@@ -377,11 +365,8 @@ class PluginSecurityManager extends EventEmitter {
                 lists.blocked.forEach(pluginId => this.blockedPlugins.add(pluginId));
             }
 
-            console.log(
-                `Loaded ${this.trustedPlugins.size} trusted and ${this.blockedPlugins.size} blocked plugins`
-            );
         } catch (error) {
-            console.log('No plugin lists found, starting with empty lists');
+            // No plugin lists found, starting with empty lists
         }
     }
 
@@ -399,7 +384,7 @@ class PluginSecurityManager extends EventEmitter {
             await fs.mkdir(path.dirname(listsPath), { recursive: true });
             await fs.writeFile(listsPath, JSON.stringify(lists, null, 2));
         } catch (error) {
-            console.error('Failed to save plugin lists:', error);
+            // Failed to save plugin lists
         }
     }
 
@@ -414,7 +399,6 @@ class PluginSecurityManager extends EventEmitter {
             data,
         };
 
-        console.log('Security event:', event);
         this.emit('securityEvent', event);
     }
 
@@ -437,13 +421,9 @@ class PluginSecurityManager extends EventEmitter {
      * Cleanup all sandboxes
      */
     async cleanup() {
-        console.log('Cleaning up Plugin Security Manager...');
-
         for (const [pluginId, sandbox] of this.sandboxes) {
             await this.destroySandbox(pluginId);
         }
-
-        console.log('Plugin Security Manager cleanup complete');
     }
 }
 

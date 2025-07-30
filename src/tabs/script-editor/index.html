@@ -8,9 +8,9 @@
     </div>
 </div>
 
-<div class="plugin-warning">
-    <i class="fas fa-exclamation-triangle"></i>
-    <span><strong>Warning:</strong> Running scripts can modify your system and data. Only execute scripts from trusted sources. <strong>Administrator privileges may be required</strong> for some operations.</span>
+<div class="plugin-warning security">
+    <i class="fas fa-code"></i>
+    <span><strong>Security Note:</strong> Scripts can modify system files, registry, and user data. Only execute code from verified and trusted sources. <strong>Administrator privileges required</strong> for system-level operations and modifications.</span>
 </div>
 
 <div class="script-editor-content">
@@ -44,12 +44,8 @@
                 <option value="text">Plain Text</option>
             </select>
             <select id="theme-select" class="control-select" title="Select Theme">
-                <option value="vs-dark">VS Dark</option>
-                <option value="vs">VS Light</option>
-                <option value="dracula">Dracula</option>
-                <option value="material">Material</option>
-                <option value="material-darker">Material Darker</option>
-                <option value="monokai">Monokai</option>
+                <option value="dark">Dark Theme</option>
+                <option value="light">Light Theme</option>
             </select>
             <button class="control-btn primary" id="run-btn" title="Run Script">
                 <i class="fas fa-play"></i> Run

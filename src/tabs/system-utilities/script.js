@@ -1,6 +1,14 @@
-async function launchUtility(utilityCommand) {
+async function launchUtility(utilityCommand, clickedElement = null) {
+    let clickedCard = null;
+
     try {
-        const clickedCard = event.target.closest('.utility-card');
+        // Try to find the clicked card from the passed element or current event
+        if (clickedElement) {
+            clickedCard = clickedElement.closest('.utility-card');
+        } else if (window.event && window.event.target) {
+            clickedCard = window.event.target.closest('.utility-card');
+        }
+
         if (clickedCard) {
             clickedCard.classList.add('loading');
         }
@@ -16,6 +24,9 @@ async function launchUtility(utilityCommand) {
                 } else {
                     showStatusMessage('success', result.message);
                 }
+            } else {
+                // Handle case where result exists but success is false
+                showStatusMessage('error', result.message || `Failed to launch ${utilityCommand}`);
             }
         } else {
             if (utilityCommand.startsWith('ms-settings:')) {
@@ -31,13 +42,16 @@ async function launchUtility(utilityCommand) {
             }
         }
     } catch (error) {
-        window.electronAPI.logError(
-            `Error launching utility: ${error.message}`,
-            'SystemUtilitiesTab'
-        );
+        console.error('Error launching utility:', error);
+        if (window.electronAPI && window.electronAPI.logError) {
+            window.electronAPI.logError(
+                `Error launching utility: ${error.message}`,
+                'SystemUtilitiesTab'
+            );
+        }
         showStatusMessage('error', `Failed to launch ${utilityCommand}: ${error.message}`);
     } finally {
-        const clickedCard = event.target.closest('.utility-card');
+        // Always remove loading state
         if (clickedCard) {
             clickedCard.classList.remove('loading');
         }
@@ -47,9 +61,17 @@ async function launchUtility(utilityCommand) {
 /**
  * Launch disk check utility with drive selection
  */
-async function launchDiskCheck() {
+async function launchDiskCheck(clickedElement = null) {
+    let clickedCard = null;
+
     try {
-        const clickedCard = event.target.closest('.utility-card');
+        // Try to find the clicked card from the passed element or current event
+        if (clickedElement) {
+            clickedCard = clickedElement.closest('.utility-card');
+        } else if (window.event && window.event.target) {
+            clickedCard = window.event.target.closest('.utility-card');
+        }
+
         if (clickedCard) {
             clickedCard.classList.add('loading');
         }
@@ -63,6 +85,8 @@ async function launchDiskCheck() {
                     'success',
                     'Command Prompt opened. Use "chkdsk C: /f" to check C: drive (requires admin privileges)'
                 );
+            } else {
+                showStatusMessage('error', result.message || 'Failed to open Command Prompt');
             }
         } else {
             showStatusMessage(
@@ -73,28 +97,35 @@ async function launchDiskCheck() {
 
         // Also suggest Windows 11 alternative
         if (window.electronAPI && window.electronAPI.getSystemInfo) {
-            const sysInfo = await window.electronAPI.getSystemInfo();
-            const isWindows11 =
-                sysInfo.osInfo &&
-                (sysInfo.osInfo.distro.includes('Windows 11') || sysInfo.osInfo.build >= 22000);
+            try {
+                const sysInfo = await window.electronAPI.getSystemInfo();
+                const isWindows11 =
+                    sysInfo.osInfo &&
+                    (sysInfo.osInfo.distro.includes('Windows 11') || sysInfo.osInfo.build >= 22000);
 
-            if (isWindows11) {
-                setTimeout(() => {
-                    showStatusMessage(
-                        'info',
-                        'Tip: On Windows 11, you can also use Settings > System > Storage > Advanced storage settings > Disks & volumes for disk management.'
-                    );
-                }, 3000);
+                if (isWindows11) {
+                    setTimeout(() => {
+                        showStatusMessage(
+                            'info',
+                            'Tip: On Windows 11, you can also use Settings > System > Storage > Advanced storage settings > Disks & volumes for disk management.'
+                        );
+                    }, 3000);
+                }
+            } catch (sysInfoError) {
+                console.warn('Could not get system info for Windows 11 tip:', sysInfoError);
             }
         }
     } catch (error) {
-        window.electronAPI.logError(
-            `Error launching disk check: ${error.message}`,
-            'SystemUtilitiesTab'
-        );
+        console.error('Error launching disk check:', error);
+        if (window.electronAPI && window.electronAPI.logError) {
+            window.electronAPI.logError(
+                `Error launching disk check: ${error.message}`,
+                'SystemUtilitiesTab'
+            );
+        }
         showStatusMessage('error', `Failed to launch disk check: ${error.message}`);
     } finally {
-        const clickedCard = event.target.closest('.utility-card');
+        // Always remove loading state
         if (clickedCard) {
             clickedCard.classList.remove('loading');
         }

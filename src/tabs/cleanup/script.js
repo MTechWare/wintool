@@ -262,14 +262,6 @@ async function loadDiskSpace() {
         if (window.electronAPI) {
             const diskData = await window.electronAPI.getDiskSpace();
             updateDiskSpaceDisplay(diskData);
-        } else {
-            // Fallback for browser testing
-            const mockData = {
-                total: 1000000000000, // 1TB
-                used: 600000000000, // 600GB
-                free: 400000000000, // 400GB
-            };
-            updateDiskSpaceDisplay(mockData);
         }
     } catch (error) {
         console.error('Error loading disk space:', error);
@@ -1282,8 +1274,6 @@ async function openDiskCleanup() {
     try {
         if (window.electronAPI) {
             await window.electronAPI.openDiskCleanup();
-        } else {
-            alert('Windows Disk Cleanup can only be opened in the desktop application.');
         }
     } catch (error) {
         showError('Failed to open Windows Disk Cleanup');
@@ -1591,12 +1581,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // Initialize category displays
     initializeCategoryDisplays();
 
-    // Initialize disk space display
-    updateDiskSpaceDisplay({
-        total: 1000000000000, // 1TB
-        used: 600000000000, // 600GB
-        free: 400000000000, // 400GB
-    });
+    // Load actual disk space data
+    loadDiskSpace();
 
     // Initialize cleanup summary
     updateCleanupSummary();

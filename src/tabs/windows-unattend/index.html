@@ -7,9 +7,9 @@
     </div>
 </div>
 
-<div class="plugin-warning">
-    <i class="fas fa-exclamation-triangle"></i>
-    <span><strong>Warning:</strong> Unattend files can completely automate Windows installation including disk partitioning. <strong>Test thoroughly in virtual machines</strong> before using on production systems. Incorrect settings may cause data loss.</span>
+<div class="plugin-warning error">
+    <i class="fas fa-robot"></i>
+    <span><strong>Security Note:</strong> Unattend files enable complete Windows installation automation including disk partitioning and system configuration. <strong>Test extensively in virtual environments</strong> before production deployment. Incorrect configurations may result in data loss.</span>
 </div>
 
 <div class="windows-unattend-content">
@@ -119,7 +119,8 @@
                 <div class="form-group">
                     <label for="timezone">Time Zone:</label>
                     <select id="timezone" data-tooltip="Sets the system time zone. Choose the time zone where the computer will be used.">
-                        <option value="Eastern Standard Time" selected>Eastern Time (US & Canada)</option>
+                        <option value="">Select Time Zone</option>
+                        <option value="Eastern Standard Time">Eastern Time (US & Canada)</option>
                         <option value="Central Standard Time">Central Time (US & Canada)</option>
                         <option value="Mountain Standard Time">Mountain Time (US & Canada)</option>
                         <option value="Pacific Standard Time">Pacific Time (US & Canada)</option>
@@ -134,7 +135,8 @@
                 <div class="form-group">
                     <label for="language">System Language:</label>
                     <select id="language" data-tooltip="Sets the default display language for Windows interface, menus, and dialogs.">
-                        <option value="en-US" selected>English (United States)</option>
+                        <option value="">Select Language</option>
+                        <option value="en-US">English (United States)</option>
                         <option value="en-GB">English (United Kingdom)</option>
                         <option value="en-CA">English (Canada)</option>
                         <option value="es-ES">Spanish (Spain)</option>
@@ -155,7 +157,8 @@
                 <div class="form-group">
                     <label for="keyboard">Keyboard Layout:</label>
                     <select id="keyboard" data-tooltip="Sets the keyboard layout and input method. Choose based on your physical keyboard.">
-                        <option value="0409:00000409" selected>US English (QWERTY)</option>
+                        <option value="">Select Keyboard Layout</option>
+                        <option value="0409:00000409">US English (QWERTY)</option>
                         <option value="0809:00000809">UK English (QWERTY)</option>
                         <option value="1009:00000409">Canadian English</option>
                         <option value="040c:0000040c">French (AZERTY)</option>
@@ -170,7 +173,8 @@
                 <div class="form-group">
                     <label for="locale">Regional Format:</label>
                     <select id="locale" data-tooltip="Sets number, currency, date, and time formats based on regional conventions.">
-                        <option value="en-US" selected>English (United States)</option>
+                        <option value="">Select Regional Format</option>
+                        <option value="en-US">English (United States)</option>
                         <option value="en-GB">English (United Kingdom)</option>
                         <option value="en-CA">English (Canada)</option>
                         <option value="fr-FR">French (France)</option>
@@ -197,7 +201,7 @@
                 </div>
                 <div class="form-group">
                     <label for="workgroup">Workgroup:</label>
-                    <input type="text" id="workgroup" placeholder="WORKGROUP" value="WORKGROUP"
+                    <input type="text" id="workgroup" placeholder="WORKGROUP"
                            data-tooltip="The workgroup name for peer-to-peer networking. Default is 'WORKGROUP'.">
                 </div>
             </div>
@@ -229,7 +233,8 @@
                 <div class="form-group">
                     <label for="windows-edition">Windows Edition:</label>
                     <select id="windows-edition" data-tooltip="Select the Windows edition to install. Must match your installation media and license.">
-                        <option value="Windows 11 Pro" selected>Windows 11 Pro</option>
+                        <option value="">Select Windows Edition</option>
+                        <option value="Windows 11 Pro">Windows 11 Pro</option>
                         <option value="Windows 11 Home">Windows 11 Home</option>
                         <option value="Windows 11 Enterprise">Windows 11 Enterprise</option>
                         <option value="Windows 11 Education">Windows 11 Education</option>
@@ -242,7 +247,8 @@
                 <div class="form-group">
                     <label for="architecture">Architecture:</label>
                     <select id="architecture" data-tooltip="Select the processor architecture. 64-bit (x64) is recommended for modern systems.">
-                        <option value="amd64" selected>64-bit (x64)</option>
+                        <option value="">Select Architecture</option>
+                        <option value="amd64">64-bit (x64)</option>
                         <option value="x86">32-bit (x86)</option>
                     </select>
                 </div>
@@ -382,10 +388,10 @@
                     </div>
                 </div>
 
-                <div class="disk-config-warning">
+                <div class="plugin-warning error compact">
                     <i class="fas fa-exclamation-triangle"></i>
-                    <strong>Warning:</strong> Enabling disk partitioning will completely erase the target disk and create new partitions.
-                    All existing data will be lost. Make sure to backup important data before proceeding.
+                    <span><strong>Warning:</strong> Enabling disk partitioning will completely erase the target disk and create new partitions.
+                    All existing data will be lost. Make sure to backup important data before proceeding.</span>
                 </div>
             </div>
         </div>
@@ -568,10 +574,10 @@
                 </div>
             </div>
 
-            <div class="network-warning">
+            <div class="plugin-warning security compact">
                 <i class="fas fa-exclamation-triangle"></i>
-                <strong>Security Note:</strong> Network credentials and Wi-Fi passwords will be stored in the unattend.xml file.
-                Ensure proper file security and consider using temporary accounts for domain joining.
+                <span><strong>Security Note:</strong> Network credentials and Wi-Fi passwords will be stored in the unattend.xml file.
+                Ensure proper file security and consider using temporary accounts for domain joining.</span>
             </div>
         </div>
     </div>
@@ -806,10 +812,10 @@
                 </div>
             </div>
 
-            <div class="privacy-warning">
+            <div class="plugin-warning info compact">
                 <i class="fas fa-info-circle"></i>
-                <strong>Note:</strong> Privacy and debloating options will be applied through registry modifications and
-                PowerShell scripts during installation. Some changes may require system restart to take full effect.
+                <span><strong>Note:</strong> Privacy and debloating options will be applied through registry modifications and
+                PowerShell scripts during installation. Some changes may require system restart to take full effect.</span>
             </div>
         </div>
     </div>
@@ -926,10 +932,9 @@
                 </div>
             </div>
 
-            <div class="security-warning">
-                <i class="fas fa-exclamation-triangle"></i>
-                <strong>Warning:</strong> Bypassing Windows 11 security requirements may result in reduced system security
-                and stability. Advanced security features require compatible hardware and may affect system performance.
+            <div class="plugin-warning security compact">
+                <i class="fas fa-shield-alt"></i>
+                <span><strong>Security Note:</strong> Disabling Windows 11 security requirements may reduce system protection and stability. Advanced security features require compatible hardware and may impact performance.</span>
             </div>
         </div>
     </div>
@@ -1184,10 +1189,9 @@
                     user profile configuration, and post-installation setup tasks.
                 </p>
 
-                <div class="wintool-auto-install-notice">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>Automatic WinTool Installation:</strong> WinTool will be automatically installed on first logon for all unattend.xml files.
-                    This provides immediate access to professional Windows system management tools after deployment.
+                <div class="plugin-warning info compact">
+                    <i class="fas fa-download"></i>
+                    <span><strong>Information:</strong> WinTool will be automatically installed on first logon for all unattend.xml files. This provides immediate access to professional Windows system management tools after deployment.</span>
                 </div>
 
                 <div class="script-commands" id="firstlogon-commands">
@@ -1264,10 +1268,9 @@
                     <i class="fas fa-plus"></i> Add Registry Entry
                 </button>
 
-                <div class="script-warning">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <strong>Warning:</strong> Custom scripts and registry modifications can affect system stability and security.
-                    Test thoroughly before using in production environments. Commands run with SYSTEM privileges.
+                <div class="plugin-warning security compact">
+                    <i class="fas fa-code"></i>
+                    <span><strong>Security Note:</strong> Custom scripts and registry modifications can affect system stability and security. Test thoroughly before using in production environments. Commands execute with SYSTEM privileges.</span>
                 </div>
             </div>
         </div>
@@ -1402,10 +1405,10 @@
                     <div class="help-section">
                         <h4><i class="fas fa-rocket"></i> Quick Start Guide</h4>
                         <ol>
-                            <li><strong>Choose a Preset:</strong> Start with Basic, Enterprise, or Secure preset</li>
-                            <li><strong>Configure Settings:</strong> Customize user accounts, regional settings, and features</li>
-                            <li><strong>Advanced Options:</strong> Configure disk partitioning, scripts, and security features</li>
-                            <li><strong>Validate:</strong> Use the validation tool to check for errors</li>
+                            <li><strong>Choose a Preset (Optional):</strong> Start with Basic, Enterprise, or Secure preset, or configure manually from scratch</li>
+                            <li><strong>Configure Settings:</strong> Fill in user accounts, regional settings, and features as needed</li>
+                            <li><strong>Advanced Options:</strong> Configure disk partitioning, scripts, and security features if required</li>
+                            <li><strong>Validate:</strong> Use the validation tool to check for errors before export</li>
                             <li><strong>Export:</strong> Generate and download your unattend.xml file</li>
                             <li><strong>Automatic WinTool:</strong> WinTool will be automatically installed on first logon</li>
                         </ol>
@@ -1444,17 +1447,21 @@
                     <div class="help-section">
                         <h4><i class="fas fa-exclamation-triangle"></i> Important Warnings</h4>
                         <div class="warning-list">
-                            <div class="warning-item">
-                                <strong>Disk Partitioning:</strong> Enabling automatic disk partitioning will completely erase the target disk.
+                            <div class="plugin-warning error compact">
+                                <i class="fas fa-hdd"></i>
+                                <span><strong>Security Note:</strong> Enabling automatic disk partitioning will completely erase the target disk.</span>
                             </div>
-                            <div class="warning-item">
-                                <strong>Security Bypasses:</strong> Bypassing Windows 11 requirements may reduce system security.
+                            <div class="plugin-warning security compact">
+                                <i class="fas fa-shield-alt"></i>
+                                <span><strong>Security Note:</strong> Bypassing Windows 11 requirements may reduce system security.</span>
                             </div>
-                            <div class="warning-item">
-                                <strong>Credentials:</strong> Passwords and domain credentials are stored in plain text in the XML file.
+                            <div class="plugin-warning compact">
+                                <i class="fas fa-key"></i>
+                                <span><strong>Security Note:</strong> Passwords and domain credentials are stored in plain text in the XML file.</span>
                             </div>
-                            <div class="warning-item">
-                                <strong>Testing:</strong> Always test unattend files in a virtual machine before production use.
+                            <div class="plugin-warning info compact">
+                                <i class="fas fa-flask"></i>
+                                <span><strong>Note:</strong> Always test unattend files in a virtual machine before production use.</span>
                             </div>
                         </div>
                     </div>

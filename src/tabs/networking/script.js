@@ -1,3 +1,7 @@
+// Store event handlers to prevent duplicates
+let networkButtonHandlersAttached = false;
+let refreshButtonHandlerAttached = false;
+
 function initNetworkingTab() {
     let container = null;
     if (typeof tabContainer !== 'undefined') {
@@ -11,8 +15,16 @@ function initNetworkingTab() {
     }
 
     if (container) {
+        // Setup event listeners only once during initialization
+        setupNetworkActionButtons(container);
+        setupRefreshButton(container);
+        // Load the initial data
         loadNetworkingInfo(container);
     } else {
+        // Setup event listeners for document-level fallback
+        setupNetworkActionButtons(document);
+        setupRefreshButton(document);
+        // Load the initial data
         loadNetworkingInfo(document);
     }
 }
@@ -23,65 +35,80 @@ if (document.readyState === 'loading') {
 }
 
 function setupRefreshButton(container) {
+    // Only attach event listener once
+    if (refreshButtonHandlerAttached) {
+        return;
+    }
+
     const refreshBtn = container.querySelector('#refresh-networking-btn');
     if (refreshBtn) {
-        refreshBtn.addEventListener('click', () => {
+        refreshBtn.onclick = () => {
             loadNetworkingInfo(container);
-        });
+        };
+        refreshButtonHandlerAttached = true;
     }
 }
 
 function setupNetworkActionButtons(container) {
+    // Only attach event listeners once
+    if (networkButtonHandlersAttached) {
+        return;
+    }
+
     const flushDnsBtn = container.querySelector('#flush-dns-btn');
     const resetTcpIpBtn = container.querySelector('#reset-tcp-ip-btn');
     const renewDhcpBtn = container.querySelector('#renew-dhcp-btn');
 
     if (flushDnsBtn) {
-        flushDnsBtn.addEventListener('click', async () => {
-            try {
-                const result = await window.electronAPI.runCommand('ipconfig /flushdns');
-                if (result.success) {
-                    loadNetworkingInfo(container);
-                }
-            } catch (error) {
-                console.error('Error flushing DNS:', error);
-            }
-        });
+        flushDnsBtn.onclick = async () => {
+            await executeNetworkCommand(
+                flushDnsBtn,
+                'ipconfig /flushdns',
+                'Flushing DNS cache...',
+                'DNS cache flushed successfully!',
+                'Failed to flush DNS cache',
+                container
+            );
+        };
     }
 
     if (resetTcpIpBtn) {
-        resetTcpIpBtn.addEventListener('click', async () => {
-            try {
-                const result = await window.electronAPI.runCommand('netsh int ip reset');
-                if (result.success) {
-                    loadNetworkingInfo(container);
-                }
-            } catch (error) {
-                console.error('Error resetting TCP/IP:', error);
+        resetTcpIpBtn.onclick = async () => {
+            const confirmed = confirm(
+                'Resetting TCP/IP stack will require a system restart to take full effect. Continue?'
+            );
+            if (confirmed) {
+                await executeNetworkCommand(
+                    resetTcpIpBtn,
+                    'netsh int ip reset',
+                    'Resetting TCP/IP stack...',
+                    'TCP/IP stack reset successfully! Please restart your computer.',
+                    'Failed to reset TCP/IP stack',
+                    container,
+                    true // Requires admin
+                );
             }
-        });
+        };
     }
 
     if (renewDhcpBtn) {
-        renewDhcpBtn.addEventListener('click', async () => {
-            try {
-                const result = await window.electronAPI.runCommand('ipconfig /renew');
-                if (result.success) {
-                    loadNetworkingInfo(container);
-                }
-            } catch (error) {
-                console.error('Error renewing DHCP lease:', error);
-            }
-        });
+        renewDhcpBtn.onclick = async () => {
+            await executeNetworkCommand(
+                renewDhcpBtn,
+                'ipconfig /renew',
+                'Renewing DHCP lease...',
+                'DHCP lease renewed successfully!',
+                'Failed to renew DHCP lease',
+                container
+            );
+        };
     }
+
+    networkButtonHandlersAttached = true;
 }
 
 async function loadNetworkingInfo(container) {
     try {
-        // Setup action buttons
-        setupNetworkActionButtons(container);
-        setupRefreshButton(container);
-
         // Get system info from Electron API
         if (window && window.electronAPI) {
             const sysInfo = await window.electronAPI.getSystemInfo();
@@ -101,14 +128,16 @@ async function loadNetworkingInfo(container) {
             updateElement(container, 'connection-status', 'Unknown');
         }
 
-        // Signal that this tab is ready
-        if (window.markTabAsReady) {
+        // Signal that this tab is ready (only on first load)
+        if (window.markTabAsReady && !container.hasAttribute('data-tab-ready')) {
+            container.setAttribute('data-tab-ready', 'true');
             window.markTabAsReady('networking');
         }
     } catch (error) {
         console.error('Error loading networking info:', error);
-        // Still signal ready even if there was an error
-        if (window.markTabAsReady) {
+        // Still signal ready even if there was an error (only on first load)
+        if (window.markTabAsReady && !container.hasAttribute('data-tab-ready')) {
+            container.setAttribute('data-tab-ready', 'true');
             window.markTabAsReady('networking');
         }
     }
@@ -206,6 +235,91 @@ function createInterfaceCard(iface) {
     `;
 
     return card;
+}
+
+// Helper function to execute network commands with proper feedback
+async function executeNetworkCommand(button, command, loadingMessage, successMessage, errorMessage, container, requiresAdmin = false) {
+    // Disable button and show loading state
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${loadingMessage}`;
+
+    try {
+        // Show notification about the operation starting
+        showNetworkNotification('info', loadingMessage);
+
+        // Execute command with or without admin privileges
+        const result = await window.electronAPI.runCommand(command, requiresAdmin);
+
+        if (result.success) {
+            showNetworkNotification('success', successMessage);
+            // Refresh network info after successful command
+            setTimeout(() => {
+                loadNetworkingInfo(container);
+            }, 1000);
+        } else {
+            throw new Error(result.stderr || result.message || 'Command failed');
+        }
+    } catch (error) {
+        console.error(`Error executing ${command}:`, error);
+        let userMessage = errorMessage;
+
+        // Provide more specific error messages
+        if (error.message.includes('cancelled') || error.message.includes('UAC')) {
+            userMessage += ' (Administrator privileges required - UAC prompt may have been cancelled)';
+        } else if (error.message.includes('Access is denied')) {
+            userMessage += ' (Access denied - please run as administrator)';
+        } else if (error.message) {
+            userMessage += `: ${error.message}`;
+        }
+
+        showNetworkNotification('error', userMessage);
+    } finally {
+        // Restore button state
+        button.disabled = false;
+        button.innerHTML = originalText;
+    }
+}
+
+// Helper function to show network notifications using global notification system
+function showNetworkNotification(type, message) {
+    // Use the global notification system if available
+    if (window.showNotification) {
+        window.showNotification(message, type);
+        return;
+    }
+
+    // Fallback to importing the notification module
+    import('../../js/modules/notifications.js').then(({ showNotification }) => {
+        showNotification(message, type);
+    }).catch(() => {
+        // Final fallback - create a simple notification
+        console.log(`[${type.toUpperCase()}] ${message}`);
+
+        // Create a simple notification element
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'success' ? '#22c55e' : type === 'error' ? '#ef4444' : '#3b82f6'};
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            z-index: 10000;
+            font-size: 14px;
+            max-width: 350px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, type === 'error' ? 10000 : 5000);
+    });
 }
 
 // Helper function to update elements

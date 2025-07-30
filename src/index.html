@@ -8,21 +8,7 @@
     <link rel="stylesheet" href="assets/fontawesome/all.min.css">
     <link rel="icon" type="image/x-icon" href="assets/icon.ico">
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="assets/codemirror/css/codemirror.min.css">
-    <link rel="stylesheet" href="assets/codemirror/addons/dialog.min.css">
-    <link rel="stylesheet" href="assets/codemirror/addons/matchesonscrollbar.min.css">
-    <link rel="stylesheet" href="assets/codemirror/addons/foldgutter.min.css">
-    <link rel="stylesheet" href="assets/codemirror/addons/show-hint.min.css">
-    <link rel="stylesheet" href="assets/codemirror/themes/dracula.min.css">
-    <link rel="stylesheet" href="assets/codemirror/themes/material.min.css">
-    <link rel="stylesheet" href="assets/codemirror/themes/material-darker.min.css">
-    <link rel="stylesheet" href="assets/codemirror/themes/material-palenight.min.css">
-    <link rel="stylesheet" href="assets/codemirror/themes/monokai.min.css">
-    <link rel="stylesheet" href="assets/codemirror/themes/eclipse.min.css">
-    <link rel="stylesheet" href="assets/codemirror/themes/solarized.min.css">
-    <link rel="stylesheet" href="assets/codemirror/themes/tomorrow-night-bright.min.css">
-    <link rel="stylesheet" href="assets/codemirror/themes/vs.min.css">
-    <link rel="stylesheet" href="assets/codemirror/themes/vs-dark.min.css">
+
 </head>
 
 <body>
@@ -352,11 +338,9 @@
                         <i class="fas fa-shield-alt"></i> Refresh Verification
                     </button>
                 </div>
-                <div class="plugin-warning">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span><strong>Security Notice:</strong> For your protection, only install plugins from developers
-                        you trust. Verified plugins are automatically checked against the official MTechWare repository.
-                        Unverified plugins should be used with caution.</span>
+                <div class="plugin-warning security">
+                    <i class="fas fa-shield-alt"></i>
+                    <span><strong>Security Note:</strong> Only install plugins from verified developers and trusted sources. Verified plugins are automatically validated against the official MTechWare repository. Unverified plugins require careful review before installation.</span>
                 </div>
                 <div class="tab-search-container">
                     <input type="text" id="plugin-search" placeholder="Search plugins..." class="tab-search-input">
@@ -439,20 +423,48 @@
                     <!-- Appearance Settings -->
                     <div id="settings-appearance" class="settings-panel active">
                         <h4>Appearance Settings</h4>
+
+                        <!-- Visual Theme Presets -->
                         <div class="settings-group">
-                            <label class="settings-label">Theme</label>
+                            <label class="settings-label">
+                                <i class="fas fa-palette"></i> Theme Presets
+                            </label>
+                            <p class="settings-description">Choose from our curated collection of beautiful themes</p>
+                            <div class="theme-presets-grid" id="theme-presets-grid">
+                                <!-- Theme preset cards will be generated here -->
+                            </div>
+                        </div>
+
+                        <!-- Legacy Theme Selector (Hidden by default) -->
+                        <div class="settings-group" style="display: none;">
+                            <label class="settings-label">Theme (Legacy)</label>
                             <select id="theme-selector" class="settings-select">
                                 <option value="classic-dark">Classic Dark</option>
                                 <option value="modern-gray">Modern Gray</option>
+                                <option value="ocean-blue">Ocean Blue</option>
+                                <option value="forest-green">Forest Green</option>
+                                <option value="royal-purple">Royal Purple</option>
+                                <option value="crimson-red">Crimson Red</option>
+                                <option value="teal-mint">Teal Mint</option>
+                                <option value="sunset-orange">Sunset Orange</option>
+                                <option value="midnight-blue">Midnight Blue</option>
                                 <option value="custom">Custom</option>
                             </select>
                             <p class="settings-description">Choose the application's color scheme</p>
                         </div>
-                        <div class="settings-group" id="custom-theme-creator" style="display: none;">
-                            <label class="settings-label">Custom Theme</label>
+
+                        <!-- Custom Theme Section -->
+                        <div class="settings-group" id="custom-theme-section">
+                            <label class="settings-label">
+                                <i class="fas fa-paint-brush"></i> Custom Theme
+                            </label>
+                            <p class="settings-description">Create your own unique theme with custom colors</p>
                             <div class="custom-theme-actions">
-                                <button class="btn btn-secondary" onclick="openThemeCreator()">
-                                    <i class="fas fa-palette"></i> Create/Edit Custom Theme
+                                <button class="btn btn-primary" onclick="openThemeCreator()">
+                                    <i class="fas fa-plus"></i> Create Custom Theme
+                                </button>
+                                <button class="btn btn-secondary" onclick="importTheme()" style="margin-left: 10px;">
+                                    <i class="fas fa-upload"></i> Import Theme
                                 </button>
                             </div>
                         </div>
@@ -793,51 +805,131 @@
         </div>
     </div>
 
-    <!-- Theme Creator Modal -->
+    <!-- Enhanced Theme Creator Modal -->
     <div id="theme-creator-modal" class="modal" style="display: none;">
-        <div class="modal-content">
+        <div class="modal-content theme-creator-modal-content">
             <div class="modal-header">
-                <h3>Create Custom Theme</h3>
+                <h3><i class="fas fa-paint-brush"></i> Custom Theme Creator</h3>
                 <button class="modal-close" onclick="closeModal('theme-creator-modal')">&times;</button>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Theme Name</label>
-                    <input type="text" id="theme-name-input" class="form-input" placeholder="My Custom Theme">
+            <div class="modal-body theme-creator-body">
+                <!-- Left Panel: Controls -->
+                <div class="theme-creator-controls">
+                    <div class="form-group">
+                        <label><i class="fas fa-tag"></i> Theme Name</label>
+                        <input type="text" id="theme-name-input" class="form-input" placeholder="My Custom Theme">
+                    </div>
+
+                    <div class="color-section">
+                        <h4><i class="fas fa-palette"></i> Primary Colors</h4>
+                        <div class="color-group">
+                            <label>Primary Color</label>
+                            <div class="color-input-group">
+                                <input type="color" id="theme-primary-color" class="color-picker" value="#ff9800">
+                                <input type="text" id="theme-primary-color-text" class="color-text-input" value="#ff9800">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="color-section">
+                        <h4><i class="fas fa-layer-group"></i> Background Colors</h4>
+                        <div class="color-group">
+                            <label>Main Background</label>
+                            <div class="color-input-group">
+                                <input type="color" id="theme-background-dark" class="color-picker" value="#1c1c1e">
+                                <input type="text" id="theme-background-dark-text" class="color-text-input" value="#1c1c1e">
+                            </div>
+                        </div>
+                        <div class="color-group">
+                            <label>Secondary Background</label>
+                            <div class="color-input-group">
+                                <input type="color" id="theme-background-light" class="color-picker" value="#2c2c2e">
+                                <input type="text" id="theme-background-light-text" class="color-text-input" value="#2c2c2e">
+                            </div>
+                        </div>
+                        <div class="color-group">
+                            <label>Card Background</label>
+                            <div class="color-input-group">
+                                <input type="color" id="theme-background-card" class="color-picker" value="#3a3a3c">
+                                <input type="text" id="theme-background-card-text" class="color-text-input" value="#3a3a3c">
+                            </div>
+                        </div>
+                        <div class="color-group">
+                            <label>Content Background</label>
+                            <div class="color-input-group">
+                                <input type="color" id="theme-background-content" class="color-picker" value="#1c1c1e">
+                                <input type="text" id="theme-background-content-text" class="color-text-input" value="#1c1c1e">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="color-section">
+                        <h4><i class="fas fa-border-style"></i> Interface Colors</h4>
+                        <div class="color-group">
+                            <label>Border Color</label>
+                            <div class="color-input-group">
+                                <input type="color" id="theme-border-color" class="color-picker" value="#444444">
+                                <input type="text" id="theme-border-color-text" class="color-text-input" value="#444444">
+                            </div>
+                        </div>
+                        <div class="color-group">
+                            <label>Hover Color</label>
+                            <div class="color-input-group">
+                                <input type="color" id="theme-hover-color" class="color-picker" value="#4f4f52">
+                                <input type="text" id="theme-hover-color-text" class="color-text-input" value="#4f4f52">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="theme-actions">
+                        <button class="btn btn-secondary" onclick="resetCustomTheme()">
+                            <i class="fas fa-undo"></i> Reset Colors
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportTheme()">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Primary Color</label>
-                    <input type="color" id="theme-primary-color" class="color-picker" value="#ff9800">
-                </div>
-                <div class="form-group">
-                    <label>Background Dark</label>
-                    <input type="color" id="theme-background-dark" class="color-picker" value="#1c1c1e">
-                </div>
-                <div class="form-group">
-                    <label>Background Light</label>
-                    <input type="color" id="theme-background-light" class="color-picker" value="#2c2c2e">
-                </div>
-                <div class="form-group">
-                    <label>Background Card</label>
-                    <input type="color" id="theme-background-card" class="color-picker" value="#3a3a3c">
-                </div>
-                <div class="form-group">
-                    <label>Border Color</label>
-                    <input type="color" id="theme-border-color" class="color-picker" value="#444444">
-                </div>
-                <div class="form-group">
-                    <label>Hover Color</label>
-                    <input type="color" id="theme-hover-color" class="color-picker" value="#4f4f52">
-                </div>
-                <div class="form-group">
-                    <label>Content Background</label>
-                    <input type="color" id="theme-background-content" class="color-picker" value="#1c1c1e">
+
+                <!-- Right Panel: Live Preview -->
+                <div class="theme-creator-preview">
+                    <h4><i class="fas fa-eye"></i> Live Preview</h4>
+                    <div class="theme-preview-container" id="theme-preview-container">
+                        <div class="preview-header">
+                            <div class="preview-title">WinTool Preview</div>
+                            <div class="preview-controls">
+                                <div class="preview-btn preview-btn-primary">Primary Button</div>
+                                <div class="preview-btn preview-btn-secondary">Secondary</div>
+                            </div>
+                        </div>
+                        <div class="preview-content">
+                            <div class="preview-card">
+                                <h5>Sample Card</h5>
+                                <p>This is how your theme will look in the application.</p>
+                                <div class="preview-progress">
+                                    <div class="preview-progress-bar"></div>
+                                </div>
+                            </div>
+                            <div class="preview-sidebar">
+                                <div class="preview-nav-item active">
+                                    <i class="fas fa-home"></i> Dashboard
+                                </div>
+                                <div class="preview-nav-item">
+                                    <i class="fas fa-cog"></i> Settings
+                                </div>
+                                <div class="preview-nav-item">
+                                    <i class="fas fa-chart-bar"></i> Analytics
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('theme-creator-modal')">Cancel</button>
-                <button class="btn btn-secondary" onclick="resetCustomTheme()">Reset Colors</button>
-                <button class="btn btn-primary" onclick="saveCustomTheme()">Save Theme</button>
+                <button class="btn btn-primary" onclick="saveCustomTheme()">
+                    <i class="fas fa-save"></i> Save Theme
+                </button>
             </div>
         </div>
     </div>
@@ -863,39 +955,6 @@
         </ul>
     </div>
     <!-- JavaScript -->
-    <script src="assets/codemirror/js/codemirror.min.js"></script>
-
-    <!-- CodeMirror Modes -->
-    <script src="assets/codemirror/modes/powershell.min.js"></script>
-    <script src="assets/codemirror/modes/shell.min.js"></script>
-    <script src="assets/codemirror/modes/javascript.min.js"></script>
-    <script src="assets/codemirror/modes/python.min.js"></script>
-    <script src="assets/codemirror/modes/sql.min.js"></script>
-    <script src="assets/codemirror/modes/xml.min.js"></script>
-    <script src="assets/codemirror/modes/css.min.js"></script>
-    <script src="assets/codemirror/modes/htmlmixed.min.js"></script>
-    <script src="assets/codemirror/modes/yaml.min.js"></script>
-    <script src="assets/codemirror/modes/markdown.min.js"></script>
-
-    <!-- CodeMirror Addons -->
-    <script src="assets/codemirror/addons/closebrackets.min.js"></script>
-    <script src="assets/codemirror/addons/matchbrackets.min.js"></script>
-    <script src="assets/codemirror/addons/closetag.min.js"></script>
-    <script src="assets/codemirror/addons/foldcode.min.js"></script>
-    <script src="assets/codemirror/addons/foldgutter.min.js"></script>
-    <script src="assets/codemirror/addons/brace-fold.min.js"></script>
-    <script src="assets/codemirror/addons/comment-fold.min.js"></script>
-    <script src="assets/codemirror/addons/search.min.js"></script>
-    <script src="assets/codemirror/addons/searchcursor.min.js"></script>
-    <script src="assets/codemirror/addons/jump-to-line.min.js"></script>
-    <script src="assets/codemirror/addons/dialog.min.js"></script>
-    <script src="assets/codemirror/addons/show-hint.min.js"></script>
-    <script src="assets/codemirror/addons/anyword-hint.min.js"></script>
-    <script src="assets/codemirror/addons/javascript-hint.min.js"></script>
-    <script src="assets/codemirror/addons/sql-hint.min.js"></script>
-    <script src="assets/codemirror/addons/active-line.min.js"></script>
-    <script src="assets/codemirror/addons/comment.min.js"></script>
-    <script src="assets/codemirror/addons/autorefresh.min.js"></script>
     <script src="js/utils/lazy-loading-helper.js"></script>
     <script src="js/tab-loader.js"></script>
     <script type="module" src="js/app.js"></script>

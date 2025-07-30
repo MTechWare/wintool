@@ -130,12 +130,19 @@
 }
 
 .env-section {
-    background: #1e1e1e;
+    background: var(--background-card);
     border-radius: 8px;
     overflow: hidden;
-    border: 1px solid #333;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    margin-bottom: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.env-section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: rgba(var(--primary-rgb), 0.3);
 }
 
 .env-section:not(:last-child) {
@@ -155,87 +162,134 @@
 }
 
 .section-header {
-    background: #2a2a2a;
-    padding: 20px 25px;
+    background: var(--background-light);
+    padding: 15px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #333;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    margin-bottom: 0;
 }
 
 .section-header h3 {
     margin: 0;
-    color: #fff;
-    font-size: 20px;
-    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
 }
 
 .section-header i {
-    margin-right: 8px;
-    color: var(--primary-color, #ff9800);
+    margin-right: 10px;
+    color: var(--primary-color);
+    filter: drop-shadow(0 2px 4px rgba(var(--primary-rgb), 0.3));
 }
 
 .variable-count {
-    background: #333;
-    padding: 4px 12px;
-    border-radius: 12px;
+    background: var(--background-card);
+    border: 1px solid var(--border-color);
+    padding: 6px 14px;
+    border-radius: 20px;
     font-size: 12px;
-    color: #ccc;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Environment Variables Table */
+/* Environment Variables Table - Modern Package-Style Theme */
 .env-table-container {
-    overflow-x: auto;
+    background: transparent;
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+    border: none;
+    margin-bottom: 0;
 }
 
 .env-table {
     width: 100%;
     border-collapse: collapse;
-    background: #1e1e1e;
+    background: transparent;
+    table-layout: fixed;
+}
+
+/* Column Width Control */
+.env-table th:nth-child(1),
+.env-table td:nth-child(1) {
+    width: 25%;
+    min-width: 200px;
+}
+
+.env-table th:nth-child(2),
+.env-table td:nth-child(2) {
+    width: 50%;
+}
+
+.env-table th:nth-child(3),
+.env-table td:nth-child(3) {
+    width: 25%;
+    min-width: 180px;
+    max-width: 200px;
 }
 
 .env-table th {
-    background: #2a2a2a;
-    color: #fff;
-    padding: 12px 15px;
+    background: var(--background-light);
+    color: var(--text-primary);
+    padding: 15px;
     text-align: left;
     font-weight: 600;
-    border-bottom: 1px solid #333;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color);
     position: sticky;
     top: 0;
     z-index: 10;
 }
 
 .env-table td {
-    padding: 12px 15px;
-    border-bottom: 1px solid #333;
-    color: #ccc;
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
     vertical-align: top;
+    transition: background-color 0.2s ease;
 }
 
 .env-table tbody tr:hover {
-    background: #252525;
+    background: var(--hover-color);
 }
 
 .env-table tbody tr.hidden {
     display: none;
 }
 
-/* Variable Name Column */
+/* Variable Name Column - Enhanced Styling */
 .var-name {
-    font-family: 'Courier New', monospace;
+    font-family: 'Segoe UI', system-ui, sans-serif;
     font-weight: 600;
-    color: #4fc3f7;
+    color: var(--primary-color);
     word-break: break-word;
     min-width: 150px;
+    font-size: 14px;
+    filter: drop-shadow(0 1px 2px rgba(var(--primary-rgb), 0.3));
 }
 
-/* Variable Value Column */
+/* Variable Value Column - Enhanced Styling */
 .var-value {
-    font-family: 'Courier New', monospace;
+    font-family: 'Consolas', 'Monaco', monospace;
     word-break: break-all;
     max-width: 400px;
     position: relative;
+    background: rgba(var(--primary-rgb), 0.05);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(var(--primary-rgb), 0.1);
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--text-secondary);
 }
 
 .var-value.truncated {
@@ -247,7 +301,7 @@
 .var-value.truncated::after {
     content: '...';
     position: absolute;
-    bottom: 0;
+    bottom: 8px;
     right: 0;
     background: #1e1e1e;
     padding-left: 10px;
@@ -267,23 +321,27 @@
     text-decoration: underline;
 }
 
-/* Action Buttons */
+/* Action Buttons - Compact Style */
 .action-buttons {
     display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-start;
+    align-items: center;
+    flex-wrap: nowrap;
 }
 
 .action-btn {
-    padding: 6px 10px;
+    padding: 5px 8px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 11px;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     transition: all 0.2s ease;
+    white-space: nowrap;
+    min-width: auto;
 }
 
 .action-btn.edit {

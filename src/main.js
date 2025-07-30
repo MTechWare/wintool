@@ -9,9 +9,10 @@
  */
 
 const { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut } = require('electron');
-const path = require('path');
 const { spawn } = require('child_process');
+const path = require('path');
 const fs = require('fs').promises;
+const fsSync = require('fs');
 const os = require('os');
 const windowsSysInfo = require('./utils/windows-sysinfo');
 const discordPresence = require('./js/modules/discord-presence');
@@ -880,9 +881,6 @@ ipcMain.handle('get-system-info', async (event, type) => {
             }
         }
 
-        const sysInfoStart = performance.now();
-        console.log('🔍 Gathering full system information using Windows PowerShell...');
-
         // Use our Windows-specific system info module
         const systemInfo = await windowsSysInfo.getAllSystemInfo();
 
@@ -901,10 +899,6 @@ ipcMain.handle('get-system-info', async (event, type) => {
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         };
-
-        console.log(
-            `✅ System info gathered successfully in ${(performance.now() - sysInfoStart).toFixed(2)}ms, building result...`
-        );
         const result = {
             // Basic system info
             platform: systemInfo.osInfo.platform || os.platform(),
@@ -1031,7 +1025,6 @@ ipcMain.handle('get-system-info', async (event, type) => {
         if (useCache) {
             systemInfoCache = result;
             systemInfoCacheTime = Date.now();
-            console.log('System information cached for future requests');
         }
 
         return result;
@@ -1057,9 +1050,6 @@ ipcMain.handle('get-system-info', async (event, type) => {
         if (useCache && error.message && error.message.includes('timed out')) {
             systemInfoCache = fallbackInfo;
             systemInfoCacheTime = Date.now();
-            console.log(
-                'Cached fallback system info due to timeout - will use fast mode on next call'
-            );
         }
 
         return fallbackInfo;
@@ -1068,8 +1058,6 @@ ipcMain.handle('get-system-info', async (event, type) => {
 
 // Network statistics handler using Windows PowerShell
 ipcMain.handle('get-network-stats', async () => {
-    console.log('get-network-stats handler called');
-
     try {
         // Get both real-time and cumulative network statistics
         const [networkStats, cumulativeStats] = await Promise.allSettled([
@@ -1079,14 +1067,6 @@ ipcMain.handle('get-network-stats', async () => {
 
         const realTimeStats = networkStats.status === 'fulfilled' ? networkStats.value : [];
         const totalStats = cumulativeStats.status === 'fulfilled' ? cumulativeStats.value : [];
-
-        console.log(
-            'Network stats received:',
-            realTimeStats.length,
-            'real-time,',
-            totalStats.length,
-            'cumulative'
-        );
 
         // Format the data
         const formatBytes = bytes => {
@@ -1098,7 +1078,6 @@ ipcMain.handle('get-network-stats', async () => {
         };
 
         // Merge real-time and cumulative data
-        const mergedStats = [];
         const statsMap = new Map();
 
         // Add cumulative stats first (total data since boot)
@@ -1228,15 +1207,11 @@ ipcMain.handle('get-network-stats', async () => {
 
 // Load applications.json file handler
 ipcMain.handle('get-applications-data', async () => {
-    console.log('get-applications-data handler called');
     const applicationsPath = path.join(__dirname, 'tabs', 'packages', 'applications.json');
 
     try {
         const data = await fs.readFile(applicationsPath, 'utf8');
         const applications = JSON.parse(data);
-        console.log(
-            `Loaded ${Object.keys(applications).length} applications from applications.json`
-        );
         return applications;
     } catch (error) {
         loggingManager.logError(
@@ -1247,46 +1222,63 @@ ipcMain.handle('get-applications-data', async () => {
     }
 });
 
-// Winget command execution handler
-ipcMain.handle('execute-winget-command', async (event, command) => {
-    console.log('execute-winget-command handler called with:', command);
+/**
+ * Validates and sanitizes package manager commands for security
+ */
+function validateAndSanitizeCommand(command, allowedCommands, logPrefix = '', logSecurity = true) {
+    if (!command || typeof command !== 'string') {
+        throw new Error('Invalid command parameter');
+    }
 
+    const commandParts = command.trim().split(' ');
+    const mainCommand = commandParts[0];
+
+    if (!allowedCommands.includes(mainCommand)) {
+        if (logSecurity && logPrefix) {
+            loggingManager.logSecurity(`BLOCKED_${logPrefix}_COMMAND`, {
+                command: mainCommand,
+                fullCommand: command,
+            });
+        }
+        throw new Error(`Command '${mainCommand}' is not allowed for security reasons`);
+    }
+
+    if (logSecurity && logPrefix) {
+        loggingManager.logSecurity(`${logPrefix}_COMMAND_EXECUTED`, {
+            command: mainCommand,
+            args: commandParts.slice(1),
+        });
+    }
+
+    return commandParts
+        .map(part => part.replace(/[;&|`$(){}[\]<>]/g, ''))
+        .join(' ');
+}
+
+/**
+ * Validates and sanitizes winget commands for security
+ */
+function validateAndSanitizeWingetCommand(command, logSecurity = true) {
+    const allowedCommands = ['search', 'install', 'uninstall', 'list', 'show', 'source', 'upgrade'];
+    return validateAndSanitizeCommand(command, allowedCommands, 'WINGET', logSecurity);
+}
+
+/**
+ * Validates and sanitizes chocolatey commands for security
+ */
+function validateAndSanitizeChocoCommand(command) {
+    const allowedCommands = ['search', 'install', 'uninstall', 'list', 'info', 'upgrade', 'outdated'];
+    return validateAndSanitizeCommand(command, allowedCommands, '', false);
+}
+
+// Winget command execution handler
+ipcMain.handle('execute-winget-command', async (_, command) => {
     // Rate limiting
     if (!checkRateLimit('winget-command')) {
         throw new Error('Rate limit exceeded. Please wait before making more requests.');
     }
 
-    // Input validation and sanitization
-    if (!command || typeof command !== 'string') {
-        throw new Error('Invalid command parameter');
-    }
-
-    // Whitelist allowed winget commands for security
-    const allowedCommands = ['search', 'install', 'uninstall', 'list', 'show', 'source', 'upgrade'];
-    const commandParts = command.trim().split(' ');
-    const mainCommand = commandParts[0];
-
-    if (!allowedCommands.includes(mainCommand)) {
-        loggingManager.logSecurity('BLOCKED_WINGET_COMMAND', {
-            command: mainCommand,
-            fullCommand: command,
-        });
-        throw new Error(`Command '${mainCommand}' is not allowed for security reasons`);
-    }
-
-    // Log allowed winget commands for monitoring
-    loggingManager.logSecurity('WINGET_COMMAND_EXECUTED', {
-        command: mainCommand,
-        args: commandParts.slice(1),
-    });
-
-    // Sanitize command arguments to prevent injection
-    const sanitizedCommand = commandParts
-        .map(part => {
-            // Remove potentially dangerous characters
-            return part.replace(/[;&|`$(){}[\]<>]/g, '');
-        })
-        .join(' ');
+    const sanitizedCommand = validateAndSanitizeWingetCommand(command);
 
     return new Promise((resolve, reject) => {
         const wingetProcess = spawn('winget', sanitizedCommand.split(' '), {
@@ -1339,9 +1331,7 @@ async function checkChocoAvailability() {
 }
 
 // Chocolatey command execution handler
-ipcMain.handle('execute-choco-command', async (event, command) => {
-    console.log('execute-choco-command handler called with:', command);
-
+ipcMain.handle('execute-choco-command', async (_, command) => {
     // Check if Chocolatey is available
     const chocoAvailable = await checkChocoAvailability();
     if (!chocoAvailable) {
@@ -1355,33 +1345,7 @@ ipcMain.handle('execute-choco-command', async (event, command) => {
         throw new Error('Rate limit exceeded. Please wait before making more requests.');
     }
 
-    // Input validation and sanitization
-    if (!command || typeof command !== 'string') {
-        throw new Error('Invalid command parameter');
-    }
-
-    const allowedCommands = [
-        'search',
-        'install',
-        'uninstall',
-        'list',
-        'info',
-        'upgrade',
-        'outdated',
-    ];
-    const commandParts = command.trim().split(' ');
-    const mainCommand = commandParts[0];
-
-    if (!allowedCommands.includes(mainCommand)) {
-        throw new Error(`Command '${mainCommand}' is not allowed for security reasons`);
-    }
-
-    // Sanitize command parts to prevent injection
-    const sanitizedCommand = commandParts
-        .map(part => {
-            return part.replace(/[;&|`$(){}[\]<>]/g, '');
-        })
-        .join(' ');
+    const sanitizedCommand = validateAndSanitizeChocoCommand(command);
 
     return new Promise((resolve, reject) => {
         const chocoProcess = spawn('choco', sanitizedCommand.split(' '), {
@@ -1416,8 +1380,7 @@ ipcMain.handle('execute-choco-command', async (event, command) => {
 });
 
 // Chocolatey command execution with progress streaming
-ipcMain.handle('execute-choco-command-with-progress', async (event, command) => {
-    console.log('execute-choco-command-with-progress handler called with:', command);
+ipcMain.handle('execute-choco-command-with-progress', async (_, command) => {
 
     // Check if Chocolatey is available
     const chocoAvailable = await checkChocoAvailability();
@@ -1427,32 +1390,7 @@ ipcMain.handle('execute-choco-command-with-progress', async (event, command) => 
         );
     }
 
-    // Input validation and sanitization (same as above)
-    if (!command || typeof command !== 'string') {
-        throw new Error('Invalid command parameter');
-    }
-
-    const allowedCommands = [
-        'search',
-        'install',
-        'uninstall',
-        'list',
-        'info',
-        'upgrade',
-        'outdated',
-    ];
-    const commandParts = command.trim().split(' ');
-    const mainCommand = commandParts[0];
-
-    if (!allowedCommands.includes(mainCommand)) {
-        throw new Error(`Command '${mainCommand}' is not allowed for security reasons`);
-    }
-
-    const sanitizedCommand = commandParts
-        .map(part => {
-            return part.replace(/[;&|`$(){}[\]<>]/g, '');
-        })
-        .join(' ');
+    const sanitizedCommand = validateAndSanitizeChocoCommand(command);
 
     return new Promise((resolve, reject) => {
         const chocoProcess = spawn('choco', sanitizedCommand.split(' '), {
@@ -1549,26 +1487,8 @@ ipcMain.handle('check-choco-availability', async () => {
 
 // Winget command execution with progress streaming
 ipcMain.handle('execute-winget-command-with-progress', async (event, command) => {
-    console.log('execute-winget-command-with-progress handler called with:', command);
 
-    // Input validation and sanitization (same as above)
-    if (!command || typeof command !== 'string') {
-        throw new Error('Invalid command parameter');
-    }
-
-    const allowedCommands = ['search', 'install', 'uninstall', 'list', 'show', 'source', 'upgrade'];
-    const commandParts = command.trim().split(' ');
-    const mainCommand = commandParts[0];
-
-    if (!allowedCommands.includes(mainCommand)) {
-        throw new Error(`Command '${mainCommand}' is not allowed for security reasons`);
-    }
-
-    const sanitizedCommand = commandParts
-        .map(part => {
-            return part.replace(/[;&|`$(){}[\]<>]/g, '');
-        })
-        .join(' ');
+    const sanitizedCommand = validateAndSanitizeWingetCommand(command, false);
 
     return new Promise((resolve, reject) => {
         const wingetProcess = spawn('winget', sanitizedCommand.split(' '), {
@@ -1677,7 +1597,6 @@ ipcMain.handle('execute-winget-command-with-progress', async (event, command) =>
 
 // Cleanup functionality handlers
 ipcMain.handle('get-disk-space', async () => {
-    console.log('get-disk-space handler called');
 
     try {
         // Use inline PowerShell command that works in both dev and packaged environments
@@ -1714,11 +1633,9 @@ ipcMain.handle('get-disk-space', async () => {
         `;
 
         const stdout = await processPool.executePowerShellCommand(psCommand);
-        console.log(`PowerShell stdout: ${stdout}`);
 
         if (stdout.trim() && stdout.trim() !== 'ERROR') {
             const diskData = JSON.parse(stdout.trim());
-            console.log('Parsed disk data:', diskData);
 
             // Validate the data
             if (diskData.Total && diskData.Total > 0) {
@@ -1731,7 +1648,6 @@ ipcMain.handle('get-disk-space', async () => {
         }
 
         // If we get here, use fallback values
-        console.log('Using fallback disk space values');
         return {
             total: 0,
             free: 0,
@@ -1749,8 +1665,7 @@ ipcMain.handle('get-disk-space', async () => {
     }
 });
 
-ipcMain.handle('execute-cleanup', async (event, category) => {
-    console.log('execute-cleanup handler called for:', category);
+ipcMain.handle('execute-cleanup', async (_, category) => {
 
     return new Promise((resolve, reject) => {
         const path = require('path');
@@ -1810,8 +1725,6 @@ ipcMain.handle('execute-cleanup', async (event, category) => {
         processPool
             .executePowerShellCommand(scriptCommand)
             .then(output => {
-                console.log(`Cleanup PowerShell completed successfully`);
-                console.log(`Cleanup PowerShell output: ${output}`);
 
                 const trimmedOutput = output.trim();
                 if (trimmedOutput) {
@@ -1833,9 +1746,6 @@ ipcMain.handle('execute-cleanup', async (event, category) => {
                     }
                 } else {
                     // Handle case where script runs successfully but returns no output
-                    console.log(
-                        `Cleanup script for ${category} completed with no output - assuming no files to clean`
-                    );
                     resolve({
                         category,
                         filesRemoved: 0,
@@ -1989,9 +1899,8 @@ ipcMain.handle('launch-system-utility', async (event, utilityCommand) => {
                 });
             } else if (sanitizedCommand === 'cleanmgr') {
                 // For disk cleanup, check if it exists, fallback to Storage Sense
-                const fs = require('fs');
                 const cleanmgrPath = 'C:\\Windows\\System32\\cleanmgr.exe';
-                if (fs.existsSync(cleanmgrPath)) {
+                if (fsSync.existsSync(cleanmgrPath)) {
                     process = spawn('cmd', ['/c', 'start', '""', 'cleanmgr'], {
                         shell: false,
                         detached: true,
@@ -2007,9 +1916,8 @@ ipcMain.handle('launch-system-utility', async (event, utilityCommand) => {
                 }
             } else if (sanitizedCommand === 'dfrgui') {
                 // For defrag, check if it exists, fallback to Storage settings
-                const fs = require('fs');
                 const dfrgPath = 'C:\\Windows\\System32\\dfrgui.exe';
-                if (fs.existsSync(dfrgPath)) {
+                if (fsSync.existsSync(dfrgPath)) {
                     process = spawn('cmd', ['/c', 'start', '""', 'dfrgui'], {
                         shell: false,
                         detached: true,

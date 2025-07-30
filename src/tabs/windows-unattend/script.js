@@ -586,25 +586,31 @@ function generatePassXML(passName, settings) {
 /**
  * Generate placeholder XML for passes that aren't fully implemented
  */
-function generateOfflineServicingXML(settings) {
+function generateOfflineServicingXML(_) {
     return `
         <!-- Offline Servicing components would go here -->
         <!-- Used for applying updates, drivers, and packages to offline image -->`;
 }
 
-function generateGeneralizeXML(settings) {
+function generateGeneralizeXML(_) {
     return `
         <!-- Generalize components would go here -->
         <!-- Used for removing system-specific information -->`;
 }
 
-function generateAuditSystemXML(settings) {
+function generateSpecializeXML(_) {
+    return `
+        <!-- Specialize components would go here -->
+        <!-- Used for system-specific configuration -->`;
+}
+
+function generateAuditSystemXML(_) {
     return `
         <!-- Audit System components would go here -->
         <!-- Used for system-level audit mode -->`;
 }
 
-function generateAuditUserXML(settings) {
+function generateAuditUserXML(_) {
     return `
         <!-- Audit User components would go here -->
         <!-- Used for user-level audit mode -->`;
@@ -1698,13 +1704,56 @@ async function copyXMLToClipboard() {
 }
 
 /**
+ * Initialize form to empty state (no preset loaded)
+ */
+function initializeEmptyForm() {
+    const form = document.querySelector('.windows-unattend-content');
+    if (form) {
+        // Reset all input fields
+        const inputs = form.querySelectorAll('input[type="text"], input[type="password"], input[type="email"]');
+        inputs.forEach(input => {
+            input.value = '';
+        });
+
+        // Reset all checkboxes to unchecked
+        const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        // Reset all select elements to first option (placeholder)
+        const selects = form.querySelectorAll('select');
+        selects.forEach(select => {
+            select.selectedIndex = 0;
+        });
+
+        // Reset textareas
+        const textareas = form.querySelectorAll('textarea');
+        textareas.forEach(textarea => {
+            textarea.value = '';
+        });
+
+        // Hide all conditional sections
+        const conditionalSections = form.querySelectorAll('.domain-settings, .disk-config-settings, .script-settings, .bitlocker-settings, .app-removal-settings, .wifi-settings, .proxy-settings, .advanced-pass-settings');
+        conditionalSections.forEach(section => {
+            section.style.display = 'none';
+        });
+
+        // Clear dynamic content containers
+        const dynamicContainers = form.querySelectorAll('#runsync-commands, #firstlogon-commands, #registry-commands, #wifi-profiles');
+        dynamicContainers.forEach(container => {
+            container.innerHTML = '';
+        });
+    }
+}
+
+/**
  * Reset form to default values
  */
 function resetForm() {
     if (confirm('Are you sure you want to reset all settings to default values?')) {
-        // Load the basic preset as default
-        loadPreset('basic');
-        showStatusMessage('info', 'Form has been reset to basic preset values');
+        initializeEmptyForm();
+        showStatusMessage('info', 'Form has been reset to empty state - no preset loaded');
     }
 }
 
@@ -2241,8 +2290,14 @@ function setupImportMethodToggle() {
     const fileSection = document.getElementById('import-file-section');
     const textSection = document.getElementById('import-text-section');
 
-    methodRadios.forEach(radio => {
-        radio.addEventListener('change', function () {
+    methodRadios.forEach((radio, index) => {
+        // Remove existing listener if it exists
+        if (radio.unattendChangeHandler) {
+            radio.removeEventListener('change', radio.unattendChangeHandler);
+        }
+
+        // Create and store new handler
+        radio.unattendChangeHandler = function () {
             if (this.value === 'file') {
                 fileSection.style.display = 'block';
                 textSection.style.display = 'none';
@@ -2250,7 +2305,9 @@ function setupImportMethodToggle() {
                 fileSection.style.display = 'none';
                 textSection.style.display = 'block';
             }
-        });
+        };
+
+        radio.addEventListener('change', radio.unattendChangeHandler);
     });
 }
 
@@ -2720,9 +2777,23 @@ function initializeTooltips() {
     const tooltipElements = document.querySelectorAll('[data-tooltip]');
 
     tooltipElements.forEach(element => {
-        element.addEventListener('mouseenter', showTooltip);
-        element.addEventListener('mouseleave', hideTooltip);
-        element.addEventListener('mousemove', moveTooltip);
+        // Remove existing tooltip listeners if they exist
+        if (element.tooltipHandlers) {
+            element.removeEventListener('mouseenter', element.tooltipHandlers.enter);
+            element.removeEventListener('mouseleave', element.tooltipHandlers.leave);
+            element.removeEventListener('mousemove', element.tooltipHandlers.move);
+        }
+
+        // Create and store new handlers
+        element.tooltipHandlers = {
+            enter: showTooltip,
+            leave: hideTooltip,
+            move: moveTooltip
+        };
+
+        element.addEventListener('mouseenter', element.tooltipHandlers.enter);
+        element.addEventListener('mouseleave', element.tooltipHandlers.leave);
+        element.addEventListener('mousemove', element.tooltipHandlers.move);
     });
 }
 
@@ -2853,188 +2924,11 @@ class UnattendErrorHandler {
 // Initialize global error handler
 const errorHandler = new UnattendErrorHandler();
 
-/**
- * Comprehensive testing framework
- */
-class UnattendTester {
-    constructor() {
-        this.tests = [];
-        this.results = [];
-    }
 
-    addTest(name, testFunction, description = '') {
-        this.tests.push({
-            name: name,
-            test: testFunction,
-            description: description,
-        });
-    }
 
-    async runAllTests() {
-        this.results = [];
 
-        for (const test of this.tests) {
-            try {
-                const startTime = performance.now();
-                const result = await test.test();
-                const endTime = performance.now();
 
-                this.results.push({
-                    name: test.name,
-                    description: test.description,
-                    passed: result === true,
-                    result: result,
-                    duration: endTime - startTime,
-                    error: null,
-                });
-            } catch (error) {
-                this.results.push({
-                    name: test.name,
-                    description: test.description,
-                    passed: false,
-                    result: null,
-                    duration: 0,
-                    error: error.message,
-                });
-            }
-        }
 
-        return this.results;
-    }
-
-    getTestReport() {
-        const passed = this.results.filter(r => r.passed).length;
-        const failed = this.results.filter(r => !r.passed).length;
-
-        return {
-            total: this.results.length,
-            passed: passed,
-            failed: failed,
-            passRate:
-                this.results.length > 0 ? ((passed / this.results.length) * 100).toFixed(2) : 0,
-            results: this.results,
-            timestamp: new Date().toISOString(),
-        };
-    }
-}
-
-// Initialize testing framework
-const tester = new UnattendTester();
-
-/**
- * Add comprehensive tests
- */
-function initializeTests() {
-    // Test XML generation
-    tester.addTest(
-        'XML Generation',
-        () => {
-            try {
-                const xml = generateUnattendXML();
-                return xml && xml.includes('<unattend') && xml.includes('</unattend>');
-            } catch (error) {
-                errorHandler.logError(error, 'XML Generation Test');
-                return false;
-            }
-        },
-        'Tests basic XML generation functionality'
-    );
-
-    // Test form validation
-    tester.addTest(
-        'Form Validation',
-        () => {
-            try {
-                // Set some test values
-                document.getElementById('admin-username').value = 'TestAdmin';
-                document.getElementById('admin-password').value = 'TestPassword123';
-                document.getElementById('computer-name').value = 'TEST-PC';
-
-                return validateCurrentConfig();
-            } catch (error) {
-                errorHandler.logError(error, 'Form Validation Test');
-                return false;
-            }
-        },
-        'Tests form validation functionality'
-    );
-
-    // Test preset loading
-    tester.addTest(
-        'Preset Loading',
-        () => {
-            try {
-                loadPreset('basic');
-                const adminUsername = document.getElementById('admin-username').value;
-                return adminUsername === 'Administrator';
-            } catch (error) {
-                errorHandler.logError(error, 'Preset Loading Test');
-                return false;
-            }
-        },
-        'Tests preset loading functionality'
-    );
-
-    // Test help modal functionality
-    tester.addTest(
-        'Help Modal',
-        () => {
-            try {
-                showHelpModal();
-                const modal = document.getElementById('help-modal');
-                const isVisible = modal && modal.style.display === 'block';
-                closeHelpModal();
-                return isVisible;
-            } catch (error) {
-                errorHandler.logError(error, 'Help Modal Test');
-                return false;
-            }
-        },
-        'Tests help modal functionality'
-    );
-
-    // Test configuration pass validation
-    tester.addTest(
-        'Configuration Passes',
-        () => {
-            try {
-                const passes = getEnabledPasses();
-                return Array.isArray(passes) && passes.length > 0;
-            } catch (error) {
-                errorHandler.logError(error, 'Configuration Passes Test');
-                return false;
-            }
-        },
-        'Tests configuration pass management'
-    );
-}
-
-/**
- * Run comprehensive tests
- */
-async function runComprehensiveTests() {
-    try {
-        showStatusMessage('info', 'Running comprehensive tests...');
-
-        const results = await tester.runAllTests();
-        const report = tester.getTestReport();
-
-        if (report.failed === 0) {
-            showStatusMessage('success', `All ${report.total} tests passed! (${report.passRate}%)`);
-        } else {
-            showStatusMessage(
-                'warning',
-                `${report.passed}/${report.total} tests passed (${report.passRate}%). ${report.failed} tests failed.`
-            );
-        }
-
-        return report;
-    } catch (error) {
-        errorHandler.logError(error, 'Comprehensive Testing');
-        showStatusMessage('error', 'Error running tests');
-        return null;
-    }
-}
 
 /**
  * Enhanced validation with detailed reporting
@@ -3184,8 +3078,36 @@ function validateForm() {
     return true;
 }
 
+// Prevent multiple script executions at the global level
+if (window.windowsUnattendScriptExecuted) {
+    console.log('Windows Unattend script already executed, skipping...');
+    return;
+}
+window.windowsUnattendScriptExecuted = true;
+
 // Track initialization to prevent multiple calls
 let isInitialized = false;
+let unattendEventHandlers = new Map();
+
+/**
+ * Safely add event listener with duplicate prevention
+ */
+function safeAddEventListener(elementId, event, handler, options = {}) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+
+    const key = `${elementId}-${event}`;
+
+    // Remove existing handler if it exists
+    if (unattendEventHandlers.has(key)) {
+        const oldHandler = unattendEventHandlers.get(key);
+        element.removeEventListener(event, oldHandler, options);
+    }
+
+    // Add new handler and store reference
+    element.addEventListener(event, handler, options);
+    unattendEventHandlers.set(key, handler);
+}
 
 /**
  * Initialize the Windows Unattend tab
@@ -3223,109 +3145,108 @@ function initWindowsUnattend() {
 
     isInitialized = true;
 
-    // Setup primary action buttons with validation integration
-    const exportBtn = document.getElementById('export-unattend');
-    if (exportBtn) {
-        exportBtn.addEventListener('click', async () => {
-            // Validate form before allowing export to prevent invalid XML generation
-            if (validateForm()) {
-                await exportUnattendXML();
+    // Remove any existing main button handler
+    if (window.unattendMainButtonHandler) {
+        document.removeEventListener('click', window.unattendMainButtonHandler, { capture: true });
+    }
+
+    // Create single delegated handler for main action buttons
+    window.unattendMainButtonHandler = function(e) {
+        const target = e.target.closest('button');
+        if (!target) return;
+
+        // Only handle buttons in the export-controls section
+        const exportControls = target.closest('.export-controls');
+        if (!exportControls) return;
+
+        // Prevent default and stop propagation immediately
+        e.preventDefault();
+        e.stopPropagation();
+
+        const id = target.id;
+
+        switch(id) {
+            case 'preview-xml':
+                showXMLPreview();
+                break;
+            case 'export-unattend':
+                if (validateForm()) {
+                    exportUnattendXML();
+                }
+                break;
+            case 'import-xml':
+                showImportModal();
+                break;
+            case 'validate-config':
+                showValidationModal();
+                break;
+            case 'reset-form':
+                resetForm();
+                break;
+        }
+
+        // Handle help button with onclick
+        if (target.classList.contains('help-btn') && target.onclick) {
+            target.onclick.call(target, e);
+        }
+    };
+
+    // Add the delegated event listener
+    document.addEventListener('click', window.unattendMainButtonHandler, { capture: true });
+
+    // Setup form controls with safe event listeners
+    safeAddEventListener('join-domain', 'change', toggleDomainSettings);
+    safeAddEventListener('enable-disk-config', 'change', toggleDiskConfigSettings);
+    safeAddEventListener('partition-style', 'change', updatePartitionStyle);
+    safeAddEventListener('os-partition-size', 'change', toggleOSCustomSize);
+    safeAddEventListener('enable-scripts', 'change', toggleScriptSettings);
+    safeAddEventListener('enable-bitlocker-config', 'change', toggleBitLockerSettings);
+    safeAddEventListener('enable-app-removal', 'change', toggleAppRemovalSettings);
+    safeAddEventListener('enable-wifi-config', 'change', toggleWifiSettings);
+    safeAddEventListener('enable-proxy-config', 'change', toggleProxySettings);
+    safeAddEventListener('enable-advanced-passes', 'change', toggleAdvancedPassSettings);
+    safeAddEventListener('pass-order', 'change', updatePassOrder);
+
+    // Setup global click handler for dynamically created buttons (remove buttons, etc.)
+    if (!document.unattendGlobalClickHandler) {
+        document.unattendGlobalClickHandler = function(e) {
+            const target = e.target.closest('button');
+            if (!target) return;
+
+            // Only handle buttons within the unattend tab
+            const unattendContainer = target.closest('.tab-content[id*="windows-unattend"]');
+            if (!unattendContainer) return;
+
+            // Handle remove command buttons
+            if (target.classList.contains('remove-command-btn')) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Determine the command type from the button's context
+                const commandContainer = target.closest('.command-item');
+                if (commandContainer) {
+                    const commandType = commandContainer.dataset.commandType || 'runsync';
+                    removeCommand(target, commandType);
+                }
+                return;
             }
-        });
-    }
 
-    // Setup XML preview functionality
-    const previewBtn = document.getElementById('preview-xml');
-    if (previewBtn) {
-        previewBtn.addEventListener('click', showXMLPreview);
-    }
+            // Handle other dynamic buttons as needed
+            if (target.onclick && typeof target.onclick === 'function') {
+                e.preventDefault();
+                e.stopPropagation();
+                target.onclick.call(target, e);
+            }
+        };
 
-    // Setup form reset functionality
-    const resetBtn = document.getElementById('reset-form');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', resetForm);
-    }
-
-    // Setup domain join toggle
-    const joinDomainCheckbox = document.getElementById('join-domain');
-    if (joinDomainCheckbox) {
-        joinDomainCheckbox.addEventListener('change', toggleDomainSettings);
-    }
-
-    // Setup disk configuration toggles
-    const enableDiskConfigCheckbox = document.getElementById('enable-disk-config');
-    if (enableDiskConfigCheckbox) {
-        enableDiskConfigCheckbox.addEventListener('change', toggleDiskConfigSettings);
-    }
-
-    const partitionStyleSelect = document.getElementById('partition-style');
-    if (partitionStyleSelect) {
-        partitionStyleSelect.addEventListener('change', updatePartitionStyle);
-    }
-
-    const osPartitionSizeSelect = document.getElementById('os-partition-size');
-    if (osPartitionSizeSelect) {
-        osPartitionSizeSelect.addEventListener('change', toggleOSCustomSize);
-    }
-
-    // Setup script execution toggle
-    const enableScriptsCheckbox = document.getElementById('enable-scripts');
-    if (enableScriptsCheckbox) {
-        enableScriptsCheckbox.addEventListener('change', toggleScriptSettings);
-    }
-
-    // Setup BitLocker configuration toggle
-    const enableBitLockerConfigCheckbox = document.getElementById('enable-bitlocker-config');
-    if (enableBitLockerConfigCheckbox) {
-        enableBitLockerConfigCheckbox.addEventListener('change', toggleBitLockerSettings);
-    }
-
-    // Setup app removal toggle
-    const enableAppRemovalCheckbox = document.getElementById('enable-app-removal');
-    if (enableAppRemovalCheckbox) {
-        enableAppRemovalCheckbox.addEventListener('change', toggleAppRemovalSettings);
-    }
-
-    // Setup Wi-Fi configuration toggle
-    const enableWifiConfigCheckbox = document.getElementById('enable-wifi-config');
-    if (enableWifiConfigCheckbox) {
-        enableWifiConfigCheckbox.addEventListener('change', toggleWifiSettings);
-    }
-
-    // Setup proxy configuration toggle
-    const enableProxyConfigCheckbox = document.getElementById('enable-proxy-config');
-    if (enableProxyConfigCheckbox) {
-        enableProxyConfigCheckbox.addEventListener('change', toggleProxySettings);
-    }
-
-    // Setup advanced pass configuration toggle
-    const enableAdvancedPassesCheckbox = document.getElementById('enable-advanced-passes');
-    if (enableAdvancedPassesCheckbox) {
-        enableAdvancedPassesCheckbox.addEventListener('change', toggleAdvancedPassSettings);
-    }
-
-    // Setup pass order change handler
-    const passOrderSelect = document.getElementById('pass-order');
-    if (passOrderSelect) {
-        passOrderSelect.addEventListener('change', updatePassOrder);
-    }
-
-    // Setup import and validation buttons
-    const importXmlButton = document.getElementById('import-xml');
-    if (importXmlButton) {
-        importXmlButton.addEventListener('click', showImportModal);
-    }
-
-    const validateConfigButton = document.getElementById('validate-config');
-    if (validateConfigButton) {
-        validateConfigButton.addEventListener('click', showValidationModal);
+        document.addEventListener('click', document.unattendGlobalClickHandler, { capture: true });
     }
 
     // Initialize tooltips
     initializeTooltips();
 
-    // Initialize testing framework
-    initializeTests();
+    // Initialize form to empty state (no preset loaded)
+    initializeEmptyForm();
 
     // Add debug mode toggle (Ctrl+Shift+D)
     document.addEventListener('keydown', function (e) {
@@ -3336,10 +3257,7 @@ function initWindowsUnattend() {
             showStatusMessage('info', `Debug mode ${debugMode ? 'enabled' : 'disabled'}`);
         }
 
-        // Add test runner shortcut (Ctrl+Shift+T)
-        if (e.ctrlKey && e.shiftKey && e.key === 'T') {
-            runComprehensiveTests();
-        }
+
     });
 
     // Setup real-time form validation on critical inputs
@@ -3415,10 +3333,8 @@ window.showValidationModal = showValidationModal;
 window.closeValidationModal = closeValidationModal;
 window.showHelpModal = showHelpModal;
 window.closeHelpModal = closeHelpModal;
-window.runComprehensiveTests = runComprehensiveTests;
 window.validateCurrentConfig = validateCurrentConfig;
 window.errorHandler = errorHandler;
-window.tester = tester;
 window.showXMLPreview = showXMLPreview;
 window.closeXMLPreview = closeXMLPreview;
 window.copyXMLToClipboard = copyXMLToClipboard;

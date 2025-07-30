@@ -145,7 +145,6 @@ class PackageManager {
             // Signal that this tab is ready
             this.lazyHelper.markTabReady();
         } catch (error) {
-            console.error('Error initializing Package Manager:', error);
             // Still signal ready even if there was an error
             this.lazyHelper.markTabReady();
         }
@@ -159,7 +158,6 @@ class PackageManager {
                 this.chocoAvailable = false;
             }
         } catch (error) {
-            console.error('Error checking Chocolatey availability:', error);
             this.chocoAvailable = false;
         }
     }
@@ -174,7 +172,6 @@ class PackageManager {
                 await this.getChocoInstalledPackages();
             }
         } catch (error) {
-            console.error('Error getting installed packages:', error);
             this.showStatus(`Failed to get installed packages: ${error.message}`, 'error');
         }
     }
@@ -186,11 +183,9 @@ class PackageManager {
                 if (result && result.output) {
                     this.parseWingetList(result.output);
                 }
-            } else {
-                console.log('Winget command execution not available (browser mode)');
             }
         } catch (error) {
-            console.error('Error getting winget installed packages:', error);
+            // Error getting winget installed packages
         }
     }
 
@@ -201,11 +196,9 @@ class PackageManager {
                 if (result && result.output) {
                     this.parseChocoList(result.output);
                 }
-            } else {
-                console.log('Choco command execution not available (browser mode)');
             }
         } catch (error) {
-            console.error('Error getting choco installed packages:', error);
+            // Error getting choco installed packages
         }
     }
 
@@ -295,8 +288,7 @@ class PackageManager {
                 return;
             }
 
-            // Fallback: try to load via fetch (for browser testing)
-            console.log('Electron API not available, trying fetch...');
+            // Fallback: try to load via fetch
             let response;
             const possiblePaths = [
                 './src/tabs/packages/applications.json',
@@ -309,10 +301,8 @@ class PackageManager {
                 try {
                     response = await fetch(path);
                     if (response.ok) {
-                        console.log(`Successfully loaded packages from: ${path}`);
                         this.packages = await response.json();
                         const packageCount = Object.keys(this.packages).length;
-                        console.log('Loaded packages via fetch:', packageCount);
                         this.showStatus(
                             `Successfully loaded ${packageCount} packages from applications.json`,
                             'success'
@@ -323,13 +313,12 @@ class PackageManager {
                         return;
                     }
                 } catch (e) {
-                    console.log(`Failed to load from: ${path}`);
+                    // Failed to load from this path
                 }
             }
 
             throw new Error('Could not load applications.json from any source');
         } catch (error) {
-            console.error('Error loading packages:', error);
             this.showStatus(`Failed to load packages: ${error.message}`, 'error');
 
             // Initialize empty packages if loading fails
@@ -351,9 +340,7 @@ class PackageManager {
             this.ensureAllCategoryActive();
             this.filterPackages();
 
-            console.log('Package data refreshed successfully');
         } catch (error) {
-            console.error('Error refreshing package data:', error);
             // Still apply filters even if refresh fails
             this.ensureAllCategoryActive();
             this.filterPackages();
@@ -501,10 +488,7 @@ class PackageManager {
     filterPackages() {
         this.filteredPackages = {};
 
-        // Log current filter state for debugging
-        console.log(
-            `Filtering packages with category: ${this.currentCategory}, search: "${this.searchTerm}", status: ${this.currentStatusFilter}`
-        );
+
 
         Object.keys(this.packages).forEach(key => {
             const pkg = this.packages[key];
@@ -538,9 +522,7 @@ class PackageManager {
             }
         });
 
-        console.log(
-            `Filtered ${Object.keys(this.filteredPackages).length} packages out of ${Object.keys(this.packages).length} total packages`
-        );
+
 
         this.renderPackages();
         this.updateTotalPackageCount(Object.keys(this.filteredPackages).length);
@@ -1398,15 +1380,6 @@ class PackageManager {
                 // Use real winget command execution
                 const result = await window.electronAPI.executeWingetCommand(command);
                 return result.output;
-            } else {
-                // Fallback to simulation for browser testing
-                return new Promise(resolve => {
-                    setTimeout(() => {
-                        resolve(
-                            `Simulated execution of: winget ${command}\n\nThis is a demo - actual winget integration would require Electron main process communication.`
-                        );
-                    }, 1000);
-                });
             }
         } catch (error) {
             throw new Error(`Winget command failed: ${error.message}`);

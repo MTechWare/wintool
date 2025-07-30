@@ -3479,9 +3479,8 @@ if (tweaksGrid && lazyHelper.shouldInitialize()) {
     // Initialize category filtering
     initializeCategoryFiltering();
 
-    // Update category filter counts and debug categories
+    // Update category filter counts
     setTimeout(() => {
-        debugCategories();
         updateCategoryFilterCounts();
     }, 200);
 
@@ -3900,22 +3899,7 @@ function filterTweaksByCategory(category) {
     }
 }
 
-/**
- * Debug function to show all categories in use
- */
-function debugCategories() {
-    const categories = [...new Set(tweaks.map(t => t.category || 'System Tweaks'))];
 
-    // Sort categories to put WinTool Exclusive at the top
-    categories.sort((a, b) => {
-        if (a === '⚡ WinTool Exclusive') return -1;
-        if (b === '⚡ WinTool Exclusive') return 1;
-        return a.localeCompare(b);
-    });
-    categories.forEach(category => {
-        const count = tweaks.filter(t => (t.category || 'System Tweaks') === category).length;
-    });
-}
 
 /**
  * Update category filter counts (optional enhancement)
@@ -3938,32 +3922,56 @@ function updateCategoryFilterCounts() {
     });
 }
 
-// Validate that there are no duplicate tweaks across presets
+// Validate that there are no duplicate tweak IDs in the tweaks array and no duplicate tweaks within individual presets
 function validatePresetUniqueness() {
-    const allUsedTweaks = new Set();
-    const duplicates = [];
+    // Check for duplicate tweak IDs in the main tweaks array
+    const tweakIds = new Set();
+    const duplicateTweakIds = [];
 
-    Object.keys(tweakPresets).forEach(presetKey => {
-        const preset = tweakPresets[presetKey];
-        preset.tweaks.forEach(tweakId => {
-            if (allUsedTweaks.has(tweakId)) {
-                duplicates.push(tweakId);
-            } else {
-                allUsedTweaks.add(tweakId);
-            }
-        });
+    tweaks.forEach(tweak => {
+        if (tweakIds.has(tweak.id)) {
+            duplicateTweakIds.push(tweak.id);
+        } else {
+            tweakIds.add(tweak.id);
+        }
     });
 
-    if (duplicates.length > 0) {
-        window.electronAPI.logWarn(
-            `Duplicate tweaks found across presets: ${duplicates.join(', ')}`,
+    if (duplicateTweakIds.length > 0) {
+        window.electronAPI.logError(
+            `Duplicate tweak IDs found in tweaks array: ${duplicateTweakIds.join(', ')}`,
             'TweaksTab'
         );
         return false;
     }
 
-    return true;
+    // Check for duplicate tweaks within individual presets (not across presets - that's allowed)
+    let hasInternalDuplicates = false;
+    Object.keys(tweakPresets).forEach(presetKey => {
+        const preset = tweakPresets[presetKey];
+        const presetTweaks = new Set();
+        const presetDuplicates = [];
+
+        preset.tweaks.forEach(tweakId => {
+            if (presetTweaks.has(tweakId)) {
+                presetDuplicates.push(tweakId);
+            } else {
+                presetTweaks.add(tweakId);
+            }
+        });
+
+        if (presetDuplicates.length > 0) {
+            window.electronAPI.logWarn(
+                `Duplicate tweaks found within preset "${presetKey}": ${presetDuplicates.join(', ')}`,
+                'TweaksTab'
+            );
+            hasInternalDuplicates = true;
+        }
+    });
+
+    return !hasInternalDuplicates;
 }
+
+
 
 // Initialize presets when page loads
 function initializePresets() {

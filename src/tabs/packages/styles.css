@@ -2,7 +2,7 @@
 @import url('../../css/universal-tab-header.css');
 .packages-container {
     padding: 20px;
-    color: #ffffff;
+    color: var(--text-primary);
 }
 
 /* Search and Controls */
@@ -19,7 +19,7 @@
 }
 
 .package-manager-selector label {
-    color: #ffffff;
+    color: var(--text-primary);
     font-weight: 500;
     font-size: 14px;
     white-space: nowrap;
@@ -27,10 +27,10 @@
 
 .package-manager-select {
     padding: 8px 12px;
-    background: #2a2a2a;
-    border: 1px solid #404040;
+    background: var(--background-card);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    color: #ffffff;
+    color: var(--text-primary);
     font-size: 14px;
     outline: none;
     transition: border-color 0.3s ease;
@@ -42,8 +42,8 @@
 }
 
 .package-manager-select option {
-    background: #2a2a2a;
-    color: #ffffff;
+    background: var(--background-card);
+    color: var(--text-primary);
 }
 
 /* Package Status Filter */
@@ -55,7 +55,7 @@
 }
 
 .package-status-filter label {
-    color: #ffffff;
+    color: var(--text-primary);
     font-weight: 500;
     font-size: 14px;
     white-space: nowrap;
@@ -63,10 +63,10 @@
 
 .package-status-select {
     padding: 8px 12px;
-    background: #2a2a2a;
-    border: 1px solid #404040;
+    background: var(--background-card);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    color: #ffffff;
+    color: var(--text-primary);
     font-size: 14px;
     outline: none;
     transition: border-color 0.3s ease;
@@ -78,8 +78,8 @@
 }
 
 .package-status-select option {
-    background: #2a2a2a;
-    color: #ffffff;
+    background: var(--background-card);
+    color: var(--text-primary);
 }
 
 /* Package Name Container */
@@ -92,12 +92,14 @@
 
 /* Installed Badge */
 .installed-badge {
-    background: #28a745;
+    background: var(--success-color);
     color: #ffffff;
     padding: 2px 8px;
     border-radius: 12px;
     font-size: 11px;
     font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -142,7 +144,7 @@
 }
 
 .package-manager-info small {
-    color: #b0b0b0;
+    color: var(--text-secondary);
     font-size: 12px;
 }
 
@@ -163,10 +165,10 @@
 .search-input {
     width: 100%;
     padding: 12px 45px 12px 15px;
-    background: #2a2a2a;
-    border: 1px solid #404040;
+    background: var(--background-card);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
-    color: #ffffff;
+    color: var(--text-primary);
     font-size: 14px;
     outline: none;
     transition: border-color 0.3s ease;
@@ -177,7 +179,7 @@
 }
 
 .search-input::placeholder {
-    color: #808080;
+    color: var(--text-secondary);
 }
 
 .search-icon {
@@ -185,7 +187,7 @@
     right: 15px;
     top: 50%;
     transform: translateY(-50%);
-    color: #808080;
+    color: var(--text-secondary);
 }
 
 /* Category Filters */
@@ -197,10 +199,10 @@
 
 .category-btn {
     padding: 8px 16px;
-    background: #2a2a2a;
-    border: 1px solid #404040;
+    background: var(--background-card);
+    border: 1px solid var(--border-color);
     border-radius: 20px;
-    color: #ffffff;
+    color: var(--text-primary);
     font-size: 13px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -208,8 +210,8 @@
 }
 
 .category-btn:hover {
-    background: #3a3a3a;
-    border-color: #505050;
+    background: var(--hover-color);
+    border-color: var(--primary-color);
 }
 
 .category-btn.active {
@@ -225,7 +227,7 @@
     align-items: center;
     margin-bottom: 20px;
     padding: 15px;
-    background: #2a2a2a;
+    background: var(--background-card);
     border-radius: 8px;
 }
 
@@ -236,13 +238,13 @@
 }
 
 #total-packages-count {
-    color: #ffffff;
+    color: var(--text-primary);
     font-size: 14px;
     font-weight: 600;
 }
 
 #selection-count {
-    color: #b0b0b0;
+    color: var(--text-secondary);
     font-size: 13px;
 }
 
@@ -253,9 +255,9 @@
 
 .action-btn {
     padding: 8px 16px;
-    border: none;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    color: #ffffff;
+    color: var(--text-primary);
     font-size: 13px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -263,6 +265,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    background: var(--background-card);
 }
 
 .action-btn:disabled {
@@ -271,35 +274,47 @@
 }
 
 .install-btn {
-    background: #28a745;
+    background: var(--success-color);
+    border-color: var(--success-color);
+    color: #ffffff;
 }
 
 .install-btn:hover:not(:disabled) {
     background: #218838;
+    border-color: #218838;
 }
 
 .uninstall-btn {
-    background: #dc3545;
+    background: var(--error-color);
+    border-color: var(--error-color);
+    color: #ffffff;
 }
 
 .uninstall-btn:hover:not(:disabled) {
     background: #c82333;
+    border-color: #c82333;
 }
 
 .import-btn {
-    background-color: #17a2b8; /* Teal */
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+    color: #ffffff;
 }
 
 .import-btn:hover:not(:disabled) {
     background-color: #138496;
+    border-color: #138496;
 }
 
 .export-btn {
-    background-color: #007bff; /* Blue */
+    background-color: #007bff;
+    border-color: #007bff;
+    color: #ffffff;
 }
 
 .export-btn:hover:not(:disabled) {
     background-color: #0069d9;
+    border-color: #0069d9;
 }
 
 .refresh-btn {
@@ -312,9 +327,10 @@
 
 /* Package List */
 .packages-list-container {
-    background: #2a2a2a;
+    background: var(--background-card);
     border-radius: 8px;
     overflow: hidden;
+    border: 1px solid var(--border-color);
 }
 
 .packages-list-header {
@@ -322,11 +338,11 @@
     grid-template-columns: 40px 1fr 1fr 2fr 120px;
     gap: 15px;
     padding: 15px;
-    background: #3a3a3a;
-    border-bottom: 1px solid #404040;
+    background: var(--background-light);
+    border-bottom: 1px solid var(--border-color);
     font-weight: 600;
     font-size: 13px;
-    color: #ffffff;
+    color: var(--text-primary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -341,17 +357,17 @@
     grid-template-columns: 40px 1fr 1fr 2fr 120px;
     gap: 15px;
     padding: 15px;
-    border-bottom: 1px solid #404040;
+    border-bottom: 1px solid var(--border-color);
     transition: background-color 0.2s ease;
     align-items: center;
 }
 
 .package-item:hover {
-    background: #333333;
+    background: var(--hover-color);
 }
 
 .package-item.selected {
-    background: #2d4a5a;
+    background: rgba(var(--primary-rgb), 0.2);
 }
 
 .package-checkbox {
@@ -383,16 +399,25 @@
     color: #ffffff;
     font-size: 16px;
     flex-shrink: 0;
+    opacity: 0.9;
+}
+
+.package-icon:hover {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
 }
 
 .package-name {
-    font-weight: 600;
-    color: #ffffff;
+    font-weight: 500;
+    color: var(--text-primary);
     font-size: 14px;
+    word-break: break-word;
+    display: flex;
+    align-items: center;
 }
 
 .package-name a {
-    color: #ffffff;
+    color: var(--text-primary);
     text-decoration: none;
     transition: color 0.2s ease;
 }
@@ -403,70 +428,89 @@
 }
 
 .package-publisher {
-    color: #b0b0b0;
+    color: var(--text-secondary);
     font-size: 13px;
-    font-style: italic;
 }
 
 .package-description {
-    color: #b0b0b0;
+    color: var(--text-secondary);
     font-size: 13px;
     line-height: 1.4;
 }
 
 .package-actions {
     display: flex;
-    gap: 6px;
+    gap: 5px;
 }
 
 .package-action-btn {
-    padding: 6px 12px;
-    border: none;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
-    outline: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--background-card);
+    color: var(--text-secondary);
+}
+
+.package-action-btn:hover {
+    background: var(--hover-color);
+    border-color: var(--primary-color);
+    color: var(--text-primary);
 }
 
 .install-package-btn {
-    background: #28a745;
-    color: #ffffff;
+    background: var(--background-card);
+    color: var(--success-color);
+    border-color: var(--border-color);
 }
 
 .install-package-btn:hover {
-    background: #218838;
+    background: var(--success-color);
+    border-color: var(--success-color);
+    color: #ffffff;
 }
 
 .uninstall-package-btn {
-    background: #dc3545;
-    color: #ffffff;
+    background: var(--background-card);
+    color: var(--error-color);
+    border-color: var(--border-color);
 }
 
 .uninstall-package-btn:hover {
-    background: #c82333;
-}
-
-.update-package-btn {
-    background: #fd7e14;
+    background: var(--error-color);
+    border-color: var(--error-color);
     color: #ffffff;
 }
 
+.update-package-btn {
+    background: var(--background-card);
+    color: #fd7e14;
+    border-color: var(--border-color);
+}
+
 .update-package-btn:hover {
-    background: #e8650e;
+    background: #fd7e14;
+    border-color: #fd7e14;
+    color: #ffffff;
 }
 
 /* Loading and Status */
 .loading-indicator {
     text-align: center;
     padding: 40px;
-    color: #b0b0b0;
+    color: var(--text-secondary);
 }
 
 .loading-indicator i {
     font-size: 24px;
     margin-bottom: 10px;
     display: block;
+    color: var(--primary-color);
 }
 
 .status-message {
@@ -989,12 +1033,12 @@
 }
 
 .status-badge.success {
-    background: #28a745;
+    background: var(--success-color);
     animation: none;
 }
 
 .status-badge.error {
-    background: #dc3545;
+    background: var(--error-color);
     animation: none;
 }
 

@@ -1,109 +1,169 @@
-/* System Info Tab Styles - System Health Dashboard Theme */
+/* System Info Tab Styles - Modern Diagnostics Dashboard Theme */
 @import url('../../css/universal-tab-header.css');
 
 /* System Info Content */
 .system-info-content {
-    max-width: 1000px;
+    max-width: 1200px;
     margin: 0 auto;
+    padding: 0 20px;
 }
 
-
-
+/* Enhanced Statistics Display */
 .stat-item {
     text-align: center;
+    position: relative;
 }
 
 .stat-number {
     display: block;
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 700;
     color: var(--primary-color);
     margin-bottom: 8px;
-    text-shadow: 0 2px 4px rgba(var(--primary-rgb), 0.3);
+    text-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.4);
+    filter: drop-shadow(0 2px 4px rgba(var(--primary-rgb), 0.3));
 }
 
 .stat-label {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 500;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+    opacity: 0.9;
 }
 
 
 
-/* Features Section */
+/* Enhanced Features Section */
 .features-section {
-    margin-bottom: 50px;
+    margin-bottom: 60px;
 }
 
 .features-section h3 {
     text-align: center;
-    font-size: 28px;
-    margin-bottom: 40px;
+    font-size: 32px;
+    margin-bottom: 50px;
     color: var(--text-primary);
-    font-weight: 600;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    position: relative;
+}
+
+.features-section h3::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+    border-radius: 2px;
+    box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.3);
 }
 
 .features-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 32px;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 28px;
+    margin-bottom: 40px;
 }
 
-/* Extra spacing for CPU information cards */
+/* Enhanced CPU information cards */
 .cpu-info-card {
-    margin-bottom: 24px;
+    margin-bottom: 28px;
+    border: 1px solid rgba(var(--primary-rgb), 0.15);
+    background: linear-gradient(135deg, var(--background-card) 0%, rgba(var(--primary-rgb), 0.02) 100%);
 }
 
-/* System Info specific card styling */
+/* Enhanced System Info card styling */
 .feature-card {
     text-align: center;
-    min-height: 240px;
+    min-height: 260px;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(8px);
+}
+
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.08) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.feature-card:hover::before {
+    opacity: 1;
 }
 
 .feature-card i {
-    font-size: 32px;
-    margin-bottom: 15px;
+    font-size: 36px;
+    margin-bottom: 18px;
+    color: var(--primary-color);
+    filter: drop-shadow(0 2px 6px rgba(var(--primary-rgb), 0.4));
+    position: relative;
+    z-index: 2;
 }
 
 .feature-card h4 {
-    font-size: 19px;
-    margin-bottom: 18px;
+    font-size: 20px;
+    margin-bottom: 20px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    position: relative;
+    z-index: 2;
 }
 
 .feature-card p {
     color: var(--text-secondary);
-    line-height: 1.5;
+    line-height: 1.6;
     position: relative;
     z-index: 2;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     font-size: 14px;
+    font-weight: 500;
 }
 
 .feature-details {
     text-align: left;
-    margin-top: 15px;
+    margin-top: 20px;
+    position: relative;
+    z-index: 2;
 }
 
 .feature-details p {
-    margin-bottom: 6px;
-    font-size: 13px;
-    line-height: 1.4;
+    margin-bottom: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+    transition: all 0.2s ease;
+}
+
+.feature-details p:hover {
+    color: var(--text-primary);
+    transform: translateX(2px);
 }
 
 .feature-details strong {
     color: var(--text-primary);
-    font-weight: 600;
+    font-weight: 700;
+    letter-spacing: 0.2px;
 }
 
-/* New Info Row Layout */
+/* Enhanced Info Row Layout */
 .info-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(var(--primary-rgb), 0.08);
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(var(--primary-rgb), 0.12);
+    transition: all 0.3s ease;
+    position: relative;
 }
 
 .info-row:last-child {
@@ -111,30 +171,33 @@
 }
 
 .info-row:hover {
-    background: rgba(var(--primary-rgb), 0.03);
-    border-radius: 6px;
-    padding-left: 8px;
-    padding-right: 8px;
-    margin-left: -8px;
-    margin-right: -8px;
+    background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.05), rgba(var(--primary-rgb), 0.02));
+    border-radius: 8px;
+    padding-left: 12px;
+    padding-right: 12px;
+    margin-left: -12px;
+    margin-right: -12px;
+    box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.1);
 }
 
 .info-label {
     color: var(--text-secondary);
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.5px;
     flex-shrink: 0;
+    opacity: 0.9;
 }
 
 .info-value {
     color: var(--text-primary);
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 700;
     text-align: right;
-    margin-left: 15px;
+    margin-left: 20px;
     word-break: break-word;
+    font-family: 'Segoe UI', system-ui, sans-serif;
 }
 
 /* CPU overview card styling removed - now uses standard card size */
@@ -190,10 +253,11 @@
     color: var(--error-color) !important;
 }
 
-/* Loading States */
+/* Enhanced Loading States */
 .loading {
-    opacity: 0.7;
+    opacity: 0.6;
     pointer-events: none;
+    position: relative;
 }
 
 .loading::after {
@@ -201,10 +265,115 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 20px;
-    height: 20px;
-    margin: -10px 0 0 -10px;
-    border: 2px solid transparent;
-    border-top: 2px solid var(--primary-color);
+    width: 24px;
+    height: 24px;
+    margin: -12px 0 0 -12px;
+    border: 3px solid rgba(var(--primary-rgb), 0.2);
+    border-top: 3px solid var(--primary-color);
     border-radius: 50%;
+    animation: diagnostics-spin 1s linear infinite;
+    box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.3);
+}
+
+/* Enhanced Animations */
+@keyframes diagnostics-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes diagnostics-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Analyzing State Animation */
+.info-value:contains("Analyzing") {
+    animation: diagnostics-pulse 2s ease-in-out infinite;
+    color: var(--primary-color);
+    font-style: italic;
+}
+
+/* Enhanced Card Hover Effects */
+.feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    border-color: rgba(var(--primary-rgb), 0.3);
+}
+
+.cpu-info-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 8px 25px rgba(var(--primary-rgb), 0.2);
+}
+
+/* Modern Status Indicators */
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+    animation: diagnostics-pulse 2s ease-in-out infinite;
+}
+
+.status-online {
+    background: var(--success-color);
+    box-shadow: 0 0 6px rgba(76, 175, 80, 0.4);
+}
+
+.status-analyzing {
+    background: var(--primary-color);
+    box-shadow: 0 0 6px rgba(var(--primary-rgb), 0.4);
+}
+
+.status-error {
+    background: var(--error-color);
+    box-shadow: 0 0 6px rgba(244, 67, 54, 0.4);
+}
+
+/* Enhanced Typography */
+.diagnostic-label {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    font-size: 11px;
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+
+.diagnostic-value {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+/* Professional Data Display */
+.data-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(var(--border-color), 0.3);
+}
+
+.data-grid:last-child {
+    border-bottom: none;
+}
+
+.data-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.data-value {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    text-align: right;
+    font-family: 'Segoe UI', system-ui, sans-serif;
 }

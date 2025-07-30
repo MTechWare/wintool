@@ -24,8 +24,6 @@ class SecurityIntegration {
             return;
         }
 
-        console.log('Initializing enhanced plugin security...');
-
         // Initialize security manager
         await this.securityManager.initialize();
 
@@ -36,7 +34,6 @@ class SecurityIntegration {
         this.integrateWithPluginLoader();
 
         this.isInitialized = true;
-        console.log('Enhanced plugin security initialized');
     }
 
     /**

@@ -28,7 +28,7 @@
     <div class="utilities-section">
         <h3><i class="fas fa-cogs"></i> System Management</h3>
         <div class="utilities-grid">
-            <div class="utility-card" onclick="launchUtility('devmgmt.msc')" title="Manage hardware devices and drivers">
+            <div class="utility-card" onclick="launchUtility('devmgmt.msc', this)" title="Manage hardware devices and drivers">
                 <div class="utility-icon">
                     <i class="fas fa-microchip"></i>
                 </div>
@@ -38,7 +38,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('diskmgmt.msc')" title="Manage disk partitions and storage">
+            <div class="utility-card" onclick="launchUtility('diskmgmt.msc', this)" title="Manage disk partitions and storage">
                 <div class="utility-icon">
                     <i class="fas fa-hdd"></i>
                 </div>
@@ -48,7 +48,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('compmgmt.msc')" title="Comprehensive system management console">
+            <div class="utility-card" onclick="launchUtility('compmgmt.msc', this)" title="Comprehensive system management console">
                 <div class="utility-icon">
                     <i class="fas fa-desktop"></i>
                 </div>
@@ -58,7 +58,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('msconfig')" title="Configure system startup and services">
+            <div class="utility-card" onclick="launchUtility('msconfig', this)" title="Configure system startup and services">
                 <div class="utility-icon">
                     <i class="fas fa-sliders-h"></i>
                 </div>
@@ -74,7 +74,7 @@
     <div class="utilities-section">
         <h3><i class="fas fa-database"></i> Registry & Services</h3>
         <div class="utilities-grid">
-            <div class="utility-card" onclick="launchUtility('regedit')" title="Edit Windows registry (Advanced users only)">
+            <div class="utility-card" onclick="launchUtility('regedit', this)" title="Edit Windows registry (Advanced users only)">
                 <div class="utility-icon">
                     <i class="fas fa-edit"></i>
                 </div>
@@ -84,7 +84,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('services.msc')" title="Manage Windows services">
+            <div class="utility-card" onclick="launchUtility('services.msc', this)" title="Manage Windows services">
                 <div class="utility-icon">
                     <i class="fas fa-server"></i>
                 </div>
@@ -94,7 +94,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('taskmgr')" title="Monitor and manage running processes">
+            <div class="utility-card" onclick="launchUtility('taskmgr', this)" title="Monitor and manage running processes">
                 <div class="utility-icon">
                     <i class="fas fa-tasks"></i>
                 </div>
@@ -104,7 +104,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('gpedit.msc')" title="Edit local group policy settings">
+            <div class="utility-card" onclick="launchUtility('gpedit.msc', this)" title="Edit local group policy settings">
                 <div class="utility-icon">
                     <i class="fas fa-shield-alt"></i>
                 </div>
@@ -120,7 +120,7 @@
     <div class="utilities-section">
         <h3><i class="fas fa-network-wired"></i> Network Tools</h3>
         <div class="utilities-grid">
-            <div class="utility-card" onclick="launchUtility('ncpa.cpl')" title="Manage network connections">
+            <div class="utility-card" onclick="launchUtility('ncpa.cpl', this)" title="Manage network connections">
                 <div class="utility-icon">
                     <i class="fas fa-wifi"></i>
                 </div>
@@ -130,7 +130,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('control /name Microsoft.NetworkAndSharingCenter')" title="Network and sharing settings">
+            <div class="utility-card" onclick="launchUtility('control /name Microsoft.NetworkAndSharingCenter', this)" title="Network and sharing settings">
                 <div class="utility-icon">
                     <i class="fas fa-share-alt"></i>
                 </div>
@@ -140,7 +140,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('cmd')" title="Command line interface">
+            <div class="utility-card" onclick="launchUtility('cmd', this)" title="Command line interface">
                 <div class="utility-icon">
                     <i class="fas fa-terminal"></i>
                 </div>
@@ -150,7 +150,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('powershell')" title="PowerShell command interface">
+            <div class="utility-card" onclick="launchUtility('powershell', this)" title="PowerShell command interface">
                 <div class="utility-icon">
                     <i class="fas fa-code"></i>
                 </div>
@@ -160,7 +160,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('wt')" title="Windows Terminal (Windows 11)">
+            <div class="utility-card" onclick="launchUtility('wt', this)" title="Windows Terminal (Windows 11)">
                 <div class="utility-icon">
                     <i class="fas fa-window-maximize"></i>
                 </div>
@@ -176,7 +176,7 @@
     <div class="utilities-section">
         <h3><i class="fas fa-info-circle"></i> System Information</h3>
         <div class="utilities-grid">
-            <div class="utility-card" onclick="launchUtility('msinfo32')" title="Detailed system information">
+            <div class="utility-card" onclick="launchUtility('msinfo32', this)" title="Detailed system information">
                 <div class="utility-icon">
                     <i class="fas fa-laptop"></i>
                 </div>
@@ -186,7 +186,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('eventvwr.msc')" title="View system and application logs">
+            <div class="utility-card" onclick="launchUtility('eventvwr.msc', this)" title="View system and application logs">
                 <div class="utility-icon">
                     <i class="fas fa-list-alt"></i>
                 </div>
@@ -196,7 +196,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('perfmon.msc')" title="Monitor system performance">
+            <div class="utility-card" onclick="launchUtility('perfmon.msc', this)" title="Monitor system performance">
                 <div class="utility-icon">
                     <i class="fas fa-chart-line"></i>
                 </div>
@@ -206,7 +206,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('resmon')" title="Real-time resource monitoring">
+            <div class="utility-card" onclick="launchUtility('resmon', this)" title="Real-time resource monitoring">
                 <div class="utility-icon">
                     <i class="fas fa-tachometer-alt"></i>
                 </div>
@@ -222,7 +222,7 @@
     <div class="utilities-section">
         <h3><i class="fas fa-users"></i> User Management</h3>
         <div class="utilities-grid">
-            <div class="utility-card" onclick="launchUtility('netplwiz')" title="Manage user accounts">
+            <div class="utility-card" onclick="launchUtility('netplwiz', this)" title="Manage user accounts">
                 <div class="utility-icon">
                     <i class="fas fa-user-cog"></i>
                 </div>
@@ -232,7 +232,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('lusrmgr.msc')" title="Local users and groups management">
+            <div class="utility-card" onclick="launchUtility('lusrmgr.msc', this)" title="Local users and groups management">
                 <div class="utility-icon">
                     <i class="fas fa-users-cog"></i>
                 </div>
@@ -242,7 +242,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('control userpasswords')" title="User account control panel">
+            <div class="utility-card" onclick="launchUtility('control userpasswords', this)" title="User account control panel">
                 <div class="utility-icon">
                     <i class="fas fa-id-card"></i>
                 </div>
@@ -252,7 +252,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('secpol.msc')" title="Local security policy settings">
+            <div class="utility-card" onclick="launchUtility('secpol.msc', this)" title="Local security policy settings">
                 <div class="utility-icon">
                     <i class="fas fa-lock"></i>
                 </div>
@@ -268,7 +268,7 @@
     <div class="utilities-section">
         <h3><i class="fas fa-tools"></i> Disk Tools</h3>
         <div class="utilities-grid">
-            <div class="utility-card" onclick="launchUtility('cleanmgr')" title="Clean up disk space">
+            <div class="utility-card" onclick="launchUtility('cleanmgr', this)" title="Clean up disk space">
                 <div class="utility-icon">
                     <i class="fas fa-broom"></i>
                 </div>
@@ -278,7 +278,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('dfrgui')" title="Defragment and optimize drives">
+            <div class="utility-card" onclick="launchUtility('dfrgui', this)" title="Defragment and optimize drives">
                 <div class="utility-icon">
                     <i class="fas fa-puzzle-piece"></i>
                 </div>
@@ -288,7 +288,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchDiskCheck()" title="Check disk for errors">
+            <div class="utility-card" onclick="launchDiskCheck(this)" title="Check disk for errors">
                 <div class="utility-icon">
                     <i class="fas fa-search"></i>
                 </div>
@@ -298,7 +298,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('diskpart')" title="Advanced disk partitioning tool">
+            <div class="utility-card" onclick="launchUtility('diskpart', this)" title="Advanced disk partitioning tool">
                 <div class="utility-icon">
                     <i class="fas fa-cut"></i>
                 </div>
@@ -314,7 +314,7 @@
     <div class="utilities-section">
         <h3><i class="fas fa-wrench"></i> Additional Tools</h3>
         <div class="utilities-grid">
-            <div class="utility-card" onclick="launchUtility('calc')" title="Windows Calculator">
+            <div class="utility-card" onclick="launchUtility('calc', this)" title="Windows Calculator">
                 <div class="utility-icon">
                     <i class="fas fa-calculator"></i>
                 </div>
@@ -324,7 +324,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('notepad')" title="Notepad text editor">
+            <div class="utility-card" onclick="launchUtility('notepad', this)" title="Notepad text editor">
                 <div class="utility-icon">
                     <i class="fas fa-file-alt"></i>
                 </div>
@@ -334,7 +334,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('snippingtool')" title="Screenshot tool">
+            <div class="utility-card" onclick="launchUtility('snippingtool', this)" title="Screenshot tool">
                 <div class="utility-icon">
                     <i class="fas fa-camera"></i>
                 </div>
@@ -344,7 +344,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('magnify')" title="Screen magnifier">
+            <div class="utility-card" onclick="launchUtility('magnify', this)" title="Screen magnifier">
                 <div class="utility-icon">
                     <i class="fas fa-search-plus"></i>
                 </div>
@@ -360,7 +360,7 @@
     <div class="utilities-section">
         <h3><i class="fas fa-cog"></i> Windows 11 Settings</h3>
         <div class="utilities-grid">
-            <div class="utility-card" onclick="launchUtility('ms-settings:storagesense')" title="Storage Sense - Modern disk cleanup">
+            <div class="utility-card" onclick="launchUtility('ms-settings:storagesense', this)" title="Storage Sense - Modern disk cleanup">
                 <div class="utility-icon">
                     <i class="fas fa-cloud"></i>
                 </div>
@@ -370,7 +370,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('ms-settings:privacy')" title="Privacy & Security settings">
+            <div class="utility-card" onclick="launchUtility('ms-settings:privacy', this)" title="Privacy & Security settings">
                 <div class="utility-icon">
                     <i class="fas fa-user-shield"></i>
                 </div>
@@ -380,7 +380,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('ms-settings:windowsupdate')" title="Windows Update settings">
+            <div class="utility-card" onclick="launchUtility('ms-settings:windowsupdate', this)" title="Windows Update settings">
                 <div class="utility-icon">
                     <i class="fas fa-download"></i>
                 </div>
@@ -390,7 +390,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('ms-settings:appsfeatures')" title="Apps & Features management">
+            <div class="utility-card" onclick="launchUtility('ms-settings:appsfeatures', this)" title="Apps & Features management">
                 <div class="utility-icon">
                     <i class="fas fa-th-large"></i>
                 </div>
@@ -400,7 +400,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('ms-settings:display')" title="Display settings">
+            <div class="utility-card" onclick="launchUtility('ms-settings:display', this)" title="Display settings">
                 <div class="utility-icon">
                     <i class="fas fa-desktop"></i>
                 </div>
@@ -410,7 +410,7 @@
                 </div>
             </div>
 
-            <div class="utility-card" onclick="launchUtility('ms-settings:sound')" title="Sound settings">
+            <div class="utility-card" onclick="launchUtility('ms-settings:sound', this)" title="Sound settings">
                 <div class="utility-icon">
                     <i class="fas fa-volume-up"></i>
                 </div>

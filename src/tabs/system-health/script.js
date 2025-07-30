@@ -212,7 +212,6 @@ function updateRealTimeMetrics(metrics) {
 async function updateHealthMetrics() {
     try {
         if (!window.electronAPI) {
-            console.warn('[SystemHealthTab] electronAPI not available');
             return;
         }
 
@@ -319,15 +318,18 @@ async function updateDiskInfo(systemInfo) {
             document.getElementById('disk-used').textContent = formatBytes(used);
             document.getElementById('disk-free').textContent = formatBytes(free);
             document.getElementById('disk-total').textContent = formatBytes(total);
+
+            document.getElementById('disk-status').className =
+                `metric-status ${getHealthStatusClass(diskUsage, HEALTH_THRESHOLDS.disk)}`;
+
+            // Check disk thresholds for alerts (even in fallback mode)
+            checkMetricThresholds('disk', diskUsage, '%');
         } else {
-            // Fallback for browser testing - use mock data
+            // Fallback values for browser testing
             const diskUsage = 65; // Mock percentage
             updateCircularProgress('disk-progress', diskUsage);
             document.getElementById('disk-percentage').textContent = `${diskUsage}%`;
-            document.getElementById('disk-status').textContent = getHealthStatus(
-                diskUsage,
-                HEALTH_THRESHOLDS.disk
-            );
+            document.getElementById('disk-status').textContent = getHealthStatus(diskUsage, HEALTH_THRESHOLDS.disk);
             document.getElementById('disk-status').className =
                 `metric-status ${getHealthStatusClass(diskUsage, HEALTH_THRESHOLDS.disk)}`;
 
@@ -499,11 +501,7 @@ function setupEventListeners(container) {
     // Setup modal event listeners
     setupModalEventListeners();
 
-    // Add demo alert button for testing (remove in production)
-    const demoAlertBtn = container.querySelector('#demo-alert-btn');
-    if (demoAlertBtn) {
-        demoAlertBtn.addEventListener('click', createDemoAlerts);
-    }
+
 }
 
 async function exportHealthReport() {
@@ -702,11 +700,6 @@ function saveAlertSettingsToStorage() {
 
         localStorage.setItem('healthDashboard_alertSettings', settingsToSave);
         localStorage.setItem('healthDashboard_thresholds', thresholdsToSave);
-
-        console.log('Alert settings saved successfully:', {
-            alertSettings: alertSettings,
-            thresholds: HEALTH_THRESHOLDS,
-        });
 
         // Verify the save worked
         const savedSettings = localStorage.getItem('healthDashboard_alertSettings');
@@ -1231,7 +1224,6 @@ function setupModalEventListeners() {
                     'Alert settings have been updated successfully'
                 );
             } catch (error) {
-                console.error('Error saving alert settings:', error);
                 alert('Error saving settings: ' + error.message);
             }
         });
@@ -1371,47 +1363,4 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
-// Demo function for testing alerts (remove in production)
-async function createDemoAlerts() {
-    // Test simple notification first
-    if (window.electronAPI && window.electronAPI.testNotification) {
-        const testResult = await window.electronAPI.testNotification();
-    }
 
-    // Create different types of alerts for testing
-    createAlert(
-        'demo_info',
-        ALERT_SEVERITY.INFO,
-        'System Information',
-        'This is an informational alert to demonstrate the alert system functionality.'
-    );
-
-    setTimeout(() => {
-        createAlert(
-            'demo_warning',
-            ALERT_SEVERITY.WARNING,
-            'Demo Warning Alert',
-            'This is a warning alert example. It indicates a potential issue that should be monitored.'
-        );
-    }, 1000);
-
-    setTimeout(() => {
-        createAlert(
-            'demo_critical',
-            ALERT_SEVERITY.CRITICAL,
-            'Demo Critical Alert',
-            'This is a critical alert example. It represents a serious issue requiring immediate attention.'
-        );
-    }, 2000);
-
-    setTimeout(() => {
-        createAlert(
-            'demo_memory',
-            ALERT_SEVERITY.WARNING,
-            'High Memory Usage',
-            'Memory usage has exceeded 85% threshold. Current usage: 87.3%',
-            'memory',
-            87.3
-        );
-    }, 3000);
-}

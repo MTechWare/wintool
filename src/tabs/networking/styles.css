@@ -226,6 +226,19 @@
     color: var(--primary-color);
 }
 
+.action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.action-btn:disabled:hover {
+    border-color: var(--border-color);
+    color: var(--text-primary);
+    box-shadow: none;
+}
+
+/* Network-specific notification styles are now in global CSS */
 
 /* Responsive Design */
 @media (max-width: 768px) {

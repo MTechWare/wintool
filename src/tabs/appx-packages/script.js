@@ -79,7 +79,6 @@ class AppXPackageManager {
                 window.markTabAsReady('appx-packages');
             }
         } catch (error) {
-            console.error('Error initializing AppX Package Manager:', error);
             this.showStatus('Error initializing AppX Package Manager: ' + error.message, 'error');
 
             // Still signal ready even if there was an error
@@ -263,7 +262,6 @@ class AppXPackageManager {
             this.filterPackages();
             this.showStatus(`Loaded ${Object.keys(this.packages).length} AppX packages`, 'success');
         } catch (error) {
-            console.error('Error loading packages:', error);
             this.showStatus(
                 'Error loading packages: ' + error.message + '. Loading sample data...',
                 'error'
@@ -295,7 +293,6 @@ class AppXPackageManager {
                 return packagesData;
             }
         } catch (error) {
-            console.warn('Enhanced AppX command failed, trying basic command:', error.message);
             // Fallback to basic command if enhanced fails
             try {
                 const basicCommand =
@@ -310,7 +307,6 @@ class AppXPackageManager {
                     return packagesData;
                 }
             } catch (fallbackError) {
-                console.error('Both AppX commands failed:', fallbackError.message);
                 // Both commands failed, return empty array
             }
         }
@@ -1120,7 +1116,6 @@ class AppXPackageManager {
                 'success'
             );
         } catch (error) {
-            console.error('Error creating backup:', error);
             this.showStatus('Error creating backup: ' + error.message, 'error');
         }
     }
@@ -1435,12 +1430,10 @@ class AppXPackageManager {
     }
 
     retryLastOperation() {
-        console.log('Retry operation requested');
         // This would need to be implemented based on the specific operation
     }
 
     openLogsWindow() {
-        console.log('Open logs window requested');
         // This would open a detailed log viewer
     }
 

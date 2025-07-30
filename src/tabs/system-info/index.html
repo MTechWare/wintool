@@ -1,37 +1,37 @@
 <div class="tab-header">
     <div>
         <h1><i class="fas fa-desktop"></i> System Information</h1>
-        <p>Comprehensive system details and hardware information</p>
+        <p>Real-time hardware diagnostics and comprehensive system analytics</p>
     </div>
     <div>
-        <button id="refresh-system-info-btn" class="action-btn" title="Refresh System Information">
+        <button id="refresh-system-info-btn" class="action-btn" title="Refresh System Diagnostics">
             <i class="fas fa-sync-alt"></i>
         </button>
-        <button id="export-system-info-summary-btn" class="action-btn" title="Export Summary">
+        <button id="export-system-info-summary-btn" class="action-btn" title="Export System Report">
             <i class="fas fa-file-export"></i>
         </button>
     </div>
 </div>
 
-<div class="plugin-warning">
-    <i class="fas fa-exclamation-triangle"></i>
-    <span><strong>Disclaimer:</strong> System information is gathered from various Windows components and hardware sensors. Some values may require <strong>administrator privileges</strong> for complete accuracy.</span>
+<div class="plugin-warning diagnostic">
+    <i class="fas fa-microchip"></i>
+    <span><strong>Information:</strong> System information is collected via Windows Management Instrumentation (WMI) and hardware sensors. <strong>Administrator privileges</strong> may be required for complete telemetry access and advanced hardware metrics.</span>
 </div>
 
 <div class="system-info-content">
     <!-- Features Section -->
     <div class="features-section">
-        <h3>System Details & Hardware Information</h3>
+        <h3>Hardware Diagnostics & System Analytics</h3>
         <div class="features-grid">
 
             <div class="feature-card">
                 <i class="fas fa-desktop"></i>
                 <h4>System Overview</h4>
                 <div class="feature-details">
-                    <p><strong>Platform:</strong> <span id="platform-info">Loading...</span></p>
-                    <p><strong>Architecture:</strong> <span id="arch-info">Loading...</span></p>
-                    <p><strong>Hostname:</strong> <span id="hostname-info">Loading...</span></p>
-                    <p><strong>System Uptime:</strong> <span id="uptime-info">Loading...</span></p>
+                    <p><strong>Platform:</strong> <span id="platform-info">Analyzing...</span></p>
+                    <p><strong>Architecture:</strong> <span id="arch-info">Analyzing...</span></p>
+                    <p><strong>Hostname:</strong> <span id="hostname-info">Analyzing...</span></p>
+                    <p><strong>System Uptime:</strong> <span id="uptime-info">Analyzing...</span></p>
                 </div>
             </div>
 
@@ -39,9 +39,9 @@
                 <i class="fas fa-code-branch"></i>
                 <h4>Kernel Information</h4>
                 <div class="feature-details">
-                    <p><strong>Build:</strong> <span id="kernel-build">Loading...</span></p>
-                    <p><strong>Version:</strong> <span id="kernel-version">Loading...</span></p>
-                    <p><strong>Architecture:</strong> <span id="kernel-arch">Loading...</span></p>
+                    <p><strong>Build Number:</strong> <span id="kernel-build">Analyzing...</span></p>
+                    <p><strong>Version:</strong> <span id="kernel-version">Analyzing...</span></p>
+                    <p><strong>Architecture:</strong> <span id="kernel-arch">Analyzing...</span></p>
                 </div>
             </div>
 
@@ -49,55 +49,53 @@
                 <i class="fas fa-cogs"></i>
                 <h4>Operating System</h4>
                 <div class="feature-details">
-                    <p><strong>Edition:</strong> <span id="os-edition">Loading...</span></p>
-                    <p><strong>Install Date:</strong> <span id="os-install-date">Loading...</span></p>
-                    <p><strong>Current User:</strong> <span id="os-current-user">Loading...</span></p>
-                    <p><strong>Computer Name:</strong> <span id="os-computer-name">Loading...</span></p>
+                    <p><strong>Edition:</strong> <span id="os-edition">Analyzing...</span></p>
+                    <p><strong>Install Date:</strong> <span id="os-install-date">Analyzing...</span></p>
+                    <p><strong>Current User:</strong> <span id="os-current-user">Analyzing...</span></p>
+                    <p><strong>Computer Name:</strong> <span id="os-computer-name">Analyzing...</span></p>
                 </div>
             </div>
 
             <div class="feature-card">
                 <i class="fas fa-memory"></i>
-                <h4>Motherboard</h4>
+                <h4>Motherboard Analytics</h4>
                 <div class="feature-details">
-                    <p><strong>Manufacturer:</strong> <span id="motherboard-manufacturer">Loading...</span></p>
-                    <p><strong>Model:</strong> <span id="motherboard-model">Loading...</span></p>
-                    <p><strong>Version:</strong> <span id="motherboard-version">Loading...</span></p>
-                    <p><strong>Serial:</strong> <span id="motherboard-serial">Loading...</span></p>
+                    <p><strong>Manufacturer:</strong> <span id="motherboard-manufacturer">Analyzing...</span></p>
+                    <p><strong>Model:</strong> <span id="motherboard-model">Analyzing...</span></p>
+                    <p><strong>Revision:</strong> <span id="motherboard-version">Analyzing...</span></p>
+                    <p><strong>Serial Number:</strong> <span id="motherboard-serial">Analyzing...</span></p>
                 </div>
             </div>
 
             <div class="feature-card">
                 <i class="fas fa-cog"></i>
-                <h4>BIOS Information</h4>
+                <h4>BIOS/UEFI Firmware</h4>
                 <div class="feature-details">
-                    <p><strong>Vendor:</strong> <span id="bios-vendor">Loading...</span></p>
-                    <p><strong>Version:</strong> <span id="bios-version">Loading...</span></p>
-                    <p><strong>Release Date:</strong> <span id="bios-release-date">Loading...</span></p>
+                    <p><strong>Vendor:</strong> <span id="bios-vendor">Analyzing...</span></p>
+                    <p><strong>Version:</strong> <span id="bios-version">Analyzing...</span></p>
+                    <p><strong>Release Date:</strong> <span id="bios-release-date">Analyzing...</span></p>
                 </div>
             </div>
-
-
 
             <div class="feature-card">
                 <i class="fas fa-hdd"></i>
-                <h4>Storage Information</h4>
+                <h4>Storage Analytics</h4>
                 <div class="feature-details">
-                    <p><strong>Primary Drive:</strong> <span id="storage-primary">Loading...</span></p>
-                    <p><strong>Total Space:</strong> <span id="storage-total">Loading...</span></p>
-                    <p><strong>Free Space:</strong> <span id="storage-free">Loading...</span></p>
-                    <p><strong>Used Space:</strong> <span id="storage-used">Loading...</span></p>
+                    <p><strong>Primary Drive:</strong> <span id="storage-primary">Analyzing...</span></p>
+                    <p><strong>Total Capacity:</strong> <span id="storage-total">Analyzing...</span></p>
+                    <p><strong>Available Space:</strong> <span id="storage-free">Analyzing...</span></p>
+                    <p><strong>Used Space:</strong> <span id="storage-used">Analyzing...</span></p>
                 </div>
             </div>
 
             <div class="feature-card">
-                <i class="fas fa-microchip"></i>
-                <h4>Graphics Information</h4>
+                <i class="fas fa-display"></i>
+                <h4>Graphics Subsystem</h4>
                 <div class="feature-details">
-                    <p><strong>Primary GPU:</strong> <span id="graphics-primary-gpu">Loading...</span></p>
-                    <p><strong>Vendor:</strong> <span id="graphics-vendor">Loading...</span></p>
-                    <p><strong>Driver Version:</strong> <span id="graphics-driver">Loading...</span></p>
-                    <p><strong>Resolution:</strong> <span id="graphics-resolution">Loading...</span></p>
+                    <p><strong>Primary GPU:</strong> <span id="graphics-primary-gpu">Analyzing...</span></p>
+                    <p><strong>Vendor:</strong> <span id="graphics-vendor">Analyzing...</span></p>
+                    <p><strong>Driver Version:</strong> <span id="graphics-driver">Analyzing...</span></p>
+                    <p><strong>Display Resolution:</strong> <span id="graphics-resolution">Analyzing...</span></p>
                 </div>
             </div>
 
@@ -107,46 +105,46 @@
             <!-- CPU Information Cards -->
             <div class="feature-card cpu-info-card">
                 <i class="fas fa-microchip"></i>
-                <h4>Processor Information</h4>
+                <h4>Processor Diagnostics</h4>
                 <div class="feature-details">
                     <div class="info-row">
-                        <span class="info-label">Model:</span>
-                        <span class="info-value" id="cpu-brand">Loading...</span>
+                        <span class="info-label">CPU Model:</span>
+                        <span class="info-value" id="cpu-brand">Analyzing...</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Manufacturer:</span>
-                        <span class="info-value" id="cpu-manufacturer">Loading...</span>
+                        <span class="info-value" id="cpu-manufacturer">Analyzing...</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Base Speed:</span>
-                        <span class="info-value" id="cpu-speed-info">Loading...</span>
+                        <span class="info-label">Base Frequency:</span>
+                        <span class="info-value" id="cpu-speed-info">Analyzing...</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Temperature:</span>
-                        <span class="info-value" id="cpu-temperature-info">Loading...</span>
+                        <span class="info-label">Core Temperature:</span>
+                        <span class="info-value" id="cpu-temperature-info">Analyzing...</span>
                     </div>
                 </div>
             </div>
 
             <div class="feature-card cpu-info-card">
                 <i class="fas fa-tachometer-alt"></i>
-                <h4>Performance Metrics</h4>
+                <h4>Performance Analytics</h4>
                 <div class="feature-details">
                     <div class="info-row">
-                        <span class="info-label">Current Speed:</span>
-                        <span class="info-value" id="cpu-current-speed">Loading...</span>
+                        <span class="info-label">Current Frequency:</span>
+                        <span class="info-value" id="cpu-current-speed">Analyzing...</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Base Speed:</span>
-                        <span class="info-value" id="cpu-speed">Loading...</span>
+                        <span class="info-label">Base Frequency:</span>
+                        <span class="info-value" id="cpu-speed">Analyzing...</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Min Speed:</span>
-                        <span class="info-value" id="cpu-speed-min">Loading...</span>
+                        <span class="info-label">Minimum Frequency:</span>
+                        <span class="info-value" id="cpu-speed-min">Analyzing...</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Max Speed:</span>
-                        <span class="info-value" id="cpu-speed-max">Loading...</span>
+                        <span class="info-label">Maximum Frequency:</span>
+                        <span class="info-value" id="cpu-speed-max">Analyzing...</span>
                     </div>
                 </div>
             </div>
@@ -156,20 +154,20 @@
                 <h4>Core Architecture</h4>
                 <div class="feature-details">
                     <div class="info-row">
-                        <span class="info-label">Total Cores:</span>
-                        <span class="info-value" id="cpu-cores">Loading...</span>
+                        <span class="info-label">Logical Cores:</span>
+                        <span class="info-value" id="cpu-cores">Analyzing...</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Physical Cores:</span>
-                        <span class="info-value" id="cpu-physical-cores">Loading...</span>
+                        <span class="info-value" id="cpu-physical-cores">Analyzing...</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Processors:</span>
-                        <span class="info-value" id="cpu-processors">Loading...</span>
+                        <span class="info-label">Processor Count:</span>
+                        <span class="info-value" id="cpu-processors">Analyzing...</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Socket:</span>
-                        <span class="info-value" id="cpu-socket">Loading...</span>
+                        <span class="info-label">Socket Type:</span>
+                        <span class="info-value" id="cpu-socket">Analyzing...</span>
                     </div>
                 </div>
             </div>

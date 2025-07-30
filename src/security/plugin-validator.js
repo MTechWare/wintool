@@ -409,7 +409,9 @@ class PluginValidator {
                     message: 'Potentially dangerous CSS expressions detected',
                 });
             }
-        } catch (error) {}
+        } catch (error) {
+            // CSS file is optional, ignore if not found
+        }
     }
 
     /**

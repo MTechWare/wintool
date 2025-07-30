@@ -1,274 +1,502 @@
-let liveTailInterval = null;
-let liveTailEnabled = false;
-let notificationsEnabled = false;
-let lastEventTime = null;
-let isInitialized = false;
+// Event Viewer - Modern Implementation
+(function() {
+    'use strict';
 
-async function initEventViewerTab() {
-    if (isInitialized) {
-        return;
-    }
+    // Private state - encapsulated to prevent conflicts
+    const EventViewer = {
+        initialized: false,
+        liveTailInterval: null,
+        liveTailEnabled: false,
+        notificationsEnabled: false,
+        allEvents: [],
+        filteredEvents: [],
+        selectedEvent: null,
+        isRefreshing: false,
+        isExporting: false
+    };
 
-    isInitialized = true;
-    setupEventViewerEventListeners();
-    await loadEventViewerSettings();
-    refreshEvents();
-
-    if (window.markTabAsReady) {
-        window.markTabAsReady(tabId);
-    }
-}
-
-function setupEventViewerEventListeners() {
-    const refreshBtn = document.querySelector('.event-viewer-controls .btn-primary');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', refreshEvents);
-    }
-
-    const refreshBtnHeader = document.getElementById('refresh-events-btn-header');
-    if (refreshBtnHeader) {
-        refreshBtnHeader.addEventListener('click', refreshEvents);
-    }
-
-    const logNameSelect = document.getElementById('log-name-select');
-    if (logNameSelect) {
-        logNameSelect.addEventListener('change', refreshEvents);
-    }
-
-    const searchInput = document.getElementById('event-search');
-    if (searchInput) {
-        searchInput.addEventListener('input', filterEvents);
-    }
-
-    const exportBtn = document.getElementById('export-events-btn');
-    if (exportBtn) {
-        exportBtn.addEventListener('click', exportEvents);
-    }
-
-    // Header export button
-    const exportBtnHeader = document.getElementById('export-events-btn-header');
-    if (exportBtnHeader) {
-        exportBtnHeader.addEventListener('click', exportEvents);
-    }
-
-    // Live tail toggle
-    const liveTailToggle = document.getElementById('live-tail-toggle');
-    if (liveTailToggle) {
-        liveTailToggle.addEventListener('change', toggleLiveTail);
-    }
-
-    // Notifications toggle
-    const notificationsToggle = document.getElementById('notifications-toggle');
-    if (notificationsToggle) {
-        notificationsToggle.addEventListener('change', toggleNotifications);
-    }
-}
-
-async function refreshEvents(isLiveTailUpdate = false) {
-    const logNameSelect = document.getElementById('log-name-select');
-    const logName = logNameSelect.value;
-    const loadingEl = document.getElementById('event-loading');
-    const tableBody = document.getElementById('event-table-body');
-
-    // Don't show loading spinner for live tail updates
-    if (loadingEl && !isLiveTailUpdate) loadingEl.style.display = 'block';
-    if (!isLiveTailUpdate) tableBody.innerHTML = '';
-
-    try {
-        const events = await window.electronAPI.getEventLogs(logName);
-        populateEventTable(events, isLiveTailUpdate);
-
-        // Check for critical events and show notifications
-        if (notificationsEnabled && events && events.length > 0) {
-            checkForCriticalEvents(events);
-        }
-    } catch (error) {
-        console.error('Error loading event logs:', error);
-        if (!isLiveTailUpdate) {
-            tableBody.innerHTML = `<tr><td colspan="5">Error loading events: ${error.message}</td></tr>`;
-        }
-    } finally {
-        if (loadingEl && !isLiveTailUpdate) loadingEl.style.display = 'none';
-    }
-}
-
-function populateEventTable(events, isLiveTailUpdate = false) {
-    const tableBody = document.getElementById('event-table-body');
-
-    if (!isLiveTailUpdate) {
-        tableBody.innerHTML = '';
-    }
-
-    if (!events || events.length === 0) {
-        if (!isLiveTailUpdate) {
-            tableBody.innerHTML = '<tr><td colspan="5">No events found.</td></tr>';
-        }
-        return;
-    }
-
-    // For live tail updates, only add new events
-    let eventsToAdd = events;
-    if (isLiveTailUpdate && lastEventTime) {
-        eventsToAdd = events.filter(event => {
-            const eventTime = new Date(event.TimeCreated);
-            return eventTime > lastEventTime;
-        });
-    }
-
-    // Update lastEventTime with the most recent event
-    if (events.length > 0) {
-        const mostRecentEvent = events.reduce((latest, current) => {
-            return new Date(current.TimeCreated) > new Date(latest.TimeCreated) ? current : latest;
-        });
-        lastEventTime = new Date(mostRecentEvent.TimeCreated);
-    }
-
-    eventsToAdd.forEach(event => {
-        const row = document.createElement('tr');
-        const levelDisplayName = event.LevelDisplayName || 'Information';
-        row.className = `level-${levelDisplayName.toLowerCase()}`;
-
-        // Add animation class for new events in live tail mode
-        if (isLiveTailUpdate) {
-            row.classList.add('new-event');
+    // Initialize function - only runs once
+    EventViewer.init = async function() {
+        if (this.initialized) {
+            console.log('Event Viewer already initialized');
+            return;
         }
 
-        row.innerHTML = `
-            <td>${levelDisplayName}</td>
-            <td>${new Date(event.TimeCreated).toLocaleString()}</td>
-            <td>${event.ProviderName || 'N/A'}</td>
-            <td>${event.Id || 'N/A'}</td>
-            <td>${(event.Message || '').split('\n')[0]}</td>
-        `;
-        row.addEventListener('click', () => showEventDetails(event));
-
-        if (isLiveTailUpdate) {
-            // Insert new events at the top for live tail
-            tableBody.insertBefore(row, tableBody.firstChild);
-        } else {
-            tableBody.appendChild(row);
+        // Check if we're in the right context
+        if (!document.getElementById('event-table-body')) {
+            console.log('Event Viewer DOM not found, skipping initialization');
+            return;
         }
-    });
 
-    // Remove animation class after animation completes
-    if (isLiveTailUpdate) {
-        setTimeout(() => {
-            document.querySelectorAll('.new-event').forEach(row => {
-                row.classList.remove('new-event');
-            });
-        }, 1000);
-    }
-}
+        console.log('Initializing Event Viewer...');
+        this.initialized = true;
 
-function showEventDetails(event) {
-    const detailPane = document.getElementById('event-detail-pane');
-    const detailContent = document.getElementById('event-detail-content');
+        this.setupEventListeners();
+        await this.loadSettings();
+        this.updateLastRefreshTime();
+        this.refreshEvents();
 
-    if (detailPane && detailContent) {
-        detailContent.textContent =
-            `Time: ${new Date(event.TimeCreated).toLocaleString()}\n` +
-            `Level: ${event.LevelDisplayName || 'Information'}\n` +
-            `Source: ${event.ProviderName || 'N/A'}\n` +
-            `Event ID: ${event.Id || 'N/A'}\n\n` +
-            `Message:\n${event.Message || ''}`;
-        detailPane.style.display = 'block';
-    }
-}
+        if (window.markTabAsReady) {
+            window.markTabAsReady('event-viewer');
+        }
+    };
 
-function filterEvents() {
-    const searchInput = document.getElementById('event-search');
-    const filter = searchInput.value.toUpperCase();
-    const table = document.querySelector('.event-table');
-    const tr = table.getElementsByTagName('tr');
+    // Setup event listeners with proper binding
+    EventViewer.setupEventListeners = function() {
+        const self = this;
 
-    for (let i = 1; i < tr.length; i++) {
-        let visible = false;
-        const tds = tr[i].getElementsByTagName('td');
-        for (let j = 0; j < tds.length; j++) {
-            const td = tds[j];
-            if (td) {
-                if (td.innerHTML.toUpperCase().indexOf(filter) > -1) {
-                    visible = true;
+        // Remove any existing event listeners first
+        if (this.clickHandler) {
+            document.removeEventListener('click', this.clickHandler, { capture: true });
+        }
+
+        // Create a bound click handler
+        this.clickHandler = function(e) {
+            const target = e.target.closest('button, .action-btn');
+            if (!target) return;
+
+            // Only handle Event Viewer buttons
+            const eventViewerContainer = target.closest('.modern-event-viewer, .tab-header');
+            if (!eventViewerContainer) return;
+
+            // Prevent default and stop propagation immediately
+            e.preventDefault();
+            e.stopPropagation();
+
+            const id = target.id;
+
+            switch(id) {
+                case 'refresh-events-btn-header':
+                    self.refreshEvents();
                     break;
+                case 'export-events-btn':
+                case 'export-events-btn-header':
+                    self.exportEvents();
+                    break;
+                case 'clear-events-btn':
+                    self.clearEvents();
+                    break;
+                case 'clear-search':
+                    self.clearSearch();
+                    break;
+                case 'close-detail-panel':
+                    self.closeDetailPanel();
+                    break;
+                case 'reset-filters-btn':
+                    self.resetFilters();
+                    break;
+            }
+        };
+
+        // Add the event listener
+        document.addEventListener('click', this.clickHandler, { capture: true });
+
+        // Handle form controls separately
+        const logNameSelect = document.getElementById('log-name-select');
+        const levelFilterSelect = document.getElementById('level-filter-select');
+        const searchInput = document.getElementById('event-search');
+
+        if (logNameSelect && !logNameSelect.dataset.eventViewerBound) {
+            logNameSelect.addEventListener('change', () => self.refreshEvents());
+            logNameSelect.dataset.eventViewerBound = 'true';
+        }
+
+        if (levelFilterSelect && !levelFilterSelect.dataset.eventViewerBound) {
+            levelFilterSelect.addEventListener('change', () => self.applyFilters());
+            levelFilterSelect.dataset.eventViewerBound = 'true';
+        }
+
+        if (searchInput && !searchInput.dataset.eventViewerBound) {
+            searchInput.addEventListener('input', (e) => self.handleSearchInput(e));
+            searchInput.addEventListener('keydown', (e) => self.handleSearchKeydown(e));
+            searchInput.dataset.eventViewerBound = 'true';
+        }
+
+        // Handle toggles
+        const toggles = ['live-tail-toggle', 'notifications-toggle'];
+        toggles.forEach(toggleId => {
+            const toggle = document.getElementById(toggleId);
+            if (toggle && !toggle.dataset.eventViewerBound) {
+                toggle.addEventListener('change', (e) => {
+                    switch(toggleId) {
+                        case 'live-tail-toggle':
+                            self.toggleLiveTail();
+                            break;
+                        case 'notifications-toggle':
+                            self.toggleNotifications();
+                            break;
+                    }
+                });
+                toggle.dataset.eventViewerBound = 'true';
+            }
+        });
+    };
+
+    // Refresh events function
+    EventViewer.refreshEvents = async function(isLiveTailUpdate = false) {
+        if (this.isRefreshing && !isLiveTailUpdate) {
+            console.log('Refresh already in progress');
+            return;
+        }
+
+        this.isRefreshing = true;
+
+        try {
+            const logNameSelect = document.getElementById('log-name-select');
+            const logName = logNameSelect ? logNameSelect.value : 'Application';
+            const loadingEl = document.getElementById('event-loading');
+            const tableBody = document.getElementById('event-table-body');
+            const emptyState = document.getElementById('empty-state');
+
+            if (!isLiveTailUpdate) {
+                if (loadingEl) loadingEl.style.display = 'flex';
+                if (emptyState) emptyState.style.display = 'none';
+                if (tableBody) tableBody.innerHTML = '';
+            }
+
+            const events = await window.electronAPI.getEventLogs(logName);
+            this.allEvents = events || [];
+
+            if (!isLiveTailUpdate) {
+                this.updateLastRefreshTime();
+            }
+
+            this.applyFilters();
+
+            if (this.notificationsEnabled && events && events.length > 0) {
+                this.checkForCriticalEvents(events);
+            }
+
+            this.updateEventCounts();
+
+        } catch (error) {
+            console.error('Error loading event logs:', error);
+            this.showNotification('Error loading events: ' + error.message, 'error');
+        } finally {
+            const loadingEl = document.getElementById('event-loading');
+            if (loadingEl && !isLiveTailUpdate) {
+                loadingEl.style.display = 'none';
+            }
+            this.isRefreshing = false;
+        }
+    };
+
+    // Apply filters function
+    EventViewer.applyFilters = function() {
+        const levelFilter = document.getElementById('level-filter-select');
+        const searchInput = document.getElementById('event-search');
+
+        const levelValue = levelFilter ? levelFilter.value : '';
+        const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+
+        this.filteredEvents = this.allEvents.filter(event => {
+            if (levelValue && event.LevelDisplayName !== levelValue) {
+                return false;
+            }
+
+            if (searchTerm) {
+                const searchableText = [
+                    event.LevelDisplayName || '',
+                    event.ProviderName || '',
+                    event.Message || '',
+                    event.Id || ''
+                ].join(' ').toLowerCase();
+
+                if (!searchableText.includes(searchTerm)) {
+                    return false;
                 }
             }
-        }
-        tr[i].style.display = visible ? '' : 'none';
-    }
-}
 
-async function exportEvents() {
-    const table = document.querySelector('.event-table');
-    const rows = table.querySelectorAll('tr');
-    let csvContent = 'data:text/csv;charset=utf-8,';
-
-    // Add headers
-    const headers = Array.from(rows[0].querySelectorAll('th')).map(header => header.innerText);
-    csvContent += headers.join(',') + '\r\n';
-
-    // Add rows
-    for (let i = 1; i < rows.length; i++) {
-        const row = rows[i];
-        if (row.style.display === 'none') continue; // Skip hidden rows
-        const cols = Array.from(row.querySelectorAll('td')).map(
-            td => `"${td.innerText.replace(/"/g, '""')}"`
-        );
-        csvContent += cols.join(',') + '\r\n';
-    }
-
-    try {
-        const logName = document.getElementById('log-name-select').value;
-        const defaultPath = `event-log-${logName}-${new Date().toISOString().slice(0, 10)}.csv`;
-        const result = await window.electronAPI.saveFile(csvContent, {
-            title: 'Save Event Log',
-            defaultPath: defaultPath,
-            filters: [
-                { name: 'CSV Files', extensions: ['csv'] },
-                { name: 'All Files', extensions: ['*'] },
-            ],
+            return true;
         });
-        if (result.success) {
-            // File saved successfully
+
+        this.populateEventTable();
+        this.updateEventCounts();
+    };
+
+function applyFilters() {
+    const levelFilter = document.getElementById('level-filter-select').value;
+    const searchTerm = document.getElementById('event-search').value.toLowerCase();
+    
+    filteredEvents = allEvents.filter(event => {
+        // Level filter
+        if (levelFilter && event.LevelDisplayName !== levelFilter) {
+            return false;
         }
-    } catch (error) {
-        console.error('Failed to save file:', error);
+        
+        // Search filter
+        if (searchTerm) {
+            const searchableText = [
+                event.LevelDisplayName || '',
+                event.ProviderName || '',
+                event.Message || '',
+                event.Id || ''
+            ].join(' ').toLowerCase();
+            
+            if (!searchableText.includes(searchTerm)) {
+                return false;
+            }
+        }
+        
+        return true;
+    });
+    
+    populateEventTable();
+    updateEventCounts();
+}
+
+    // Populate event table
+    EventViewer.populateEventTable = function() {
+        const tableBody = document.getElementById('event-table-body');
+        const emptyState = document.getElementById('empty-state');
+
+        if (!tableBody) return;
+
+        tableBody.innerHTML = '';
+
+        if (this.filteredEvents.length === 0) {
+            this.showEmptyState();
+            return;
+        }
+
+        if (emptyState) emptyState.style.display = 'none';
+
+        this.filteredEvents.forEach((event, index) => {
+            const row = this.createEventRow(event, index);
+            tableBody.appendChild(row);
+        });
+    };
+
+function createEventRow(event, index) {
+    const row = document.createElement('tr');
+    const levelDisplayName = event.LevelDisplayName || 'Information';
+    row.className = `level-${levelDisplayName.toLowerCase()}`;
+    row.dataset.eventIndex = index;
+    
+    // Format timestamp
+    const timestamp = new Date(event.TimeCreated);
+    const formattedTime = timestamp.toLocaleString();
+    
+    // Truncate message for table display
+    const message = (event.Message || '').split('\n')[0];
+    const truncatedMessage = message.length > 80 ? message.substring(0, 80) + '...' : message;
+    
+    row.innerHTML = `
+        <td class="level-${levelDisplayName.toLowerCase()}">${levelDisplayName}</td>
+        <td>${formattedTime}</td>
+        <td>${event.ProviderName || 'N/A'}</td>
+        <td>${event.Id || 'N/A'}</td>
+        <td title="${message}">${truncatedMessage}</td>
+    `;
+    
+    row.addEventListener('click', () => showEventDetails(event, row));
+    
+    return row;
+}
+
+function showEventDetails(event, row) {
+    // Update selected row
+    document.querySelectorAll('.modern-events-table tbody tr').forEach(tr => {
+        tr.classList.remove('selected');
+    });
+    row.classList.add('selected');
+    
+    selectedEvent = event;
+    
+    // Populate detail panel
+    const detailPanel = document.getElementById('event-detail-panel');
+    const detailLevel = document.getElementById('detail-level');
+    const detailId = document.getElementById('detail-id');
+    const detailSource = document.getElementById('detail-source');
+    const detailTime = document.getElementById('detail-time');
+    const detailMessage = document.getElementById('detail-message-content');
+    const detailRaw = document.getElementById('detail-raw-content');
+    
+    if (detailLevel) {
+        detailLevel.textContent = event.LevelDisplayName || 'Information';
+        detailLevel.className = `detail-value level-${(event.LevelDisplayName || 'information').toLowerCase()}`;
+    }
+    if (detailId) detailId.textContent = event.Id || 'N/A';
+    if (detailSource) detailSource.textContent = event.ProviderName || 'N/A';
+    if (detailTime) detailTime.textContent = new Date(event.TimeCreated).toLocaleString();
+    if (detailMessage) detailMessage.textContent = event.Message || 'No message available';
+    if (detailRaw) detailRaw.textContent = JSON.stringify(event, null, 2);
+    
+    // Show detail panel
+    if (detailPanel) detailPanel.style.display = 'block';
+}
+
+function closeDetailPanel() {
+    const detailPanel = document.getElementById('event-detail-panel');
+    if (detailPanel) detailPanel.style.display = 'none';
+    
+    // Clear selected row
+    document.querySelectorAll('.modern-events-table tbody tr').forEach(tr => {
+        tr.classList.remove('selected');
+    });
+    
+    selectedEvent = null;
+}
+
+function showEmptyState(message = null) {
+    const emptyState = document.getElementById('empty-state');
+    if (emptyState) {
+        if (message) {
+            const emptyContent = emptyState.querySelector('.empty-content p');
+            if (emptyContent) {
+                emptyContent.textContent = message;
+            }
+        }
+        emptyState.style.display = 'flex';
     }
 }
 
-// Settings management functions
+function updateEventCounts() {
+    const totalCount = document.getElementById('total-events-count');
+    const filteredCount = document.getElementById('filtered-events-count');
+    
+    if (totalCount) {
+        totalCount.textContent = `${allEvents.length} events`;
+    }
+    
+    if (filteredCount) {
+        if (filteredEvents.length !== allEvents.length) {
+            filteredCount.textContent = `${filteredEvents.length} filtered`;
+            filteredCount.style.display = 'inline';
+        } else {
+            filteredCount.style.display = 'none';
+        }
+    }
+}
+
+function updateLastRefreshTime() {
+    const lastRefreshEl = document.getElementById('last-refresh-time');
+    if (lastRefreshEl) {
+        lastRefreshEl.textContent = new Date().toLocaleTimeString();
+    }
+}
+
+// Search functionality
+function handleSearchInput(event) {
+    const searchTerm = event.target.value;
+    const clearBtn = document.getElementById('clear-search');
+    
+    if (clearBtn) {
+        clearBtn.style.display = searchTerm ? 'block' : 'none';
+    }
+    
+    // Debounce search
+    clearTimeout(window.searchTimeout);
+    window.searchTimeout = setTimeout(() => {
+        applyFilters();
+    }, 300);
+}
+
+function handleSearchKeydown(event) {
+    if (event.key === 'Escape') {
+        clearSearch();
+    }
+}
+
+function clearSearch() {
+    const searchInput = document.getElementById('event-search');
+    const clearBtn = document.getElementById('clear-search');
+    
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.focus();
+    }
+    if (clearBtn) {
+        clearBtn.style.display = 'none';
+    }
+    
+    applyFilters();
+}
+
+// Toggle functions
+async function toggleLiveTail() {
+    const toggle = document.getElementById('live-tail-toggle');
+    const liveStatus = document.getElementById('live-status');
+    
+    liveTailEnabled = toggle.checked;
+    
+    if (liveStatus) {
+        liveStatus.style.display = liveTailEnabled ? 'flex' : 'none';
+    }
+    
+    if (liveTailEnabled) {
+        startLiveTail();
+        showNotification('Live monitoring enabled', 'success');
+    } else {
+        stopLiveTail();
+        showNotification('Live monitoring disabled', 'info');
+    }
+    
+    await saveEventViewerSettings();
+}
+
+async function toggleNotifications() {
+    const toggle = document.getElementById('notifications-toggle');
+    notificationsEnabled = toggle.checked;
+    
+    showNotification(
+        notificationsEnabled ? 'Notifications enabled' : 'Notifications disabled',
+        'info'
+    );
+    
+    await saveEventViewerSettings();
+}
+
+async function toggleAutoScroll() {
+    const toggle = document.getElementById('auto-scroll-toggle');
+    autoScrollEnabled = toggle.checked;
+    
+    showNotification(
+        autoScrollEnabled ? 'Auto-scroll enabled' : 'Auto-scroll disabled',
+        'info'
+    );
+}
+
+// Live tail functionality
+function startLiveTail() {
+    if (liveTailInterval) {
+        clearInterval(liveTailInterval);
+    }
+
+    liveTailInterval = setInterval(() => {
+        refreshEvents(true);
+    }, 5000); // Check every 5 seconds
+}
+
+function stopLiveTail() {
+    if (liveTailInterval) {
+        clearInterval(liveTailInterval);
+        liveTailInterval = null;
+    }
+}
+
+// Settings management
 async function loadEventViewerSettings() {
     try {
         if (window.electronAPI) {
-            // Load live tail setting
-            liveTailEnabled = await window.electronAPI.getSetting(
-                'eventViewer.liveTailEnabled',
-                false
-            );
+            liveTailEnabled = await window.electronAPI.getSetting('eventViewer.liveTailEnabled', false);
+            notificationsEnabled = await window.electronAPI.getSetting('eventViewer.notificationsEnabled', false);
+            autoScrollEnabled = await window.electronAPI.getSetting('eventViewer.autoScrollEnabled', true);
+
+            // Apply settings to UI
             const liveTailToggle = document.getElementById('live-tail-toggle');
-            if (liveTailToggle) {
-                // Temporarily remove event listener to prevent triggering during initialization
-                liveTailToggle.removeEventListener('change', toggleLiveTail);
-                liveTailToggle.checked = liveTailEnabled;
-                // Re-add event listener
-                liveTailToggle.addEventListener('change', toggleLiveTail);
-
-                if (liveTailEnabled) {
-                    startLiveTail();
-                }
-            }
-
-            // Load notifications setting
-            notificationsEnabled = await window.electronAPI.getSetting(
-                'eventViewer.notificationsEnabled',
-                false
-            );
             const notificationsToggle = document.getElementById('notifications-toggle');
-            if (notificationsToggle) {
-                // Temporarily remove event listener to prevent triggering during initialization
-                notificationsToggle.removeEventListener('change', toggleNotifications);
-                notificationsToggle.checked = notificationsEnabled;
-                // Re-add event listener
-                notificationsToggle.addEventListener('change', toggleNotifications);
+            const autoScrollToggle = document.getElementById('auto-scroll-toggle');
+
+            if (liveTailToggle) liveTailToggle.checked = liveTailEnabled;
+            if (notificationsToggle) notificationsToggle.checked = notificationsEnabled;
+            if (autoScrollToggle) autoScrollToggle.checked = autoScrollEnabled;
+
+            // Start live tail if enabled
+            if (liveTailEnabled) {
+                startLiveTail();
+                const liveStatus = document.getElementById('live-status');
+                if (liveStatus) liveStatus.style.display = 'flex';
             }
         }
     } catch (error) {
@@ -280,94 +508,45 @@ async function saveEventViewerSettings() {
     try {
         if (window.electronAPI) {
             await window.electronAPI.setSetting('eventViewer.liveTailEnabled', liveTailEnabled);
-            await window.electronAPI.setSetting(
-                'eventViewer.notificationsEnabled',
-                notificationsEnabled
-            );
+            await window.electronAPI.setSetting('eventViewer.notificationsEnabled', notificationsEnabled);
+            await window.electronAPI.setSetting('eventViewer.autoScrollEnabled', autoScrollEnabled);
         }
     } catch (error) {
         console.error('Error saving Event Viewer settings:', error);
     }
 }
 
-// Live tail mode functions
-async function toggleLiveTail() {
-    const toggle = document.getElementById('live-tail-toggle');
-    liveTailEnabled = toggle.checked;
+// Utility functions
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+        <span>${message}</span>
+    `;
 
-    // Save setting
-    await saveEventViewerSettings();
+    // Add to page
+    document.body.appendChild(notification);
 
-    if (liveTailEnabled) {
-        startLiveTail();
-        showEventViewerNotification('Live tail mode enabled', 'info');
-    } else {
-        stopLiveTail();
-        showEventViewerNotification('Live tail mode disabled', 'info');
-    }
-}
-
-function startLiveTail() {
-    if (liveTailInterval) {
-        clearInterval(liveTailInterval);
-    }
-
-    // Refresh every 10 seconds instead of 5 to reduce CPU usage
-    liveTailInterval = setInterval(() => {
-        refreshEvents(true);
-    }, 10000);
-
-    // Update UI to show live tail is active
-    const liveTailIndicator = document.getElementById('live-tail-indicator');
-    if (liveTailIndicator) {
-        liveTailIndicator.style.display = 'inline-block';
-    }
-}
-
-function stopLiveTail() {
-    if (liveTailInterval) {
-        clearInterval(liveTailInterval);
-        liveTailInterval = null;
-    }
-
-    // Hide live tail indicator
-    const liveTailIndicator = document.getElementById('live-tail-indicator');
-    if (liveTailIndicator) {
-        liveTailIndicator.style.display = 'none';
-    }
-}
-
-// Notifications functions
-async function toggleNotifications() {
-    const toggle = document.getElementById('notifications-toggle');
-    notificationsEnabled = toggle.checked;
-
-    // Save setting
-    await saveEventViewerSettings();
-
-    if (notificationsEnabled) {
-        showEventViewerNotification('Critical event notifications enabled', 'success');
-    } else {
-        showEventViewerNotification('Critical event notifications disabled', 'info');
-    }
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 3000);
 }
 
 function checkForCriticalEvents(events) {
-    if (!events || events.length === 0) return;
+    const criticalEvents = events.filter(event =>
+        event.LevelDisplayName === 'Critical' || event.LevelDisplayName === 'Error'
+    );
 
-    const criticalEvents = events.filter(event => {
-        const level = (event.LevelDisplayName || '').toLowerCase();
-        return level === 'error' || level === 'critical';
-    });
-
-    criticalEvents.forEach(event => {
-        const eventTime = new Date(event.TimeCreated);
-
-        // Only show notifications for events that are newer than our last check
-        if (!lastEventTime || eventTime > lastEventTime) {
+    if (criticalEvents.length > 0 && notificationsEnabled) {
+        criticalEvents.slice(0, 3).forEach(event => {
             showDesktopNotification(event);
-        }
-    });
+        });
+    }
 }
 
 function showDesktopNotification(event) {
@@ -379,7 +558,6 @@ function showDesktopNotification(event) {
     const title = `${level} Event - ${source}`;
     const body = `Event ID: ${event.Id || 'N/A'}\n${truncatedMessage}`;
 
-    // Use the existing notification system
     if (window.electronAPI && window.electronAPI.showNotification) {
         window.electronAPI.showNotification({
             title: title,
@@ -389,73 +567,380 @@ function showDesktopNotification(event) {
     }
 }
 
-// Utility function for in-app notifications
-function showEventViewerNotification(message, type = 'info') {
-    // Use the global notification system if available
-    if (typeof window.showNotification === 'function') {
-        window.showNotification(message, type);
-    }
-}
+// Action functions
+let isExporting = false;
 
-// Cleanup function
-async function cleanupEventViewer() {
-    stopLiveTail();
-    // Save settings one final time before cleanup
-    await saveEventViewerSettings();
-}
-
-// Clean up when tab is hidden or page unloads
-window.addEventListener('beforeunload', cleanupEventViewer);
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden && liveTailEnabled) {
-        stopLiveTail();
-    } else if (!document.hidden && liveTailEnabled) {
-        startLiveTail();
-    }
-});
-
-// Listen for tab changes to pause/resume live tail appropriately
-if (window.tabEventManager) {
-    window.tabEventManager.addEventListener('tabChanged', event => {
-        const { tabId } = event.detail;
-        if (tabId === 'event-viewer' && liveTailEnabled) {
-            // Tab became active, start live tail
-            startLiveTail();
-        } else if (tabId !== 'event-viewer' && liveTailEnabled) {
-            // Tab became inactive, stop live tail to save resources
-            stopLiveTail();
-        }
-    });
-}
-
-window.refreshEvents = refreshEvents;
-
-// Initialize lazy loading helper
-const lazyHelper = new LazyLoadingHelper('event-viewer');
-
-// Wrap initEventViewerTab with lazy loading support
-function initEventViewerTabWithLazyLoading() {
-    // Check if should initialize (lazy loading support)
-    if (!lazyHelper.shouldInitialize()) {
-        lazyHelper.markTabReady();
+async function exportEvents() {
+    // Prevent multiple simultaneous exports
+    if (isExporting) {
+        console.log('Export already in progress, skipping...');
         return;
     }
 
-    // Mark script as executed
-    lazyHelper.markScriptExecuted();
+    isExporting = true;
 
-    // Call original initialization
-    initEventViewerTab();
+    try {
+        const eventsToExport = filteredEvents.length > 0 ? filteredEvents : allEvents;
 
-    // Mark tab as ready
-    lazyHelper.markTabReady();
+        if (eventsToExport.length === 0) {
+            showNotification('No events to export', 'warning');
+            return;
+        }
+
+        const csvContent = convertEventsToCSV(eventsToExport);
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `event-logs-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showNotification(`Exported ${eventsToExport.length} events`, 'success');
+    } catch (error) {
+        console.error('Error exporting events:', error);
+        showNotification('Failed to export events', 'error');
+    } finally {
+        isExporting = false;
+    }
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initEventViewerTabWithLazyLoading);
-} else {
-    initEventViewerTabWithLazyLoading();
+function convertEventsToCSV(events) {
+    const headers = ['Level', 'Timestamp', 'Source', 'Event ID', 'Message'];
+    const csvRows = [headers.join(',')];
+
+    events.forEach(event => {
+        const row = [
+            event.LevelDisplayName || '',
+            new Date(event.TimeCreated).toISOString(),
+            event.ProviderName || '',
+            event.Id || '',
+            (event.Message || '').replace(/"/g, '""').replace(/\n/g, ' ')
+        ];
+        csvRows.push(row.map(field => `"${field}"`).join(','));
+    });
+
+    return csvRows.join('\n');
 }
 
-// Create global reset function for refresh functionality
-lazyHelper.createGlobalResetFunction();
+function clearEvents() {
+    if (confirm('Are you sure you want to clear all events from the display?')) {
+        allEvents = [];
+        filteredEvents = [];
+        populateEventTable();
+        updateEventCounts();
+        closeDetailPanel();
+        showNotification('Events cleared', 'info');
+    }
+}
+
+function resetFilters() {
+    const levelFilter = document.getElementById('level-filter-select');
+    const searchInput = document.getElementById('event-search');
+    const clearBtn = document.getElementById('clear-search');
+
+    if (levelFilter) levelFilter.value = '';
+    if (searchInput) searchInput.value = '';
+    if (clearBtn) clearBtn.style.display = 'none';
+
+    applyFilters();
+    showNotification('Filters reset', 'info');
+}
+
+
+
+    // Essential utility functions
+    EventViewer.createEventRow = function(event, index) {
+        const row = document.createElement('tr');
+        const levelDisplayName = event.LevelDisplayName || 'Information';
+        row.className = `level-${levelDisplayName.toLowerCase()}`;
+        row.dataset.eventIndex = index;
+
+        const timestamp = new Date(event.TimeCreated);
+        const formattedTime = timestamp.toLocaleString();
+        const message = (event.Message || '').split('\n')[0];
+        const truncatedMessage = message.length > 80 ? message.substring(0, 80) + '...' : message;
+
+        row.innerHTML = `
+            <td class="level-${levelDisplayName.toLowerCase()}">${levelDisplayName}</td>
+            <td>${formattedTime}</td>
+            <td>${event.ProviderName || 'N/A'}</td>
+            <td>${event.Id || 'N/A'}</td>
+            <td title="${message}">${truncatedMessage}</td>
+        `;
+
+        row.addEventListener('click', () => this.showEventDetails(event, row));
+        return row;
+    };
+
+    EventViewer.showEventDetails = function(event, row) {
+        document.querySelectorAll('.modern-events-table tbody tr').forEach(tr => {
+            tr.classList.remove('selected');
+        });
+        row.classList.add('selected');
+
+        const detailPanel = document.getElementById('event-detail-panel');
+        if (detailPanel) detailPanel.style.display = 'block';
+    };
+
+    EventViewer.closeDetailPanel = function() {
+        const detailPanel = document.getElementById('event-detail-panel');
+        if (detailPanel) detailPanel.style.display = 'none';
+
+        document.querySelectorAll('.modern-events-table tbody tr').forEach(tr => {
+            tr.classList.remove('selected');
+        });
+    };
+
+    EventViewer.showEmptyState = function() {
+        const emptyState = document.getElementById('empty-state');
+        if (emptyState) emptyState.style.display = 'flex';
+    };
+
+    EventViewer.updateEventCounts = function() {
+        const totalCount = document.getElementById('total-events-count');
+        const filteredCount = document.getElementById('filtered-events-count');
+
+        if (totalCount) totalCount.textContent = `${this.allEvents.length} events`;
+        if (filteredCount) {
+            if (this.filteredEvents.length !== this.allEvents.length) {
+                filteredCount.textContent = `${this.filteredEvents.length} filtered`;
+                filteredCount.style.display = 'inline';
+            } else {
+                filteredCount.style.display = 'none';
+            }
+        }
+    };
+
+    EventViewer.updateLastRefreshTime = function() {
+        const lastRefreshEl = document.getElementById('last-refresh-time');
+        if (lastRefreshEl) lastRefreshEl.textContent = new Date().toLocaleTimeString();
+    };
+
+    EventViewer.handleSearchInput = function(event) {
+        const searchTerm = event.target.value;
+        const clearBtn = document.getElementById('clear-search');
+        if (clearBtn) clearBtn.style.display = searchTerm ? 'block' : 'none';
+
+        clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(() => this.applyFilters(), 300);
+    };
+
+    EventViewer.handleSearchKeydown = function(event) {
+        if (event.key === 'Escape') this.clearSearch();
+    };
+
+    EventViewer.clearSearch = function() {
+        const searchInput = document.getElementById('event-search');
+        const clearBtn = document.getElementById('clear-search');
+
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.focus();
+        }
+        if (clearBtn) clearBtn.style.display = 'none';
+        this.applyFilters();
+    };
+
+    EventViewer.exportEvents = function() {
+        if (this.isExporting) return;
+        this.isExporting = true;
+
+        try {
+            const eventsToExport = this.filteredEvents.length > 0 ? this.filteredEvents : this.allEvents;
+            if (eventsToExport.length === 0) {
+                this.showNotification('No events to export', 'warning');
+                return;
+            }
+
+            const csvContent = this.convertEventsToCSV(eventsToExport);
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `event-logs-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            this.showNotification(`Exported ${eventsToExport.length} events`, 'success');
+        } catch (error) {
+            this.showNotification('Failed to export events', 'error');
+        } finally {
+            this.isExporting = false;
+        }
+    };
+
+    EventViewer.convertEventsToCSV = function(events) {
+        const headers = ['Level', 'Timestamp', 'Source', 'Event ID', 'Message'];
+        const csvRows = [headers.join(',')];
+
+        events.forEach(event => {
+            const row = [
+                event.LevelDisplayName || '',
+                new Date(event.TimeCreated).toISOString(),
+                event.ProviderName || '',
+                event.Id || '',
+                (event.Message || '').replace(/"/g, '""').replace(/\n/g, ' ')
+            ];
+            csvRows.push(row.map(field => `"${field}"`).join(','));
+        });
+
+        return csvRows.join('\n');
+    };
+
+    EventViewer.clearEvents = function() {
+        if (confirm('Are you sure you want to clear all events from the display?')) {
+            this.allEvents = [];
+            this.filteredEvents = [];
+            this.populateEventTable();
+            this.updateEventCounts();
+            this.closeDetailPanel();
+            this.showNotification('Events cleared', 'info');
+        }
+    };
+
+    EventViewer.resetFilters = function() {
+        const levelFilter = document.getElementById('level-filter-select');
+        const searchInput = document.getElementById('event-search');
+        const clearBtn = document.getElementById('clear-search');
+
+        if (levelFilter) levelFilter.value = '';
+        if (searchInput) searchInput.value = '';
+        if (clearBtn) clearBtn.style.display = 'none';
+
+        this.applyFilters();
+        this.showNotification('Filters reset', 'info');
+    };
+
+    EventViewer.toggleLiveTail = function() {
+        const toggle = document.getElementById('live-tail-toggle');
+        this.liveTailEnabled = toggle ? toggle.checked : false;
+
+        const liveStatus = document.getElementById('live-status');
+        if (liveStatus) liveStatus.style.display = this.liveTailEnabled ? 'flex' : 'none';
+
+        if (this.liveTailEnabled) {
+            this.startLiveTail();
+            this.showNotification('Live monitoring enabled', 'success');
+        } else {
+            this.stopLiveTail();
+            this.showNotification('Live monitoring disabled', 'info');
+        }
+    };
+
+    EventViewer.toggleNotifications = function() {
+        const toggle = document.getElementById('notifications-toggle');
+        this.notificationsEnabled = toggle ? toggle.checked : false;
+        this.showNotification(
+            this.notificationsEnabled ? 'Notifications enabled' : 'Notifications disabled',
+            'info'
+        );
+    };
+
+
+
+    EventViewer.startLiveTail = function() {
+        if (this.liveTailInterval) clearInterval(this.liveTailInterval);
+        this.liveTailInterval = setInterval(() => this.refreshEvents(true), 5000);
+    };
+
+    EventViewer.stopLiveTail = function() {
+        if (this.liveTailInterval) {
+            clearInterval(this.liveTailInterval);
+            this.liveTailInterval = null;
+        }
+    };
+
+    EventViewer.loadSettings = async function() {
+        try {
+            if (window.electronAPI) {
+                this.liveTailEnabled = await window.electronAPI.getSetting('eventViewer.liveTailEnabled', false);
+                this.notificationsEnabled = await window.electronAPI.getSetting('eventViewer.notificationsEnabled', false);
+
+                const liveTailToggle = document.getElementById('live-tail-toggle');
+                const notificationsToggle = document.getElementById('notifications-toggle');
+
+                if (liveTailToggle) liveTailToggle.checked = this.liveTailEnabled;
+                if (notificationsToggle) notificationsToggle.checked = this.notificationsEnabled;
+
+                if (this.liveTailEnabled) {
+                    this.startLiveTail();
+                    const liveStatus = document.getElementById('live-status');
+                    if (liveStatus) liveStatus.style.display = 'flex';
+                }
+            }
+        } catch (error) {
+            console.error('Error loading Event Viewer settings:', error);
+        }
+    };
+
+    EventViewer.showNotification = function(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        `;
+
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 3000);
+    };
+
+    EventViewer.checkForCriticalEvents = function(events) {
+        const criticalEvents = events.filter(event =>
+            event.LevelDisplayName === 'Critical' || event.LevelDisplayName === 'Error'
+        );
+
+        if (criticalEvents.length > 0 && this.notificationsEnabled) {
+            criticalEvents.slice(0, 3).forEach(event => {
+                this.showDesktopNotification(event);
+            });
+        }
+    };
+
+    EventViewer.showDesktopNotification = function(event) {
+        const level = event.LevelDisplayName || 'Error';
+        const source = event.ProviderName || 'Unknown';
+        const message = (event.Message || '').split('\n')[0];
+        const truncatedMessage = message.length > 100 ? message.substring(0, 100) + '...' : message;
+
+        if (window.electronAPI && window.electronAPI.showNotification) {
+            window.electronAPI.showNotification({
+                title: `${level} Event - ${source}`,
+                body: `Event ID: ${event.Id || 'N/A'}\n${truncatedMessage}`,
+                type: level.toLowerCase() === 'critical' ? 'error' : 'warning',
+            });
+        }
+    };
+
+    // Global functions for compatibility
+    window.initEventViewerTab = function() {
+        EventViewer.init();
+    };
+
+    window.refreshEvents = function() {
+        EventViewer.refreshEvents();
+    };
+
+    window.exportEvents = function() {
+        EventViewer.exportEvents();
+    };
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => EventViewer.init());
+    } else {
+        EventViewer.init();
+    }
+
+})(); // End of IIFE

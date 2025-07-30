@@ -54,7 +54,6 @@ class PluginSandbox extends EventEmitter {
      * Initialize the sandbox for a plugin
      */
     async initialize() {
-        console.log(`Initializing sandbox for plugin: ${this.pluginId}`);
 
         // Load plugin permissions
         await this.loadPermissions();
@@ -93,7 +92,7 @@ class PluginSandbox extends EventEmitter {
             this.permissions.add('storage.write');
             this.permissions.add('notifications.show');
         } catch (error) {
-            console.warn(`Failed to load permissions for ${this.pluginId}:`, error.message);
+            // Failed to load permissions, using defaults
         }
     }
 
@@ -370,7 +369,6 @@ class PluginSandbox extends EventEmitter {
      * Cleanup sandbox resources
      */
     destroy() {
-        console.log(`Destroying sandbox for plugin: ${this.pluginId}`);
 
         if (this.memoryMonitor) {
             clearInterval(this.memoryMonitor);

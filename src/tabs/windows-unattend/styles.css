@@ -331,27 +331,7 @@
     color: var(--primary-color);
 }
 
-.disk-config-warning {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    color: #856404;
-    padding: 15px;
-    border-radius: 8px;
-    margin-top: 20px;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-}
-
-.disk-config-warning i {
-    color: #f39c12;
-    font-size: 18px;
-    margin-top: 2px;
-}
-
-.disk-config-warning strong {
-    font-weight: 600;
-}
+/* Disk config warning now uses universal plugin-warning.error class */
 
 /* Script Execution Settings */
 .script-settings {
@@ -435,52 +415,9 @@
     transform: translateY(-1px);
 }
 
-.script-warning {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    color: #856404;
-    padding: 15px;
-    border-radius: 8px;
-    margin-top: 20px;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-}
+/* All warning styles now use universal system from universal-tab-header.css */
 
-.script-warning i {
-    color: #f39c12;
-    font-size: 18px;
-    margin-top: 2px;
-}
-
-.script-warning strong {
-    font-weight: 600;
-}
-
-/* WinTool Auto-Install Notice */
-.wintool-auto-install-notice {
-    background: #d1ecf1;
-    border: 1px solid #bee5eb;
-    color: #0c5460;
-    padding: 15px;
-    border-radius: 8px;
-    margin: 15px 0;
-    border-left: 4px solid #17a2b8;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-}
-
-.wintool-auto-install-notice i {
-    color: #17a2b8;
-    font-size: 18px;
-    margin-top: 2px;
-    flex-shrink: 0;
-}
-
-.wintool-auto-install-notice strong {
-    font-weight: 600;
-}
+/* Removed - now using universal plugin-warning.info class */
 
 /* BitLocker Settings */
 .bitlocker-settings {
@@ -491,28 +428,7 @@
     border-radius: 8px;
 }
 
-/* Security Warning */
-.security-warning {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    color: #856404;
-    padding: 15px;
-    border-radius: 8px;
-    margin-top: 20px;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-}
-
-.security-warning i {
-    color: #f39c12;
-    font-size: 18px;
-    margin-top: 2px;
-}
-
-.security-warning strong {
-    font-weight: 600;
-}
+/* Removed - now using universal plugin-warning.security class */
 
 /* App Removal Settings */
 .app-removal-settings {
@@ -523,28 +439,7 @@
     border-radius: 8px;
 }
 
-/* Privacy Warning */
-.privacy-warning {
-    background: #d1ecf1;
-    border: 1px solid #bee5eb;
-    color: #0c5460;
-    padding: 15px;
-    border-radius: 8px;
-    margin-top: 20px;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-}
-
-.privacy-warning i {
-    color: #17a2b8;
-    font-size: 18px;
-    margin-top: 2px;
-}
-
-.privacy-warning strong {
-    font-weight: 600;
-}
+/* Privacy warning now uses universal plugin-warning.info class */
 
 /* Wi-Fi Settings */
 .wifi-settings {
@@ -577,28 +472,7 @@
     border-radius: 8px;
 }
 
-/* Network Warning */
-.network-warning {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    color: #856404;
-    padding: 15px;
-    border-radius: 8px;
-    margin-top: 20px;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-}
-
-.network-warning i {
-    color: #f39c12;
-    font-size: 18px;
-    margin-top: 2px;
-}
-
-.network-warning strong {
-    font-weight: 600;
-}
+/* Network warning now uses universal plugin-warning.security class */
 
 /* Configuration Pass Management */
 .pass-grid {
@@ -921,19 +795,7 @@
     margin-top: 15px;
 }
 
-.warning-item {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    color: #856404;
-    padding: 12px;
-    border-radius: 6px;
-    margin-bottom: 10px;
-    border-left: 4px solid #f39c12;
-}
-
-.warning-item strong {
-    font-weight: 600;
-}
+/* Warning items now use universal plugin-warning system */
 
 
 [data-theme="dark"] {
@@ -946,11 +808,7 @@
     --primary-hover: #357abd;
 }
 
-[data-theme="dark"] .warning-item {
-    background: #3d3d1a;
-    border-color: #5a5a2a;
-    color: #d4d4aa;
-}
+/* Dark theme warning-item styles removed - now using universal system */
 
 [data-theme="dark"] .help-item {
     background: var(--background-card);

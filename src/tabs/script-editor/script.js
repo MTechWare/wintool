@@ -1,12 +1,12 @@
 let currentFile = null;
 let isModified = false;
-let codeMirrorEditor = null;
+let textEditor = null;
 let settings = {
     fontSize: 14,
     tabSize: 4,
     wordWrap: false,
     autoSave: true,
-    theme: 'vs-dark',
+    theme: 'dark',
     language: 'javascript',
 };
 
@@ -17,7 +17,7 @@ function loadSettings() {
             settings = { ...settings, ...JSON.parse(saved) };
         }
     } catch (error) {
-        console.error('Error loading settings:', error);
+        // Settings loading failed, use defaults
     }
 }
 
@@ -25,80 +25,107 @@ function saveSettings() {
     try {
         localStorage.setItem('scriptEditor.settings', JSON.stringify(settings));
     } catch (error) {
-        console.error('Error saving settings:', error);
+        // Settings saving failed
     }
 }
 
-function initializeCodeMirror(container) {
+function initializeTextEditor(container) {
+    console.log('initializeTextEditor called'); // Debug log
     const editorElement = container.querySelector('#code-editor');
-    if (!editorElement || codeMirrorEditor) {
+    console.log('Editor element found:', !!editorElement); // Debug log
+
+    if (!editorElement || textEditor) {
+        console.log('Editor element not found or already initialized'); // Debug log
         return;
     }
 
-    if (typeof CodeMirror === 'undefined') {
-        console.error('CodeMirror is not available! Falling back to textarea.');
-        // Create a fallback textarea
-        const textarea = document.createElement('textarea');
-        textarea.className = 'code-editor-fallback';
-        textarea.style.width = '100%';
-        textarea.style.height = '400px';
-        textarea.style.fontFamily = 'Consolas, Monaco, monospace';
-        textarea.style.fontSize = '14px';
-        textarea.placeholder = 'Start typing your code here...';
-        editorElement.appendChild(textarea);
+    // Create a styled textarea that matches the app theme
+    console.log('Creating themed text editor'); // Debug log
+    const textarea = document.createElement('textarea');
+    textarea.className = 'themed-text-editor';
+    textarea.id = 'script-textarea';
+    textarea.value = '// Start typing your code here...\n';
 
-        // Set up change listener for fallback
-        textarea.addEventListener('input', () => onContentChange(container));
-        return;
-    }
-
-    // Create CodeMirror instance
-    codeMirrorEditor = CodeMirror(editorElement, {
-        value: '// Start typing your code here...\n',
-        mode: getCodeMirrorMode(settings.language),
-        theme: settings.theme,
-        lineNumbers: true,
-        lineWrapping: settings.wordWrap,
-        indentUnit: settings.tabSize,
+    // Apply comprehensive styling
+    Object.assign(textarea.style, {
+        width: '100%',
+        height: '400px',
+        minHeight: '300px',
+        fontFamily: 'Consolas, "Courier New", Monaco, monospace',
+        fontSize: settings.fontSize + 'px',
+        lineHeight: '1.5',
+        padding: '15px',
+        border: '1px solid #444',
+        borderRadius: '8px',
+        backgroundColor: '#1e1e1e',
+        color: '#d4d4d4',
+        outline: 'none',
+        resize: 'vertical',
         tabSize: settings.tabSize,
-        autoCloseBrackets: true,
-        matchBrackets: true,
-        foldGutter: true,
-        gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-        extraKeys: {
-            'Ctrl-Space': 'autocomplete',
-            F11: function (cm) {
-                cm.setOption('fullScreen', !cm.getOption('fullScreen'));
-            },
-            Esc: function (cm) {
-                if (cm.getOption('fullScreen')) cm.setOption('fullScreen', false);
-            },
-        },
+        whiteSpace: settings.wordWrap ? 'pre-wrap' : 'pre',
+        overflowWrap: settings.wordWrap ? 'break-word' : 'normal',
+        scrollbarWidth: 'thin',
+        scrollbarColor: '#555 #2d2d2d'
+    });
+
+    // Add focus and blur effects
+    textarea.addEventListener('focus', () => {
+        textarea.style.borderColor = '#007acc';
+        textarea.style.boxShadow = '0 0 0 2px rgba(0, 122, 204, 0.2)';
+    });
+
+    textarea.addEventListener('blur', () => {
+        textarea.style.borderColor = '#444';
+        textarea.style.boxShadow = 'none';
+    });
+
+    // Handle tab key for proper indentation
+    textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const spaces = ' '.repeat(settings.tabSize);
+
+            textarea.value = textarea.value.substring(0, start) + spaces + textarea.value.substring(end);
+            textarea.selectionStart = textarea.selectionEnd = start + settings.tabSize;
+        }
     });
 
     // Set up change listener
-    codeMirrorEditor.on('change', () => {
-        onContentChange(container);
-    });
+    textarea.addEventListener('input', () => onContentChange(container));
+
+    // Clear the editor element and add our textarea
+    editorElement.innerHTML = '';
+    editorElement.appendChild(textarea);
+
+    textEditor = textarea;
+    console.log('Text editor created successfully:', !!textEditor); // Debug log
 }
 
-// Get CodeMirror mode for language
-function getCodeMirrorMode(language) {
-    const modeMap = {
-        javascript: 'javascript',
-        python: 'python',
-        powershell: 'powershell',
-        shell: 'shell',
-        sql: 'sql',
-        html: 'htmlmixed',
-        css: 'css',
-        json: { name: 'javascript', json: true },
-        xml: 'xml',
-        yaml: 'yaml',
-        markdown: 'markdown',
-        text: 'text/plain',
+// Simple language detection for syntax highlighting hints (visual only)
+function getLanguageDisplayName(language) {
+    const nameMap = {
+        javascript: 'JavaScript',
+        python: 'Python',
+        powershell: 'PowerShell',
+        shell: 'Shell Script',
+        batch: 'Batch File',
+        html: 'HTML',
+        css: 'CSS',
+        json: 'JSON',
+        xml: 'XML',
+        markdown: 'Markdown',
+        text: 'Plain Text',
     };
-    return modeMap[language] || 'text/plain';
+    return nameMap[language] || 'Plain Text';
+}
+
+// Update language display in the UI
+function updateLanguageDisplay(container) {
+    // This could be used to show the current language in the UI
+    // For now, it's just a placeholder for future enhancements
+    console.log('Current language:', getLanguageDisplayName(settings.language));
 }
 
 // Detect language from file extension
@@ -125,13 +152,22 @@ function detectLanguageFromExtension(extension) {
 
 // Apply settings to the editor
 function applySettings(container) {
-    if (codeMirrorEditor) {
-        codeMirrorEditor.setOption('theme', settings.theme);
-        codeMirrorEditor.setOption('mode', getCodeMirrorMode(settings.language));
-        codeMirrorEditor.setOption('lineWrapping', settings.wordWrap);
-        codeMirrorEditor.setOption('indentUnit', settings.tabSize);
-        codeMirrorEditor.setOption('tabSize', settings.tabSize);
-        codeMirrorEditor.refresh();
+    if (textEditor) {
+        textEditor.style.fontSize = settings.fontSize + 'px';
+        textEditor.style.tabSize = settings.tabSize;
+        textEditor.style.whiteSpace = settings.wordWrap ? 'pre-wrap' : 'pre';
+        textEditor.style.overflowWrap = settings.wordWrap ? 'break-word' : 'normal';
+
+        // Apply theme
+        if (settings.theme === 'light') {
+            textEditor.style.backgroundColor = '#ffffff';
+            textEditor.style.color = '#333333';
+            textEditor.style.borderColor = '#cccccc';
+        } else {
+            textEditor.style.backgroundColor = '#1e1e1e';
+            textEditor.style.color = '#d4d4d4';
+            textEditor.style.borderColor = '#444444';
+        }
     }
 
     // Update settings modal inputs
@@ -152,23 +188,28 @@ function applySettings(container) {
     if (themeSelect) themeSelect.value = settings.theme;
 }
 
-// Get editor content (CodeMirror or fallback)
+// Get editor content
 function getEditorContent(container) {
-    if (codeMirrorEditor) {
-        return codeMirrorEditor.getValue();
+    if (textEditor) {
+        return textEditor.value;
     }
-    // Fallback to textarea
-    const textarea = container.querySelector('.code-editor-fallback');
+    // Fallback - try to find any textarea in the editor
+    const textarea = container.querySelector('#script-textarea') || container.querySelector('textarea');
     return textarea ? textarea.value : '';
 }
 
-// Set editor content (CodeMirror or fallback)
+// Set editor content
 function setEditorContent(container, content) {
-    if (codeMirrorEditor) {
-        codeMirrorEditor.setValue(content);
+    console.log('setEditorContent called with content length:', content ? content.length : 'null/undefined'); // Debug log
+    console.log('textEditor exists:', !!textEditor); // Debug log
+    if (textEditor) {
+        console.log('Setting text editor content'); // Debug log
+        textEditor.value = content;
     } else {
-        // Fallback to textarea
-        const textarea = container.querySelector('.code-editor-fallback');
+        console.log('Using fallback textarea'); // Debug log
+        // Fallback - try to find any textarea in the editor
+        const textarea = container.querySelector('#script-textarea') || container.querySelector('textarea');
+        console.log('Textarea found:', !!textarea); // Debug log
         if (textarea) textarea.value = content;
     }
 }
@@ -193,25 +234,32 @@ function newFile(container) {
 // Open file function
 async function openFile(container) {
     try {
-        if (window.electronAPI && window.electronAPI.openFile) {
-            const result = await window.electronAPI.openFile();
+        if (window.electronAPI && window.electronAPI.openFileDialog) {
+            const result = await window.electronAPI.openFileDialog();
+            console.log('Open file result:', result); // Debug log
             if (result && result.content !== undefined) {
-                if (codeMirrorEditor) {
-                    codeMirrorEditor.setValue(result.content);
-                    // Auto-detect language from file extension
-                    const extension = result.filePath.split('.').pop().toLowerCase();
-                    const language = detectLanguageFromExtension(extension);
-                    if (language) {
-                        settings.language = language;
-                        codeMirrorEditor.setOption('mode', getCodeMirrorMode(language));
-                        const languageSelect = container.querySelector('#language-select');
-                        if (languageSelect) languageSelect.value = language;
-                    }
+                console.log('Setting editor content:', result.content.substring(0, 100) + '...'); // Debug log
+                // Set the content in the text editor
+                setEditorContent(container, result.content);
+
+                // Auto-detect language from file extension
+                const extension = result.filePath.split('.').pop().toLowerCase();
+                const language = detectLanguageFromExtension(extension);
+                if (language) {
+                    settings.language = language;
+                    const languageSelect = container.querySelector('#language-select');
+                    if (languageSelect) languageSelect.value = language;
+                    // Update the language display
+                    updateLanguageDisplay(container);
                 }
+
                 currentFile = result.filePath;
                 isModified = false;
                 updateFileInfo(container);
                 addToOutput(container, `File opened: ${result.filePath}`);
+            } else {
+                console.log('No file selected or file content is undefined'); // Debug log
+                addToOutput(container, 'No file selected.');
             }
         } else {
             // Fallback for browser mode
@@ -223,18 +271,19 @@ async function openFile(container) {
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = e => {
-                        if (codeMirrorEditor) {
-                            codeMirrorEditor.setValue(e.target.result);
-                            // Auto-detect language from file extension
-                            const extension = file.name.split('.').pop().toLowerCase();
-                            const language = detectLanguageFromExtension(extension);
-                            if (language) {
-                                settings.language = language;
-                                codeMirrorEditor.setOption('mode', getCodeMirrorMode(language));
-                                const languageSelect = container.querySelector('#language-select');
-                                if (languageSelect) languageSelect.value = language;
-                            }
+                        // Set the content in the text editor
+                        setEditorContent(container, e.target.result);
+
+                        // Auto-detect language from file extension
+                        const extension = file.name.split('.').pop().toLowerCase();
+                        const language = detectLanguageFromExtension(extension);
+                        if (language) {
+                            settings.language = language;
+                            const languageSelect = container.querySelector('#language-select');
+                            if (languageSelect) languageSelect.value = language;
+                            updateLanguageDisplay(container);
                         }
+
                         currentFile = file.name;
                         isModified = false;
                         updateFileInfo(container);
@@ -246,20 +295,26 @@ async function openFile(container) {
             input.click();
         }
     } catch (error) {
-        console.error('Error opening file:', error);
         addToOutput(container, `Error opening file: ${error.message}`);
     }
 }
 
 // Save file function
 async function saveFile(container) {
-    if (!codeMirrorEditor) return;
-
-    const content = codeMirrorEditor.getValue();
+    const content = getEditorContent(container);
+    if (!content && content !== '') return;
 
     try {
         if (window.electronAPI && window.electronAPI.saveFile) {
-            const result = await window.electronAPI.saveFile(currentFile, content);
+            const options = {
+                title: 'Save Script File',
+                defaultPath: currentFile || 'script.js',
+                filters: [
+                    { name: 'Scripts', extensions: ['ps1', 'bat', 'cmd', 'sh', 'js'] },
+                    { name: 'All Files', extensions: ['*'] }
+                ]
+            };
+            const result = await window.electronAPI.saveFile(content, options);
             if (result && result.filePath) {
                 currentFile = result.filePath;
                 isModified = false;
@@ -278,7 +333,6 @@ async function saveFile(container) {
             addToOutput(container, `File downloaded: ${currentFile || 'script.txt'}`);
         }
     } catch (error) {
-        console.error('Error saving file:', error);
         addToOutput(container, `Error saving file: ${error.message}`);
     }
 }
@@ -287,9 +341,9 @@ async function saveFile(container) {
 async function runScript(container) {
     const languageSelect = container.querySelector('#language-select');
 
-    if (!codeMirrorEditor || !languageSelect) return;
+    if (!languageSelect) return;
 
-    const content = codeMirrorEditor.getValue().trim();
+    const content = getEditorContent(container).trim();
     const language = languageSelect.value;
 
     if (!content) {
@@ -319,14 +373,8 @@ async function runScript(container) {
                     break;
 
                 case 'javascript':
-                    // For JavaScript, we can use eval in the renderer process
-                    try {
-                        const evalResult = eval(content);
-                        addToOutput(container, 'JavaScript Output:');
-                        addToOutput(container, `Result: ${evalResult}`);
-                    } catch (error) {
-                        addToOutput(container, `JavaScript Error: ${error.message}`);
-                    }
+                    // JavaScript execution not supported for security reasons
+                    addToOutput(container, 'JavaScript execution is disabled for security reasons.');
                     break;
 
                 case 'python':
@@ -358,23 +406,12 @@ async function runScript(container) {
                     break;
             }
         } else {
-            // Browser mode - limited execution
-            if (language === 'javascript') {
-                try {
-                    const result = eval(content);
-                    addToOutput(container, `JavaScript Result: ${result}`);
-                } catch (error) {
-                    addToOutput(container, `JavaScript Error: ${error.message}`);
-                }
-            } else {
-                addToOutput(
-                    container,
-                    'Script execution not available in browser mode. Only JavaScript can be executed.'
-                );
-            }
+            addToOutput(
+                container,
+                'Script execution not available in browser mode.'
+            );
         }
     } catch (error) {
-        console.error('Error running script:', error);
         addToOutput(container, `Execution Error: ${error.message}`);
     }
 }
@@ -464,124 +501,120 @@ function hideSettings(container) {
  * @returns {void}
  */
 function setupEventListeners(container) {
-    // File operation handlers - Core file management functionality
-    const newBtn = container.querySelector('#new-file-btn');
-    const openBtn = container.querySelector('#open-file-btn');
-    const saveBtn = container.querySelector('#save-file-btn');
-
-    if (newBtn) {
-        newBtn.addEventListener('click', () => {
-            // User Interaction: Create new file - clears editor and resets state
-            newFile(container);
-        });
-    }
-    if (openBtn) {
-        openBtn.addEventListener('click', () => {
-            // User Interaction: Open existing file - shows file dialog and loads content
-            openFile(container);
-        });
-    }
-    if (saveBtn) {
-        saveBtn.addEventListener('click', () => {
-            // User Interaction: Save current file - persists editor content to disk
-            saveFile(container);
-        });
+    // Remove any existing event listeners first to prevent duplicates
+    if (container.scriptEditorClickHandler) {
+        document.removeEventListener('click', container.scriptEditorClickHandler, { capture: true });
     }
 
-    // Script execution handler - Runs user code with output capture
-    const runBtn = container.querySelector('#run-btn');
-    if (runBtn) {
-        runBtn.addEventListener('click', () => {
-            // User Interaction: Execute script - runs code and displays output/errors
-            runScript(container);
-        });
-    }
+    // Create a bound click handler for the Script Editor
+    container.scriptEditorClickHandler = function(e) {
+        console.log('Script editor click handler triggered', e.target); // Debug log
+        const target = e.target.closest('button');
+        console.log('Button target found:', target, target ? target.id : 'none'); // Debug log
+        if (!target) return;
 
-    // Clear output
-    const clearBtn = container.querySelector('#clear-output-btn');
-    if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-            clearOutput(container);
-        });
-    }
+        // Only handle Script Editor buttons within this container
+        if (!container.contains(target)) {
+            console.log('Button not within container, ignoring'); // Debug log
+            return;
+        }
 
-    // Settings
-    const settingsBtn = container.querySelector('#editor-settings-btn');
-    if (settingsBtn) {
-        settingsBtn.addEventListener('click', () => {
-            showSettings(container);
-        });
-    }
+        // Prevent default and stop propagation immediately
+        e.preventDefault();
+        e.stopPropagation();
 
-    // Modal close
-    const modalClose = container.querySelector('.modal-close');
-    if (modalClose) {
-        modalClose.addEventListener('click', () => hideSettings(container));
-    }
+        const id = target.id;
+        console.log('Handling button click for:', id); // Debug log
 
-    // Language and theme selectors
-    const languageSelect = container.querySelector('#language-select');
-    if (languageSelect) {
-        languageSelect.addEventListener('change', e => {
+        switch(id) {
+            case 'new-file-btn':
+                console.log('Calling newFile'); // Debug log
+                newFile(container);
+                break;
+            case 'open-file-btn':
+                console.log('Calling openFile'); // Debug log
+                openFile(container);
+                break;
+            case 'save-file-btn':
+                console.log('Calling saveFile'); // Debug log
+                saveFile(container);
+                break;
+            case 'run-btn':
+                console.log('Calling runScript'); // Debug log
+                runScript(container);
+                break;
+            case 'clear-output-btn':
+                console.log('Calling clearOutput'); // Debug log
+                clearOutput(container);
+                break;
+            case 'editor-settings-btn':
+                console.log('Calling showSettings'); // Debug log
+                showSettings(container);
+                break;
+            default:
+                console.log('Unknown button ID:', id); // Debug log
+        }
+
+        // Handle modal close
+        if (target.classList.contains('modal-close')) {
+            hideSettings(container);
+        }
+    };
+
+    // Add the event listener
+    document.addEventListener('click', container.scriptEditorClickHandler, { capture: true });
+
+    // Handle form controls separately to prevent duplicates
+    const formControls = [
+        { selector: '#language-select', event: 'change', handler: (e) => {
             settings.language = e.target.value;
-            if (codeMirrorEditor) {
-                codeMirrorEditor.setOption('mode', getCodeMirrorMode(settings.language));
-            }
+            updateLanguageDisplay(container);
             saveSettings();
-        });
-    }
-
-    const themeSelect = container.querySelector('#theme-select');
-    if (themeSelect) {
-        themeSelect.addEventListener('change', e => {
+        }},
+        { selector: '#theme-select', event: 'change', handler: (e) => {
             settings.theme = e.target.value;
-            if (codeMirrorEditor) {
-                codeMirrorEditor.setOption('theme', settings.theme);
-            }
+            applySettings(container);
             saveSettings();
-        });
-    }
-
-    // Settings inputs
-    const fontSizeInput = container.querySelector('#font-size-input');
-    if (fontSizeInput) {
-        fontSizeInput.addEventListener('change', e => {
+        }},
+        { selector: '#font-size-input', event: 'change', handler: (e) => {
             settings.fontSize = parseInt(e.target.value);
             applySettings(container);
             saveSettings();
-        });
-    }
-
-    const tabSizeInput = container.querySelector('#tab-size-input');
-    if (tabSizeInput) {
-        tabSizeInput.addEventListener('change', e => {
+        }},
+        { selector: '#tab-size-input', event: 'change', handler: (e) => {
             settings.tabSize = parseInt(e.target.value);
             applySettings(container);
             saveSettings();
-        });
-    }
-
-    const wordWrapCheckbox = container.querySelector('#word-wrap-checkbox');
-    if (wordWrapCheckbox) {
-        wordWrapCheckbox.addEventListener('change', e => {
+        }},
+        { selector: '#word-wrap-checkbox', event: 'change', handler: (e) => {
             settings.wordWrap = e.target.checked;
             applySettings(container);
             saveSettings();
-        });
-    }
-
-    const autoSaveCheckbox = container.querySelector('#auto-save-checkbox');
-    if (autoSaveCheckbox) {
-        autoSaveCheckbox.addEventListener('change', e => {
+        }},
+        { selector: '#auto-save-checkbox', event: 'change', handler: (e) => {
             settings.autoSave = e.target.checked;
             saveSettings();
-        });
-    }
+        }}
+    ];
+
+    // Remove existing form control listeners and add new ones
+    formControls.forEach(({ selector, event, handler }) => {
+        const element = container.querySelector(selector);
+        if (element) {
+            // Remove existing listener if it exists
+            if (element.scriptEditorHandler) {
+                element.removeEventListener(event, element.scriptEditorHandler);
+            }
+            // Add new listener and store reference
+            element.scriptEditorHandler = handler;
+            element.addEventListener(event, handler);
+        }
+    });
 }
 
 function initializeScriptEditor(container) {
     loadSettings();
-    initializeCodeMirror(container);
+    initializeTextEditor(container);
     applySettings(container);
     setupEventListeners(container);
 
@@ -594,5 +627,11 @@ function initializeScriptEditor(container) {
 if (tabContainer) {
     initializeScriptEditor(tabContainer);
 } else {
-    console.error('No container found for script editor tab, cannot initialize.');
+    // Fallback: wait for DOM to be ready
+    document.addEventListener('DOMContentLoaded', () => {
+        const container = document.querySelector('.folder-tab-container[data-tab="script-editor"]');
+        if (container) {
+            initializeScriptEditor(container);
+        }
+    });
 }
