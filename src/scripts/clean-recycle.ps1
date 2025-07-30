@@ -46,34 +46,7 @@ try {
         }
     }
     
-    # Clean thumbnail cache and explorer database files
-    $explorerPaths = @(
-        "$env:LOCALAPPDATA\Microsoft\Windows\Explorer\thumbcache_*.db",
-        "$env:LOCALAPPDATA\Microsoft\Windows\Explorer\iconcache_*.db"
-    )
-    
-    foreach ($explorerPattern in $explorerPaths) {
-        try {
-            $files = Get-ChildItem -Path $explorerPattern -File -Force -ErrorAction SilentlyContinue |
-                     Where-Object { 
-                         $_.LastWriteTime -lt (Get-Date).AddDays(-7) -and
-                         $_.Length -gt 1MB
-                     }
-            
-            foreach ($file in $files) {
-                try {
-                    $fileSize = $file.Length
-                    Remove-Item -Path $file.FullName -Force -ErrorAction Stop
-                    $filesRemoved++
-                    $totalSizeFreed += $fileSize
-                } catch {
-                    continue
-                }
-            }
-        } catch {
-            continue
-        }
-    }
+
     
 
     $result = @{

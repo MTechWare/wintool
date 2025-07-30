@@ -20,6 +20,11 @@ export async function showSettings() {
 
         modal.style.display = 'flex';
 
+        // Generate theme preset cards after modal is shown
+        setTimeout(() => {
+            generateThemePresets();
+        }, 100);
+
         console.log('Settings modal opened');
     }
 }
@@ -32,6 +37,9 @@ async function loadCurrentSettings() {
             if (themeSelector) {
                 themeSelector.value = theme;
             }
+
+            // Update theme presets active state
+            updateActiveThemePreset();
 
             const primaryColor = await window.electronAPI.getSetting('primaryColor', '#ff9800');
             const colorPicker = document.getElementById('primary-color-picker');
@@ -149,6 +157,10 @@ function initSettingsNavigation() {
         themeSelector.addEventListener('change', async e => {
             const selectedTheme = e.target.value;
             await applyTheme(selectedTheme);
+
+            // Update theme presets active state
+            updateActiveThemePreset();
+
             const customThemeCreator = document.getElementById('custom-theme-creator');
             if (customThemeCreator) {
                 customThemeCreator.style.display = selectedTheme === 'custom' ? 'block' : 'none';
@@ -317,6 +329,116 @@ export async function resetSettings() {
     } catch (error) {
         console.error('Error resetting settings:', error);
         showNotification(`An error occurred: ${error.message}`, 'error');
+    }
+}
+
+// Generate theme preset cards
+export function generateThemePresets() {
+    const grid = document.getElementById('theme-presets-grid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+
+    try {
+        Object.entries(THEMES).forEach(([themeKey, theme]) => {
+            // Skip empty custom theme
+            if (themeKey === 'custom' && (!theme || Object.keys(theme).length === 0)) {
+                return;
+            }
+
+            const card = document.createElement('div');
+            card.className = 'theme-preset-card';
+            card.dataset.theme = themeKey;
+
+            // Create color dots for preview with fallback colors
+            const colorDots = [
+                theme['--primary-color'] || '#ff9800',
+                theme['--background-card'] || '#3a3a3c',
+                theme['--background-light'] || '#2c2c2e',
+                theme['--border-color'] || '#444444'
+            ].map(color => `<div class="theme-color-dot" style="background-color: ${color};"></div>`).join('');
+
+            // Special handling for custom theme
+            const isCustom = themeKey === 'custom';
+            const categoryText = isCustom ? 'custom' : (theme.category || 'theme');
+
+            card.innerHTML = `
+                <div class="theme-preset-category">${categoryText}</div>
+                <div class="theme-preset-header">
+                    <div class="theme-preset-icon" style="background-color: ${theme['--primary-color'] || '#ff9800'};">
+                        <i class="${theme.icon || 'fas fa-palette'}"></i>
+                    </div>
+                    <div class="theme-preset-info">
+                        <h5>${theme.name || themeKey}</h5>
+                        <p>${theme.description || 'Custom theme preset'}</p>
+                    </div>
+                </div>
+                <div class="theme-preset-colors">
+                    ${colorDots}
+                </div>
+                ${isCustom ? '<div class="custom-theme-badge"><i class="fas fa-edit"></i></div>' : ''}
+            `;
+
+            // Add click handler
+            card.addEventListener('click', () => selectThemePreset(themeKey));
+
+            // Add double-click handler for custom theme to open editor
+            if (isCustom) {
+                card.addEventListener('dblclick', () => {
+                    if (typeof window.openThemeCreator === 'function') {
+                        window.openThemeCreator();
+                    }
+                });
+            }
+
+            grid.appendChild(card);
+        });
+    } catch (error) {
+        console.error('Error generating theme presets:', error);
+    }
+
+    // Update active state
+    updateActiveThemePreset();
+}
+
+// Select a theme preset
+export async function selectThemePreset(themeKey) {
+    try {
+        await applyTheme(themeKey);
+
+        // Update theme selector (hidden)
+        const themeSelector = document.getElementById('theme-selector');
+        if (themeSelector) {
+            themeSelector.value = themeKey;
+        }
+
+        // Update active state
+        updateActiveThemePreset();
+
+        // Save setting
+        if (window.electronAPI) {
+            await window.electronAPI.setSetting('theme', themeKey);
+        }
+
+        console.log(`Applied theme: ${themeKey}`);
+    } catch (error) {
+        console.error('Error applying theme preset:', error);
+    }
+}
+
+// Update active theme preset visual state
+export function updateActiveThemePreset() {
+    const currentTheme = document.getElementById('theme-selector')?.value || 'classic-dark';
+
+    // Remove active class from all cards
+    document.querySelectorAll('.theme-preset-card').forEach(card => {
+        card.classList.remove('active');
+    });
+
+    // Add active class to current theme
+    const activeCard = document.querySelector(`[data-theme="${currentTheme}"]`);
+    if (activeCard) {
+        activeCard.classList.add('active');
     }
 }
 

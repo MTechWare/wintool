@@ -54,7 +54,6 @@ class PluginManager {
 
         // Plugin management handlers
         ipcMain.handle('get-tab-folders', async () => {
-            console.log('get-tab-folders handler called');
             const disabledPlugins = await this.settingsManager.getDisabledPlugins();
             const tabs = [];
             const plugins = [];
@@ -85,12 +84,10 @@ class PluginManager {
             // Combine tabs and plugins, ensuring plugins are last
             const allItems = [...tabs, ...plugins];
 
-            console.log('Found tab/plugin items:', allItems);
             return allItems;
         });
 
         ipcMain.handle('get-all-plugins', async () => {
-            console.log('get-all-plugins handler called');
             const pluginMap = await this.getPluginMap();
             const disabledPlugins = await this.settingsManager.getDisabledPlugins();
 
@@ -275,7 +272,6 @@ class PluginManager {
 
         ipcMain.handle('open-plugins-directory', async () => {
             const userPluginsPath = this.getPluginsPath();
-            console.log(`Opening user plugins directory: ${userPluginsPath}`);
             await shell.openPath(userPluginsPath);
             return true;
         });
@@ -361,7 +357,6 @@ class PluginManager {
 
         // Verified plugins handlers
         ipcMain.handle('refresh-verified-plugins', async () => {
-            console.log('refresh-verified-plugins handler called');
             try {
                 await this.updateVerifiedPluginsList();
                 return { success: true, message: 'Verified plugins list refreshed successfully' };
@@ -372,7 +367,6 @@ class PluginManager {
         });
 
         ipcMain.handle('get-verified-plugins', async () => {
-            console.log('get-verified-plugins handler called');
             return {
                 success: true,
                 verifiedHashes: { ...this.verifiedHashes },
@@ -601,7 +595,7 @@ class PluginManager {
                 return;
             }
 
-            console.log(`Installing dependencies for plugin '${pluginId}'...`);
+
 
             // Install dependencies using npm
             const { spawn } = require('child_process');
@@ -626,22 +620,18 @@ class PluginManager {
 
                 npmProcess.on('close', (code) => {
                     if (code === 0) {
-                        console.log(`Successfully installed dependencies for plugin '${pluginId}'`);
                         resolve();
                     } else {
-                        console.error(`Failed to install dependencies for plugin '${pluginId}': ${stderr}`);
                         reject(new Error(`npm install failed with code ${code}: ${stderr}`));
                     }
                 });
 
                 npmProcess.on('error', (error) => {
-                    console.error(`Failed to start npm install for plugin '${pluginId}': ${error.message}`);
                     reject(error);
                 });
             });
 
         } catch (error) {
-            console.error(`Error ensuring dependencies for plugin '${pluginId}': ${error.message}`);
             // Don't throw the error, just log it so plugin loading can continue
         }
     }
@@ -716,7 +706,6 @@ class PluginManager {
      * Get tab content (handles both built-in tabs and plugins)
      */
     async getTabContent(tabFolder) {
-        console.log('get-tab-content handler called for:', tabFolder);
 
         // Determine the base path (could be a built-in 'tab' or a 'plugin')
         let tabPath;

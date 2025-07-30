@@ -1,24 +1,4 @@
-# WinTool System Cleanup Script
-# Copyright (c) 2024 MTechWare
-# This script is part of WinTool - Windows System Management Tool
-# Licensed under GPL-3.0-or-later
-#
-# Purpose: Clean system files and temporary data to free up disk space
-# This script only removes temporary files and does not modify system settings
-# All operations are performed with proper error handling and validation
-
-#Requires -Version 5.1
-[CmdletBinding()]
-param()
-
-# Script metadata for security validation
-$ScriptInfo = @{
-    Name = "WinTool System Cleanup"
-    Version = "1.0.0"
-    Author = "MTechWare"
-    Purpose = "System file cleanup"
-    SafetyLevel = "Safe - Only removes temporary files"
-}
+# Clean system files and temporary data
 
 try {
     # Initialize counters
@@ -213,24 +193,7 @@ try {
         }
     }
 
-    # 7. Clean Event Logs (clear old entries, keep recent) - Optional and careful
-    try {
-        $eventLogs = @("Application", "System", "Setup")  # Removed Security for safety
-        foreach ($logName in $eventLogs) {
-            try {
-                $log = Get-WinEvent -ListLog $logName -ErrorAction SilentlyContinue
-                if ($log -and $log.RecordCount -gt 5000) {
-                    # Only clear if log has more than 5000 entries (increased threshold)
-                    $null = wevtutil cl $logName 2>$null
-                    $filesRemoved += 50  # Conservative estimate of cleared entries
-                }
-            } catch {
-                continue
-            }
-        }
-    } catch {
-        # Skip event log clearing if there are any issues
-    }
+
 
     # Output result as JSON
     $result = @{

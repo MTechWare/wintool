@@ -82,12 +82,14 @@ module.exports = {
     // File system restrictions
     fileSystem: {
         allowedScriptPaths: [
-            'scripts/scan-temp.ps1',
-            'scripts/scan-system.ps1',
-            'scripts/scan-cache.ps1',
             'scripts/clean-temp.ps1',
             'scripts/clean-system.ps1',
             'scripts/clean-cache.ps1',
+            'scripts/clean-browser.ps1',
+            'scripts/clean-updates.ps1',
+            'scripts/clean-logs.ps1',
+            'scripts/clean-recycle.ps1',
+            'scripts/clean-dumps.ps1',
             'scripts/get-disk-space.ps1',
         ],
         scriptDirectory: __dirname + '/../',

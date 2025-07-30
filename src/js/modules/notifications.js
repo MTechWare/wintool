@@ -1,84 +1,126 @@
 /**
- * Display a notification message to the user with specified type and styling.
+ * Enhanced notification system with improved design and functionality.
  * Creates a notification container if it doesn't exist and shows a styled notification.
  *
  * @param {string} message - The message to display in the notification
  * @param {string} [type='info'] - The type of notification ('info', 'success', 'error', 'warning')
- * @returns {void}
+ * @param {number} [duration] - Duration in milliseconds (optional, uses default based on type)
+ * @returns {HTMLElement} The notification element
  */
-export function showNotification(message, type = 'info') {
+export function showNotification(message, type = 'info', duration = null) {
+    // Create notification container if it doesn't exist
     let container = document.querySelector('.notification-container');
     if (!container) {
         container = document.createElement('div');
         container.className = 'notification-container';
-        container.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10000;
-            pointer-events: none;
-        `;
         document.body.appendChild(container);
     }
 
+    // Create notification element
     const notification = document.createElement('div');
-    notification.className = 'notification';
+    notification.className = `notification notification-${type}`;
 
-    let icon = 'fas fa-info-circle';
-    let bgColor = 'var(--primary-color)';
+    // Set icon based on type
+    const iconMap = {
+        'success': 'check-circle',
+        'error': 'exclamation-circle',
+        'warning': 'exclamation-triangle',
+        'info': 'info-circle'
+    };
 
-    switch (type) {
-        case 'success':
-            icon = 'fas fa-check-circle';
-            bgColor = '#10b981';
-            break;
-        case 'error':
-            icon = 'fas fa-exclamation-circle';
-            bgColor = '#ef4444';
-            break;
-        case 'warning':
-            icon = 'fas fa-exclamation-triangle';
-            bgColor = '#f59e0b';
-            break;
-        default:
-            icon = 'fas fa-info-circle';
-            bgColor = 'var(--primary-color)';
-    }
-
-    notification.style.cssText = `
-        background: ${bgColor};
-        color: white;
-        padding: 12px 16px;
-        border-radius: 6px;
-        margin-bottom: 10px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 14px;
-        max-width: 350px;
-        pointer-events: auto;
-        transform: translateX(100%);
-        transition: transform 0.3s ease-out;
-    `;
+    const icon = iconMap[type] || 'info-circle';
 
     notification.innerHTML = `
-        <i class="${icon}"></i>
+        <i class="fas fa-${icon}"></i>
         <span>${message}</span>
+        <button class="notification-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
     `;
 
+    // Add to container
     container.appendChild(notification);
 
-    setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
-    }, 100);
+    // Set auto-remove timeout based on type or custom duration
+    const timeout = duration || (type === 'error' ? 10000 : type === 'warning' ? 7000 : 5000);
 
     setTimeout(() => {
-        notification.style.transform = 'translateX(100%)';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 300);
-    }, 4000);
+        if (notification.parentElement) {
+            notification.style.animation = 'slideOut 0.3s ease-in';
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 300);
+        }
+    }, timeout);
+
+    return notification;
+}
+
+/**
+ * Show a success notification
+ * @param {string} message - The success message to display
+ * @param {number} [duration] - Duration in milliseconds
+ * @returns {HTMLElement} The notification element
+ */
+export function showSuccess(message, duration = null) {
+    return showNotification(message, 'success', duration);
+}
+
+/**
+ * Show an error notification
+ * @param {string} message - The error message to display
+ * @param {number} [duration] - Duration in milliseconds
+ * @returns {HTMLElement} The notification element
+ */
+export function showError(message, duration = null) {
+    return showNotification(message, 'error', duration);
+}
+
+/**
+ * Show a warning notification
+ * @param {string} message - The warning message to display
+ * @param {number} [duration] - Duration in milliseconds
+ * @returns {HTMLElement} The notification element
+ */
+export function showWarning(message, duration = null) {
+    return showNotification(message, 'warning', duration);
+}
+
+/**
+ * Show an info notification
+ * @param {string} message - The info message to display
+ * @param {number} [duration] - Duration in milliseconds
+ * @returns {HTMLElement} The notification element
+ */
+export function showInfo(message, duration = null) {
+    return showNotification(message, 'info', duration);
+}
+
+/**
+ * Clear all notifications
+ */
+export function clearAllNotifications() {
+    const container = document.querySelector('.notification-container');
+    if (container) {
+        const notifications = container.querySelectorAll('.notification');
+        notifications.forEach(notification => {
+            notification.style.animation = 'slideOut 0.3s ease-in';
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 300);
+        });
+    }
+}
+
+/**
+ * Legacy function for backward compatibility
+ * @deprecated Use showNotification, showSuccess, showError, showWarning, or showInfo instead
+ */
+export function displayNotification(message, type = 'info') {
+    console.warn('displayNotification is deprecated. Use showNotification instead.');
+    return showNotification(message, type);
 }

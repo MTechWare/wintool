@@ -42,7 +42,6 @@ try {
     }
 
     $additionalPaths = @(
-        "$env:SystemRoot\SoftwareDistribution\Download\*",
         "$env:LOCALAPPDATA\Microsoft\Windows\INetCache\*",
         "$env:LOCALAPPDATA\Microsoft\Windows\WebCache\*"
     )

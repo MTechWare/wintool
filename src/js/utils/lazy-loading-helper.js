@@ -27,7 +27,6 @@ class LazyLoadingHelper {
     markScriptExecuted() {
         this.scriptExecuted = true;
         window[this.globalKey] = true;
-        console.log(`Script execution marked for tab: ${this.tabId}`);
     }
 
     /**
@@ -80,7 +79,6 @@ class LazyLoadingHelper {
 
         // Skip if already executed and skipIfExecuted is true
         if (skipIfExecuted && this.scriptExecuted) {
-            console.log(`Tab script already executed, skipping initialization: ${this.tabId}`);
             if (markReady) {
                 this.markTabReady();
             }
@@ -182,5 +180,3 @@ class LazyLoadingHelper {
 
 // Export for use in tab scripts
 window.LazyLoadingHelper = LazyLoadingHelper;
-
-console.log('Lazy Loading Helper utility loaded');

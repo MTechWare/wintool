@@ -46,32 +46,7 @@ try {
         }
     }
 
-    $browserCaches = @(
-        "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Cache\*",
-        "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Cache\*",
-        "$env:LOCALAPPDATA\Mozilla\Firefox\Profiles\*\cache2\*",
-        "$env:APPDATA\Opera Software\Opera Stable\Cache\*"
-    )
 
-    foreach ($cachePath in $browserCaches) {
-        try {
-            $cacheFiles = Get-ChildItem -Path $cachePath -Force -ErrorAction SilentlyContinue |
-                         Where-Object { -not $_.PSIsContainer -and $_.LastWriteTime -lt (Get-Date).AddHours(-1) }
-
-            foreach ($file in $cacheFiles) {
-                try {
-                    $fileSize = $file.Length
-                    Remove-Item -Path $file.FullName -Force -ErrorAction Stop
-                    $filesRemoved++
-                    $totalSizeFreed += $fileSize
-                } catch {
-                    continue
-                }
-            }
-        } catch {
-            continue
-        }
-    }
 
     $storeCachePath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsStore_*\LocalCache"
     try {

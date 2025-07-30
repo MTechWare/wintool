@@ -107,30 +107,134 @@ export function openThemeCreator() {
     const modal = document.getElementById('theme-creator-modal');
     if (modal) {
         const customTheme = THEMES['custom'];
-        document.getElementById('theme-name-input').value = customTheme.name || 'My Custom Theme';
-        document.getElementById('theme-primary-color').value =
-            customTheme['--primary-color'] || '#ff9800';
-        document.getElementById('theme-background-dark').value =
-            customTheme['--background-dark'] || '#1c1c1e';
-        document.getElementById('theme-background-light').value =
-            customTheme['--background-light'] || '#2c2c2e';
-        document.getElementById('theme-background-card').value =
-            customTheme['--background-card'] || '#3a3a3c';
-        document.getElementById('theme-border-color').value =
-            customTheme['--border-color'] || '#444444';
-        document.getElementById('theme-hover-color').value =
-            customTheme['--hover-color'] || '#4f4f52';
-        document.getElementById('theme-background-content').value =
-            customTheme['--background-content'] || '#1c1c1e';
+
+        // Load existing custom theme or defaults
+        const themeData = {
+            name: customTheme.name || 'My Custom Theme',
+            '--primary-color': customTheme['--primary-color'] || '#ff9800',
+            '--background-dark': customTheme['--background-dark'] || '#1c1c1e',
+            '--background-light': customTheme['--background-light'] || '#2c2c2e',
+            '--background-card': customTheme['--background-card'] || '#3a3a3c',
+            '--border-color': customTheme['--border-color'] || '#444444',
+            '--hover-color': customTheme['--hover-color'] || '#4f4f52',
+            '--background-content': customTheme['--background-content'] || '#1c1c1e'
+        };
+
+        // Set form values
+        document.getElementById('theme-name-input').value = themeData.name;
+
+        // Set color inputs and text inputs
+        Object.keys(themeData).forEach(key => {
+            if (key !== 'name') {
+                const colorInput = document.getElementById(`theme-${key.replace('--', '').replace(/-/g, '-')}`);
+                const textInput = document.getElementById(`theme-${key.replace('--', '').replace(/-/g, '-')}-text`);
+
+                if (colorInput) colorInput.value = themeData[key];
+                if (textInput) textInput.value = themeData[key];
+            }
+        });
+
+        // Initialize live preview
+        initThemeCreatorListeners();
+        updateThemePreview();
+
         modal.style.display = 'flex';
     }
 }
 
+// Initialize theme creator event listeners
+function initThemeCreatorListeners() {
+    const colorInputs = [
+        'theme-primary-color',
+        'theme-background-dark',
+        'theme-background-light',
+        'theme-background-card',
+        'theme-border-color',
+        'theme-hover-color',
+        'theme-background-content'
+    ];
+
+    colorInputs.forEach(inputId => {
+        const colorInput = document.getElementById(inputId);
+        const textInput = document.getElementById(`${inputId}-text`);
+
+        if (colorInput && textInput) {
+            // Sync color picker with text input
+            colorInput.addEventListener('input', (e) => {
+                textInput.value = e.target.value;
+                updateThemePreview();
+            });
+
+            // Sync text input with color picker
+            textInput.addEventListener('input', (e) => {
+                const color = e.target.value;
+                if (isValidHexColor(color)) {
+                    colorInput.value = color;
+                    updateThemePreview();
+                }
+            });
+        }
+    });
+}
+
+// Update live preview
+function updateThemePreview() {
+    const previewContainer = document.getElementById('theme-preview-container');
+    if (!previewContainer) return;
+
+    const themeData = {
+        '--primary-color': document.getElementById('theme-primary-color')?.value || '#ff9800',
+        '--background-dark': document.getElementById('theme-background-dark')?.value || '#1c1c1e',
+        '--background-light': document.getElementById('theme-background-light')?.value || '#2c2c2e',
+        '--background-card': document.getElementById('theme-background-card')?.value || '#3a3a3c',
+        '--border-color': document.getElementById('theme-border-color')?.value || '#444444',
+        '--hover-color': document.getElementById('theme-hover-color')?.value || '#4f4f52',
+        '--background-content': document.getElementById('theme-background-content')?.value || '#1c1c1e'
+    };
+
+    // Calculate derived colors
+    const primaryRgb = hexToRgb(themeData['--primary-color']);
+    themeData['--primary-rgb'] = `${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}`;
+    themeData['--primary-dark'] = darkenColor(themeData['--primary-color'], 0.15);
+    themeData['--primary-darker'] = darkenColor(themeData['--primary-color'], 0.3);
+
+    // Apply theme to preview container
+    Object.entries(themeData).forEach(([key, value]) => {
+        previewContainer.style.setProperty(key, value);
+    });
+}
+
+// Validate hex color
+function isValidHexColor(hex) {
+    return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(hex);
+}
+
+// Convert hex to RGB
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : { r: 255, g: 152, b: 0 };
+}
+
 export async function saveCustomTheme() {
     const themeName = document.getElementById('theme-name-input').value;
+    const primaryColor = document.getElementById('theme-primary-color').value;
+
     const theme = {
         name: themeName,
-        '--primary-color': document.getElementById('theme-primary-color').value,
+        description: 'Custom user-created theme',
+        icon: 'fas fa-paint-brush',
+        category: 'custom',
+        '--primary-color': primaryColor,
+        '--primary-dark': darkenColor(primaryColor, 0.15),
+        '--primary-darker': darkenColor(primaryColor, 0.3),
+        '--primary-rgb': (() => {
+            const rgb = hexToRgb(primaryColor);
+            return `${rgb.r}, ${rgb.g}, ${rgb.b}`;
+        })(),
         '--background-dark': document.getElementById('theme-background-dark').value,
         '--background-light': document.getElementById('theme-background-light').value,
         '--background-card': document.getElementById('theme-background-card').value,
@@ -142,12 +246,20 @@ export async function saveCustomTheme() {
     THEMES['custom'] = theme;
     await window.electronAPI.setSetting('customTheme', theme);
     await applyTheme('custom');
-    closeModal('theme-creator-modal');
-    showNotification('Custom theme saved! Restart to apply all changes.', 'success');
 
-    if (confirm('A restart is required to fully apply the new theme. Restart now?')) {
-        window.electronAPI.restartApplication();
+    // Update theme selector
+    const themeSelector = document.getElementById('theme-selector');
+    if (themeSelector) {
+        themeSelector.value = 'custom';
     }
+
+    // Update theme presets display
+    if (typeof window.generateThemePresets === 'function') {
+        window.generateThemePresets();
+    }
+
+    closeModal('theme-creator-modal');
+    showNotification('Custom theme saved successfully!', 'success');
 
     const primaryColorPicker = document.getElementById('primary-color-picker');
     const primaryColorPreview = document.getElementById('primary-color-preview');
@@ -219,13 +331,26 @@ export function exportTheme() {
 }
 
 export function resetCustomTheme() {
-    document.getElementById('theme-name-input').value = 'My Custom Theme';
-    document.getElementById('theme-primary-color').value = '#ff9800';
-    document.getElementById('theme-background-dark').value = '#1c1c1e';
-    document.getElementById('theme-background-light').value = '#2c2c2e';
-    document.getElementById('theme-background-card').value = '#3a3a3c';
-    document.getElementById('theme-border-color').value = '#444444';
-    document.getElementById('theme-hover-color').value = '#4f4f52';
-    document.getElementById('theme-background-content').value = '#1c1c1e';
+    const defaultValues = {
+        'theme-name-input': 'My Custom Theme',
+        'theme-primary-color': '#ff9800',
+        'theme-background-dark': '#1c1c1e',
+        'theme-background-light': '#2c2c2e',
+        'theme-background-card': '#3a3a3c',
+        'theme-border-color': '#444444',
+        'theme-hover-color': '#4f4f52',
+        'theme-background-content': '#1c1c1e'
+    };
+
+    Object.entries(defaultValues).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        const textElement = document.getElementById(`${id}-text`);
+
+        if (element) element.value = value;
+        if (textElement) textElement.value = value;
+    });
+
+    // Update live preview
+    updateThemePreview();
     showNotification('Custom theme colors reset. Click "Save Theme" to apply.', 'success');
 }

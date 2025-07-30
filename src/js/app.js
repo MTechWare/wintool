@@ -45,6 +45,9 @@ import {
     showSettings,
     applyAnimationSetting,
     togglePerformanceMode,
+    generateThemePresets,
+    selectThemePreset,
+    updateActiveThemePreset,
 } from './modules/settings.js';
 import {
     openThemeCreator,
@@ -55,7 +58,6 @@ import {
 } from './modules/theme.js';
 import { initFpsCounter, showFpsCounter, hideFpsCounter } from './modules/fps-counter.js';
 import { DEFAULT_TAB_ORDER, setTabLoader } from './modules/state.js';
-import { initStartupOptimizer, getStartupRecommendations } from './modules/startup-optimizer.js';
 
 import './utils/lazy-loading-helper.js';
 import './utils/batch-checker.js';
@@ -108,8 +110,6 @@ async function initialBoot() {
  * @returns {Promise<void>} Promise that resolves when deferred boot is complete
  */
 async function deferredBoot() {
-    await initStartupOptimizer();
-
     initTabSystem();
     initGlobalKeyboardShortcuts();
     initPluginInstallButton();
@@ -249,6 +249,9 @@ window.applyAnimationSetting = applyAnimationSetting;
 window.togglePerformanceMode = togglePerformanceMode;
 window.showFpsCounter = showFpsCounter;
 window.hideFpsCounter = hideFpsCounter;
+window.generateThemePresets = generateThemePresets;
+window.selectThemePreset = selectThemePreset;
+window.updateActiveThemePreset = updateActiveThemePreset;
 
 import('./modules/offline-status.js').then(module => {
     module.initOfflineStatusIndicator();
