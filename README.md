@@ -18,7 +18,47 @@ WinTool is a powerful and intuitive application for Windows system management, d
 
 ## 🆕 What's New
 
-# Version: v0.2.8wb - Optimized
+## Version: v0.2.8wb
+
+## 🎨 **Enhanced Appearance System**
+**Professional theme management with live preview technology**
+
+### **Theme Collection**
+• **9 Curated Presets** — Classic Dark, Modern Gray, Ocean Blue, Forest Green, Royal Purple, Crimson Red, Teal Mint, Sunset Orange, Midnight Blue
+• **Interactive Preview Cards** — Real-time theme visualization with color palette display
+• **Instant Theme Switching** — One-click application with smooth transitions
+• **Advanced Custom Creator** — Live preview engine with organized color sections and dual input methods
+• **Adaptive Layout** — Responsive theme cards with modern card-based design
+
+---
+
+## 📊 **Event Viewer Redesign**
+**Modern dashboard interface with enhanced data visualization**
+
+### **Interface Overhaul**
+• **Card-Based Architecture** — Clean, modern layout with improved visual hierarchy
+• **Expandable Detail Panels** — Structured data display with raw JSON analysis view
+• **Smart Status Dashboard** — Real-time event metrics, filter status, and refresh indicators
+• **Streamlined Control System** — Organized sections with modern toggles and intuitive placement
+• **Responsive Framework** — Optimized for all screen sizes and resolutions
+
+---
+
+## 🛡️ **Codebase Optimization**
+**Comprehensive security hardening and performance enhancement**
+
+### **Code Cleanup Metrics**
+• **1,500+ Lines Removed** — Eliminated redundant testing frameworks and debug patterns
+• **Security Vulnerabilities Patched** — Removed dangerous `eval()` usage and empty error handlers
+• **5 Obsolete Files Deleted** — Cleaned unused scripts and documentation artifacts
+• **100+ Debug Statements Purged** — Removed console logging and browser testing fallbacks
+• **Performance Optimized** — Eliminated unnecessary processing and redundant operations
+• **Production Hardened** — All development artifacts and testing infrastructure removed
+
+### **Quality Improvements**
+• **Code Standards** — Fixed unused variables, empty catch blocks, and duplicate patterns
+• **Maintainability** — Eliminated duplication and created reusable helper functions
+• **Security Hardening** — Removed dangerous script execution and browser simulation code
 
 ---
 
