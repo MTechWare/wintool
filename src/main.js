@@ -160,6 +160,159 @@ function restartApp() {
 }
 
 /**
+ * Creates the admin prompt window to request elevation.
+ * Shows a dedicated window explaining why admin privileges are needed.
+ *
+ * @async
+ * @function createAdminPromptWindow
+ * @returns {Promise<void>} Promise that resolves when admin prompt window is created
+ */
+async function createAdminPromptWindow() {
+    const adminPromptWindow = new BrowserWindow({
+        width: 580,
+        height: 850,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+            enableRemoteModule: true,
+            webSecurity: false,
+            devTools: process.env.NODE_ENV !== 'production',
+        },
+        frame: false,
+        transparent: false,
+        resizable: false,
+        maximizable: false,
+        minimizable: false,
+        alwaysOnTop: true,
+        center: true,
+        show: true,
+        icon: path.join(__dirname, 'assets', 'images', 'icon.ico'),
+    });
+
+    await adminPromptWindow.loadFile(path.join(__dirname, 'admin-prompt.html'));
+
+    // Handle window closed
+    adminPromptWindow.on('closed', () => {
+        global.adminPromptWindow = null;
+        // If admin prompt is closed without action, start main app without admin
+        if (!app.isQuiting) {
+            setTimeout(() => {
+                startMainApplication();
+            }, 500);
+        }
+    });
+
+    // Store reference to admin prompt window
+    global.adminPromptWindow = adminPromptWindow;
+
+    // Add IPC handler for minimizing admin window
+    const { ipcMain } = require('electron');
+    ipcMain.on('minimize-admin-window', () => {
+        if (adminPromptWindow && !adminPromptWindow.isDestroyed()) {
+            adminPromptWindow.minimize();
+        }
+    });
+
+    return adminPromptWindow;
+}
+
+/**
+ * Starts the main application after admin prompt handling.
+ * Creates the main window and initializes all components.
+ *
+ * @async
+ * @function startMainApplication
+ * @returns {Promise<void>} Promise that resolves when main application is started
+ */
+async function startMainApplication() {
+    try {
+        // Clear the admin prompt flag
+        global.showingAdminPrompt = false;
+
+        // Close admin prompt window if it exists
+        if (global.adminPromptWindow && !global.adminPromptWindow.isDestroyed()) {
+            global.adminPromptWindow.close();
+            global.adminPromptWindow = null;
+        }
+
+        const mainWindow = windowManager.getMainWindow();
+        if (mainWindow) {
+            return; // Window already exists
+        }
+
+        windowManager.setDependencies({
+            getStore: () => settingsManager.getStore(),
+            systemTray: systemTray,
+            app: app,
+        });
+
+        await windowManager.createWindow();
+        systemTray.initialize();
+
+        // Background startup tasks
+        (async () => {
+            try {
+                const enableDiscordRpc = await settingsManager.getSetting(
+                    'enableDiscordRpc',
+                    true
+                );
+                if (enableDiscordRpc) {
+                    discordPresence.start();
+                }
+
+                await ensureAppDirectoriesExist();
+                await pluginManager.loadPluginBackends();
+                await processPool.finishStartupPhase();
+                await applyPerformanceOptimizations();
+            } catch (error) {
+                loggingManager.logError(
+                    `Error during background startup tasks: ${error.message}`,
+                    'BackgroundStartup'
+                );
+            }
+        })();
+    } catch (error) {
+        loggingManager.logError(
+            `Error during application startup: ${error.message}`,
+            'ApplicationStartup'
+        );
+
+        // Fallback window creation
+        try {
+            const basicWindow = new BrowserWindow({
+                width: 800,
+                height: 600,
+                webPreferences: {
+                    preload: path.join(__dirname, 'preload.js'),
+                    nodeIntegration: false,
+                    contextIsolation: true,
+                    enableRemoteModule: false,
+                    webSecurity: true,
+                    sandbox: false,
+                    devTools: process.env.NODE_ENV !== 'production',
+                },
+                frame: true,
+                transparent: false,
+                show: true,
+            });
+
+            basicWindow.loadFile(path.join(__dirname, 'index.html'));
+            systemTray.initialize();
+        } catch (basicError) {
+            loggingManager.logError(
+                `Even basic window creation failed: ${basicError.message}`,
+                'WindowCreation'
+            );
+            dialog.showErrorBox(
+                'Startup Error',
+                'WinTool failed to start. Please check the application logs for more details.'
+            );
+            app.quit();
+        }
+    }
+}
+
+/**
  * Initializes the main application and all its components.
  * Sets up dependencies, handles elevation prompts, and creates the main window.
  *
@@ -172,9 +325,36 @@ async function initializeApplication() {
         app.setAppUserModelId('com.mtechware.wintool');
     }
 
-    globalShortcut.register('Control+Q', () => {
-        systemTray.quitApplication();
-    });
+    // Register global shortcut with retry mechanism
+    const registerQuitShortcut = () => {
+        // Check if shortcut is already registered
+        if (globalShortcut.isRegistered('Control+Q')) {
+            console.log('Ctrl+Q shortcut is already registered, unregistering first');
+            globalShortcut.unregister('Control+Q');
+        }
+
+        const shortcutRegistered = globalShortcut.register('Control+Q', () => {
+            console.log('Ctrl+Q shortcut triggered!');
+            loggingManager.logInfo('Ctrl+Q shortcut triggered', 'GlobalShortcut');
+            systemTray.quitApplication();
+        });
+
+        if (shortcutRegistered) {
+            console.log('Ctrl+Q global shortcut registered successfully');
+            loggingManager.logInfo('Ctrl+Q global shortcut registered successfully', 'GlobalShortcut');
+        } else {
+            console.error('Failed to register Ctrl+Q global shortcut');
+            loggingManager.logError('Failed to register Ctrl+Q global shortcut', 'GlobalShortcut');
+
+            // Retry after a delay
+            setTimeout(() => {
+                console.log('Retrying Ctrl+Q shortcut registration...');
+                registerQuitShortcut();
+            }, 2000);
+        }
+    };
+
+    registerQuitShortcut();
 
     settingsManager.setDependencies({
         discordPresence: discordPresence,
@@ -201,163 +381,74 @@ async function initializeApplication() {
     loggingManager.initialize();
     global.logger = loggingManager;
 
-    const { default: isElevated } = await import('is-elevated');
-    const elevated = await isElevated();
-
-    const showWindowAndFinishSetup = async () => {
-        const mainWindow = windowManager.getMainWindow();
-        if (mainWindow) {
-            return; // Window already exists
-        }
-
+    // Check if we should show admin prompt first (only on Windows)
+    if (process.platform === 'win32') {
         try {
-            windowManager.setDependencies({
-                getStore: () => settingsManager.getStore(),
-                systemTray: systemTray,
-                app: app,
-            });
+            // First check if we're already running as admin
+            let isAlreadyElevated = false;
+            try {
+                await processPool.executeCmdCommand('net session');
+                isAlreadyElevated = true;
+            } catch (elevationCheckError) {
+                // Not running as admin
+                isAlreadyElevated = false;
+            }
 
-            await windowManager.createWindow();
-            systemTray.initialize();
+            // If already elevated, skip admin prompt and go to main app
+            if (isAlreadyElevated) {
+                // Continue to main application
+            } else {
+                // Try to get elevation preference, but don't fail if settings aren't ready
+                let elevationPreference = 'ask'; // Default fallback
 
-            (async () => {
                 try {
-                    const enableDiscordRpc = await settingsManager.getSetting(
-                        'enableDiscordRpc',
-                        true
-                    );
-                    if (enableDiscordRpc) {
-                        discordPresence.start();
-                    }
-
-                    await ensureAppDirectoriesExist();
-                    await pluginManager.loadPluginBackends();
-                    await processPool.finishStartupPhase();
-                    await applyPerformanceOptimizations();
-                } catch (error) {
+                    elevationPreference = await settingsManager.getSetting('elevationChoice', 'ask');
+                } catch (settingsError) {
+                    // If settings aren't available, use default behavior (ask)
                     loggingManager.logError(
-                        `Error during background startup tasks: ${error.message}`,
-                        'BackgroundStartup'
+                        `Settings not available during initialization, using default: ${settingsError.message}`,
+                        'Initialization'
                     );
                 }
-            })();
+
+                const shouldShowAdminPrompt = elevationPreference === 'ask';
+
+                if (shouldShowAdminPrompt) {
+                    // Set flag to prevent main window creation
+                    global.showingAdminPrompt = true;
+
+                    // Show admin prompt window first
+                    await createAdminPromptWindow();
+                    return;
+                } else if (elevationPreference === 'yes') {
+                    // Try to elevate automatically
+                    try {
+                        const { spawn } = require('child_process');
+                        const appPath = process.execPath;
+                        const psScript = `Start-Process -FilePath "${appPath}" -Verb RunAs`;
+                        await processPool.executePowerShellCommand(psScript);
+
+                        // If elevation was requested, quit this instance
+                        setTimeout(() => {
+                            app.quit();
+                        }, 1000);
+                        return;
+                    } catch (elevationError) {
+                        // Continue to main app if elevation fails
+                    }
+                }
+                // If preference is 'no' or elevation failed, continue to main app
+            }
         } catch (error) {
             loggingManager.logError(
-                `Error in showWindowAndFinishSetup: ${error.message}`,
-                'WindowSetup'
+                `Error checking elevation preference: ${error.message}`,
+                'Initialization'
             );
-
-            try {
-                const basicWindow = new BrowserWindow({
-                    width: 800,
-                    height: 600,
-                    webPreferences: {
-                        preload: path.join(__dirname, 'preload.js'),
-                        nodeIntegration: false,
-                        contextIsolation: true,
-                        enableRemoteModule: false,
-                        webSecurity: true,
-                        sandbox: false,
-                        devTools: process.env.NODE_ENV !== 'production',
-                    },
-                    frame: true,
-                    transparent: false,
-                    show: true,
-                });
-
-                basicWindow.loadFile(path.join(__dirname, 'index.html'));
-                systemTray.initialize();
-            } catch (basicError) {
-                loggingManager.logError(
-                    `Even basic window creation failed: ${basicError.message}`,
-                    'WindowCreation'
-                );
-                dialog.showErrorBox(
-                    'Startup Error',
-                    'WinTool failed to start. Please try running as administrator or contact support.'
-                );
-                app.quit();
-            }
         }
-    };
-
-    if (!elevated) {
-        const elevationChoice = await settingsManager.getSetting('elevationChoice', 'ask');
-
-        if (elevationChoice === 'yes') {
-            const { exec } = require('child_process');
-            const cmd = `"${process.execPath}"`;
-            const args = process.argv.slice(1).join(' ');
-            exec(
-                `powershell -Command "Start-Process -FilePath '${cmd}' -ArgumentList '${args}' -Verb RunAs"`,
-                err => {
-                    if (err)
-                        loggingManager.logError(
-                            `Failed to restart as administrator: ${err.message}`,
-                            'ElevationRestart'
-                        );
-                    app.quit();
-                }
-            );
-            return;
-        } else if (elevationChoice === 'no') {
-            showWindowAndFinishSetup();
-        } else {
-            // 'ask'
-            const promptWindow = new BrowserWindow({
-                width: 500,
-                height: 300,
-                frame: false,
-                resizable: false,
-                webPreferences: {
-                    preload: path.join(__dirname, 'preload.js'),
-                    nodeIntegration: false,
-                    contextIsolation: true,
-                    enableRemoteModule: false,
-                    webSecurity: true,
-                    sandbox: false,
-                    devTools: process.env.NODE_ENV !== 'production',
-                },
-            });
-
-            promptWindow.loadFile(path.join(__dirname, 'elevation-prompt.html'));
-
-            promptWindow.webContents.on('did-finish-load', async () => {
-                const themeSettings = await settingsManager.getThemeSettings();
-                promptWindow.webContents.send('theme-data', themeSettings);
-            });
-
-            ipcMain.once('elevation-choice', async (_, { choice, remember }) => {
-                promptWindow.close();
-
-                if (remember) {
-                    await settingsManager.setSetting('elevationChoice', choice ? 'yes' : 'no');
-                }
-
-                if (choice) {
-                    const { exec } = require('child_process');
-                    const cmd = `"${process.execPath}"`;
-                    const args = process.argv.slice(1).join(' ');
-                    exec(
-                        `powershell -Command "Start-Process -FilePath '${cmd}' -ArgumentList '${args}' -Verb RunAs"`,
-                        err => {
-                            if (err)
-                                loggingManager.logError(
-                                    `Failed to restart as administrator: ${err.message}`,
-                                    'ElevationRestart'
-                                );
-                            app.quit();
-                        }
-                    );
-                } else {
-                    showWindowAndFinishSetup();
-                }
-            });
-        }
-    } else {
-        // Already elevated
-        showWindowAndFinishSetup();
     }
+
+    // Start the main application
+    await startMainApplication();
 }
 
 app.whenReady().then(initializeApplication);
@@ -369,7 +460,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', async () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
+    if (BrowserWindow.getAllWindows().length === 0 && !global.showingAdminPrompt) {
         await windowManager.createWindow();
     }
 });
@@ -624,6 +715,108 @@ ipcMain.handle('restart-application', () => {
     return true;
 });
 
+/**
+ * IPC Handler: Requests administrator elevation for the application.
+ * Attempts to restart the application with elevated privileges.
+ *
+ * @param {Electron.IpcMainInvokeEvent} _ - The IPC event object (unused)
+ * @returns {Promise<{success: boolean, message?: string}>} Promise resolving to elevation result
+ */
+/**
+ * IPC Handler: Checks if the application is currently running with administrator privileges.
+ * 
+ * @param {Electron.IpcMainInvokeEvent} _ - The IPC event object (unused)
+ * @returns {Promise<{isElevated: boolean}>} Promise resolving to elevation status
+ */
+ipcMain.handle('check-elevation-status', async (_) => {
+    try {
+        await processPool.executeCmdCommand('net session');
+        return { isElevated: true };
+    } catch (error) {
+        return { isElevated: false };
+    }
+});
+
+/**
+ * IPC Handler: Gets theme settings for admin prompt window.
+ * Returns the current theme configuration including custom themes.
+ * 
+ * @param {Electron.IpcMainInvokeEvent} _ - The IPC event object (unused)
+ * @returns {Promise<{theme: string, primaryColor: string, customTheme: object}>} Promise resolving to theme settings
+ */
+ipcMain.handle('get-theme-settings', async (_) => {
+    try {
+        return await settingsManager.getThemeSettings();
+    } catch (error) {
+        loggingManager.logError(
+            `Error getting theme settings: ${error.message}`,
+            'ThemeSettings'
+        );
+        // Return default theme settings if there's an error
+        return {
+            theme: 'modern-gray',
+            primaryColor: '#ff6b35',
+            customTheme: {},
+            rainbowMode: false,
+        };
+    }
+});
+
+ipcMain.handle('request-elevation', async (_) => {
+    try {
+        // Check if already elevated using a simple command
+        try {
+            await processPool.executeCmdCommand('net session');
+            // If this succeeds, we're already running as admin
+            const adminPromptWindows = BrowserWindow.getAllWindows().filter(win =>
+                win.webContents.getURL().includes('admin-prompt.html')
+            );
+
+            adminPromptWindows.forEach(win => win.close());
+            await startMainApplication();
+
+            return { success: true, message: 'Already running with administrator privileges' };
+        } catch (elevationCheckError) {
+            // Not running as admin, continue with elevation request
+        }
+
+        // Request elevation by restarting the app with admin privileges
+        const appPath = process.execPath;
+
+        // Use PowerShell to restart with elevation
+        const psScript = `Start-Process -FilePath "${appPath}" -Verb RunAs`;
+
+        await processPool.executePowerShellCommand(psScript);
+
+        // If we reach here, elevation was requested successfully
+        // The new elevated process will start, so we can quit this one
+        setTimeout(() => {
+            app.quit();
+        }, 1000);
+
+        return { success: true, message: 'Elevation requested successfully' };
+
+    } catch (error) {
+        loggingManager.logError(
+            `Error requesting elevation: ${error.message}`,
+            'Elevation'
+        );
+
+        // If elevation fails, continue without admin
+        const adminPromptWindows = BrowserWindow.getAllWindows().filter(win =>
+            win.webContents.getURL().includes('admin-prompt.html')
+        );
+
+        adminPromptWindows.forEach(win => win.close());
+        await startMainApplication();
+
+        return {
+            success: false,
+            message: `Elevation failed: ${error.message}. Continuing with standard privileges.`
+        };
+    }
+});
+
 // Environment Variables Management IPC handlers
 ipcMain.handle('get-environment-variables', async () => {
     try {
@@ -798,6 +991,20 @@ ipcMain.handle('get-system-health-info', async () => {
     }
 });
 
+// Clear system info cache handler for forcing fresh data
+ipcMain.handle('clear-system-info-cache', async () => {
+    try {
+        windowsSysInfo.clearCache();
+        return { success: true };
+    } catch (error) {
+        loggingManager.logError(
+            `Error clearing system info cache: ${error.message}`,
+            'SystemHealth'
+        );
+        throw error;
+    }
+});
+
 // System information cache
 let systemInfoCache = null;
 let systemInfoCacheTime = 0;
@@ -831,8 +1038,8 @@ ipcMain.handle('get-system-info', async (event, type) => {
             const reason = isStartupPhase
                 ? 'startup optimization'
                 : hasRecentTimeoutError
-                  ? 'recent timeout error'
-                  : 'user setting';
+                    ? 'recent timeout error'
+                    : 'user setting';
 
             const basicInfo = {
                 platform: os.platform(),
@@ -2087,6 +2294,50 @@ ipcMain.handle('control-service', async (event, serviceName, action) => {
             `PowerShell error for ${action} ${serviceName}: ${error.message}`,
             'ServiceControl'
         );
+
+        // If PowerShell fails due to execution policy, try using sc.exe as fallback
+        if (error.message.includes('execution policy') ||
+            error.message.includes('ExecutionPolicy') ||
+            error.message.includes('cannot be loaded because running scripts is disabled')) {
+
+            loggingManager.logInfo(
+                `PowerShell execution policy blocked, trying sc.exe fallback for ${action} ${serviceName}`,
+                'ServiceControl'
+            );
+
+            try {
+                let scCommand;
+                switch (action) {
+                    case 'start':
+                        scCommand = `sc start "${sanitizedServiceName}"`;
+                        break;
+                    case 'stop':
+                        scCommand = `sc stop "${sanitizedServiceName}"`;
+                        break;
+                    case 'restart':
+                        // For restart, we need to stop then start
+                        scCommand = `sc stop "${sanitizedServiceName}" && timeout /t 2 /nobreak && sc start "${sanitizedServiceName}"`;
+                        break;
+                    default:
+                        throw new Error(`Invalid action for sc.exe: ${action}`);
+                }
+
+                const scOutput = await processPool.executeCmdCommand(scCommand);
+                return {
+                    success: true,
+                    message: `Service ${action} completed successfully using sc.exe`,
+                    serviceName: serviceName,
+                    action: action,
+                };
+            } catch (scError) {
+                loggingManager.logError(
+                    `Both PowerShell and sc.exe failed for ${action} ${serviceName}: ${scError.message}`,
+                    'ServiceControl'
+                );
+                throw new Error(`Failed to ${action} service: PowerShell blocked by execution policy, sc.exe also failed: ${scError.message}`);
+            }
+        }
+
         throw new Error(`Failed to ${action} service: ${error.message}`);
     }
 });
@@ -2167,7 +2418,15 @@ ipcMain.handle('finish-startup-phase', async () => {
 
 // PowerShell execution handler
 ipcMain.handle('execute-powershell', async (event, command) => {
-    console.log('execute-powershell handler called');
+    // Hide PowerShell execution logging for services manager
+    const isServiceCommand = command.includes('Get-Service') ||
+        command.includes('Start-Service') ||
+        command.includes('Stop-Service') ||
+        command.includes('Set-Service');
+
+    if (!isServiceCommand) {
+        console.log('execute-powershell handler called');
+    }
 
     if (!command || typeof command !== 'string') {
         throw new Error('Invalid command parameter');
@@ -2279,7 +2538,15 @@ ipcMain.handle('show-save-dialog', async (event, options) => {
 
 // Script execution handler for the editor tab
 ipcMain.handle('execute-script', async (event, { script, shell }) => {
-    console.log(`execute-script handler called for shell: ${shell}`);
+    // Hide PowerShell execution logging for service-related scripts
+    const isServiceScript = script.includes('Get-Service') ||
+        script.includes('Start-Service') ||
+        script.includes('Stop-Service') ||
+        script.includes('Set-Service');
+
+    if (!isServiceScript) {
+        console.log(`execute-script handler called for shell: ${shell}`);
+    }
 
     // Use SimpleCommandExecutor for both PowerShell and CMD
     if (shell === 'powershell') {

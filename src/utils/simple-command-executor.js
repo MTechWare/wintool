@@ -48,38 +48,79 @@ class SimpleCommandExecutor {
         try {
             // Use Base64 encoding to avoid quote escaping issues entirely
             const encodedCommand = Buffer.from(command, 'utf16le').toString('base64');
-            const psCommand = `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ${encodedCommand}`;
 
-            const { stdout, stderr } = await execAsync(psCommand, {
-                encoding: 'utf8',
-                maxBuffer: 1024 * 1024 * 10, // 10MB buffer
-                timeout: timeout,
-                windowsHide: true,
-            });
+            // Try multiple PowerShell execution methods to bypass execution policy restrictions
+            let psCommand;
 
-            if (stderr && stderr.trim()) {
-                // Only warn about stderr if it's not a common expected message
-                const stderrLower = stderr.toLowerCase();
-                if (
-                    !stderrLower.includes('cannot find') &&
-                    !stderrLower.includes('does not exist') &&
-                    !stderrLower.includes('access is denied')
-                ) {
-                    console.warn(`[SimpleCommandExecutor] PowerShell stderr: ${stderr}`);
+            let executionAttempts = [
+                // Method 1: Standard bypass with encoded command
+                `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ${encodedCommand}`,
+                // Method 2: Force bypass with additional parameters and scope
+                `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Scope Process -Command "& {${command}}"`,
+                // Method 3: Use pwsh if available (PowerShell Core)
+                `pwsh.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ${encodedCommand}`,
+                // Method 4: Direct command execution with unrestricted policy
+                `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -EncodedCommand ${encodedCommand}`,
+                // Method 5: Use cmd to invoke PowerShell (sometimes bypasses group policy)
+                `cmd.exe /c "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ${encodedCommand}"`,
+                // Method 6: Force execution policy at process level
+                `powershell.exe -NoProfile -NonInteractive -Command "Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force; ${command}"`,
+                // Method 7: Alternative PowerShell path
+                `%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ${encodedCommand}`
+            ];
+
+            let lastError;
+            for (let i = 0; i < executionAttempts.length; i++) {
+                try {
+                    psCommand = executionAttempts[i];
+                    const { stdout, stderr } = await execAsync(psCommand, {
+                        encoding: 'utf8',
+                        maxBuffer: 1024 * 1024 * 10, // 10MB buffer
+                        timeout: timeout,
+                        windowsHide: true,
+                    });
+
+                    // If we get here, the command succeeded
+                    if (stderr && stderr.trim()) {
+                        // Only warn about stderr if it's not a common expected message
+                        const stderrLower = stderr.toLowerCase();
+                        if (
+                            !stderrLower.includes('cannot find') &&
+                            !stderrLower.includes('does not exist') &&
+                            !stderrLower.includes('access is denied') &&
+                            !stderrLower.includes('execution policy')
+                        ) {
+                            console.warn(`[SimpleCommandExecutor] PowerShell stderr: ${stderr}`);
+                        }
+                    }
+
+                    const result = stdout.trim();
+
+                    // Cache read-only results
+                    if (this.isReadOnlyCommand(command)) {
+                        this.commandCache.set(cacheKey, {
+                            result: result,
+                            timestamp: Date.now(),
+                        });
+                    }
+
+                    return result;
+                } catch (error) {
+                    lastError = error;
+                    // If this is an execution policy error, try the next method
+                    if (error.message.includes('execution policy') ||
+                        error.message.includes('ExecutionPolicy') ||
+                        error.message.includes('cannot be loaded because running scripts is disabled')) {
+                        console.log(`[SimpleCommandExecutor] Execution policy error with method ${i + 1}, trying next method...`);
+                        continue;
+                    }
+                    // For other errors, break and throw
+                    break;
                 }
             }
 
-            const result = stdout.trim();
-
-            // Cache read-only results
-            if (this.isReadOnlyCommand(command)) {
-                this.commandCache.set(cacheKey, {
-                    result: result,
-                    timestamp: Date.now(),
-                });
-            }
-
-            return result;
+            // If we get here, all methods failed
+            throw lastError;
         } catch (error) {
             // Don't log expected failures as errors
             if (!this.isExpectedFailure(command, error.message)) {
@@ -186,25 +227,80 @@ class SimpleCommandExecutor {
             return services;
         } catch (error) {
             console.log('WMIC not available, using PowerShell fallback');
-            // Fallback to PowerShell if WMIC fails (common on newer Windows systems)
-            // Use a simpler PowerShell command that works reliably
-            const psScript = `Get-Service | Select-Object Name,DisplayName,Status,StartType | ConvertTo-Json`;
+            try {
+                // Fallback to PowerShell if WMIC fails (common on newer Windows systems)
+                // Use a simpler PowerShell command that works reliably
+                const psScript = `Get-Service | Select-Object Name,DisplayName,Status,StartType | ConvertTo-Json`;
 
-            const output = await this.executePowerShellCommand(psScript);
-            if (!output || output.trim().length === 0) {
-                throw new Error('Both WMIC and PowerShell methods failed to get services');
-            }
+                const output = await this.executePowerShellCommand(psScript);
+                if (!output || output.trim().length === 0) {
+                    throw new Error('PowerShell method failed to get services');
+                }
 
-            const services = JSON.parse(output);
-            const servicesArray = Array.isArray(services) ? services : [services];
+                const services = JSON.parse(output);
+                const servicesArray = Array.isArray(services) ? services : [services];
 
-            // Convert Status numbers to strings for consistency
-            return servicesArray.map(service => ({
-                Name: service.Name,
+                // Convert Status numbers to strings for consistency
+                return servicesArray.map(service => ({
+                    Name: service.Name,
                 DisplayName: service.DisplayName,
                 Status: this.convertStatusToString(service.Status),
                 StartType: this.convertStartTypeToString(service.StartType),
             }));
+            } catch (psError) {
+                console.log('PowerShell also failed, using sc.exe fallback');
+                try {
+                    // Final fallback: use sc.exe to query services
+                    const scCommand = 'sc query state= all';
+                    const scOutput = await this.executeCmdCommand(scCommand);
+
+                    const services = [];
+                    const lines = scOutput.split('\n');
+                    let currentService = {};
+
+                    for (let line of lines) {
+                        line = line.trim();
+                        if (line.startsWith('SERVICE_NAME:')) {
+                            if (currentService.Name) {
+                                services.push(currentService);
+                            }
+                            currentService = {
+                                Name: line.replace('SERVICE_NAME:', '').trim(),
+                                DisplayName: '',
+                                Status: 'Unknown',
+                                StartType: 'Unknown'
+                            };
+                        } else if (line.startsWith('DISPLAY_NAME:')) {
+                            currentService.DisplayName = line.replace('DISPLAY_NAME:', '').trim();
+                        } else if (line.startsWith('STATE')) {
+                            const stateParts = line.split(':');
+                            if (stateParts.length > 1) {
+                                const stateInfo = stateParts[1].trim();
+                                if (stateInfo.includes('RUNNING')) {
+                                    currentService.Status = 'Running';
+                                } else if (stateInfo.includes('STOPPED')) {
+                                    currentService.Status = 'Stopped';
+                                } else if (stateInfo.includes('PAUSED')) {
+                                    currentService.Status = 'Paused';
+                                }
+                            }
+                        }
+                    }
+
+                    // Add the last service
+                    if (currentService.Name) {
+                        services.push(currentService);
+                    }
+
+                    if (services.length === 0) {
+                        throw new Error('sc.exe returned no services');
+                    }
+
+                    return services;
+                } catch (scError) {
+                    throw new Error(`All methods failed - WMIC: ${error.message}, PowerShell: ${psError.message}, sc.exe: ${scError.message}`);
+                }
+            }
         }
     }
 

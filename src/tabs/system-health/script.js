@@ -5,7 +5,7 @@ const maxHistoryPoints = 60;
 let isHealthDashboardActive = false;
 
 let lastHealthDataFetch = 0;
-const HEALTH_DATA_CACHE_DURATION = 20000;
+const HEALTH_DATA_CACHE_DURATION = 5000; // Reduced from 20s to 5s for more responsive memory updates
 let cachedHealthData = null;
 
 let refreshDebounceTimer = null;
@@ -225,7 +225,19 @@ async function updateHealthMetrics() {
             return;
         }
 
+        // Show subtle loading indicator for memory data
+        const memPercentageElement = document.getElementById('memory-percentage');
+        const originalText = memPercentageElement?.textContent;
+        if (memPercentageElement) {
+            memPercentageElement.style.opacity = '0.6';
+        }
+
         const systemInfo = await window.electronAPI.getSystemHealthInfo();
+
+        // Restore memory display
+        if (memPercentageElement) {
+            memPercentageElement.style.opacity = '1';
+        }
 
         // Cache the data
         cachedHealthData = { systemInfo };
@@ -449,6 +461,13 @@ function setupEventListeners(container) {
             // Clear cache to force fresh data
             cachedHealthData = null;
             lastHealthDataFetch = 0;
+
+            // Also clear the underlying system info cache for immediate updates
+            try {
+                await window.electronAPI.clearSystemInfoCache();
+            } catch (error) {
+                console.warn('Failed to clear system info cache:', error);
+            }
 
             try {
                 await updateHealthMetrics();

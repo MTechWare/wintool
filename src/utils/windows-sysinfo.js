@@ -72,7 +72,15 @@ class WindowsSystemInfo {
      */
     constructor() {
         this.cache = new Map();
-        this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
+        this.cacheTimeout = 30 * 1000; // Reduced from 5 minutes to 30 seconds for more responsive memory updates
+    }
+
+    /**
+     * Clear all cached data to force fresh system information retrieval.
+     * Useful when you need immediate updates after system changes.
+     */
+    clearCache() {
+        this.cache.clear();
     }
 
     /**
@@ -729,9 +737,9 @@ class WindowsSystemInfo {
                 available: parseInt(disk.FreeSpace) || 0,
                 use: disk.Size
                     ? Math.round(
-                          ((parseInt(disk.Size) - parseInt(disk.FreeSpace)) / parseInt(disk.Size)) *
-                              100
-                      )
+                        ((parseInt(disk.Size) - parseInt(disk.FreeSpace)) / parseInt(disk.Size)) *
+                        100
+                    )
                     : 0,
                 mount: disk.DeviceID || '',
                 rw: true,
@@ -777,6 +785,8 @@ class WindowsSystemInfo {
                     ieee8021xState: '',
                     carrierChanges: 0,
                 }));
+
+
             });
         } catch (error) {
             console.warn(
@@ -977,11 +987,11 @@ class WindowsSystemInfo {
                     graphics.status === 'fulfilled'
                         ? graphics.value
                         : {
-                              controllers: [],
-                              displays: [],
-                              driverVersion: 'Unknown',
-                              resolution: 'Unknown',
-                          },
+                            controllers: [],
+                            displays: [],
+                            driverVersion: 'Unknown',
+                            resolution: 'Unknown',
+                        },
                 time: await this.time(),
                 timestamp: new Date().toISOString(),
             };

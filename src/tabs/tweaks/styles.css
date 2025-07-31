@@ -1560,6 +1560,27 @@ input:focus + .slider {
     }
 }
 
+/* Invalid/Missing Tweak Items */
+.preset-tweak-item.invalid {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(220, 53, 69, 0.05) 100%);
+    border: 1px solid rgba(220, 53, 69, 0.2);
+    opacity: 0.7;
+}
+
+.preset-tweak-item.invalid .preset-tweak-title {
+    color: #dc3545;
+    font-style: italic;
+}
+
+.preset-tweak-item.invalid .preset-tweak-description {
+    color: rgba(220, 53, 69, 0.8);
+}
+
+.preset-tweak-item.invalid .preset-tweak-category {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+}
+
 /* Responsive modal */
 @media (max-width: 768px) {
     .preset-modal-content {

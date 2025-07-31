@@ -69,6 +69,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // System information
     getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
     getSystemHealthInfo: () => ipcRenderer.invoke('get-system-health-info'),
+    clearSystemInfoCache: () => ipcRenderer.invoke('clear-system-info-cache'),
     getNetworkStats: () => ipcRenderer.invoke('get-network-stats'),
 
     // Tab folder management
@@ -174,6 +175,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     executeScript: (script, shell) => ipcRenderer.invoke('execute-script', { script, shell }),
     executePowerShell: command => ipcRenderer.invoke('execute-powershell', command),
     executeCmd: command => ipcRenderer.invoke('execute-cmd', command),
+    executeCmdCommand: command => ipcRenderer.invoke('execute-cmd', command), // Alias for services tab
     finishStartupPhase: () => ipcRenderer.invoke('finish-startup-phase'),
     showSaveDialog: options => ipcRenderer.invoke('show-save-dialog', options),
 
@@ -191,6 +193,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getVerifiedPlugins: () => ipcRenderer.invoke('get-verified-plugins'),
     toggleDevTools: () => ipcRenderer.invoke('toggle-dev-tools'),
     openSpecialFolder: folderKey => ipcRenderer.invoke('open-special-folder', folderKey),
+
+    // Elevation Management
+    requestElevation: () => ipcRenderer.invoke('request-elevation'),
+    checkElevationStatus: () => ipcRenderer.invoke('check-elevation-status'),
 });
 
 // Expose a dedicated API for plugins

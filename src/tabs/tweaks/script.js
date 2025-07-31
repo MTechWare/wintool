@@ -3327,42 +3327,8 @@ if (tweaksGrid && lazyHelper.shouldInitialize()) {
     });
 
     const exportTweaksBtn = document.getElementById('export-tweaks-btn');
-    exportTweaksBtn.addEventListener('click', async () => {
-        const appliedTweaks = [];
-        // Query all tweak cards directly from the grid to ensure everything displayed is considered.
-        const allTweakCards = tweaksGrid.querySelectorAll('.plugin-card');
-
-        allTweakCards.forEach(card => {
-            const checkbox = card.querySelector('.tweak-checkbox');
-            if (checkbox && checkbox.checked) {
-                const tweakId = card.dataset.tweakId;
-                // Ensure the tweak exists in our master list before exporting
-                if (tweaks.some(t => t.id === tweakId)) {
-                    appliedTweaks.push(tweakId);
-                }
-            }
-        });
-
-        const exportData = {
-            description: 'WinTool Applied Tweaks Configuration',
-            exportDate: new Date().toISOString(),
-            tweakCount: appliedTweaks.length,
-            appliedTweakIds: appliedTweaks,
-        };
-
-        const content = JSON.stringify(exportData, null, 2);
-        const result = await window.electronAPI.saveFile(content, {
-            title: 'Export Applied Tweaks',
-            defaultPath: 'wintool-tweaks.json',
-            filters: [{ name: 'JSON Files', extensions: ['json'] }],
-        });
-
-        if (result && result.filePath) {
-            // This is a placeholder for a notification. Assuming electronAPI has such a function.
-            console.log(
-                `${appliedTweaks.length} tweaks exported successfully to ${result.filePath} `
-            );
-        }
+    exportTweaksBtn.addEventListener('click', () => {
+        showExportPreviewModal();
     });
 
     // Save Preset functionality
@@ -3426,40 +3392,10 @@ if (tweaksGrid && lazyHelper.shouldInitialize()) {
                     return;
                 }
 
-                // Show confirmation for presets
-                if (importType.includes('preset')) {
-                    const confirmMessage = `Import ${importType}?\n\nThis will apply ${importedTweakIds.length} tweaks from the preset.\n\nDo you want to continue?`;
-                    if (!confirm(confirmMessage)) {
-                        return;
-                    }
-                }
+                // Show preview modal for all import types
+                showImportPreviewModal(importedData, importedTweakIds, importType);
+                return; // Exit here as the modal will handle the actual import
 
-                let appliedCount = 0;
-                for (const tweakId of importedTweakIds) {
-                    const tweak = tweaks.find(t => t.id === tweakId);
-                    if (tweak) {
-                        const card = tweaksGrid.querySelector(`[data-tweak-id="${tweak.id}"]`);
-                        if (card) {
-                            const checkbox = card.querySelector('.tweak-checkbox');
-                            // Apply if it's not already checked
-                            if (!checkbox.checked) {
-                                checkbox.checked = true;
-                                // Dispatch change event to trigger the apply logic
-                                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-                                appliedCount++;
-
-                                // Add a small delay for presets to prevent overwhelming the system
-                                if (importType.includes('preset')) {
-                                    await new Promise(resolve => setTimeout(resolve, 100));
-                                }
-                            }
-                        }
-                    }
-                }
-
-                const message = `Successfully imported ${importType} !\n\n${appliedCount} tweaks were newly applied.`;
-                console.log(message);
-                alert(message);
             } catch (error) {
                 window.electronAPI.logError(
                     `Failed to read or parse imported tweaks file: ${error.message}`,
@@ -3561,6 +3497,111 @@ function closePresetModal() {
 }
 
 /**
+ * Show export preview modal with detailed information about tweaks to be exported
+ */
+function showExportPreviewModal() {
+    const appliedTweaks = [];
+    const allTweakCards = tweaksGrid.querySelectorAll('.plugin-card');
+
+    // Collect all applied tweaks
+    allTweakCards.forEach(card => {
+        const checkbox = card.querySelector('.tweak-checkbox');
+        if (checkbox && checkbox.checked) {
+            const tweakId = card.dataset.tweakId;
+            // Ensure the tweak exists in our master list before exporting
+            if (tweaks.some(t => t.id === tweakId)) {
+                appliedTweaks.push(tweakId);
+            }
+        }
+    });
+
+    // Check if there are any tweaks to export
+    if (appliedTweaks.length === 0) {
+        alert('No tweaks are currently applied. Apply some tweaks first before exporting.');
+        return;
+    }
+
+    const modal = document.getElementById('export-preview-modal');
+    const modalTitle = document.getElementById('export-modal-title');
+    const modalDescription = document.getElementById('export-modal-description');
+    const tweakCountSpan = document.getElementById('export-tweak-count');
+    const safetyLevelSpan = document.getElementById('export-safety-level');
+    const exportDateSpan = document.getElementById('export-date');
+    const tweaksList = document.getElementById('export-tweaks-list');
+    const confirmBtn = document.getElementById('confirm-export-btn');
+
+    // Set modal content
+    modalTitle.textContent = 'Export Applied Tweaks';
+    modalDescription.textContent = 'Review the tweaks that will be exported to your configuration file. This file can be imported later to apply the same tweaks.';
+    tweakCountSpan.textContent = `${appliedTweaks.length} tweaks`;
+    exportDateSpan.textContent = new Date().toLocaleDateString();
+
+    // Calculate safety level for applied tweaks
+    const safetyInfo = calculatePresetSafety(appliedTweaks);
+    safetyLevelSpan.innerHTML = `<i class="fas fa-shield-alt" style="color: ${safetyInfo.color}"></i> ${safetyInfo.level}`;
+
+    // Clear and populate tweaks list
+    tweaksList.innerHTML = '';
+
+    appliedTweaks.forEach(tweakId => {
+        const tweak = tweaks.find(t => t.id === tweakId);
+        if (tweak) {
+            const tweakItem = createPresetTweakItem(tweak);
+            tweaksList.appendChild(tweakItem);
+        }
+    });
+
+    // Set up export button
+    confirmBtn.onclick = async () => {
+        closeExportModal();
+        await performExport(appliedTweaks);
+    };
+
+    // Show modal
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+/**
+ * Close the export preview modal
+ */
+function closeExportModal() {
+    const modal = document.getElementById('export-preview-modal');
+    modal.classList.remove('show');
+    document.body.style.overflow = ''; // Restore scrolling
+}
+
+/**
+ * Perform the actual export operation
+ */
+async function performExport(appliedTweaks) {
+    const exportData = {
+        description: 'WinTool Applied Tweaks Configuration',
+        exportDate: new Date().toISOString(),
+        tweakCount: appliedTweaks.length,
+        appliedTweakIds: appliedTweaks,
+        version: '1.0',
+        source: 'WinTool Export'
+    };
+
+    const content = JSON.stringify(exportData, null, 2);
+    const result = await window.electronAPI.saveFile(content, {
+        title: 'Export Applied Tweaks',
+        defaultPath: 'wintool-tweaks.json',
+        filters: [{ name: 'JSON Files', extensions: ['json'] }],
+    });
+
+    if (result && result.filePath) {
+        alert(
+            `Export completed successfully!\n\n${appliedTweaks.length} tweaks exported to:\n${result.filePath}\n\nYou can import this file later using the Import button.`
+        );
+        console.log(
+            `${appliedTweaks.length} tweaks exported successfully to ${result.filePath}`
+        );
+    }
+}
+
+/**
  * Create a tweak item for the preset preview
  */
 function createPresetTweakItem(tweak) {
@@ -3615,6 +3656,84 @@ function calculatePresetSafety(tweakIds) {
 }
 
 /**
+ * Show import preview modal with detailed information about tweaks to be imported
+ */
+function showImportPreviewModal(importedData, importedTweakIds, importType) {
+    const modal = document.getElementById('preset-preview-modal');
+    const modalTitle = document.getElementById('preset-modal-title');
+    const modalDescription = document.getElementById('preset-modal-description');
+    const tweakCountSpan = document.getElementById('preset-tweak-count');
+    const safetyLevelSpan = document.getElementById('preset-safety-level');
+    const tweaksList = document.getElementById('preset-tweaks-list');
+    const applyBtn = document.getElementById('apply-preset-btn');
+
+    // Set modal content based on import type
+    let title, description;
+    if (importType.includes('preset')) {
+        title = `Import Preset: ${importedData.name || 'Unknown'}`;
+        description = importedData.description || 'This preset will apply the following tweaks to your system.';
+    } else if (importType === 'export file') {
+        title = 'Import Exported Tweaks';
+        description = 'This will apply the previously exported tweaks to your system.';
+    } else {
+        title = 'Import Tweaks';
+        description = 'This will apply the selected tweaks to your system.';
+    }
+
+    modalTitle.textContent = title;
+    modalDescription.textContent = description;
+    tweakCountSpan.textContent = `${importedTweakIds.length} tweaks`;
+
+    // Calculate safety level for imported tweaks
+    const safetyInfo = calculatePresetSafety(importedTweakIds);
+    safetyLevelSpan.innerHTML = `<i class="fas fa-shield-alt" style="color: ${safetyInfo.color}"></i> ${safetyInfo.level}`;
+
+    // Clear and populate tweaks list
+    tweaksList.innerHTML = '';
+
+    // Track valid and invalid tweaks
+    let validTweaks = 0;
+    let invalidTweaks = 0;
+
+    importedTweakIds.forEach(tweakId => {
+        const tweak = tweaks.find(t => t.id === tweakId);
+        if (tweak) {
+            const tweakItem = createPresetTweakItem(tweak);
+            tweaksList.appendChild(tweakItem);
+            validTweaks++;
+        } else {
+            // Show invalid/missing tweaks
+            const invalidItem = document.createElement('div');
+            invalidItem.className = 'preset-tweak-item invalid';
+            invalidItem.innerHTML = `
+                <div class="preset-tweak-category">Missing Tweak</div>
+                <div class="preset-tweak-title">ID: ${tweakId}</div>
+                <div class="preset-tweak-description">This tweak is not available in the current version.</div>
+            `;
+            tweaksList.appendChild(invalidItem);
+            invalidTweaks++;
+        }
+    });
+
+    // Update count to show valid/invalid breakdown
+    if (invalidTweaks > 0) {
+        tweakCountSpan.textContent = `${validTweaks} valid tweaks, ${invalidTweaks} unavailable`;
+    }
+
+    // Set up apply button
+    applyBtn.textContent = 'Import Tweaks';
+    applyBtn.innerHTML = '<i class="fas fa-file-import"></i> Import Tweaks';
+    applyBtn.onclick = async () => {
+        closePresetModal();
+        await applyImportedTweaks(importedTweakIds, importType);
+    };
+
+    // Show modal
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+/**
  * Apply preset with confirmation after modal preview
  */
 function applyPresetWithConfirmation(presetName, preset) {
@@ -3648,11 +3767,17 @@ function applyPresetWithConfirmation(presetName, preset) {
     }
 }
 
-// Close modal when clicking outside of it
+// Close modals when clicking outside of them
 document.addEventListener('click', event => {
-    const modal = document.getElementById('preset-preview-modal');
-    if (event.target === modal) {
+    const presetModal = document.getElementById('preset-preview-modal');
+    const exportModal = document.getElementById('export-preview-modal');
+
+    if (event.target === presetModal) {
         closePresetModal();
+    }
+
+    if (event.target === exportModal) {
+        closeExportModal();
     }
 });
 
@@ -3731,6 +3856,82 @@ async function applyPresetTweaks(preset) {
     alert(
         `Preset "${preset.name}" applied successfully!\n\n${appliedCount} tweaks were applied\n${skippedCount} tweaks were already applied\n\nA system restart is recommended for all changes to take effect.`
     );
+}
+
+/**
+ * Apply tweaks from imported configuration
+ *
+ * This function implements the import application algorithm that safely applies
+ * a collection of imported tweaks from various sources (export files, presets, arrays).
+ * It provides a user-friendly way to apply multiple tweaks from imported data.
+ *
+ * Algorithm Flow:
+ * 1. Iterate through each tweak ID in the imported list
+ * 2. Locate the corresponding tweak card in the UI
+ * 3. Check if the tweak is already applied (checkbox state)
+ * 4. Apply unapplied tweaks by simulating checkbox interaction
+ * 5. Add throttling delays to prevent system overload
+ * 6. Track application statistics for user feedback
+ * 7. Provide comprehensive completion summary
+ *
+ * Safety Features:
+ * - Skips already applied tweaks to prevent conflicts
+ * - Provides detailed feedback on application results
+ * - Implements throttling to prevent system overload
+ * - Logs missing tweaks for debugging purposes
+ *
+ * @async
+ * @param {Array<string>} importedTweakIds - Array of tweak IDs to apply
+ * @param {string} importType - Type of import (for user feedback)
+ * @returns {Promise<void>}
+ */
+async function applyImportedTweaks(importedTweakIds, importType) {
+    let appliedCount = 0;
+    let skippedCount = 0;
+    let notFoundCount = 0;
+
+    // Process each tweak in the imported list sequentially
+    for (const tweakId of importedTweakIds) {
+        const card = tweaksGrid.querySelector(`[data-tweak-id="${tweakId}"]`);
+        if (card) {
+            const checkbox = card.querySelector('.tweak-checkbox');
+            if (checkbox && !checkbox.checked) {
+                // Simulate clicking the checkbox to apply the tweak
+                // This ensures all event handlers and validation logic are triggered
+                checkbox.checked = true;
+                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                appliedCount++;
+
+                // Add a small delay to prevent overwhelming the system
+                // This throttling prevents registry access conflicts and UI freezing
+                await new Promise(resolve => setTimeout(resolve, 100));
+            } else if (checkbox && checkbox.checked) {
+                // Track tweaks that were already applied
+                skippedCount++;
+            }
+        } else {
+            // Track missing tweaks for user feedback
+            notFoundCount++;
+            // Log missing tweaks for debugging and maintenance
+            window.electronAPI.logWarn(
+                `Imported tweak "${tweakId}" not found in current tweaks list`,
+                'TweaksTab'
+            );
+        }
+    }
+
+    // Provide comprehensive feedback to the user
+    let message = `Import from ${importType} completed successfully!\n\n`;
+    message += `${appliedCount} tweaks were applied\n`;
+    message += `${skippedCount} tweaks were already applied`;
+
+    if (notFoundCount > 0) {
+        message += `\n${notFoundCount} tweaks were not found (may be from a different version)`;
+    }
+
+    message += `\n\nA system restart is recommended for all changes to take effect.`;
+
+    alert(message);
 }
 
 /**
@@ -4012,6 +4213,9 @@ window.showSavePresetModal = showSavePresetModal;
 window.populatePresetTooltips = populatePresetTooltips;
 window.closePresetModal = closePresetModal;
 window.showPresetPreviewModal = showPresetPreviewModal;
+window.showExportPreviewModal = showExportPreviewModal;
+window.closeExportModal = closeExportModal;
+window.applyImportedTweaks = applyImportedTweaks;
 window.initializePresets = initializePresets;
 window.updatePresetCounts = updatePresetCounts;
 window.validatePresetUniqueness = validatePresetUniqueness;

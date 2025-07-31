@@ -184,3 +184,44 @@
         </div>
     </div>
 </div>
+
+<!-- Export Preview Modal -->
+<div id="export-preview-modal" class="preset-modal">
+    <div class="preset-modal-content">
+        <div class="preset-modal-header">
+            <h2 id="export-modal-title">Export Applied Tweaks</h2>
+            <button class="preset-modal-close" onclick="closeExportModal()">&times;</button>
+        </div>
+        <div class="preset-modal-body">
+            <p id="export-modal-description">Review the tweaks that will be exported to your configuration file.</p>
+            <div class="preset-modal-stats">
+                <div class="preset-stat">
+                    <i class="fas fa-list"></i>
+                    <span id="export-tweak-count">0 tweaks</span>
+                </div>
+                <div class="preset-stat">
+                    <i class="fas fa-shield-alt"></i>
+                    <span id="export-safety-level">Safety Level</span>
+                </div>
+                <div class="preset-stat">
+                    <i class="fas fa-calendar"></i>
+                    <span id="export-date">Export Date</span>
+                </div>
+            </div>
+            <div class="preset-tweaks-preview">
+                <h3>Tweaks to Export:</h3>
+                <div id="export-tweaks-list" class="preset-tweaks-grid">
+                    <!-- Export tweak preview cards will be inserted here -->
+                </div>
+            </div>
+        </div>
+        <div class="preset-modal-footer">
+            <button class="btn btn-secondary" onclick="closeExportModal()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="btn btn-primary" id="confirm-export-btn">
+                <i class="fas fa-file-export"></i> Export Configuration
+            </button>
+        </div>
+    </div>
+</div>
