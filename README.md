@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![WinTool Version](https://img.shields.io/badge/WinTool-v0.2.8wb-orange?style=for-the-badge&logo=windows&logoColor=white)
+![WinTool Version](https://img.shields.io/badge/WinTool-v0.2.9wb-orange?style=for-the-badge&logo=windows&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows_11-blue?style=for-the-badge&logo=windows)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=for-the-badge)
 ![GitHub Stars](https://img.shields.io/github/stars/MTechWare/wintool?style=for-the-badge&logo=github)
@@ -18,47 +18,40 @@ WinTool is a powerful and intuitive application for Windows system management, d
 
 ## 🆕 What's New
 
-## Version: v0.2.8wb
+# Version: v0.2.9wb
 
-## 🎨 **Enhanced Appearance System**
-**Professional theme management with live preview technology**
-
-### **Theme Collection**
-• **9 Curated Presets** — Classic Dark, Modern Gray, Ocean Blue, Forest Green, Royal Purple, Crimson Red, Teal Mint, Sunset Orange, Midnight Blue
-• **Interactive Preview Cards** — Real-time theme visualization with color palette display
-• **Instant Theme Switching** — One-click application with smooth transitions
-• **Advanced Custom Creator** — Live preview engine with organized color sections and dual input methods
-• **Adaptive Layout** — Responsive theme cards with modern card-based design
+> **A complete visual transformation with enhanced appearance plus ultra-fast service management.**
 
 ---
 
-## 📊 **Event Viewer Redesign**
-**Modern dashboard interface with enhanced data visualization**
+## :gear: **Enhanced Tweaks System**
+**Advanced import/export functionality with intelligent preview/review system**
 
-### **Interface Overhaul**
-• **Card-Based Architecture** — Clean, modern layout with improved visual hierarchy
-• **Expandable Detail Panels** — Structured data display with raw JSON analysis view
-• **Smart Status Dashboard** — Real-time event metrics, filter status, and refresh indicators
-• **Streamlined Control System** — Organized sections with modern toggles and intuitive placement
-• **Responsive Framework** — Optimized for all screen sizes and resolutions
+### **Smart Import Modal**
+• **Preview Before Apply** — Detailed modal showing tweak breakdown with safety analysis
+• **Batch Processing** — Sequential application with throttling to prevent system conflicts
+
+### **Smart Export Modal**
+• **Preview Before Export** — Detailed modal showing all applied tweaks before saving
+• **Safety Analysis** — Color-coded safety level assessment for export collections
+• **Visual Tweak Review** — Grid display of all tweaks to be exported with descriptions
 
 ---
 
-## 🛡️ **Codebase Optimization**
-**Comprehensive security hardening and performance enhancement**
+## :zap: **Ultra-Fast Service Management**
+**Revolutionary performance improvements for Windows service operations**
 
-### **Code Cleanup Metrics**
-• **1,500+ Lines Removed** — Eliminated redundant testing frameworks and debug patterns
-• **Security Vulnerabilities Patched** — Removed dangerous `eval()` usage and empty error handlers
-• **5 Obsolete Files Deleted** — Cleaned unused scripts and documentation artifacts
-• **100+ Debug Statements Purged** — Removed console logging and browser testing fallbacks
-• **Performance Optimized** — Eliminated unnecessary processing and redundant operations
-• **Production Hardened** — All development artifacts and testing infrastructure removed
+### **Enhanced Service Control**
+• **Multi-Tier Privilege Escalation** — Smart privilege escalation for services requiring admin rights
+• **Comprehensive Error Handling** — Clear feedback for access denied, disabled services, and privilege issues
+• **Robust Fallback System** — Multiple methods ensure maximum success rate for service operations
 
-### **Quality Improvements**
-• **Code Standards** — Fixed unused variables, empty catch blocks, and duplicate patterns
-• **Maintainability** — Eliminated duplication and created reusable helper functions
-• **Security Hardening** — Removed dangerous script execution and browser simulation code
+### **Modern Table Design**
+• **Environment Variables Style** — Services table now matches the polished Environment Variables design
+• **Enhanced Status Badges** — Improved visual status indicators with consistent color theming
+• **Better Typography** — System fonts with drop shadows and improved readability
+• **Responsive Design** — Optimized for all screen sizes with better column management
+• **Visual Hierarchy** — Clear section headers with icons and badge-style counters
 
 ---
 
