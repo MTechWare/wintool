@@ -5,9 +5,26 @@ import { showCommandPalette, showHelpModal } from './command-palette.js';
 import { refreshCurrentTab, refreshSystemInformation } from './tabs.js';
 
 export function initGlobalKeyboardShortcuts() {
-    loadCustomShortcuts();
+    console.log('Initializing global keyboard shortcuts...');
+    
+    // Add a small delay to ensure electronAPI is available
+    setTimeout(() => {
+        loadCustomShortcuts();
+    }, 100);
 
     document.addEventListener('keydown', e => {
+        // Debug: Log key events for common shortcuts
+        if ((e.ctrlKey && e.key.toLowerCase() === 'k') || e.key === 'F1') {
+            console.log('Key event detected:', {
+                key: e.key,
+                ctrlKey: e.ctrlKey,
+                altKey: e.altKey,
+                shiftKey: e.shiftKey,
+                target: e.target.tagName,
+                currentShortcuts: currentShortcuts
+            });
+        }
+
         if (
             e.target.tagName === 'INPUT' ||
             e.target.tagName === 'TEXTAREA' ||
@@ -24,12 +41,15 @@ export function initGlobalKeyboardShortcuts() {
         }
 
         if (matchesShortcut(e, currentShortcuts['show-help'])) {
+            console.log('Help shortcut matched');
             e.preventDefault();
             showHelpModal();
         } else if (matchesShortcut(e, currentShortcuts['command-palette'])) {
+            console.log('Command palette shortcut matched');
             e.preventDefault();
             showCommandPalette();
         } else if (matchesShortcut(e, currentShortcuts['focus-search'])) {
+            console.log('Focus search shortcut matched');
             e.preventDefault();
             const searchInput = document.getElementById('tab-search');
             if (searchInput) {
@@ -37,17 +57,21 @@ export function initGlobalKeyboardShortcuts() {
                 searchInput.select();
             }
         } else if (matchesShortcut(e, currentShortcuts['refresh-tab'])) {
+            console.log('Refresh tab shortcut matched');
             e.preventDefault();
             refreshCurrentTab();
         } else if (matchesShortcut(e, currentShortcuts['open-settings'])) {
+            console.log('Open settings shortcut matched');
             e.preventDefault();
             showSettings();
         } else if (matchesShortcut(e, currentShortcuts['refresh-system'])) {
+            console.log('Refresh system shortcut matched');
             e.preventDefault();
             refreshSystemInformation();
         } else if (matchesShortcut(e, currentShortcuts['close-modal'])) {
             const openModal = document.querySelector('.modal[style*="flex"]');
             if (openModal) {
+                console.log('Close modal shortcut matched');
                 e.preventDefault();
                 closeModal(openModal.id);
             }
@@ -56,13 +80,29 @@ export function initGlobalKeyboardShortcuts() {
 }
 
 function matchesShortcut(event, shortcutString) {
-    if (!shortcutString) return false;
+    if (!shortcutString) {
+        console.log('No shortcut string provided');
+        return false;
+    }
 
     const parts = shortcutString.split('+').map(part => part.trim());
     const key = parts[parts.length - 1].toLowerCase();
     const modifiers = parts.slice(0, -1).map(mod => mod.toLowerCase());
 
     const eventKey = event.key.toLowerCase();
+    
+    // Debug logging for key matching
+    if ((event.ctrlKey && event.key.toLowerCase() === 'k') || event.key === 'F1') {
+        console.log('Matching shortcut:', {
+            shortcutString,
+            parts,
+            key,
+            modifiers,
+            eventKey,
+            eventCode: event.code.toLowerCase()
+        });
+    }
+    
     if (eventKey !== key.toLowerCase() && event.code.toLowerCase() !== key.toLowerCase()) {
         return false;
     }
@@ -72,22 +112,42 @@ function matchesShortcut(event, shortcutString) {
     const hasShift = modifiers.includes('shift');
     const hasMeta = modifiers.includes('meta') || modifiers.includes('cmd');
 
-    return (
+    const matches = (
         event.ctrlKey === hasCtrl &&
         event.altKey === hasAlt &&
         event.shiftKey === hasShift &&
         event.metaKey === hasMeta
     );
+
+    if ((event.ctrlKey && event.key.toLowerCase() === 'k') || event.key === 'F1') {
+        console.log('Shortcut match result:', matches, {
+            eventCtrl: event.ctrlKey,
+            hasCtrl,
+            eventAlt: event.altKey,
+            hasAlt,
+            eventShift: event.shiftKey,
+            hasShift,
+            eventMeta: event.metaKey,
+            hasMeta
+        });
+    }
+
+    return matches;
 }
 
 export async function loadCustomShortcuts() {
     try {
         if (window.electronAPI) {
+            console.log('Loading custom shortcuts...');
             const savedShortcuts = await window.electronAPI.getSetting(
                 'keyboardShortcuts',
                 DEFAULT_SHORTCUTS
             );
+            console.log('Loaded shortcuts:', savedShortcuts);
             setCurrentShortcuts({ ...DEFAULT_SHORTCUTS, ...savedShortcuts });
+        } else {
+            console.warn('electronAPI not available, using default shortcuts');
+            setCurrentShortcuts({ ...DEFAULT_SHORTCUTS });
         }
     } catch (error) {
         console.error('Error loading custom shortcuts:', error);

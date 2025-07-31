@@ -77,6 +77,8 @@ module.exports = {
         executionPolicy: 'Bypass', // Required for scripts to run
         noProfile: true, // Don't load PowerShell profiles
         timeout: 30000, // 30 second timeout
+        hideScripts: true, // Hide PowerShell script execution from users
+        silentMode: true, // Suppress console logging for PowerShell operations
     },
 
     // File system restrictions

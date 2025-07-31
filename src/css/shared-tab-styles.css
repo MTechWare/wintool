@@ -88,7 +88,7 @@
 /* Card Styles - System Health Dashboard Theme */
 .plugin-card,
 .feature-card {
-    background: linear-gradient(135deg, var(--background-card) 0%, rgba(26, 26, 28, 0.8) 100%);
+    background: var(--background-card);
     border: 1px solid rgba(var(--primary-rgb), 0.1);
     border-radius: 16px;
     padding: 24px 20px;
@@ -98,33 +98,17 @@
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     min-height: 200px;
 }
 
-.plugin-card::before,
-.feature-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.05) 0%, transparent 50%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
 
-.plugin-card:hover::before,
-.feature-card:hover::before {
-    opacity: 1;
-}
 
 .plugin-card:hover,
 .feature-card:hover {
     border-color: rgba(var(--primary-rgb), 0.3);
     transform: translateY(-5px);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .plugin-card h4,
@@ -391,6 +375,48 @@
     margin-bottom: 40px;
 }
 
+/* Info Row Styles - For System Diagnostics Cards */
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(var(--primary-rgb), 0.1);
+    transition: all 0.2s ease;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row:hover {
+    background: rgba(var(--primary-rgb), 0.05);
+    border-radius: 6px;
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+.info-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    margin-right: 16px;
+    position: relative;
+    z-index: 2;
+}
+
+.info-value {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-align: right;
+    flex: 1;
+    position: relative;
+    z-index: 2;
+    word-break: break-word;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .tab-header {
@@ -413,5 +439,19 @@
     .modal-content {
         width: 95%;
         margin: 2% auto;
+    }
+
+    .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .info-label {
+        margin-right: 0;
+    }
+
+    .info-value {
+        text-align: left;
     }
 }

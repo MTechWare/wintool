@@ -88,6 +88,23 @@ async function loadCurrentSettings() {
             const elevationSelector = document.getElementById('elevation-preference');
             if (elevationSelector) {
                 elevationSelector.value = elevationPreference;
+                
+                // Check current elevation status and update the description
+                try {
+                    const elevationStatus = await window.electronAPI.checkElevationStatus();
+                    const statusText = elevationStatus.isElevated ? 
+                        ' (Currently running as Administrator)' : 
+                        ' (Currently running as Standard User)';
+                    
+                    // Find the description element and update it
+                    const descriptionElement = elevationSelector.parentElement.querySelector('.settings-description');
+                    if (descriptionElement) {
+                        const originalText = descriptionElement.textContent.replace(/ \(Currently.*\)/, '');
+                        descriptionElement.textContent = originalText + statusText;
+                    }
+                } catch (error) {
+                    // Silently continue if elevation status check fails
+                }
             }
 
             const enableDevTools = await window.electronAPI.getSetting('enableDevTools', false);

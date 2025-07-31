@@ -195,13 +195,20 @@ class SystemTray {
      * Quit application properly
      */
     quitApplication() {
-        if (this.app) {
-            this.app.isQuiting = true;
-            this.app.quit();
-        } else {
-            // Fallback if app reference is not available
-            app.isQuiting = true;
-            app.quit();
+        console.log('quitApplication called');
+        try {
+            if (this.app) {
+                console.log('Using injected app reference');
+                this.app.isQuiting = true;
+                this.app.quit();
+            } else {
+                console.log('Using fallback app reference');
+                // Fallback if app reference is not available
+                app.isQuiting = true;
+                app.quit();
+            }
+        } catch (error) {
+            console.error('Error in quitApplication:', error);
         }
     }
 
