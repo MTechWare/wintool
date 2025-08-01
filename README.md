@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![WinTool Version](https://img.shields.io/badge/WinTool-v0.2.9wb-orange?style=for-the-badge&logo=windows&logoColor=white)
+![WinTool Version](https://img.shields.io/badge/WinTool-v0.3.0wb-orange?style=for-the-badge&logo=windows&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows_11-blue?style=for-the-badge&logo=windows)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=for-the-badge)
 ![GitHub Stars](https://img.shields.io/github/stars/MTechWare/wintool?style=for-the-badge&logo=github)
