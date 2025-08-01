@@ -10,6 +10,8 @@
     gap: 30px;
 }
 
+
+
 /* Enhanced Disk Overview Section */
 .disk-overview {
     margin-bottom: 0;
@@ -40,14 +42,14 @@
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 25px;
-    
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
 }
 
 .disk-item:hover {
     border-color: var(--primary-color);
-    
+    transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
 }
 
@@ -85,7 +87,7 @@
     height: 100%;
     background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
     border-radius: 4px;
-    
+    transition: width 1s ease;
     width: 0%;
     position: relative;
 }
@@ -98,7 +100,7 @@
     right: 0;
     bottom: 0;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    
+    animation: shimmer 2s infinite;
 }
 
 .disk-details {
@@ -106,6 +108,11 @@
     color: var(--text-secondary);
     font-style: italic;
     margin-top: 8px;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
 }
 
 /* Cleanup Categories Section */
@@ -161,14 +168,14 @@
     display: flex;
     align-items: center;
     gap: 15px;
-    
+    transition: all 0.3s ease;
     cursor: pointer;
     position: relative;
 }
 
 .category-card:hover {
     border-color: var(--primary-color);
-    
+    transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
@@ -246,7 +253,7 @@
 
 .category-status.scanning i {
     color: var(--primary-color);
-    
+    animation: spin 1s linear infinite;
 }
 
 .category-status.ready i {
@@ -255,6 +262,11 @@
 
 .category-status.error i {
     color: var(--error-color);
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 /* Cleanup Actions */
@@ -295,6 +307,8 @@
     gap: 15px;
     flex-wrap: wrap;
 }
+
+
 
 .cleanup-header {
     display: flex;
@@ -444,7 +458,7 @@
     height: 100%;
     background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
     border-radius: 6px;
-    
+    transition: width 0.5s ease;
     width: 0%;
     position: relative;
 }
@@ -457,7 +471,7 @@
     right: 0;
     bottom: 0;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-    
+    animation: progress-shimmer 1.5s infinite;
 }
 
 .progress-text {
@@ -518,6 +532,13 @@
     gap: 15px;
 }
 
+@keyframes progress-shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+
+
 /* Progress Section */
 .progress-section {
     margin-bottom: 40px;
@@ -569,7 +590,7 @@
     height: 100%;
     background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
     border-radius: 6px;
-    
+    transition: width 0.3s ease;
     width: 0%;
 }
 
@@ -582,7 +603,7 @@
 /* Results Section */
 .results-section {
     margin-bottom: 40px;
-    
+    animation: slideInUp 0.6s ease-out;
 }
 
 .results-header {
@@ -607,7 +628,7 @@
 
 .results-header h3 i {
     font-size: 32px;
-    
+    animation: pulse 2s infinite;
 }
 
 .results-timestamp {
@@ -639,7 +660,7 @@
     display: flex;
     align-items: center;
     gap: 20px;
-    
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
 }
@@ -653,12 +674,12 @@
     height: 4px;
     background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
     transform: scaleX(0);
-    
+    transition: transform 0.3s ease;
 }
 
 .result-card:hover {
     border-color: var(--primary-color);
-    
+    transform: translateY(-4px);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
 }
 
@@ -754,7 +775,7 @@
 .detail-item {
     padding: 20px;
     border-bottom: 1px solid var(--border-color);
-    
+    transition: all 0.3s ease;
 }
 
 .detail-item:last-child {
@@ -819,6 +840,8 @@
     margin-left: 28px;
 }
 
+
+
 .results-actions {
     display: flex;
     justify-content: center;
@@ -861,9 +884,50 @@
     100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
+.fa-spin {
+    animation: fa-spin 1s infinite linear;
+}
+
+@keyframes fa-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes countUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* Result card animations */
 .result-card {
-    
+    animation: fadeInScale 0.6s ease-out;
     animation-fill-mode: both;
 }
 
@@ -877,7 +941,7 @@
     padding: 12px 24px;
     font-weight: 600;
     border-radius: 12px;
-    
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
 }
@@ -890,7 +954,7 @@
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    
+    transition: left 0.5s ease;
 }
 
 .results-actions .btn:hover::before {
@@ -898,13 +962,17 @@
 }
 
 .results-actions .btn:hover {
-    
+    transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
 /* Success state styling */
 .results-section.success .results-header {
     background: linear-gradient(135deg, var(--success-color), #27ae60);
+}
+
+.results-section.success .result-value {
+    animation: countUp 1s ease-out;
 }
 
 /* Enhanced detail status styling */
@@ -917,6 +985,10 @@
     background: rgba(231, 76, 60, 0.2);
     color: var(--error-color);
 }
+
+
+
+
 
 /* Settings Modal */
 .settings-modal {
@@ -1014,6 +1086,8 @@
         gap: 20px;
     }
 
+
+
     .disk-stats {
         grid-template-columns: 1fr;
         gap: 15px;
@@ -1062,6 +1136,8 @@
         padding: 20px;
         margin: 10px;
     }
+
+
 
     .modal-content {
         margin: 10px;

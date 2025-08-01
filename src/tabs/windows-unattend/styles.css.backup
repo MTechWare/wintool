@@ -22,14 +22,14 @@
     padding: 20px;
     text-align: center;
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
 }
 
 .action-card:hover {
     border-color: var(--primary-color);
-    
+    transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     background: var(--background-hover);
 }
@@ -71,7 +71,7 @@
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -86,7 +86,7 @@
 
 .export-btn:hover {
     background: var(--primary-color-dark);
-    
+    transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(var(--primary-color-rgb), 0.3);
 }
 
@@ -97,7 +97,7 @@
 
 .preview-btn:hover {
     background: #138496;
-    
+    transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
 }
 
@@ -110,7 +110,7 @@
 .reset-btn:hover {
     background: var(--background-hover);
     border-color: var(--primary-color);
-    
+    transform: translateY(-2px);
 }
 
 /* Unattend Section */
@@ -120,7 +120,7 @@
     border-radius: 12px;
     margin-bottom: 25px;
     overflow: hidden;
-    
+    transition: all 0.3s ease;
 }
 
 .unattend-section:hover {
@@ -188,7 +188,7 @@
     color: var(--text-primary);
     font-size: 14px;
     outline: none;
-    
+    transition: border-color 0.3s ease;
     box-sizing: border-box;
 }
 
@@ -211,6 +211,7 @@
     font-style: italic;
 }
 
+
 .section-content h4 {
     font-size: 16px;
     font-weight: 600;
@@ -224,6 +225,7 @@
     margin-top: 0;
 }
 
+
 .checkbox-group {
     display: flex;
     align-items: center;
@@ -233,7 +235,7 @@
 .checkbox-group input[type="checkbox"] {
     width: auto;
     margin: 0;
-    
+    transform: scale(1.2);
     accent-color: var(--primary-color);
 }
 
@@ -242,6 +244,7 @@
     cursor: pointer;
     user-select: none;
 }
+
 
 .features-grid {
     display: grid;
@@ -290,12 +293,12 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    
+    transition: all 0.3s ease;
 }
 
 .preset-btn:hover {
     background: var(--primary-hover);
-    
+    transform: translateY(-1px);
 }
 
 .preset-btn i {
@@ -385,12 +388,12 @@
     align-items: center;
     gap: 8px;
     margin-bottom: 20px;
-    
+    transition: all 0.3s ease;
 }
 
 .add-command-btn:hover {
     background: var(--primary-hover);
-    
+    transform: translateY(-1px);
 }
 
 .remove-command-btn {
@@ -404,12 +407,12 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    
+    transition: all 0.3s ease;
 }
 
 .remove-command-btn:hover {
     background: #c82333;
-    
+    transform: translateY(-1px);
 }
 
 /* All warning styles now use universal system from universal-tab-header.css */
@@ -484,7 +487,7 @@
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 15px;
-    
+    transition: all 0.3s ease;
 }
 
 .pass-item:hover {
@@ -671,7 +674,7 @@
 
 .import-btn:hover {
     background: #138496;
-    
+    transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
 }
 
@@ -682,7 +685,7 @@
 
 .validate-btn:hover {
     background: #218838;
-    
+    transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
 }
 
@@ -695,7 +698,7 @@
 
 .help-btn:hover {
     background: #5a6268;
-    
+    transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
 }
 
@@ -794,6 +797,7 @@
 
 /* Warning items now use universal plugin-warning system */
 
+
 [data-theme="dark"] {
     --background-main: #1a1a1a;
     --background-card: #2d2d2d;
@@ -810,6 +814,7 @@
     background: var(--background-card);
     border-color: var(--border-color);
 }
+
 
 @media (max-width: 768px) {
 
@@ -849,14 +854,15 @@
     word-wrap: break-word;
     z-index: 10000;
     opacity: 0;
-
+    transform: translateY(5px);
+    transition: all 0.3s ease;
     pointer-events: none;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .tooltip.show {
     opacity: 1;
-    
+    transform: translateY(0);
 }
 
 .tooltip::after {
@@ -864,7 +870,7 @@
     position: absolute;
     top: 100%;
     left: 50%;
-    
+    transform: translateX(-50%);
     border: 5px solid transparent;
     border-top-color: rgba(0, 0, 0, 0.9);
 }
@@ -901,6 +907,14 @@
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* Smooth Transitions */
+.unattend-section,
+.modal-content,
+.form-group,
+.btn {
+    transition: all 0.3s ease;
 }
 
 /* Focus States */
@@ -1005,7 +1019,7 @@ textarea:focus {
     cursor: pointer;
     padding: 5px;
     border-radius: 4px;
-    
+    transition: all 0.3s ease;
 }
 
 .modal-close:hover {
@@ -1048,7 +1062,7 @@ textarea:focus {
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1084,7 +1098,7 @@ textarea:focus {
     z-index: 1000;
     max-width: 400px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    
+    animation: slideIn 0.3s ease;
 }
 
 .status-message.success {
@@ -1109,6 +1123,17 @@ textarea:focus {
     background: var(--primary-color);
     color: white;
     border: 1px solid var(--primary-color-dark);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 /* Responsive Design */
@@ -1197,6 +1222,21 @@ textarea:focus {
     pointer-events: none;
 }
 
+.export-btn.loading i,
+.import-btn.loading i,
+.validate-btn.loading i {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 /* Simple tooltip styles */
 .custom-tooltip {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1212,7 +1252,7 @@ textarea:focus {
 .checkbox-group:hover {
     background: rgba(var(--primary-color-rgb), 0.05);
     border-radius: 4px;
-    
+    transition: background 0.2s ease;
 }
 
 .checkbox-group label:hover {

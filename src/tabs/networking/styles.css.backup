@@ -25,11 +25,11 @@
     border-radius: 12px;
     border: 1px solid var(--border-color);
     text-align: center;
-    
+    transition: all 0.3s ease;
 }
 
 .overview-card:hover {
-    
+    transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
@@ -75,11 +75,11 @@
     padding: 25px;
     border-radius: 12px;
     border: 1px solid var(--border-color);
-    
+    transition: all 0.3s ease;
 }
 
 .interface-card:hover {
-    
+    transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
@@ -163,6 +163,8 @@
     font-size: 13px;
 }
 
+
+
 /* Loading state */
 .loading {
     color: var(--text-secondary);
@@ -206,7 +208,7 @@
     font-weight: 600;
     color: var(--text-primary);
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -214,7 +216,7 @@
 
 .action-btn:hover {
     border-color: var(--primary-color);
-    
+    transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
     color: var(--primary-color);
 }
@@ -247,6 +249,8 @@
     .interfaces-container {
         grid-template-columns: 1fr;
     }
+
+
 
     .interface-header {
         flex-direction: column;

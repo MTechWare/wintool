@@ -75,21 +75,6 @@
             box-shadow: 0 0 6px rgba(var(--primary-rgb), 0.8);
             flex-shrink: 0;
             margin-top: 1px;
-            animation: brandDotPulse 3s ease-in-out infinite;
-        }
-
-        @keyframes brandDotPulse {
-
-            0%,
-            100% {
-                box-shadow: 0 0 6px rgba(var(--primary-rgb), 0.8);
-                transform: scale(1);
-            }
-
-            50% {
-                box-shadow: 0 0 12px rgba(var(--primary-rgb), 1);
-                transform: scale(1.2);
-            }
         }
 
         .brand-text {
@@ -134,7 +119,6 @@
             align-items: center;
             justify-content: center;
             font-size: 12px;
-            transition: all 0.2s ease;
         }
 
         .title-bar-btn:hover {
@@ -168,19 +152,6 @@
             backdrop-filter: blur(10px);
             position: relative;
             overflow: visible;
-            animation: slideIn 0.8s ease-out;
-        }
-
-        @keyframes slideIn {
-            0% {
-                opacity: 0;
-                transform: translateY(30px) scale(0.95);
-            }
-
-            100% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
         }
 
         .admin-prompt-container::before {
@@ -206,7 +177,6 @@
             color: var(--primary-color);
             position: relative;
             z-index: 2;
-            animation: iconFloat 3s ease-in-out infinite;
             filter: drop-shadow(0 8px 16px rgba(var(--primary-rgb), 0.3));
         }
 
@@ -219,34 +189,7 @@
             height: 70px;
             background: radial-gradient(circle, rgba(var(--primary-rgb), 0.3) 0%, transparent 70%);
             border-radius: 50%;
-            animation: glowPulse 2s ease-in-out infinite;
             z-index: 1;
-        }
-
-        @keyframes iconFloat {
-
-            0%,
-            100% {
-                transform: translateY(0px) rotate(0deg);
-            }
-
-            50% {
-                transform: translateY(-8px) rotate(3deg);
-            }
-        }
-
-        @keyframes glowPulse {
-
-            0%,
-            100% {
-                opacity: 0.6;
-                transform: translate(-50%, -50%) scale(1);
-            }
-
-            50% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1.2);
-            }
         }
 
         .admin-title {
@@ -335,7 +278,6 @@
             align-items: center;
             gap: 8px;
             text-decoration: none;
-            transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
@@ -351,7 +293,6 @@
 
         .btn-primary:hover {
             background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-darker) 100%);
-            transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(var(--primary-rgb), 0.4);
         }
 
@@ -364,7 +305,6 @@
 
         .btn-secondary:hover {
             background: var(--hover-color);
-            transform: translateY(-3px);
             border-color: var(--primary-color);
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
         }
@@ -405,13 +345,12 @@
             border: 3px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
+            animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .btn.loading .loading-spinner {
@@ -437,7 +376,6 @@
             color: var(--text-secondary);
             font-size: 13px;
             cursor: pointer;
-            transition: color 0.2s ease;
         }
 
         .preference-checkbox:hover {

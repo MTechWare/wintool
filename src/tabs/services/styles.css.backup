@@ -67,18 +67,22 @@
     outline: none;
     border-color: rgba(var(--primary-rgb), 0.3);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-    
+    transform: translateY(-1px);
 }
 
 .search-container .search-icon {
     position: absolute;
     left: 16px;
     top: 50%;
-    
+    transform: translateY(-50%);
     color: var(--primary-color);
     font-size: 1.1rem;
     z-index: 3;
 
+}
+
+.search-container:hover .search-icon {
+    transform: translateY(-50%) scale(1.1);
 }
 
 .filter-container {
@@ -250,7 +254,7 @@
 }
 
 .quick-service-card:hover {
-    
+    transform: translateY(-5px);
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
     border-color: rgba(var(--primary-rgb), 0.3);
 }
@@ -368,7 +372,7 @@
 }
 
 .services-list-section:hover {
-    
+    transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     border-color: rgba(var(--primary-rgb), 0.3);
 }
@@ -920,7 +924,7 @@
 
 .remove-service-btn:hover {
     background: #c0392b;
-    
+    transform: translateY(-1px);
 }
 
 .add-service-controls {
@@ -997,7 +1001,7 @@
 
 .add-service-btn:hover {
     background: #27ae60;
-    
+    transform: translateY(-1px);
 }
 
 .add-service-btn:disabled {
@@ -1022,7 +1026,7 @@
 
 .btn-secondary:hover {
     background: #7f8c8d;
-    
+    transform: translateY(-1px);
 }
 
 .empty-state {

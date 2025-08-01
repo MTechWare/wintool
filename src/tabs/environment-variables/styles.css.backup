@@ -56,7 +56,7 @@
     position: absolute;
     right: 12px;
     top: 50%;
-    
+    transform: translateY(-50%);
     color: #888;
     pointer-events: none;
 }
@@ -136,11 +136,11 @@
     border: 1px solid var(--border-color);
     margin-bottom: 30px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    
+    transition: all 0.3s ease;
 }
 
 .env-section:hover {
-    
+    transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     border-color: rgba(var(--primary-rgb), 0.3);
 }
@@ -154,7 +154,7 @@
     position: absolute;
     bottom: -35px;
     left: 50%;
-    
+    transform: translateX(-50%);
     width: 60px;
     height: 2px;
     background: linear-gradient(90deg, transparent, var(--primary-color, #ff9800), transparent);
@@ -255,7 +255,7 @@
     border-bottom: 1px solid var(--border-color);
     color: var(--text-primary);
     vertical-align: top;
-    
+    transition: background-color 0.2s ease;
 }
 
 .env-table tbody tr:hover {
@@ -339,7 +339,7 @@
     display: flex;
     align-items: center;
     gap: 3px;
-    
+    transition: all 0.2s ease;
     white-space: nowrap;
     min-width: auto;
 }

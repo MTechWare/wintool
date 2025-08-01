@@ -1872,48 +1872,573 @@ ipcMain.handle('get-disk-space', async () => {
     }
 });
 
+// Inline PowerShell scripts for cleanup operations
+const cleanupScripts = {
+    temp: `
+try {
+    $filesRemoved = 0
+    $totalSizeFreed = 0
+    $ErrorActionPreference = "SilentlyContinue"
+
+    $tempPaths = @(
+        $env:TEMP,
+        $env:TMP,
+        "$env:SystemRoot\\Temp",
+        "$env:LOCALAPPDATA\\Temp"
+    )
+
+    $tempPaths = $tempPaths | Where-Object { $_ -and (Test-Path $_ -ErrorAction SilentlyContinue) } | Sort-Object -Unique
+
+    foreach ($path in $tempPaths) {
+        try {
+            $cutoffTime = (Get-Date).AddHours(-1)
+            $files = Get-ChildItem -Path $path -Recurse -Force -ErrorAction SilentlyContinue |
+                     Where-Object {
+                         -not $_.PSIsContainer -and
+                         $_.LastWriteTime -lt $cutoffTime -and
+                         $_.Length -gt 0
+                     }
+
+            if ($files) {
+                foreach ($file in $files) {
+                    try {
+                        $fileSize = $file.Length
+                        Remove-Item -Path $file.FullName -Force -ErrorAction Stop
+                        $filesRemoved++
+                        $totalSizeFreed += $fileSize
+                    } catch {
+                        continue
+                    }
+                }
+            }
+        } catch {
+            continue
+        }
+    }
+
+    $additionalPaths = @(
+        "$env:LOCALAPPDATA\\Microsoft\\Windows\\INetCache\\*",
+        "$env:LOCALAPPDATA\\Microsoft\\Windows\\WebCache\\*"
+    )
+
+    foreach ($pattern in $additionalPaths) {
+        try {
+            $items = Get-ChildItem -Path $pattern -Force -ErrorAction SilentlyContinue |
+                     Where-Object { -not $_.PSIsContainer -and $_.LastWriteTime -lt (Get-Date).AddHours(-2) }
+
+            foreach ($item in $items) {
+                try {
+                    $itemSize = $item.Length
+                    Remove-Item -Path $item.FullName -Force -ErrorAction Stop
+                    $filesRemoved++
+                    $totalSizeFreed += $itemSize
+                } catch {
+                    continue
+                }
+            }
+        } catch {
+            continue
+        }
+    }
+
+    $result = @{
+        filesRemoved = $filesRemoved
+        sizeFreed = $totalSizeFreed
+        category = "temp"
+        timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    }
+
+    $result | ConvertTo-Json -Compress
+
+} catch {
+    @{
+        filesRemoved = 0
+        sizeFreed = 0
+        category = "temp"
+        error = $_.Exception.Message
+        timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    } | ConvertTo-Json -Compress
+}`,
+
+    cache: `
+try {
+    $filesRemoved = 0
+    $totalSizeFreed = 0
+    $ErrorActionPreference = "SilentlyContinue"
+
+    $prefetchPath = "$env:SystemRoot\\Prefetch"
+    if (Test-Path $prefetchPath -ErrorAction SilentlyContinue) {
+        $oldFiles = Get-ChildItem -Path $prefetchPath -Force -ErrorAction SilentlyContinue |
+                   Where-Object {
+                       -not $_.PSIsContainer -and
+                       $_.Extension -eq ".pf" -and
+                       $_.LastWriteTime -lt (Get-Date).AddDays(-14)
+                   }
+
+        foreach ($file in $oldFiles) {
+            try {
+                $fileSize = $file.Length
+                Remove-Item -Path $file.FullName -Force -ErrorAction Stop
+                $filesRemoved++
+                $totalSizeFreed += $fileSize
+            } catch {
+                continue
+            }
+        }
+    }
+
+    $thumbCachePath = "$env:LOCALAPPDATA\\Microsoft\\Windows\\Explorer"
+    if (Test-Path $thumbCachePath -ErrorAction SilentlyContinue) {
+        $thumbFiles = Get-ChildItem -Path $thumbCachePath -Force -ErrorAction SilentlyContinue |
+                     Where-Object {
+                         -not $_.PSIsContainer -and
+                         ($_.Name -like "thumbcache_*.db" -or $_.Name -like "iconcache_*.db")
+                     }
+
+        foreach ($file in $thumbFiles) {
+            try {
+                $fileSize = $file.Length
+                Remove-Item -Path $file.FullName -Force -ErrorAction Stop
+                $filesRemoved++
+                $totalSizeFreed += $fileSize
+            } catch {
+                continue
+            }
+        }
+    }
+
+    $result = @{
+        filesRemoved = $filesRemoved
+        sizeFreed = $totalSizeFreed
+        category = "cache"
+        timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    }
+
+    $result | ConvertTo-Json -Compress
+
+} catch {
+    @{
+        filesRemoved = 0
+        sizeFreed = 0
+        category = "cache"
+        error = $_.Exception.Message
+        timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    } | ConvertTo-Json -Compress
+}`
+};
+
 ipcMain.handle('execute-cleanup', async (_, category) => {
-
     return new Promise((resolve, reject) => {
-        const path = require('path');
-        let scriptPath = '';
-
-        // Determine the correct scripts directory based on whether app is packaged
-        const scriptsDir = app.isPackaged
-            ? path.join(process.resourcesPath, 'scripts')
-            : path.join(__dirname, 'scripts');
+        let script = '';
 
         switch (category) {
             case 'temp':
-                scriptPath = path.join(scriptsDir, 'clean-temp.ps1');
-                break;
-
-            case 'system':
-                scriptPath = path.join(scriptsDir, 'clean-system.ps1');
+                script = cleanupScripts.temp;
                 break;
 
             case 'cache':
-                scriptPath = path.join(scriptsDir, 'clean-cache.ps1');
+                script = cleanupScripts.cache;
+                break;
+
+            case 'system':
+                script = `
+try {
+    $filesRemoved = 0
+    $totalSizeFreed = 0
+    $ErrorActionPreference = "SilentlyContinue"
+
+    # Clean Windows Error Reporting
+    $werPaths = @(
+        "$env:ProgramData\\Microsoft\\Windows\\WER\\ReportQueue",
+        "$env:ProgramData\\Microsoft\\Windows\\WER\\ReportArchive",
+        "$env:LOCALAPPDATA\\Microsoft\\Windows\\WER\\ReportQueue",
+        "$env:LOCALAPPDATA\\Microsoft\\Windows\\WER\\ReportArchive"
+    )
+
+    foreach ($werPath in $werPaths) {
+        if (Test-Path $werPath -ErrorAction SilentlyContinue) {
+            try {
+                $files = Get-ChildItem -Path $werPath -Recurse -Force -ErrorAction SilentlyContinue |
+                         Where-Object { -not $_.PSIsContainer -and $_.Length -gt 0 }
+
+                foreach ($file in $files) {
+                    try {
+                        $fileSize = $file.Length
+                        Remove-Item -Path $file.FullName -Force -ErrorAction Stop
+                        $filesRemoved++
+                        $totalSizeFreed += $fileSize
+                    } catch {
+                        continue
+                    }
+                }
+            } catch {
+                continue
+            }
+        }
+    }
+
+    # Clean System Log Files (older than 7 days)
+    $logPaths = @(
+        "$env:SystemRoot\\Logs\\CBS",
+        "$env:SystemRoot\\Logs\\DISM",
+        "$env:SystemRoot\\Logs\\MoSetup",
+        "$env:SystemRoot\\Logs\\WindowsUpdate"
+    )
+
+    foreach ($logPath in $logPaths) {
+        if (Test-Path $logPath -ErrorAction SilentlyContinue) {
+            try {
+                $files = Get-ChildItem -Path $logPath -Recurse -Force -ErrorAction SilentlyContinue |
+                         Where-Object {
+                             -not $_.PSIsContainer -and
+                             $_.LastWriteTime -lt (Get-Date).AddDays(-7) -and
+                             $_.Length -gt 0
+                         }
+
+                foreach ($file in $files) {
+                    try {
+                        $fileSize = $file.Length
+                        Remove-Item -Path $file.FullName -Force -ErrorAction Stop
+                        $filesRemoved++
+                        $totalSizeFreed += $fileSize
+                    } catch {
+                        continue
+                    }
+                }
+            } catch {
+                continue
+            }
+        }
+    }
+
+    @{
+        filesRemoved = $filesRemoved
+        sizeFreed = $totalSizeFreed
+        category = "system"
+        timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    } | ConvertTo-Json -Compress
+
+} catch {
+    @{
+        filesRemoved = 0
+        sizeFreed = 0
+        category = "system"
+        error = $_.Exception.Message
+        timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    } | ConvertTo-Json -Compress
+}`;
                 break;
 
             case 'browser':
-                scriptPath = path.join(scriptsDir, 'clean-browser.ps1');
+                script = `
+try {
+    $filesRemoved = 0
+    $totalSizeFreed = 0
+    $ErrorActionPreference = "SilentlyContinue"
+
+    # Chrome cache paths
+    $chromePaths = @(
+        "$env:LOCALAPPDATA\\Google\\Chrome\\User Data\\Default\\Cache",
+        "$env:LOCALAPPDATA\\Google\\Chrome\\User Data\\Default\\Code Cache",
+        "$env:LOCALAPPDATA\\Google\\Chrome\\User Data\\Default\\GPUCache"
+    )
+
+    # Edge cache paths
+    $edgePaths = @(
+        "$env:LOCALAPPDATA\\Microsoft\\Edge\\User Data\\Default\\Cache",
+        "$env:LOCALAPPDATA\\Microsoft\\Edge\\User Data\\Default\\Code Cache",
+        "$env:LOCALAPPDATA\\Microsoft\\Edge\\User Data\\Default\\GPUCache"
+    )
+
+    # Process Chrome and Edge paths
+    $allDirectPaths = $chromePaths + $edgePaths
+
+    foreach ($cachePath in $allDirectPaths) {
+        if (Test-Path $cachePath -ErrorAction SilentlyContinue) {
+            try {
+                $files = Get-ChildItem -Path $cachePath -File -Recurse -Force -ErrorAction SilentlyContinue |
+                         Where-Object {
+                             $_.LastWriteTime -lt (Get-Date).AddHours(-1) -and
+                             $_.Length -gt 0
+                         }
+
+                foreach ($file in $files) {
+                    try {
+                        $fileSize = $file.Length
+                        Remove-Item -Path $file.FullName -Force -ErrorAction Stop
+                        $filesRemoved++
+                        $totalSizeFreed += $fileSize
+                    } catch {
+                        continue
+                    }
+                }
+            } catch {
+                continue
+            }
+        }
+    }
+
+    # Process Firefox profiles (handle wildcards separately)
+    $firefoxProfilesBase = "$env:LOCALAPPDATA\\Mozilla\\Firefox\\Profiles"
+    if (Test-Path $firefoxProfilesBase -ErrorAction SilentlyContinue) {
+        try {
+            $firefoxProfiles = Get-ChildItem -Path $firefoxProfilesBase -Directory -Force -ErrorAction SilentlyContinue
+            foreach ($profile in $firefoxProfiles) {
+                $cachePaths = @(
+                    (Join-Path $profile.FullName "cache2"),
+                    (Join-Path $profile.FullName "startupCache")
+                )
+
+                foreach ($cachePath in $cachePaths) {
+                    if (Test-Path $cachePath -ErrorAction SilentlyContinue) {
+                        try {
+                            $files = Get-ChildItem -Path $cachePath -File -Recurse -Force -ErrorAction SilentlyContinue |
+                                     Where-Object {
+                                         $_.LastWriteTime -lt (Get-Date).AddHours(-1) -and
+                                         $_.Length -gt 0
+                                     }
+
+                            foreach ($file in $files) {
+                                try {
+                                    $fileSize = $file.Length
+                                    Remove-Item -Path $file.FullName -Force -ErrorAction Stop
+                                    $filesRemoved++
+                                    $totalSizeFreed += $fileSize
+                                } catch {
+                                    continue
+                                }
+                            }
+                        } catch {
+                            continue
+                        }
+                    }
+                }
+            }
+        } catch {
+            continue
+        }
+    }
+
+    @{
+        filesRemoved = $filesRemoved
+        sizeFreed = $totalSizeFreed
+        category = "browser"
+        timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    } | ConvertTo-Json -Compress
+
+} catch {
+    @{
+        filesRemoved = 0
+        sizeFreed = 0
+        category = "browser"
+        error = $_.Exception.Message
+        timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    } | ConvertTo-Json -Compress
+}`;
                 break;
 
             case 'updates':
-                scriptPath = path.join(scriptsDir, 'clean-updates.ps1');
+                script = `
+try {
+    $filesRemoved = 0
+    $totalSizeFreed = 0
+    $ErrorActionPreference = "SilentlyContinue"
+
+    $updatePaths = @(
+        "$env:SystemRoot\\SoftwareDistribution\\Download\\*",
+        "$env:SystemRoot\\SoftwareDistribution\\DataStore\\Logs\\*"
+    )
+
+    foreach ($updatePattern in $updatePaths) {
+        try {
+            $files = Get-ChildItem -Path $updatePattern -File -Force -ErrorAction SilentlyContinue |
+                     Where-Object {
+                         $_.LastWriteTime -lt (Get-Date).AddDays(-7) -and
+                         $_.Length -gt 0
+                     }
+
+            foreach ($file in $files) {
+                try {
+                    $fileSize = $file.Length
+                    Remove-Item -Path $file.FullName -Force -ErrorAction Stop
+                    $filesRemoved++
+                    $totalSizeFreed += $fileSize
+                } catch {
+                    continue
+                }
+            }
+        } catch {
+            continue
+        }
+    }
+
+    @{
+        filesRemoved = $filesRemoved
+        sizeFreed = $totalSizeFreed
+        category = "updates"
+        timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    } | ConvertTo-Json -Compress
+
+} catch {
+    @{
+        filesRemoved = 0
+        sizeFreed = 0
+        category = "updates"
+        error = $_.Exception.Message
+        timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    } | ConvertTo-Json -Compress
+}`;
                 break;
 
             case 'logs':
-                scriptPath = path.join(scriptsDir, 'clean-logs.ps1');
+                script = `
+try {
+    $filesRemoved = 0
+    $totalSizeFreed = 0
+    $ErrorActionPreference = "SilentlyContinue"
+
+    $logPaths = @(
+        "$env:SystemRoot\\Logs\\*",
+        "$env:LOCALAPPDATA\\Microsoft\\Windows\\WebCache\\*.log",
+        "$env:ProgramData\\Microsoft\\Windows\\WER\\*.log"
+    )
+
+    foreach ($pattern in $logPaths) {
+        try {
+            $items = Get-ChildItem -Path $pattern -Force -ErrorAction SilentlyContinue |
+                     Where-Object { -not $_.PSIsContainer -and $_.LastWriteTime -lt (Get-Date).AddDays(-30) -and $_.Length -gt 1MB }
+
+            foreach ($item in $items) {
+                try {
+                    $itemSize = $item.Length
+                    Remove-Item -Path $item.FullName -Force -ErrorAction Stop
+                    $filesRemoved++
+                    $totalSizeFreed += $itemSize
+                } catch {
+                    continue
+                }
+            }
+        } catch {
+            continue
+        }
+    }
+
+    @{
+        filesRemoved = $filesRemoved
+        sizeFreed = $totalSizeFreed
+        category = "logs"
+        timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    } | ConvertTo-Json -Compress
+
+} catch {
+    @{
+        filesRemoved = 0
+        sizeFreed = 0
+        category = "logs"
+        error = $_.Exception.Message
+        timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    } | ConvertTo-Json -Compress
+}`;
                 break;
 
             case 'recycle':
-                scriptPath = path.join(scriptsDir, 'clean-recycle.ps1');
+                script = `
+try {
+    $filesRemoved = 0
+    $totalSizeFreed = 0
+    $ErrorActionPreference = "SilentlyContinue"
+
+    # Clear Recycle Bin using PowerShell
+    $recycleBin = (New-Object -ComObject Shell.Application).Namespace(0xA)
+    if ($recycleBin) {
+        $items = $recycleBin.Items()
+        $filesRemoved = $items.Count
+
+        # Estimate size (simplified)
+        foreach ($item in $items) {
+            try {
+                $totalSizeFreed += $item.Size
+            } catch {
+                continue
+            }
+        }
+
+        # Empty recycle bin
+        try {
+            $recycleBin.InvokeVerb("Empty")
+        } catch {
+            # Fallback method
+            Clear-RecycleBin -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    @{
+        filesRemoved = $filesRemoved
+        sizeFreed = $totalSizeFreed
+        category = "recycle"
+        timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    } | ConvertTo-Json -Compress
+
+} catch {
+    @{
+        filesRemoved = 0
+        sizeFreed = 0
+        category = "recycle"
+        error = $_.Exception.Message
+        timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    } | ConvertTo-Json -Compress
+}`;
                 break;
 
             case 'dumps':
-                scriptPath = path.join(scriptsDir, 'clean-dumps.ps1');
+                script = `
+try {
+    $filesRemoved = 0
+    $totalSizeFreed = 0
+    $ErrorActionPreference = "SilentlyContinue"
+
+    $dumpPaths = @(
+        "$env:SystemRoot\\Minidump\\*",
+        "$env:SystemRoot\\MEMORY.DMP",
+        "$env:LOCALAPPDATA\\CrashDumps\\*"
+    )
+
+    foreach ($pattern in $dumpPaths) {
+        try {
+            $items = Get-ChildItem -Path $pattern -Force -ErrorAction SilentlyContinue |
+                     Where-Object { -not $_.PSIsContainer -and $_.Length -gt 0 }
+
+            foreach ($item in $items) {
+                try {
+                    $itemSize = $item.Length
+                    Remove-Item -Path $item.FullName -Force -ErrorAction Stop
+                    $filesRemoved++
+                    $totalSizeFreed += $itemSize
+                } catch {
+                    continue
+                }
+            }
+        } catch {
+            continue
+        }
+    }
+
+    @{
+        filesRemoved = $filesRemoved
+        sizeFreed = $totalSizeFreed
+        category = "dumps"
+        timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    } | ConvertTo-Json -Compress
+
+} catch {
+    @{
+        filesRemoved = 0
+        sizeFreed = 0
+        category = "dumps"
+        error = $_.Exception.Message
+        timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    } | ConvertTo-Json -Compress
+}`;
                 break;
 
             case 'registry':
@@ -1926,13 +2451,10 @@ ipcMain.handle('execute-cleanup', async (_, category) => {
                 return;
         }
 
-        // Use SimpleCommandExecutor for script execution
-        const scriptCommand = `& "${scriptPath}"`;
-
+        // Execute the inline PowerShell script
         processPool
-            .executePowerShellCommand(scriptCommand)
+            .executePowerShellCommand(script)
             .then(output => {
-
                 const trimmedOutput = output.trim();
                 if (trimmedOutput) {
                     try {

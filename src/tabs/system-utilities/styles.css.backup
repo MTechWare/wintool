@@ -26,7 +26,7 @@
     color: var(--text-primary);
     font-size: 14px;
     outline: none;
-    
+    transition: border-color 0.3s ease;
 }
 
 .search-input:focus {
@@ -42,7 +42,7 @@
     position: absolute;
     right: 15px;
     top: 50%;
-    
+    transform: translateY(-50%);
     color: var(--text-secondary);
     pointer-events: none;
 }
@@ -102,7 +102,7 @@
     border-radius: 12px;
     padding: 20px;
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: 15px;
@@ -112,13 +112,13 @@
 
 .utility-card:hover {
     border-color: var(--primary-color);
-    
+    transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
     background: var(--background-hover);
 }
 
 .utility-card:active {
-    
+    transform: translateY(0);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
 }
 
@@ -132,12 +132,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    
+    transition: all 0.3s ease;
 }
 
 .utility-card:hover .utility-icon {
     background: var(--primary-color-dark);
-    
+    transform: scale(1.1);
 }
 
 .utility-icon i {
@@ -202,7 +202,7 @@
     z-index: 1000;
     max-width: 400px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    
+    animation: slideIn 0.3s ease;
 }
 
 .status-message.success {
@@ -221,6 +221,17 @@
     background: #ff9800;
     color: white;
     border: 1px solid #e68900;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 /* Responsive Design */
@@ -299,8 +310,27 @@
     z-index: 1;
 }
 
+.utility-card.loading .utility-icon {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
 .utility-card.hidden {
     display: none;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.6;
+        transform: scale(1.05);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 /* Tooltip Enhancement */
@@ -309,7 +339,7 @@
     position: absolute;
     bottom: -35px;
     left: 50%;
-    
+    transform: translateX(-50%);
     background: var(--background-dark);
     color: var(--text-primary);
     padding: 8px 12px;

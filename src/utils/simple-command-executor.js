@@ -57,16 +57,16 @@ class SimpleCommandExecutor {
                 `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ${encodedCommand}`,
                 // Method 2: Force bypass with additional parameters and scope
                 `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Scope Process -Command "& {${command}}"`,
-                // Method 3: Use pwsh if available (PowerShell Core)
-                `pwsh.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ${encodedCommand}`,
-                // Method 4: Direct command execution with unrestricted policy
+                // Method 3: Direct command execution with unrestricted policy
                 `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -EncodedCommand ${encodedCommand}`,
+                // Method 4: Force execution policy at process level
+                `powershell.exe -NoProfile -NonInteractive -Command "Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force; ${command}"`,
                 // Method 5: Use cmd to invoke PowerShell (sometimes bypasses group policy)
                 `cmd.exe /c "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ${encodedCommand}"`,
-                // Method 6: Force execution policy at process level
-                `powershell.exe -NoProfile -NonInteractive -Command "Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force; ${command}"`,
-                // Method 7: Alternative PowerShell path
-                `%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ${encodedCommand}`
+                // Method 6: Alternative PowerShell path with environment variable expansion
+                `"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ${encodedCommand}`,
+                // Method 7: Use pwsh if available (PowerShell Core)
+                `pwsh.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ${encodedCommand}`
             ];
 
             let lastError;

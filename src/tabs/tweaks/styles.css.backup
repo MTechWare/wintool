@@ -48,7 +48,7 @@
     border: 1px solid rgba(var(--primary-rgb), 0.1);
     color: var(--text-primary);
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     border-radius: 10px;
     position: relative;
     overflow: hidden;
@@ -66,7 +66,7 @@
     bottom: 0;
     background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.1) 0%, rgba(var(--primary-rgb), 0.05) 100%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .action-btn:hover::before,
@@ -79,7 +79,7 @@
 #refresh-tweaks-btn:hover,
 #export-tweaks-summary-btn:hover {
     border-color: rgba(var(--primary-rgb), 0.3);
-    
+    transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
@@ -90,7 +90,13 @@
     position: relative;
     z-index: 2;
     filter: drop-shadow(0 2px 4px rgba(var(--primary-rgb), 0.3));
-    
+    transition: transform 0.3s ease;
+}
+
+.action-btn:hover i,
+#refresh-tweaks-btn:hover i,
+#export-tweaks-summary-btn:hover i {
+    transform: scale(1.1);
 }
 
 /* Loading indicator styles */
@@ -117,14 +123,14 @@
     margin-bottom: 1rem;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
 .loading-text {
     color: var(--text-secondary);
     font-size: 0.9rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 /* No tweaks message styles */
@@ -178,7 +184,7 @@
     bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.05) 0%, transparent 50%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .preset-quick-actions:hover::before {
@@ -192,7 +198,7 @@
     padding: 15px 12px;
     text-align: center;
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
     min-height: 100px;
@@ -208,7 +214,7 @@
     bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.05) 0%, transparent 50%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .preset-card:hover::before {
@@ -217,7 +223,7 @@
 
 .preset-card:hover {
     border-color: rgba(var(--primary-rgb), 0.3);
-    
+    transform: translateY(-5px);
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
 }
 
@@ -226,10 +232,14 @@
     color: var(--primary-color);
     margin-bottom: 8px;
     display: block;
-    
+    transition: all 0.3s ease;
     position: relative;
     z-index: 2;
     filter: drop-shadow(0 4px 8px rgba(var(--primary-rgb), 0.3));
+}
+
+.preset-card:hover i {
+    transform: scale(1.1) rotate(5deg);
 }
 
 .preset-card h4 {
@@ -237,7 +247,7 @@
     font-weight: 600;
     margin: 0 0 6px 0;
     color: var(--text-primary);
-    
+    transition: all 0.3s ease;
     position: relative;
     z-index: 2;
     letter-spacing: 0.2px;
@@ -265,7 +275,7 @@
     height: 3px;
     background: linear-gradient(90deg, var(--primary-color), var(--primary-dark, #ff5722));
     transform: scaleX(0);
-    
+    transition: transform 0.3s ease;
 }
 
 .preset-card:hover::before {
@@ -277,7 +287,7 @@
     position: absolute;
     bottom: calc(100% + 10px);
     left: 50%;
-    
+    transform: translateX(-50%);
     background: var(--background-main);
     border: 1px solid var(--primary-color);
     border-radius: 6px;
@@ -286,7 +296,7 @@
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
-    
+    transition: all 0.2s ease;
     width: 300px;
     pointer-events: none;
     max-height: 250px;
@@ -299,7 +309,7 @@
     position: absolute;
     top: 100%;
     left: 50%;
-    
+    transform: translateX(-50%);
     border: 6px solid transparent;
     border-top-color: var(--primary-color);
 }
@@ -309,7 +319,7 @@
     position: absolute;
     top: 100%;
     left: 50%;
-    
+    transform: translateX(-50%);
     border: 5px solid transparent;
     border-top-color: var(--background-main);
     z-index: 1;
@@ -414,6 +424,11 @@
     animation: spin 1s linear infinite;
 }
 
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 /* Enhanced button styling for save preset */
 .btn.btn-primary {
     background: var(--primary-color);
@@ -424,7 +439,7 @@
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -432,8 +447,12 @@
 
 .btn.btn-primary:hover {
     background: var(--primary-color-hover, #0056b3);
-    
+    transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn.btn-primary:active {
+    transform: translateY(0);
 }
 
 /* Toggle Switch - System Health Dashboard Theme */
@@ -458,7 +477,7 @@
     right: 0;
     bottom: 0;
     background: linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 100%);
-    
+    transition: all 0.3s ease;
     border-radius: 28px;
     border: 1px solid rgba(var(--primary-rgb), 0.1);
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -472,7 +491,7 @@
     left: 4px;
     bottom: 3px;
     background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
-    
+    transition: all 0.3s ease;
     border-radius: 50%;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
@@ -484,9 +503,13 @@ input:checked + .slider {
 }
 
 input:checked + .slider:before {
-    
+    transform: translateX(28px);
     background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.slider:hover {
+    transform: scale(1.05);
 }
 
 input:focus + .slider {
@@ -520,7 +543,7 @@ input:focus + .slider {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
@@ -536,7 +559,7 @@ input:focus + .slider {
     bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.05) 0%, transparent 50%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .plugin-card:hover::before {
@@ -545,7 +568,7 @@ input:focus + .slider {
 
 .plugin-card:hover {
     border-color: rgba(var(--primary-rgb), 0.3);
-    
+    transform: translateY(-5px);
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
 }
 
@@ -617,7 +640,7 @@ input:focus + .slider {
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, var(--text-secondary-alpha, rgba(255, 255, 255, 0.1)), transparent);
-    
+    transition: left 0.5s ease;
 }
 
 .source-badge:hover::before {
@@ -626,9 +649,9 @@ input:focus + .slider {
 
 .source-badge:hover {
     opacity: 0.9;
-    
+    transform: translateY(-1px);
     box-shadow: 0 4px 8px var(--shadow-color-hover, rgba(0, 0, 0, 0.2));
-    
+    transition: all 0.2s ease;
 }
 
 /* WinTool exclusive badge styling - vibrant primary color with premium effects */
@@ -646,18 +669,24 @@ input:focus + .slider {
     opacity: 1;
     position: relative;
     overflow: hidden;
-    
+    transform: scale(1.05);
     z-index: 2;
 }
 
 .source-badge[data-source="WinTool"]::before {
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    
+    animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    50% { left: -100%; }
+    100% { left: 100%; }
 }
 
 .source-badge[data-source="WinTool"]:hover {
     background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 110%, #fff) 0%, var(--primary-color) 100%);
-    
+    transform: scale(1.08) translateY(-2px);
     box-shadow:
         0 8px 16px color-mix(in srgb, var(--primary-color) 50%, transparent),
         0 0 0 2px color-mix(in srgb, var(--primary-color) 30%, transparent),
@@ -677,12 +706,21 @@ input:focus + .slider {
     border-radius: inherit;
     z-index: -1;
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .source-badge[data-source="WinTool"]:hover::after {
     opacity: 0.6;
-    
+    animation: glow-pulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow-pulse {
+    0% {
+        box-shadow: 0 0 8px color-mix(in srgb, var(--primary-color) 60%, transparent);
+    }
+    100% {
+        box-shadow: 0 0 25px color-mix(in srgb, var(--primary-color) 90%, transparent);
+    }
 }
 
 /* Other source badge styling - harmonized with primary color but muted */
@@ -712,7 +750,7 @@ input:focus + .slider {
 .source-badge[data-source="Optimizer"]:hover,
 .source-badge[data-source="W11Boost"]:hover {
     opacity: 0.9;
-    
+    transform: translateY(-1px);
 }
 
 /* WinTool Exclusive category filter button styling - uses primary color with fade */
@@ -733,7 +771,7 @@ input:focus + .slider {
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    
+    transition: left 0.5s ease;
 }
 
 .wintool-exclusive-filter:hover::before {
@@ -742,7 +780,7 @@ input:focus + .slider {
 
 .wintool-exclusive-filter:hover {
     background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 90%, #000) 0%, color-mix(in srgb, var(--primary-color) 60%, #000) 100%) !important;
-    
+    transform: translateY(-2px);
     box-shadow: 0 6px 12px color-mix(in srgb, var(--primary-color) 40%, transparent) !important;
 }
 
@@ -750,6 +788,7 @@ input:focus + .slider {
     background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 90%, #000) 0%, color-mix(in srgb, var(--primary-color) 60%, #000) 100%) !important;
     box-shadow: 0 4px 8px color-mix(in srgb, var(--primary-color) 30%, transparent) !important;
 }
+
 
 /* Search Input - System Health Dashboard Theme */
 .search-container {
@@ -767,7 +806,7 @@ input:focus + .slider {
     background: linear-gradient(135deg, var(--background-card) 0%, rgba(26, 26, 28, 0.8) 100%);
     color: var(--text-primary);
     font-size: 1rem;
-    
+    transition: all 0.3s ease;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     position: relative;
     z-index: 2;
@@ -782,19 +821,23 @@ input:focus + .slider {
     outline: none;
     border-color: rgba(var(--primary-rgb), 0.3);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-    
+    transform: translateY(-1px);
 }
 
 .search-icon {
     position: absolute;
     left: 16px;
     top: 50%;
-    
+    transform: translateY(-50%);
     color: var(--primary-color);
     font-size: 1.1rem;
     z-index: 3;
     filter: drop-shadow(0 2px 4px rgba(var(--primary-rgb), 0.3));
-    
+    transition: transform 0.3s ease;
+}
+
+.search-container:hover .search-icon {
+    transform: translateY(-50%) scale(1.1);
 }
 
 /* Header Controls - System Health Dashboard Theme */
@@ -821,7 +864,7 @@ input:focus + .slider {
     bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.05) 0%, transparent 50%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .tweaks-header-controls:hover::before {
@@ -853,7 +896,7 @@ input:focus + .slider {
     border: 1px solid rgba(var(--primary-rgb), 0.1);
     color: var(--text-primary);
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     border-radius: 10px;
     position: relative;
     overflow: hidden;
@@ -874,7 +917,7 @@ input:focus + .slider {
     bottom: 0;
     background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.1) 0%, rgba(var(--primary-rgb), 0.05) 100%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .tweak-actions .btn:hover::before,
@@ -887,7 +930,7 @@ input:focus + .slider {
 #import-tweaks-btn:hover,
 #export-tweaks-btn:hover {
     border-color: rgba(var(--primary-rgb), 0.3);
-    
+    transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
@@ -898,7 +941,13 @@ input:focus + .slider {
     position: relative;
     z-index: 2;
     filter: drop-shadow(0 2px 4px rgba(var(--primary-rgb), 0.3));
-    
+    transition: transform 0.3s ease;
+}
+
+.tweak-actions .btn:hover i,
+#import-tweaks-btn:hover i,
+#export-tweaks-btn:hover i {
+    transform: scale(1.1);
 }
 
 #tweaks-grid .plugin-section-header {
@@ -964,6 +1013,8 @@ input:focus + .slider {
     border-left: 4px solid #8b4513;
 }
 
+
+
 /* Gaming & Media - Pink theme */
 .plugin-section-header:has-text("🎮 Gaming & Media") {
     color: #e83e8c;
@@ -981,6 +1032,8 @@ input:focus + .slider {
     padding: 15px 20px;
     border-left: 4px solid #17a2b8;
 }
+
+
 
 /* Category Filter Buttons - System Health Dashboard Theme */
 .category-filters {
@@ -1006,7 +1059,7 @@ input:focus + .slider {
     bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.05) 0%, transparent 50%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .category-filters:hover::before {
@@ -1025,7 +1078,7 @@ input:focus + .slider {
     font-size: 1rem;
     font-weight: 500;
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     white-space: nowrap;
     position: relative;
     overflow: hidden;
@@ -1042,7 +1095,7 @@ input:focus + .slider {
     bottom: 0;
     background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.1) 0%, rgba(var(--primary-rgb), 0.05) 100%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .category-filter-btn:hover::before {
@@ -1051,7 +1104,7 @@ input:focus + .slider {
 
 .category-filter-btn:hover {
     border-color: rgba(var(--primary-rgb), 0.3);
-    
+    transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
@@ -1143,7 +1196,13 @@ input:focus + .slider {
     top: 8px;
     right: 8px;
     font-size: 1.2em;
-    
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
 }
 
 /* Preset Preview Modal - System Health Dashboard Theme */
@@ -1157,7 +1216,7 @@ input:focus + .slider {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(8px);
-    
+    animation: fadeIn 0.3s ease;
 }
 
 .preset-modal.show {
@@ -1175,7 +1234,7 @@ input:focus + .slider {
     max-width: 800px;
     max-height: 90vh;
     overflow: hidden;
-    
+    animation: slideIn 0.3s ease;
     position: relative;
     opacity: 1 !important;
 }
@@ -1226,7 +1285,7 @@ input:focus + .slider {
     align-items: center;
     justify-content: center;
     border-radius: 10px;
-    
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -1241,7 +1300,7 @@ input:focus + .slider {
     bottom: 0;
     background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.1) 0%, rgba(var(--primary-rgb), 0.05) 100%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .preset-modal-close:hover::before {
@@ -1251,7 +1310,7 @@ input:focus + .slider {
 .preset-modal-close:hover {
     border-color: rgba(var(--primary-rgb), 0.3);
     color: var(--primary-color);
-    
+    transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
@@ -1295,7 +1354,7 @@ input:focus + .slider {
     bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.05) 0%, transparent 50%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .preset-modal-stats:hover::before {
@@ -1342,7 +1401,7 @@ input:focus + .slider {
     border: 1px solid rgba(var(--primary-rgb), 0.1);
     border-radius: 10px;
     padding: 16px;
-    
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -1357,7 +1416,7 @@ input:focus + .slider {
     bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.05) 0%, transparent 50%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .preset-tweak-item:hover::before {
@@ -1366,7 +1425,7 @@ input:focus + .slider {
 
 .preset-tweak-item:hover {
     border-color: rgba(var(--primary-rgb), 0.3);
-    
+    transform: translateY(-3px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
@@ -1426,7 +1485,7 @@ input:focus + .slider {
     border-radius: 10px;
     font-weight: 500;
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1444,7 +1503,7 @@ input:focus + .slider {
     bottom: 0;
     background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.1) 0%, rgba(var(--primary-rgb), 0.05) 100%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .preset-modal-footer .btn:hover::before {
@@ -1459,7 +1518,7 @@ input:focus + .slider {
 
 .preset-modal-footer .btn.btn-secondary:hover {
     border-color: rgba(var(--primary-rgb), 0.3);
-    
+    transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
@@ -1475,7 +1534,7 @@ input:focus + .slider {
 
 .preset-modal-footer .btn.btn-primary:hover {
     background: var(--primary-color);
-    
+    transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(var(--primary-rgb), 0.4);
 }
 
@@ -1483,6 +1542,22 @@ input:focus + .slider {
     position: relative;
     z-index: 2;
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 /* Invalid/Missing Tweak Items */

@@ -6,7 +6,7 @@
 #export-health-btn:hover {
     color: var(--primary-color);
     border-color: rgba(var(--primary-rgb), 0.3);
-    
+    transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
@@ -17,7 +17,13 @@
     position: relative;
     z-index: 2;
     filter: drop-shadow(0 2px 4px rgba(var(--primary-rgb), 0.3));
-    
+    transition: transform 0.3s ease;
+}
+
+.action-btn:hover i,
+#refresh-health-btn:hover i,
+#export-health-btn:hover i {
+    transform: scale(1.1);
 }
 
 .health-dashboard {
@@ -39,7 +45,7 @@
     display: flex;
     align-items: center;
     gap: 15px;
-    
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
@@ -54,7 +60,7 @@
     bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.05) 0%, transparent 50%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .health-status-card:hover::before {
@@ -63,7 +69,7 @@
 
 .health-status-card:hover {
     border-color: rgba(var(--primary-rgb), 0.3);
-    
+    transform: translateY(-5px);
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
 }
 
@@ -73,7 +79,11 @@
     position: relative;
     z-index: 2;
     filter: drop-shadow(0 4px 8px rgba(var(--primary-rgb), 0.3));
-    
+    transition: transform 0.3s ease;
+}
+
+.health-status-card:hover .status-icon {
+    transform: scale(1.1) rotate(5deg);
 }
 
 .status-icon.warning {
@@ -116,7 +126,7 @@
     border: 1px solid rgba(var(--primary-rgb), 0.1);
     border-radius: 16px;
     padding: 24px 20px;
-    
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
@@ -132,7 +142,7 @@
     bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.05) 0%, transparent 50%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .metric-card:hover::before {
@@ -141,7 +151,7 @@
 
 .metric-card:hover {
     border-color: rgba(var(--primary-rgb), 0.3);
-    
+    transform: translateY(-5px);
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
 }
 
@@ -169,7 +179,11 @@
     color: var(--primary-color);
     font-size: 24px;
     filter: drop-shadow(0 4px 8px rgba(var(--primary-rgb), 0.3));
-    
+    transition: transform 0.3s ease;
+}
+
+.metric-card:hover .metric-header h4 i {
+    transform: scale(1.1) rotate(5deg);
 }
 
 .metric-status {
@@ -260,6 +274,8 @@
     font-weight: 600;
 }
 
+
+
 /* Charts Section */
 .charts-section {
     display: grid;
@@ -273,7 +289,7 @@
     border: 1px solid rgba(var(--primary-rgb), 0.1);
     border-radius: 16px;
     padding: 25px;
-    
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
@@ -288,7 +304,7 @@
     bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.05) 0%, transparent 50%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .chart-container:hover::before {
@@ -297,7 +313,7 @@
 
 .chart-container:hover {
     border-color: rgba(var(--primary-rgb), 0.3);
-    
+    transform: translateY(-5px);
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
 }
 
@@ -324,7 +340,7 @@
     border-radius: 16px;
     padding: 25px;
     margin-bottom: 40px;
-    
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
@@ -339,7 +355,7 @@
     bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.05) 0%, transparent 50%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .alerts-section:hover::before {
@@ -348,7 +364,7 @@
 
 .alerts-section:hover {
     border-color: rgba(var(--primary-rgb), 0.3);
-    
+    transform: translateY(-5px);
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
 }
 
@@ -389,7 +405,7 @@
     padding: 10px 12px;
     color: var(--text-primary);
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     font-size: 12px;
     position: relative;
     overflow: hidden;
@@ -405,7 +421,7 @@
     bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.1) 0%, transparent 50%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .alert-control-btn:hover::before {
@@ -416,14 +432,18 @@
     background: var(--primary-color);
     color: white;
     border-color: rgba(var(--primary-rgb), 0.3);
-    
+    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
 }
 
 .alert-control-btn i {
     position: relative;
     z-index: 2;
-    
+    transition: transform 0.3s ease;
+}
+
+.alert-control-btn:hover i {
+    transform: scale(1.1);
 }
 
 #alerts-container {
@@ -456,8 +476,12 @@
     padding: 15px;
     border-radius: 8px;
     border-left: 4px solid;
-    
+    transition: all 0.2s ease;
     position: relative;
+}
+
+.alert-item:hover {
+    transform: translateX(2px);
 }
 
 .alert-item.info {
@@ -527,7 +551,7 @@
     font-size: 16px;
     padding: 4px;
     border-radius: 4px;
-    
+    transition: all 0.2s ease;
 }
 
 .alert-dismiss:hover {
@@ -610,7 +634,7 @@
     cursor: pointer;
     padding: 8px 12px;
     border-radius: 8px;
-    
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -626,7 +650,7 @@
     bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.1) 0%, transparent 50%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .modal-close:hover::before {
@@ -637,7 +661,7 @@
     background: var(--primary-color);
     color: white;
     border-color: rgba(var(--primary-rgb), 0.3);
-    
+    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
 }
 
@@ -720,7 +744,7 @@
     padding: 10px 14px;
     color: var(--text-primary);
     font-size: 14px;
-    
+    transition: all 0.3s ease;
     position: relative;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -729,7 +753,7 @@
     outline: none;
     border-color: rgba(var(--primary-rgb), 0.3);
     box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1), 0 4px 12px rgba(0, 0, 0, 0.2);
-    
+    transform: translateY(-1px);
 }
 
 .preference-group {
@@ -745,12 +769,12 @@
     border: 1px solid rgba(var(--primary-rgb), 0.05);
     border-radius: 10px;
     padding: 15px;
-    
+    transition: all 0.3s ease;
 }
 
 .preference-item:hover {
     border-color: rgba(var(--primary-rgb), 0.1);
-    
+    transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -770,7 +794,11 @@
     height: 18px;
     accent-color: var(--primary-color);
     cursor: pointer;
-    
+    transition: all 0.3s ease;
+}
+
+.preference-item input[type="checkbox"]:hover {
+    transform: scale(1.1);
 }
 
 .preference-item select {
@@ -781,7 +809,7 @@
     color: var(--text-primary);
     font-size: 14px;
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     min-width: 200px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -790,12 +818,12 @@
     outline: none;
     border-color: rgba(var(--primary-rgb), 0.3);
     box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1), 0 4px 12px rgba(0, 0, 0, 0.2);
-    
+    transform: translateY(-1px);
 }
 
 .preference-item select:hover {
     border-color: rgba(var(--primary-rgb), 0.2);
-    
+    transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
@@ -829,7 +857,7 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
@@ -845,7 +873,7 @@
     bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .btn-primary:hover::before {
@@ -854,7 +882,7 @@
 
 .btn-primary:hover {
     background: var(--primary-hover, #2563eb);
-    
+    transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(var(--primary-rgb), 0.4);
 }
 
@@ -867,7 +895,7 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -883,7 +911,7 @@
     bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.05) 0%, transparent 50%);
     opacity: 0;
-    
+    transition: opacity 0.3s ease;
 }
 
 .btn-secondary:hover::before {
@@ -894,7 +922,7 @@
     background: var(--border-color);
     color: var(--text-primary);
     border-color: rgba(var(--primary-rgb), 0.3);
-    
+    transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
@@ -914,7 +942,7 @@
     color: var(--text-primary);
     font-size: 14px;
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -922,12 +950,12 @@
     outline: none;
     border-color: rgba(var(--primary-rgb), 0.3);
     box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1), 0 4px 12px rgba(0, 0, 0, 0.2);
-    
+    transform: translateY(-1px);
 }
 
 .history-filters select:hover {
     border-color: rgba(var(--primary-rgb), 0.2);
-    
+    transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
@@ -952,7 +980,7 @@
     gap: 12px;
     padding: 12px;
     border-bottom: 1px solid var(--border-color);
-    
+    transition: all 0.2s ease;
 }
 
 .history-item:hover {

@@ -90,7 +90,7 @@
     position: absolute;
     right: 15px;
     top: 50%;
-    
+    transform: translateY(-50%);
     color: var(--text-secondary);
     font-size: 16px;
 }
@@ -118,7 +118,7 @@
 .filter-btn:hover {
     background: var(--hover-color);
     border-color: var(--primary-color);
-    
+    transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.2);
 }
 
@@ -179,7 +179,7 @@
 .action-btn:hover:not(:disabled) {
     background: var(--hover-color);
     border-color: var(--primary-color);
-    
+    transform: translateY(-1px);
 }
 
 .uninstall-btn {
@@ -205,10 +205,14 @@
     color: #ffffff;
 }
 
+
+
 /* Enhanced button effects */
 .action-btn:hover:not(:disabled) {
     box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.2);
 }
+
+
 
 .uninstall-btn:hover:not(:disabled) {
     box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
@@ -402,14 +406,14 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    
+    transition: all 0.2s ease;
     cursor: help;
     min-width: 80px;
     justify-content: center;
 }
 
 .package-type-badge:hover {
-    
+    transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
@@ -437,10 +441,14 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    
+    transition: all 0.2s ease;
     cursor: help;
     min-width: 70px;
     justify-content: center;
+}
+
+.safety-indicator:hover {
+    transform: scale(1.05);
 }
 
 .safety-indicator.safe {
@@ -537,7 +545,7 @@
     position: absolute;
     bottom: 100%;
     left: 50%;
-    
+    transform: translateX(-50%);
     background: var(--background-dark);
     color: var(--text-primary);
     padding: 8px 12px;
@@ -620,6 +628,12 @@
     opacity: 0.8;
 }
 
+/* Icon hover effects */
+.appx-package-name i:hover {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+}
+
 .appx-package-actions {
     display: flex;
     gap: 5px;
@@ -631,7 +645,7 @@
     border-radius: 4px;
     font-size: 12px;
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: 4px;
@@ -644,6 +658,8 @@
     border-color: var(--primary-color);
     color: var(--text-primary);
 }
+
+
 
 .appx-uninstall-package-btn {
     background: var(--background-card);
@@ -666,7 +682,7 @@
 .appx-details-btn:hover {
     background: var(--primary-hover);
     border-color: var(--primary-hover);
-    
+    transform: translateY(-1px);
 }
 
 /* Loading and Status */
@@ -724,6 +740,8 @@
     z-index: 10000;
 
 }
+
+
 
 .progress-modal-content {
     background: var(--background-card);
@@ -809,14 +827,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    
+    transition: all 0.2s ease;
     font-size: 14px;
 }
 
 .modal-action-btn:hover {
     background: var(--hover-color);
     color: var(--text-primary);
-    
+    transform: scale(1.05);
 }
 
 .modal-action-btn.cancel-btn:hover {
@@ -828,6 +846,8 @@
     background: rgba(220, 53, 69, 0.1);
     color: #dc3545;
 }
+
+
 
 /* Progress Body */
 .progress-body {
@@ -891,7 +911,7 @@
     height: 100%;
     background: linear-gradient(90deg, var(--primary-color), rgba(var(--primary-rgb), 0.8));
     border-radius: 16px;
-    
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     width: 0%;
     position: relative;
     overflow: hidden;
@@ -913,8 +933,10 @@
     right: 0;
     bottom: 0;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    
+    animation: shimmer 2.5s infinite;
 }
+
+
 
 .progress-text {
     color: var(--text-primary);
@@ -932,7 +954,7 @@
     height: 8px;
     background: var(--primary-color);
     border-radius: 50%;
-    
+    animation: pulse 1.5s infinite;
 }
 
 /* Current Package Section */
@@ -1009,23 +1031,23 @@
     letter-spacing: 0.5px;
     background: var(--primary-color);
     color: #ffffff;
-    
+    animation: pulse 2s infinite;
 }
 
 .status-badge.success {
     background: #28a745;
-    
+    animation: none;
 }
 
 .status-badge.error {
     background: #dc3545;
-    
+    animation: none;
 }
 
 .status-badge.warning {
     background: #ffc107;
     color: #000;
-    
+    animation: none;
 }
 
 /* Output Section */
@@ -1075,7 +1097,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    
+    transition: all 0.2s ease;
     font-size: 12px;
 }
 
@@ -1145,7 +1167,7 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     border: 1px solid transparent;
     display: flex;
     align-items: center;
@@ -1155,8 +1177,12 @@
 }
 
 .progress-actions .btn:hover {
-    
+    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.progress-actions .btn:active {
+    transform: translateY(0);
 }
 
 .btn-primary {
@@ -1208,7 +1234,7 @@
 
 .progress-modal.error .progress-icon {
     background: linear-gradient(135deg, #dc3545, #c82333);
-    
+    animation: shake 0.5s ease-in-out;
 }
 
 .progress-modal.error .progress-bar {
@@ -1217,12 +1243,14 @@
 
 .progress-modal.success .progress-icon {
     background: linear-gradient(135deg, #28a745, #218838);
-    
+    animation: bounce 0.6s ease-in-out;
 }
 
 .progress-modal.success .progress-bar {
     background: linear-gradient(90deg, #28a745, rgba(40, 167, 69, 0.8));
 }
+
+
 
 /* Responsive Design */
 @media (max-width: 768px) {
@@ -1266,7 +1294,7 @@
     border-radius: 6px;
     font-size: 14px;
     cursor: pointer;
-    
+    transition: all 0.3s ease;
     background: var(--background-card);
     color: var(--text-primary);
 }
@@ -1274,7 +1302,7 @@
 .btn:hover {
     background: var(--hover-color);
     border-color: var(--primary-color);
-    
+    transform: translateY(-1px);
 }
 
 .btn-secondary {
@@ -1337,7 +1365,7 @@
     cursor: pointer;
     padding: 5px;
     border-radius: 4px;
-    
+    transition: all 0.3s ease;
 }
 
 .close-btn:hover {
