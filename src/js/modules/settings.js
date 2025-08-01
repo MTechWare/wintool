@@ -126,16 +126,7 @@ async function loadCurrentSettings() {
                 clearPluginCacheCheckbox.checked = clearPluginCache;
             }
 
-            const disableAnimations = await window.electronAPI.getSetting(
-                'disableAnimations',
-                true
-            );
-            const disableAnimationsCheckbox = document.getElementById(
-                'disable-animations-checkbox'
-            );
-            if (disableAnimationsCheckbox) {
-                disableAnimationsCheckbox.checked = disableAnimations;
-            }
+
 
             const topMost = await window.electronAPI.getSetting('topMost', false);
             const topMostCheckbox = document.getElementById('top-most-checkbox');
@@ -281,9 +272,7 @@ export async function saveSettings() {
                 document.getElementById('clear-plugin-cache')?.checked || false;
             await window.electronAPI.setSetting('clearPluginCache', clearPluginCache);
 
-            const disableAnimations =
-                document.getElementById('disable-animations-checkbox')?.checked || false;
-            await window.electronAPI.setSetting('disableAnimations', disableAnimations);
+
 
             const topMost = document.getElementById('top-most-checkbox')?.checked || false;
             await window.electronAPI.setSetting('topMost', topMost);
@@ -488,7 +477,6 @@ export async function loadAndApplyStartupSettings() {
 
             const loadedHiddenTabs = await window.electronAPI.getSetting('hiddenTabs', []);
             setHiddenTabs(loadedHiddenTabs);
-            await applyAnimationSetting();
             console.log('Startup settings loaded and applied');
         }
     } catch (error) {
@@ -551,7 +539,6 @@ export async function restoreLastActiveTab() {
 }
 
 function applySettings() {
-    applyAnimationSetting();
     const rainbowMode = document.getElementById('rainbow-mode-checkbox')?.checked || false;
     if (rainbowMode) {
         const rainbowSpeed = document.getElementById('rainbow-speed-slider')?.value || 5;
@@ -569,98 +556,13 @@ function applySettings() {
     }
 }
 
-export async function applyAnimationSetting() {
-    const disableAnimations = await window.electronAPI.getSetting('disableAnimations', true);
-    if (disableAnimations) {
-        document.body.classList.add('no-animations');
-    } else {
-        document.body.classList.remove('no-animations');
-    }
 
-    // Update the performance toggle button appearance
-    updatePerformanceToggleButton(disableAnimations);
-}
 
-export async function togglePerformanceMode() {
-    const currentSetting = await window.electronAPI.getSetting('disableAnimations', true);
-    const newSetting = !currentSetting;
 
-    // Save the new setting
-    await window.electronAPI.setSetting('disableAnimations', newSetting);
 
-    // Apply the setting immediately
-    if (newSetting) {
-        document.body.classList.add('no-animations');
-    } else {
-        document.body.classList.remove('no-animations');
-    }
 
-    // Update the checkbox in settings if it exists
-    const checkbox = document.getElementById('disable-animations-checkbox');
-    if (checkbox) {
-        checkbox.checked = newSetting;
-    }
 
-    // Update the toggle button appearance
-    updatePerformanceToggleButton(newSetting);
 
-    // Show a brief notification
-    showPerformanceNotification(newSetting);
-}
-
-function updatePerformanceToggleButton(isEnabled) {
-    const button = document.getElementById('performance-toggle-btn');
-    if (button) {
-        const icon = button.querySelector('i');
-        const span = button.querySelector('span');
-
-        if (isEnabled) {
-            button.style.borderColor = 'var(--primary-color)';
-            button.style.background = 'rgba(var(--primary-rgb), 0.1)';
-            icon.className = 'fas fa-rocket';
-            span.textContent = 'Performance ✓';
-            button.title = 'Performance Mode Active - Click to disable';
-        } else {
-            button.style.borderColor = '';
-            button.style.background = '';
-            icon.className = 'fas fa-rocket';
-            span.textContent = 'Performance';
-            button.title = 'Toggle Performance Mode (Disable Animations)';
-        }
-    }
-}
-
-function showPerformanceNotification(isEnabled) {
-    // Create a simple notification
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 80px;
-        right: 20px;
-        background: var(--card-bg);
-        border: 1px solid var(--primary-color);
-        border-radius: 8px;
-        padding: 12px 16px;
-        color: var(--text-primary);
-        font-size: 14px;
-        z-index: 10000;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    `;
-
-    notification.innerHTML = `
-        <i class="fas fa-rocket" style="margin-right: 8px; color: var(--primary-color);"></i>
-        Performance Mode ${isEnabled ? 'Enabled' : 'Disabled'}
-    `;
-
-    document.body.appendChild(notification);
-
-    // Remove notification after 2 seconds
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
-        }
-    }, 2000);
-}
 
 // Helper function to reset performance customization flag (can be called from console)
 window.resetPerformanceCustomization = async function () {
@@ -735,16 +637,12 @@ async function savePerformanceSettings() {
                 document.getElementById('enable-discord-rpc')?.checked !== false; // Default to true
             const enableLazyLoading =
                 document.getElementById('enable-lazy-loading')?.checked !== false; // Default to true
-            const disableAnimations =
-                document.getElementById('disable-animations-checkbox')?.checked || false;
-
             // Check if current settings match any predefined performance mode
             const detectedMode = detectPerformanceModeFromSettings(
                 fastSystemInfo,
                 cacheSystemInfo,
                 enableDiscordRpc,
-                enableLazyLoading,
-                disableAnimations
+                enableLazyLoading
             );
 
             console.log('=== PERFORMANCE MODE SAVE DEBUG ===');
@@ -894,9 +792,6 @@ async function checkForCustomSettings(selectedMode) {
             document.getElementById('enable-discord-rpc')?.checked ?? true;
         const currentEnableLazyLoading =
             document.getElementById('enable-lazy-loading')?.checked ?? true;
-        const currentDisableAnimations =
-            document.getElementById('disable-animations-checkbox')?.checked ?? true;
-
         // Get expected settings for the selected mode
         const expectedSettings = getExpectedSettingsForMode(selectedMode);
 
@@ -905,8 +800,7 @@ async function checkForCustomSettings(selectedMode) {
             currentFastSystemInfo !== expectedSettings.fastSystemInfo ||
             currentCacheSystemInfo !== expectedSettings.cacheSystemInfo ||
             currentEnableDiscordRpc !== expectedSettings.enableDiscordRpc ||
-            currentEnableLazyLoading !== expectedSettings.enableLazyLoading ||
-            currentDisableAnimations !== expectedSettings.disableAnimations
+            currentEnableLazyLoading !== expectedSettings.enableLazyLoading
         );
     } catch (error) {
         console.error('Error checking for custom settings:', error);
@@ -923,7 +817,6 @@ function getExpectedSettingsForMode(mode) {
                 cacheSystemInfo: true,
                 enableDiscordRpc: false,
                 enableLazyLoading: true,
-                disableAnimations: true,
             };
         case 'balanced':
             return {
@@ -931,7 +824,6 @@ function getExpectedSettingsForMode(mode) {
                 cacheSystemInfo: true,
                 enableDiscordRpc: true,
                 enableLazyLoading: true,
-                disableAnimations: true,
             };
         case 'high-end':
             return {
@@ -939,7 +831,6 @@ function getExpectedSettingsForMode(mode) {
                 cacheSystemInfo: false,
                 enableDiscordRpc: true,
                 enableLazyLoading: false,
-                disableAnimations: true,
             };
         default:
             return {
@@ -947,7 +838,6 @@ function getExpectedSettingsForMode(mode) {
                 cacheSystemInfo: false,
                 enableDiscordRpc: false,
                 enableLazyLoading: false,
-                disableAnimations: false,
             };
     }
 }
@@ -968,9 +858,7 @@ function applyPerformanceModeSettings(mode) {
     if (document.getElementById('enable-lazy-loading')) {
         document.getElementById('enable-lazy-loading').checked = settings.enableLazyLoading;
     }
-    if (document.getElementById('disable-animations-checkbox')) {
-        document.getElementById('disable-animations-checkbox').checked = settings.disableAnimations;
-    }
+
 }
 
 // Helper function to detect performance mode from current settings
@@ -978,16 +866,14 @@ function detectPerformanceModeFromSettings(
     fastSystemInfo,
     cacheSystemInfo,
     enableDiscordRpc,
-    enableLazyLoading,
-    disableAnimations
+    enableLazyLoading
 ) {
     // Low-end mode characteristics
     if (
         fastSystemInfo &&
         cacheSystemInfo &&
         !enableDiscordRpc &&
-        enableLazyLoading &&
-        disableAnimations
+        enableLazyLoading
     ) {
         return 'low-end';
     }
@@ -997,8 +883,7 @@ function detectPerformanceModeFromSettings(
         fastSystemInfo &&
         cacheSystemInfo &&
         enableDiscordRpc &&
-        enableLazyLoading &&
-        disableAnimations
+        enableLazyLoading
     ) {
         return 'balanced';
     }
@@ -1008,8 +893,7 @@ function detectPerformanceModeFromSettings(
         !fastSystemInfo &&
         !cacheSystemInfo &&
         enableDiscordRpc &&
-        !enableLazyLoading &&
-        disableAnimations
+        !enableLazyLoading
     ) {
         return 'high-end';
     }

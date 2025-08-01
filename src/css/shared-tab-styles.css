@@ -1,4 +1,4 @@
-/* Shared Tab Styles */
+﻿/* Shared Tab Styles */
 
 /* Tab Header */
 .tab-header {
@@ -44,7 +44,7 @@
     border: 1px solid rgba(var(--primary-rgb), 0.1);
     color: var(--text-primary);
     cursor: pointer;
-    transition: all 0.3s ease;
+    
     border-radius: 10px;
     position: relative;
     overflow: hidden;
@@ -60,7 +60,7 @@
     bottom: 0;
     background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.1) 0%, rgba(var(--primary-rgb), 0.05) 100%);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    
 }
 
 .action-btn:hover::before {
@@ -69,7 +69,7 @@
 
 .action-btn:hover {
     border-color: rgba(var(--primary-rgb), 0.3);
-    transform: translateY(-2px);
+    
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
@@ -78,11 +78,7 @@
     position: relative;
     z-index: 2;
     filter: drop-shadow(0 2px 4px rgba(var(--primary-rgb), 0.3));
-    transition: transform 0.3s ease;
-}
-
-.action-btn:hover i {
-    transform: scale(1.1);
+    
 }
 
 /* Card Styles - System Health Dashboard Theme */
@@ -95,19 +91,17 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    transition: all 0.3s ease;
+    
     position: relative;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     min-height: 200px;
 }
 
-
-
 .plugin-card:hover,
 .feature-card:hover {
     border-color: rgba(var(--primary-rgb), 0.3);
-    transform: translateY(-5px);
+    
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
@@ -140,7 +134,7 @@
     border: 1px solid rgba(var(--primary-rgb), 0.1);
     color: var(--text-primary);
     cursor: pointer;
-    transition: all 0.3s ease;
+    
     border-radius: 10px;
     position: relative;
     overflow: hidden;
@@ -159,7 +153,7 @@
     bottom: 0;
     background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.1) 0%, rgba(var(--primary-rgb), 0.05) 100%);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    
 }
 
 .btn:hover::before {
@@ -168,7 +162,7 @@
 
 .btn:hover {
     border-color: rgba(var(--primary-rgb), 0.3);
-    transform: translateY(-2px);
+    
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
@@ -177,11 +171,7 @@
     position: relative;
     z-index: 2;
     filter: drop-shadow(0 2px 4px rgba(var(--primary-rgb), 0.3));
-    transition: transform 0.3s ease;
-}
-
-.btn:hover i {
-    transform: scale(1.1);
+    
 }
 
 .btn-primary {
@@ -222,7 +212,7 @@
     background: linear-gradient(135deg, var(--background-card) 0%, rgba(26, 26, 28, 0.8) 100%);
     color: var(--text-primary);
     font-size: 1rem;
-    transition: all 0.3s ease;
+    
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     position: relative;
     z-index: 2;
@@ -237,23 +227,19 @@
     outline: none;
     border-color: rgba(var(--primary-rgb), 0.3);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-    transform: translateY(-1px);
+    
 }
 
 .search-icon {
     position: absolute;
     left: 16px;
     top: 50%;
-    transform: translateY(-50%);
+    
     color: var(--primary-color);
     font-size: 1.1rem;
     z-index: 3;
     filter: drop-shadow(0 2px 4px rgba(var(--primary-rgb), 0.3));
-    transition: transform 0.3s ease;
-}
-
-.search-container:hover .search-icon {
-    transform: translateY(-50%) scale(1.1);
+    
 }
 
 /* Modal Styles - System Health Dashboard Theme */
@@ -318,7 +304,7 @@
     cursor: pointer;
     padding: 8px;
     border-radius: 8px;
-    transition: all 0.3s ease;
+    
     position: relative;
     z-index: 2;
 }
@@ -326,7 +312,7 @@
 .modal-close:hover {
     color: var(--primary-color);
     background: rgba(var(--primary-rgb), 0.1);
-    transform: scale(1.1);
+    
 }
 
 .modal-body {
@@ -364,6 +350,12 @@
     color: var(--primary-color);
     margin-bottom: 1rem;
     filter: drop-shadow(0 4px 8px rgba(var(--primary-rgb), 0.3));
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 /* Grid Layouts */
@@ -382,7 +374,7 @@
     align-items: center;
     padding: 8px 0;
     border-bottom: 1px solid rgba(var(--primary-rgb), 0.1);
-    transition: all 0.2s ease;
+    
 }
 
 .info-row:last-child {

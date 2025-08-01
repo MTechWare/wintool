@@ -603,10 +603,6 @@ export async function refreshSystemInformation() {
         refreshIndicator.className = 'global-refresh-indicator';
         refreshIndicator.innerHTML =
             '<i class="fas fa-sync-alt fa-spin"></i> Refreshing System Information...';
-        const animationStyle = document.body.classList.contains('no-animations')
-            ? ''
-            : 'animation: slideDown 0.3s ease-out;';
-
         refreshIndicator.style.cssText = `
             position: fixed;
             top: 20px;
@@ -619,24 +615,7 @@ export async function refreshSystemInformation() {
             font-size: 14px;
             z-index: 10000;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            ${animationStyle}
         `;
-
-        // Only add animations if not in no-animations mode
-        if (
-            !document.body.classList.contains('no-animations') &&
-            !document.querySelector('#refresh-animations')
-        ) {
-            const style = document.createElement('style');
-            style.id = 'refresh-animations';
-            style.textContent = `
-                @keyframes slideDown {
-                    from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
-                    to { transform: translateX(-50%) translateY(0); opacity: 1; }
-                }
-            `;
-            document.head.appendChild(style);
-        }
 
         document.body.appendChild(refreshIndicator);
 

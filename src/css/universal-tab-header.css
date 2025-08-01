@@ -1,4 +1,4 @@
-/* Universal Tab Header CSS */
+﻿/* Universal Tab Header CSS */
 
 /* CSS Variables */
 .tab-header {
@@ -67,7 +67,7 @@
     border: 1px solid var(--border-color, var(--fallback-border));
     color: var(--text-primary, var(--fallback-text-primary));
     cursor: pointer;
-    transition: all 0.3s ease;
+    
     border-radius: 10px;
     display: flex;
     align-items: center;
@@ -104,7 +104,7 @@
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08);
     backdrop-filter: blur(8px);
-    transition: all 0.3s ease;
+    
 }
 
 .plugin-warning::before {
@@ -116,7 +116,7 @@
     bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.06) 0%, transparent 60%);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    
 }
 
 .plugin-warning:hover::before {
@@ -124,7 +124,7 @@
 }
 
 .plugin-warning:hover {
-    transform: translateY(-1px);
+    
     box-shadow: 0 6px 20px rgba(245, 158, 11, 0.12);
     border-color: rgba(245, 158, 11, 0.3);
 }

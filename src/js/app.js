@@ -43,8 +43,7 @@ import {
     applyHiddenTabs,
     restoreLastActiveTab,
     showSettings,
-    applyAnimationSetting,
-    togglePerformanceMode,
+
     generateThemePresets,
     selectThemePreset,
     updateActiveThemePreset,
@@ -245,8 +244,7 @@ window.saveCustomTheme = saveCustomTheme;
 window.importTheme = importTheme;
 window.exportTheme = exportTheme;
 window.resetCustomTheme = resetCustomTheme;
-window.applyAnimationSetting = applyAnimationSetting;
-window.togglePerformanceMode = togglePerformanceMode;
+
 window.showFpsCounter = showFpsCounter;
 window.hideFpsCounter = hideFpsCounter;
 window.generateThemePresets = generateThemePresets;
