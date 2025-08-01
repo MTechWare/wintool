@@ -18,42 +18,10 @@ WinTool is a powerful and intuitive application for Windows system management, d
 
 ## 🆕 What's New
 
-# Version: v0.2.9wb
+# Version: v0.3.0wb
 
-> **A complete visual transformation with enhanced appearance plus ultra-fast service management.**
+> **Removed Animations.**
 
----
-
-## :gear: **Enhanced Tweaks System**
-**Advanced import/export functionality with intelligent preview/review system**
-
-### **Smart Import Modal**
-• **Preview Before Apply** — Detailed modal showing tweak breakdown with safety analysis
-• **Batch Processing** — Sequential application with throttling to prevent system conflicts
-
-### **Smart Export Modal**
-• **Preview Before Export** — Detailed modal showing all applied tweaks before saving
-• **Safety Analysis** — Color-coded safety level assessment for export collections
-• **Visual Tweak Review** — Grid display of all tweaks to be exported with descriptions
-
----
-
-## :zap: **Ultra-Fast Service Management**
-**Revolutionary performance improvements for Windows service operations**
-
-### **Enhanced Service Control**
-• **Multi-Tier Privilege Escalation** — Smart privilege escalation for services requiring admin rights
-• **Comprehensive Error Handling** — Clear feedback for access denied, disabled services, and privilege issues
-• **Robust Fallback System** — Multiple methods ensure maximum success rate for service operations
-
-### **Modern Table Design**
-• **Environment Variables Style** — Services table now matches the polished Environment Variables design
-• **Enhanced Status Badges** — Improved visual status indicators with consistent color theming
-• **Better Typography** — System fonts with drop shadows and improved readability
-• **Responsive Design** — Optimized for all screen sizes with better column management
-• **Visual Hierarchy** — Clear section headers with icons and badge-style counters
-
----
 
 ## 📋 Table of Contents
 
