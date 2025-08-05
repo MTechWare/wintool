@@ -107,8 +107,7 @@ export const DEFAULT_TAB_ORDER = [
     'system-health', // 2. Check system health status
     'tweaks', // 3. Apply system optimizations
     'cleanup', // 4. Clean up system files
-    'processes', // 5. Monitor running processes
-    'services', // 6. Manage system services
+    'services', // 5. Manage system services
     'packages', // 7. Install/manage software
     'appx-packages', // 8. Manage Windows Store apps
     'networking', // 9. Network configuration/monitoring

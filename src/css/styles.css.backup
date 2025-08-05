@@ -1,4 +1,4 @@
-﻿/* WinTool Styles */
+/* WinTool Styles */
 
 /* Fonts */
 @font-face {
@@ -138,6 +138,8 @@
     color: #3b82f6 !important;
 }
 
+
+
 /* Global Reset */
 * {
     margin: 0;
@@ -155,6 +157,7 @@
     display: none;
 }
 
+
 html, body {
     height: 100vh;
     overflow: hidden;
@@ -162,6 +165,7 @@ html, body {
     background: var(--background-dark);
     color: var(--text-primary);
 }
+
 
 .splash-screen {
     position: fixed;
@@ -483,7 +487,7 @@ html, body {
     position: absolute;
     right: 14px;
     top: 50%;
-    
+    transform: translateY(-50%);
     color: var(--text-secondary);
     font-size: 14px;
     pointer-events: none;
@@ -572,7 +576,7 @@ html, body {
     position: absolute;
     left: -12px;
     top: 50%;
-    
+    transform: translateY(-50%);
     width: 4px;
     height: 60%;
     background: var(--primary-color);
@@ -909,6 +913,8 @@ html, body {
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
+
+
 /* Features Section */
 .features-section {
     margin-bottom: 50px;
@@ -928,7 +934,7 @@ html, body {
     position: absolute;
     bottom: -10px;
     left: 50%;
-    
+    transform: translateX(-50%);
     width: 60px;
     height: 3px;
     background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
@@ -1015,7 +1021,7 @@ html, body {
     position: absolute;
     bottom: -10px;
     left: 50%;
-    
+    transform: translateX(-50%);
     width: 60px;
     height: 3px;
     background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
@@ -1114,7 +1120,7 @@ html, body {
     position: absolute;
     bottom: -10px;
     left: 50%;
-    
+    transform: translateX(-50%);
     width: 60px;
     height: 3px;
     background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
@@ -1303,6 +1309,8 @@ html, body {
     margin-top: 10px;
 }
 
+
+
 /* Settings Modal Specific Styles */
 .settings-modal-content {
     max-width: 1200px; /* Larger max-width for bigger modal */
@@ -1402,7 +1410,7 @@ html, body {
     position: absolute;
     left: -12px;
     top: 50%;
-    
+    transform: translateY(-50%);
     width: 4px;
     height: 60%;
     background: var(--primary-color);
@@ -2001,6 +2009,7 @@ html, body {
     font-weight: 500;
 }
 
+
 @media (max-width: 768px) {
     .hero-section {
         padding: 40px 20px;
@@ -2070,6 +2079,8 @@ html, body {
     }
 }
 
+
+
 @media (max-width: 480px) {
     .sidebar {
         width: 240px;
@@ -2107,6 +2118,8 @@ html, body {
         font-size: 11px;
     }
 }
+
+
 
 /* Enhanced Scrollbar for content areas */
 .tab-content {
@@ -2334,7 +2347,7 @@ html, body {
     position: absolute;
     right: 12px;
     top: 50%;
-    
+    transform: translateY(-50%);
     color: var(--text-secondary);
 }
 
@@ -2671,7 +2684,7 @@ html, body {
     position: absolute;
     left: 20px;
     top: 50%;
-    
+    transform: translateY(-50%);
     color: var(--text-secondary);
     font-size: 18px;
 }
@@ -2901,6 +2914,8 @@ html, body {
     color: var(--text-primary);
 }
 
+
+
 /* Responsive adjustments for notifications */
 @media (max-width: 768px) {
     .notification-container {
@@ -2919,3 +2934,5 @@ html, body {
         font-size: 16px;
     }
 }
+
+
