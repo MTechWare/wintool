@@ -113,13 +113,8 @@
     border: 3px solid var(--border-color);
     border-top: 3px solid var(--accent-color);
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    
     margin-bottom: 1rem;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
 }
 
 .loading-text {
@@ -411,7 +406,7 @@
     border: 2px solid var(--primary-color);
     border-top: 2px solid transparent;
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    
 }
 
 /* Enhanced button styling for save preset */

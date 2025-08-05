@@ -620,7 +620,8 @@
                 });
             }
 
-            escapeRegex(string) {()|[\]\\]/g, '\\$&');
+            escapeRegex(string) {
+                return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             }
 
             updateStats() {

@@ -248,13 +248,8 @@
     border: 3px solid rgba(var(--primary-rgb), 0.2);
     border-top: 3px solid var(--primary-color);
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    
     box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.3);
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
 }
 
 /* Enhanced Animations */
