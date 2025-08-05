@@ -1,6 +1,6 @@
 {
   "name": "wintool",
-  "version": "0.3.0wb",
+  "version": "0.3.1wb",
   "main": "src/main.js",
   "description": "WinTool - Windows System Management Tool",
   "author": "MTech",
@@ -17,7 +17,6 @@
     "icon": "src/assets/images/icon.ico",
     "copyright": "Copyright © 2025 MTechWare",
     "fileAssociations": [],
-
     "win": {
       "target": [
         "portable"
