@@ -20,7 +20,7 @@ WinTool is a powerful and intuitive application for Windows system management, d
 
 # Version: v0.3.1wb
 
-> **A complete visual transformation with enhanced appearance plus ultra-fast service management.**
+> **Bug Fix.**
 
 ---
 
