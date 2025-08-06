@@ -1,7 +1,0 @@
-{
-    "name": "Cleanup",
-    "icon": "fas fa-broom",
-    "description": "Clean temporary files and optimize Windows system",
-    "version": "1.0.0",
-    "author": "WinTool"
-}

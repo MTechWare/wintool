@@ -1,7 +1,0 @@
-{
-    "name": "Packages",
-    "icon": "fas fa-box",
-    "description": "Manage Windows packages using winget",
-    "version": "1.0.0",
-    "author": "WinTool"
-}
