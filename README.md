@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![WinTool Version](https://img.shields.io/badge/WinTool-v0.3.1wb-orange?style=for-the-badge&logo=windows&logoColor=white)
+![WinTool Version](https://img.shields.io/badge/WinTool-v0.3.2wb-orange?style=for-the-badge&logo=windows&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows_11-blue?style=for-the-badge&logo=windows)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=for-the-badge)
 ![GitHub Stars](https://img.shields.io/github/stars/MTechWare/wintool?style=for-the-badge&logo=github)
@@ -18,14 +18,14 @@ WinTool is a powerful and intuitive application for Windows system management, d
 
 ## 🆕 What's New
 
-# Version: v0.3.1wb
+# Version: v0.3.2wb
 
 > **Bug Fix.**
 
 ---
 
 ## :bug: **Bug Fixes**
-**Fixed syntax error in log viewer that was causing JavaScript crashes**
+**Removed Chocolatey support to eliminate compatibility issues and focus on Windows Package Manager (winget)**
 
 ---
 
