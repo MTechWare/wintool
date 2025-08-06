@@ -1,0 +1,32 @@
+<div class="tab-header">
+    <h1><i class="fas fa-microchip"></i> Processes</h1>
+    <p>View and manage running processes.</p>
+</div>
+<div class="processes-controls">
+    <div class="process-search-container">
+        <i class="fas fa-search"></i>
+        <input type="text" id="process-search-input" placeholder="Search processes...">
+    </div>
+    <div class="process-refresh-controls">
+        <label for="auto-refresh-checkbox">
+            <input type="checkbox" id="auto-refresh-checkbox">
+            Auto-refresh every
+        </label>
+        <input type="number" id="refresh-interval-input" value="5" min="1" max="60">
+        <span>seconds</span>
+    </div>
+    <button id="terminate-process-btn" class="btn btn-danger" disabled>Terminate Selected</button>
+</div>
+<div class="processes-container">
+    <div class="process-list-container">
+        <div class="process-list-header">
+            <div class="pid">PID</div>
+            <div class="name">Name</div>
+            <div class="cpu">CPU (%)</div>
+            <div class="memory">Memory</div>
+        </div>
+        <div class="process-list">
+            <!-- Processes will be loaded here -->
+        </div>
+    </div>
+</div>

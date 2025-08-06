@@ -1,0 +1,66 @@
+<div class="tab-header">
+    <div>
+        <h1><i class="fas fa-network-wired"></i> Network Information</h1>
+        <p>Network interfaces and connectivity details</p>
+    </div>
+    <div>
+        <button id="refresh-networking-btn" class="action-btn" title="Refresh Networking">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+        <button id="export-networking-summary-btn" class="action-btn" title="Export Summary">
+            <i class="fas fa-file-export"></i>
+        </button>
+    </div>
+</div>
+
+<div class="plugin-warning">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span><strong>Disclaimer:</strong> Network operations may require <strong>administrator privileges</strong>. Some actions like resetting TCP/IP stack will require a system restart to take full effect.</span>
+</div>
+
+<div class="networking-content">
+    <!-- Network Actions -->
+    <div class="network-actions-section">
+        <h3>Network Actions</h3>
+        <div class="actions-grid">
+            <button id="flush-dns-btn" class="action-btn"><i class="fas fa-redo"></i> Flush DNS Cache</button>
+            <button id="reset-tcp-ip-btn" class="action-btn"><i class="fas fa-undo"></i> Reset TCP/IP Stack</button>
+            <button id="renew-dhcp-btn" class="action-btn"><i class="fas fa-sync-alt"></i> Renew DHCP Lease</button>
+        </div>
+    </div>
+
+    <!-- Network Overview -->
+    <div class="network-overview">
+        <h3>Network Overview</h3>
+        <div class="overview-grid">
+            <div class="overview-card" id="total-interfaces-card">
+                <i class="fas fa-ethernet"></i>
+                <h4>Total Interfaces</h4>
+                <p id="total-interfaces">Loading...</p>
+            </div>
+            <div class="overview-card" id="active-interfaces-card">
+                <i class="fas fa-link"></i>
+                <h4>Active Interfaces</h4>
+                <p id="active-interfaces">Loading...</p>
+            </div>
+            <div class="overview-card" id="primary-interface-card">
+                <i class="fas fa-star"></i>
+                <h4>Primary Interface</h4>
+                <p id="primary-interface">Loading...</p>
+            </div>
+            <div class="overview-card" id="connection-status-card">
+                <i class="fas fa-signal"></i>
+                <h4>Connection Status</h4>
+                <p id="connection-status">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Network Interfaces -->
+    <div class="network-interfaces-section">
+        <h3>Network Interfaces</h3>
+        <div id="network-interfaces-container" class="interfaces-container">
+            <!-- Network interfaces will be loaded here -->
+        </div>
+    </div>
+</div>

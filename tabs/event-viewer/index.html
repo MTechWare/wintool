@@ -1,0 +1,222 @@
+<div class="tab-header">
+    <div>
+        <h1><i class="fas fa-clipboard-list"></i> Event Viewer</h1>
+        <p>Modern Windows Event Log monitoring with real-time insights</p>
+    </div>
+    <div class="header-actions">
+        <button id="refresh-events-btn-header" class="action-btn" title="Refresh Events">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+        <button id="export-events-btn-header" class="action-btn" title="Export Events">
+            <i class="fas fa-file-export"></i>
+        </button>
+        <button id="clear-events-btn" class="action-btn" title="Clear Events">
+            <i class="fas fa-trash"></i>
+        </button>
+    </div>
+</div>
+
+<div class="modern-event-viewer">
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div class="status-left">
+            <div class="status-item">
+                <i class="fas fa-database"></i>
+                <span id="total-events-count">0 events</span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-filter"></i>
+                <span id="filtered-events-count">0 filtered</span>
+            </div>
+            <div class="status-item" id="live-status" style="display: none;">
+                <i class="fas fa-circle live-pulse"></i>
+                <span>Live Monitoring</span>
+            </div>
+        </div>
+        <div class="status-right">
+            <div class="status-item">
+                <i class="fas fa-clock"></i>
+                <span id="last-refresh-time">Never</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modern Controls Panel -->
+    <div class="controls-panel">
+        <div class="controls-section">
+            <div class="control-group">
+                <label class="control-label">Log Source</label>
+                <div class="select-wrapper">
+                    <select id="log-name-select" class="modern-select">
+                        <option value="Application">Application Events</option>
+                        <option value="System">System Events</option>
+                        <option value="Security">Security Events</option>
+                    </select>
+                    <i class="fas fa-chevron-down select-arrow"></i>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Event Level</label>
+                <div class="select-wrapper">
+                    <select id="level-filter-select" class="modern-select">
+                        <option value="">All Levels</option>
+                        <option value="Critical">Critical</option>
+                        <option value="Error">Error</option>
+                        <option value="Warning">Warning</option>
+                        <option value="Information">Information</option>
+                        <option value="Verbose">Verbose</option>
+                    </select>
+                    <i class="fas fa-chevron-down select-arrow"></i>
+                </div>
+            </div>
+
+            <div class="control-group search-group">
+                <label class="control-label">Search</label>
+                <div class="search-wrapper">
+                    <input type="text" id="event-search" class="modern-search" placeholder="Search events, sources, or messages...">
+                    <i class="fas fa-search search-icon"></i>
+                    <button id="clear-search" class="clear-search" style="display: none;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-section">
+            <div class="toggle-controls">
+                <div class="modern-toggle">
+                    <input type="checkbox" id="live-tail-toggle" class="toggle-input">
+                    <label for="live-tail-toggle" class="toggle-label">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-text">
+                            <i class="fas fa-broadcast-tower"></i>
+                            Live Monitoring
+                        </span>
+                    </label>
+                </div>
+
+                <div class="modern-toggle">
+                    <input type="checkbox" id="notifications-toggle" class="toggle-input">
+                    <label for="notifications-toggle" class="toggle-label">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-text">
+                            <i class="fas fa-bell"></i>
+                            Notifications
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="event-loading" class="modern-loading" style="display: none;">
+        <div class="loading-content">
+            <div class="loading-spinner">
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+            </div>
+            <span class="loading-text">Loading events...</span>
+        </div>
+    </div>
+
+    <!-- Events Container -->
+    <div class="events-container">
+        <div class="events-table-wrapper">
+            <table class="modern-events-table">
+                <thead>
+                    <tr>
+                        <th class="col-level">
+                            <div class="header-content">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Level</span>
+                            </div>
+                        </th>
+                        <th class="col-time">
+                            <div class="header-content">
+                                <i class="fas fa-clock"></i>
+                                <span>Timestamp</span>
+                            </div>
+                        </th>
+                        <th class="col-source">
+                            <div class="header-content">
+                                <i class="fas fa-cube"></i>
+                                <span>Source</span>
+                            </div>
+                        </th>
+                        <th class="col-id">
+                            <div class="header-content">
+                                <i class="fas fa-hashtag"></i>
+                                <span>Event ID</span>
+                            </div>
+                        </th>
+                        <th class="col-message">
+                            <div class="header-content">
+                                <i class="fas fa-comment"></i>
+                                <span>Message</span>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="event-table-body">
+                    <!-- Events will be populated here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Event Details Panel -->
+        <div id="event-detail-panel" class="event-detail-panel" style="display: none;">
+            <div class="detail-header">
+                <h3><i class="fas fa-info-circle"></i> Event Details</h3>
+                <button id="close-detail-panel" class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="detail-content">
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>Level:</label>
+                        <span id="detail-level" class="detail-value"></span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Event ID:</label>
+                        <span id="detail-id" class="detail-value"></span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Source:</label>
+                        <span id="detail-source" class="detail-value"></span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Timestamp:</label>
+                        <span id="detail-time" class="detail-value"></span>
+                    </div>
+                </div>
+                <div class="detail-message">
+                    <label>Message:</label>
+                    <div id="detail-message-content" class="message-content"></div>
+                </div>
+                <div class="detail-raw">
+                    <label>Raw Data:</label>
+                    <pre id="detail-raw-content" class="raw-content"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="empty-state" style="display: none;">
+        <div class="empty-content">
+            <i class="fas fa-clipboard-list"></i>
+            <h3>No Events Found</h3>
+            <p>No events match your current filters. Try adjusting your search criteria or refresh the data.</p>
+            <button id="reset-filters-btn" class="modern-btn primary">
+                <i class="fas fa-undo"></i>
+                Reset Filters
+            </button>
+        </div>
+    </div>
+</div>

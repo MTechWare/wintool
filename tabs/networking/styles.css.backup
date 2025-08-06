@@ -1,0 +1,274 @@
+/* Networking Tab Styles - System Health Dashboard Theme */
+@import url('../../css/universal-tab-header.css');
+
+/* Network Overview */
+.network-overview {
+    margin-bottom: 40px;
+}
+
+.network-overview h3 {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 30px;
+    color: var(--text-primary);
+}
+
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.overview-card {
+    background: var(--background-card);
+    padding: 25px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.overview-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.overview-card i {
+    font-size: 32px;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.overview-card h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+.overview-card p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* Network Interfaces Section */
+.network-interfaces-section {
+    margin-bottom: 40px;
+}
+
+.network-interfaces-section h3 {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 30px;
+    color: var(--text-primary);
+}
+
+.interfaces-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+.interface-card {
+    background: var(--background-card);
+    padding: 25px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.interface-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.interface-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.interface-icon {
+    font-size: 32px;
+    color: var(--primary-color);
+}
+
+.interface-info h4 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 5px 0;
+}
+
+.interface-type {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.interface-status {
+    margin-left: auto;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.interface-status.up {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+.interface-status.down {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.interface-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-row .label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    min-width: 120px;
+}
+
+.detail-row span:last-child {
+    color: var(--text-primary);
+    text-align: right;
+    flex: 1;
+    margin-left: 10px;
+    word-break: break-word;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+
+
+
+/* Loading state */
+.loading {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Success/Error States */
+.success {
+    color: var(--success-color) !important;
+}
+
+.error {
+    color: var(--error-color) !important;
+}
+
+/* Network Actions */
+.network-actions-section {
+    margin-bottom: 40px;
+}
+
+.network-actions-section h3 {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 30px;
+    color: var(--text-primary);
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    justify-content: center;
+}
+
+.action-btn {
+    background: var(--background-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.action-btn:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    color: var(--primary-color);
+}
+
+.action-btn i {
+    font-size: 20px;
+    color: var(--primary-color);
+}
+
+.action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.action-btn:disabled:hover {
+    border-color: var(--border-color);
+    color: var(--text-primary);
+    box-shadow: none;
+}
+
+/* Network-specific notification styles are now in global CSS */
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .overview-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+
+    .interfaces-container {
+        grid-template-columns: 1fr;
+    }
+
+
+
+    .interface-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .interface-status {
+        margin-left: 0;
+    }
+
+    .detail-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .detail-row span:last-child {
+        text-align: left;
+        margin-left: 0;
+    }
+}

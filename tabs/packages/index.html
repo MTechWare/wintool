@@ -1,0 +1,244 @@
+<div class="tab-header">
+    <div>
+        <h1><i class="fas fa-box"></i> Package Manager</h1>
+        <p id="package-manager-description">Manage Windows packages using winget</p>
+    </div>
+    <div>
+    </div>
+</div>
+
+<div class="plugin-warning">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span><strong>Disclaimer:</strong> Installing or uninstalling packages can modify your system. Always verify package sources and ensure you trust the publisher. <strong>Administrator privileges may be required</strong> for some operations.</span>
+</div>
+
+<div class="packages-container">
+
+    <!-- Search and Controls -->
+    <div class="packages-controls">
+        <!-- Package Manager Selector -->
+        <div class="package-manager-selector">
+            <label for="package-manager-select">Package Manager:</label>
+            <select id="package-manager-select" class="package-manager-select">
+                <option value="winget" selected>Windows Package Manager (winget)</option>
+
+            </select>
+            <div class="package-manager-info">
+                <small>
+                    <i class="fas fa-info-circle"></i>
+                    WinGet is recommended.</a>
+                </small>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="package-search" placeholder="Search packages..." class="search-input">
+            <i class="fas fa-search search-icon"></i>
+        </div>
+
+        <!-- Package Status Filter -->
+        <div class="package-status-filter">
+            <label for="package-status-select">Show:</label>
+            <select id="package-status-select" class="package-status-select">
+                <option value="all" selected>All Packages</option>
+                <option value="installed">Installed Only</option>
+                <option value="available">Available Only</option>
+                <option value="updates">Updates Available</option>
+            </select>
+            <button id="refresh-installed" class="action-btn refresh-btn" title="Refresh installed packages and check for updates">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+
+        <div class="category-filters">
+            <button class="category-btn active" data-category="all">All</button>
+            <button class="category-btn" data-category="Browsers">Browsers</button>
+            <button class="category-btn" data-category="Communications">Communications</button>
+            <button class="category-btn" data-category="Development">Development</button>
+            <button class="category-btn" data-category="Document">Document</button>
+            <button class="category-btn" data-category="Games">Games</button>
+            <button class="category-btn" data-category="Microsoft Tools">Microsoft Tools</button>
+            <button class="category-btn" data-category="Multimedia Tools">Multimedia Tools</button>
+            <button class="category-btn" data-category="Pro Tools">Pro Tools</button>
+            <button class="category-btn" data-category="Utilities">Utilities</button>
+        </div>
+    </div>
+
+    <!-- Package Info and Actions -->
+    <div class="selection-info">
+        <div class="package-info-left">
+            <span id="total-packages-count">Loading packages...</span>
+            <span id="selection-count">0 packages selected</span>
+        </div>
+        <div class="action-buttons">
+            <button id="install-selected" class="action-btn install-btn" disabled>
+                <i class="fas fa-download"></i> Install Selected
+            </button>
+            <button id="uninstall-selected" class="action-btn uninstall-btn" disabled>
+                <i class="fas fa-trash"></i> Uninstall Selected
+            </button>
+            <button id="import-packages" class="action-btn import-btn">
+                <i class="fas fa-file-import"></i> Import
+            </button>
+            <button id="export-packages" class="action-btn export-btn" disabled>
+                <i class="fas fa-file-export"></i> Export
+            </button>
+        </div>
+    </div>
+
+    <!-- Progress Bar Container -->
+    <div id="progress-container" class="progress-container" style="display: none;" onclick="packageManager.handleProgressClick(event)">
+        <div class="progress-header">
+            <h4 id="progress-title">Package Operation</h4>
+            <button class="progress-cancel" onclick="packageManager.cancelOperation()" title="Cancel Operation">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="progress-info">
+            <div id="progress-message">Preparing...</div>
+            <div id="progress-details"></div>
+        </div>
+        <div class="progress-bar-container">
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <div id="progress-percentage">0%</div>
+        </div>
+        <div id="progress-output" class="progress-output"></div>
+    </div>
+
+    <!-- Package List -->
+    <div class="packages-list-container">
+        <div class="packages-list-header">
+            <div class="header-checkbox">
+                <input type="checkbox" id="select-all">
+            </div>
+            <div class="header-package"><i class="fas fa-cube" style="margin-right: 8px; color: var(--primary-color);"></i>Package</div>
+            <div class="header-publisher">Publisher</div>
+            <div class="header-description">Description</div>
+            <div class="header-actions">Actions</div>
+        </div>
+        
+        <div id="packages-list" class="packages-list">
+            <!-- Packages will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="loading-indicator" class="loading-indicator" style="display: none;">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>Loading packages...</span>
+    </div>
+
+    <!-- Status messages -->
+    <div id="status-message" class="status-message" style="display: none;"></div>
+</div>
+
+<!-- Enhanced Progress Modal -->
+<div id="packages-progress-modal" class="progress-modal" style="display: none;">
+    <div class="progress-modal-content">
+        <div class="progress-header">
+            <div class="progress-header-left">
+                <div class="progress-icon" id="packages-progress-icon">
+                    <i class="fas fa-download"></i>
+                </div>
+                <div class="progress-title-section">
+                    <h3 id="packages-progress-title">Processing...</h3>
+                    <div id="packages-progress-subtitle" class="progress-subtitle"></div>
+                </div>
+            </div>
+            <div class="progress-header-actions">
+                <button id="packages-minimize-modal" class="modal-action-btn minimize-btn" title="Minimize">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button id="packages-cancel-operation" class="modal-action-btn cancel-btn" title="Cancel Operation">
+                    <i class="fas fa-stop"></i>
+                </button>
+                <button id="packages-close-modal" class="modal-action-btn close-btn" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="progress-body">
+            <!-- Status Section -->
+            <div class="progress-status-section">
+                <div class="progress-status-item">
+                    <span class="status-label">Status:</span>
+                    <span id="packages-operation-status" class="status-value">Initializing...</span>
+                </div>
+                <div class="progress-status-item">
+                    <span class="status-label">Progress:</span>
+                    <span id="packages-progress-percentage" class="status-value">0%</span>
+                </div>
+                <div class="progress-status-item">
+                    <span class="status-label">Time Elapsed:</span>
+                    <span id="packages-time-elapsed" class="status-value">00:00</span>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-bar-section">
+                <div class="progress-bar-container">
+                    <div id="packages-progress-bar" class="progress-bar">
+                        <div class="progress-bar-fill"></div>
+                        <div class="progress-bar-glow"></div>
+                    </div>
+                </div>
+                <div id="packages-progress-text" class="progress-text">Initializing...</div>
+            </div>
+
+            <!-- Package Details -->
+            <div id="packages-current-package" class="current-package-section" style="display: none;">
+                <div class="package-info-card">
+                    <div class="package-icon-placeholder">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    <div class="package-details">
+                        <div id="packages-current-name" class="package-name">Package Name</div>
+                        <div id="packages-current-publisher" class="package-publisher">Publisher</div>
+                        <div id="packages-current-version" class="package-version">Version</div>
+                    </div>
+                    <div class="package-status">
+                        <div id="packages-current-status" class="status-badge">Processing</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Output Console -->
+            <div class="progress-output-section">
+                <div class="output-header">
+                    <span class="output-title">
+                        <i class="fas fa-terminal"></i>
+                        Console Output
+                    </span>
+                    <div class="output-controls">
+                        <button id="packages-clear-output" class="output-control-btn" title="Clear Output">
+                            <i class="fas fa-eraser"></i>
+                        </button>
+                        <button id="packages-copy-output" class="output-control-btn" title="Copy Output">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button id="packages-toggle-output" class="output-control-btn" title="Toggle Output">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="packages-progress-output" class="progress-output"></div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="progress-actions">
+            <button id="packages-retry-operation" class="btn btn-primary" style="display: none;">
+                <i class="fas fa-redo"></i> Retry
+            </button>
+            <button id="packages-view-logs" class="btn btn-secondary" style="display: none;">
+                <i class="fas fa-file-alt"></i> View Logs
+            </button>
+            <button id="packages-done-modal" class="btn btn-success" style="display: none;">
+                <i class="fas fa-check"></i> Done
+            </button>
+        </div>
+    </div>
+</div>

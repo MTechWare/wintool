@@ -1,0 +1,7 @@
+{
+    "name": "Services Manager",
+    "icon": "fas fa-cogs",
+    "description": "Manage Windows services - start, stop, restart and monitor service status",
+    "version": "1.0.0",
+    "author": "WinTool Team"
+}

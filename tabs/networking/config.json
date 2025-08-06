@@ -1,0 +1,7 @@
+{
+    "name": "Networking",
+    "icon": "fas fa-network-wired",
+    "description": "View network interfaces and connectivity information",
+    "version": "1.0.0",
+    "author": "WinTool"
+}

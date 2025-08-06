@@ -1,0 +1,100 @@
+{
+  "applicationInfo": {
+    "name": "WinTool",
+    "version": "0.1.9w",
+    "publisher": "MTechWare",
+    "description": "Windows System Management Tool",
+    "license": "GPL-3.0-or-later",
+    "website": "https://github.com/MTechWare/wintool",
+    "legitimate": true,
+    "purpose": "System optimization and management"
+  },
+  "securityProfile": {
+    "riskLevel": "low",
+    "category": "system-utility",
+    "signedExecutable": false,
+    "codeSigningPlanned": true,
+    "openSource": true,
+    "repositoryUrl": "https://github.com/MTechWare/wintool"
+  },
+  "legitimateOperations": {
+    "fileOperations": [
+      {
+        "operation": "cleanup-temp-files",
+        "description": "Removes temporary files to free disk space",
+        "paths": ["%TEMP%", "%LOCALAPPDATA%\\Temp", "Windows\\Temp"],
+        "safety": "safe",
+        "reversible": false
+      },
+      {
+        "operation": "system-cache-cleanup",
+        "description": "Cleans system caches and logs",
+        "paths": ["Windows\\SoftwareDistribution\\Download", "Windows\\Logs"],
+        "safety": "safe",
+        "reversible": false
+      }
+    ],
+    "processOperations": [
+      {
+        "operation": "powershell-execution",
+        "description": "Executes PowerShell scripts for system operations",
+        "purpose": "System cleanup and information gathering",
+        "parameters": ["-NoProfile", "-NonInteractive", "-ExecutionPolicy RemoteSigned"],
+        "safety": "monitored"
+      },
+      {
+        "operation": "system-utility-launch",
+        "description": "Launches Windows system utilities",
+        "examples": ["msconfig", "regedit", "services.msc"],
+        "safety": "safe"
+      }
+    ],
+    "networkOperations": [
+      {
+        "operation": "update-check",
+        "description": "Checks for application updates",
+        "endpoints": ["github.com/MTechWare/wintool"],
+        "frequency": "on-startup",
+        "safety": "safe"
+      },
+      {
+        "operation": "plugin-verification",
+        "description": "Downloads verified plugin list",
+        "endpoints": ["raw.githubusercontent.com/MTechWare/wintool"],
+        "frequency": "periodic",
+        "safety": "safe"
+      }
+    ]
+  },
+  "securityMeasures": {
+    "inputValidation": true,
+    "rateLimiting": true,
+    "commandSanitization": true,
+    "pluginSandboxing": true,
+    "securityLogging": true,
+    "privilegeEscalation": "user-prompted-only"
+  },
+  "antivirusGuidance": {
+    "commonFlags": [
+      "unsigned-executable",
+      "powershell-execution",
+      "system-file-access",
+      "process-spawning"
+    ],
+    "whitelistRecommendation": "Add WinTool.exe and installation directory to antivirus exclusions",
+    "falsePositiveReporting": "Report false positives to antivirus vendors",
+    "verificationSteps": [
+      "Download only from official GitHub releases",
+      "Verify file hashes if provided",
+      "Check digital signature when available",
+      "Scan with multiple antivirus engines"
+    ]
+  },
+  "complianceInfo": {
+    "dataCollection": "none",
+    "telemetry": "optional-discord-rpc-only",
+    "userConsent": "required-for-admin-operations",
+    "privacyPolicy": "no-data-transmitted",
+    "gdprCompliant": true
+  }
+}

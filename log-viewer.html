@@ -1,0 +1,779 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Log Viewer</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="assets/fontawesome/all.min.css">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+        body {
+            background-color: var(--background-dark);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header Section */
+        .log-header {
+            background: var(--background-light);
+            border-bottom: 2px solid var(--border-color);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex-shrink: 0;
+        }
+
+        .log-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .log-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-container {
+            position: relative;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 8px 35px 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--background-dark);
+            color: var(--text-primary);
+            font-size: 14px;
+            
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--background-card);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .filter-btn:hover {
+            background: var(--hover-color);
+            border-color: var(--primary-color);
+        }
+
+        .filter-btn.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-btn {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--background-card);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 12px;
+            
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .control-btn:hover {
+            background: var(--hover-color);
+            border-color: var(--primary-color);
+        }
+
+        .control-btn.danger:hover {
+            background: var(--error-color);
+            border-color: var(--error-color);
+            color: white;
+        }
+
+        /* Stats Section */
+        .log-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-count {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Log Container */
+        .log-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #log-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .log-message {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 12px;
+            margin-bottom: 2px;
+            border-radius: 4px;
+            border-left: 3px solid transparent;
+            
+            word-break: break-word;
+        }
+
+        .log-message:hover {
+            background: var(--background-light);
+        }
+
+        .log-message.highlighted {
+            background: rgba(255, 152, 0, 0.1);
+            border-left-color: var(--primary-color);
+        }
+
+        .log-timestamp {
+            color: var(--text-secondary);
+            font-size: 11px;
+            min-width: 80px;
+            flex-shrink: 0;
+        }
+
+        .log-level {
+            font-weight: 600;
+            font-size: 11px;
+            min-width: 50px;
+            text-align: center;
+            padding: 2px 6px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .log-content {
+            flex: 1;
+            white-space: pre-wrap;
+        }
+
+        .log-source {
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-style: italic;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        /* Log Level Styles */
+        .log-error {
+            border-left-color: var(--error-color);
+        }
+        .log-error .log-level {
+            background: var(--error-color);
+            color: white;
+        }
+        .log-error .log-content {
+            color: #ffcdd2;
+        }
+
+        .log-warn {
+            border-left-color: #ffc107;
+        }
+        .log-warn .log-level {
+            background: #ffc107;
+            color: #000;
+        }
+        .log-warn .log-content {
+            color: #fff3cd;
+        }
+
+        .log-info {
+            border-left-color: #2196f3;
+        }
+        .log-info .log-level {
+            background: #2196f3;
+            color: white;
+        }
+
+        .log-debug {
+            border-left-color: #9c27b0;
+        }
+        .log-debug .log-level {
+            background: #9c27b0;
+            color: white;
+        }
+        .log-debug .log-content {
+            color: var(--text-secondary);
+        }
+
+        .log-success {
+            border-left-color: var(--success-color);
+        }
+        .log-success .log-level {
+            background: var(--success-color);
+            color: white;
+        }
+        .log-success .log-content {
+            color: #c8e6c9;
+        }
+
+        .log-trace {
+            border-left-color: #607d8b;
+        }
+        .log-trace .log-level {
+            background: #607d8b;
+            color: white;
+        }
+        .log-trace .log-content {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        /* Scrollbar Styling */
+        #log-container::-webkit-scrollbar {
+            width: 8px;
+            display: block;
+        }
+
+        #log-container::-webkit-scrollbar-track {
+            background: var(--background-dark);
+        }
+
+        #log-container::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        #log-container::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="log-header">
+        <div class="log-title">
+            <i class="fas fa-list-alt"></i>
+            Enhanced Log Viewer
+        </div>
+
+        <div class="log-controls">
+            <div class="search-container">
+                <input type="text" id="search-input" class="search-input" placeholder="Search logs...">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-level="all">
+                    <i class="fas fa-list"></i> All
+                </button>
+                <button class="filter-btn" data-level="error">
+                    <i class="fas fa-exclamation-circle"></i> Errors
+                </button>
+                <button class="filter-btn" data-level="warn">
+                    <i class="fas fa-exclamation-triangle"></i> Warnings
+                </button>
+                <button class="filter-btn" data-level="info">
+                    <i class="fas fa-info-circle"></i> Info
+                </button>
+                <button class="filter-btn" data-level="debug">
+                    <i class="fas fa-bug"></i> Debug
+                </button>
+                <button class="filter-btn" data-level="success">
+                    <i class="fas fa-check-circle"></i> Success
+                </button>
+            </div>
+
+            <div class="control-buttons">
+                <button class="control-btn" id="auto-scroll-btn" title="Toggle Auto-scroll">
+                    <i class="fas fa-arrow-down"></i> Auto-scroll
+                </button>
+                <button class="control-btn" id="export-btn" title="Export Logs">
+                    <i class="fas fa-download"></i> Export
+                </button>
+                <button class="control-btn danger" id="clear-btn" title="Clear All Logs">
+                    <i class="fas fa-trash"></i> Clear
+                </button>
+            </div>
+        </div>
+
+        <div class="log-stats">
+            <div class="stat-item">
+                <i class="fas fa-list"></i>
+                <span>Total: <span class="stat-count" id="total-count">0</span></span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-exclamation-circle" style="color: var(--error-color);"></i>
+                <span>Errors: <span class="stat-count" id="error-count">0</span></span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-exclamation-triangle" style="color: #ffc107;"></i>
+                <span>Warnings: <span class="stat-count" id="warn-count">0</span></span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-info-circle" style="color: #2196f3;"></i>
+                <span>Info: <span class="stat-count" id="info-count">0</span></span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-eye" style="color: var(--text-secondary);"></i>
+                <span>Visible: <span class="stat-count" id="visible-count">0</span></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="log-main">
+        <div id="log-container">
+            <div class="empty-state">
+                <i class="fas fa-clipboard-list"></i>
+                <h3>No logs yet</h3>
+                <p>Logs will appear here as they are generated</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Enhanced Log Viewer JavaScript
+        class EnhancedLogViewer {
+            constructor() {
+                this.logContainer = document.getElementById('log-container');
+                this.searchInput = document.getElementById('search-input');
+                this.filterButtons = document.querySelectorAll('.filter-btn');
+                this.autoScrollBtn = document.getElementById('auto-scroll-btn');
+                this.exportBtn = document.getElementById('export-btn');
+                this.clearBtn = document.getElementById('clear-btn');
+
+                this.logs = [];
+                this.filteredLogs = [];
+                this.currentFilter = 'all';
+                this.searchTerm = '';
+                this.autoScroll = true;
+                this.maxLogs = 1000; // Limit to prevent memory issues
+
+                this.stats = {
+                    total: 0,
+                    error: 0,
+                    warn: 0,
+                    info: 0,
+                    debug: 0,
+                    success: 0,
+                    trace: 0
+                };
+
+                this.initializeEventListeners();
+                this.updateStats();
+            }
+
+            initializeEventListeners() {
+                // Search functionality
+                this.searchInput.addEventListener('input', (e) => {
+                    this.searchTerm = e.target.value.toLowerCase();
+                    this.filterAndDisplayLogs();
+                });
+
+                // Filter buttons
+                this.filterButtons.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        this.filterButtons.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        this.currentFilter = btn.dataset.level;
+                        this.filterAndDisplayLogs();
+                    });
+                });
+
+                // Auto-scroll toggle
+                this.autoScrollBtn.addEventListener('click', () => {
+                    this.autoScroll = !this.autoScroll;
+                    this.autoScrollBtn.classList.toggle('active', this.autoScroll);
+                    if (this.autoScroll) {
+                        this.scrollToBottom();
+                    }
+                });
+
+                // Export logs
+                this.exportBtn.addEventListener('click', () => {
+                    this.exportLogs();
+                });
+
+                // Clear logs
+                this.clearBtn.addEventListener('click', () => {
+                    this.clearLogs();
+                });
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey) {
+                        switch(e.key) {
+                            case 'f':
+                                e.preventDefault();
+                                this.searchInput.focus();
+                                break;
+                            case 'l':
+                                e.preventDefault();
+                                this.clearLogs();
+                                break;
+                            case 's':
+                                e.preventDefault();
+                                this.exportLogs();
+                                break;
+                        }
+                    }
+                    if (e.key === 'Escape') {
+                        this.searchInput.value = '';
+                        this.searchTerm = '';
+                        this.filterAndDisplayLogs();
+                    }
+                });
+            }
+
+            addLogMessage(level, message, source = 'System') {
+                const timestamp = new Date();
+                const logEntry = {
+                    id: Date.now() + Math.random(),
+                    timestamp,
+                    level: level.toLowerCase(),
+                    message,
+                    source
+                };
+
+                this.logs.push(logEntry);
+                this.stats[level.toLowerCase()] = (this.stats[level.toLowerCase()] || 0) + 1;
+                this.stats.total++;
+
+                // Limit log entries to prevent memory issues
+                if (this.logs.length > this.maxLogs) {
+                    const removed = this.logs.shift();
+                    this.stats[removed.level]--;
+                    this.stats.total--;
+                }
+
+                this.updateStats();
+                this.filterAndDisplayLogs();
+
+                if (this.autoScroll) {
+                    setTimeout(() => this.scrollToBottom(), 10);
+                }
+            }
+
+            filterAndDisplayLogs() {
+                this.filteredLogs = this.logs.filter(log => {
+                    // Filter by level
+                    if (this.currentFilter !== 'all' && log.level !== this.currentFilter) {
+                        return false;
+                    }
+
+                    // Filter by search term
+                    if (this.searchTerm) {
+                        const searchableText = `${log.message} ${log.source}`.toLowerCase();
+                        if (!searchableText.includes(this.searchTerm)) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                });
+
+                this.displayLogs();
+                this.updateVisibleCount();
+            }
+
+            displayLogs() {
+                if (this.filteredLogs.length === 0) {
+                    this.showEmptyState();
+                    return;
+                }
+
+                const fragment = document.createDocumentFragment();
+
+                this.filteredLogs.forEach(log => {
+                    const logElement = this.createLogElement(log);
+                    fragment.appendChild(logElement);
+                });
+
+                this.logContainer.innerHTML = '';
+                this.logContainer.appendChild(fragment);
+            }
+
+            createLogElement(log) {
+                const logDiv = document.createElement('div');
+                logDiv.className = `log-message log-${log.level}`;
+                logDiv.dataset.logId = log.id;
+
+                // Highlight search terms
+                let messageContent = log.message;
+                if (this.searchTerm) {
+                    const regex = new RegExp(`(${this.escapeRegex(this.searchTerm)})`, 'gi');
+                    messageContent = messageContent.replace(regex, '<mark style="background: var(--primary-color); color: white; padding: 1px 3px; border-radius: 2px;">$1</mark>');
+                    logDiv.classList.add('highlighted');
+                }
+
+                logDiv.innerHTML = `
+                    <div class="log-timestamp">${this.formatTime(log.timestamp)}</div>
+                    <div class="log-level">${log.level.toUpperCase()}</div>
+                    <div class="log-content">${messageContent}</div>
+                    <div class="log-source">${log.source}</div>
+                `;
+
+                return logDiv;
+            }
+
+            showEmptyState() {
+                this.logContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard-list"></i>
+                        <h3>${this.searchTerm || this.currentFilter !== 'all' ? 'No matching logs' : 'No logs yet'}</h3>
+                        <p>${this.searchTerm || this.currentFilter !== 'all' ? 'Try adjusting your search or filter criteria' : 'Logs will appear here as they are generated'}</p>
+                    </div>
+                `;
+            }
+
+            formatTime(timestamp) {
+                return timestamp.toLocaleTimeString('en-US', {
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            }
+
+            escapeRegex(string) {
+                return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            }
+
+            updateStats() {
+                document.getElementById('total-count').textContent = this.stats.total;
+                document.getElementById('error-count').textContent = this.stats.error || 0;
+                document.getElementById('warn-count').textContent = this.stats.warn || 0;
+                document.getElementById('info-count').textContent = this.stats.info || 0;
+            }
+
+            updateVisibleCount() {
+                document.getElementById('visible-count').textContent = this.filteredLogs.length;
+            }
+
+            scrollToBottom() {
+                this.logContainer.scrollTop = this.logContainer.scrollHeight;
+            }
+
+            clearLogs() {
+                if (confirm('Are you sure you want to clear all logs? This action cannot be undone.')) {
+                    this.logs = [];
+                    this.filteredLogs = [];
+                    this.stats = {
+                        total: 0,
+                        error: 0,
+                        warn: 0,
+                        info: 0,
+                        debug: 0,
+                        success: 0,
+                        trace: 0
+                    };
+                    this.updateStats();
+                    this.updateVisibleCount();
+                    this.showEmptyState();
+                }
+            }
+
+            exportLogs() {
+                if (this.filteredLogs.length === 0) {
+                    alert('No logs to export');
+                    return;
+                }
+
+                const exportData = this.filteredLogs.map(log => ({
+                    timestamp: log.timestamp.toISOString(),
+                    level: log.level,
+                    source: log.source,
+                    message: log.message
+                }));
+
+                const jsonData = JSON.stringify(exportData, null, 2);
+                const csvData = this.convertToCSV(exportData);
+
+                // Create download links
+                this.downloadFile(jsonData, `wintool-logs-${new Date().toISOString().split('T')[0]}.json`, 'application/json');
+
+                // Also offer CSV format
+                setTimeout(() => {
+                    if (confirm('Would you also like to download logs in CSV format?')) {
+                        this.downloadFile(csvData, `wintool-logs-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+                    }
+                }, 100);
+            }
+
+            convertToCSV(data) {
+                const headers = ['Timestamp', 'Level', 'Source', 'Message'];
+                const csvContent = [
+                    headers.join(','),
+                    ...data.map(log => [
+                        `"${log.timestamp}"`,
+                        `"${log.level}"`,
+                        `"${log.source}"`,
+                        `"${log.message.replace(/"/g, '""')}"`
+                    ].join(','))
+                ].join('\n');
+
+                return csvContent;
+            }
+
+            downloadFile(content, filename, contentType) {
+                const blob = new Blob([content], { type: contentType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        // Initialize the enhanced log viewer
+        const logViewer = new EnhancedLogViewer();
+
+        // Listen for log messages from the main process
+        window.electronAPI.onLogMessage((level, message, source = 'System') => {
+            logViewer.addLogMessage(level, message, source);
+        });
+
+        // Theme handling
+        window.electronAPI.onThemeData((themeData) => {
+            applyTheme(themeData);
+        });
+
+        function applyTheme(themeData) {
+            const { theme, primaryColor, customTheme } = themeData;
+            const root = document.documentElement;
+
+            // This is a simplified version of the main app's theme logic
+            if (theme === 'custom' && customTheme) {
+                for (const [key, value] of Object.entries(customTheme)) {
+                    if (key !== 'name') {
+                        root.style.setProperty(key, value);
+                    }
+                }
+            } else {
+                // You might need to define the base themes here or load them from a shared file
+                const classicDark = {
+                    '--primary-color': primaryColor,
+                    '--background-dark': '#1c1c1e',
+                    '--background-light': '#2c2c2e',
+                    '--background-card': '#3a3a3c',
+                    '--border-color': '#444444',
+                    '--hover-color': '#4f4f52',
+                    '--text-primary': '#ffffff',
+                    '--text-secondary': '#b0b0b0',
+                    '--error-color': '#f44336',
+                    '--success-color': '#4caf50'
+                };
+                const classicLight = {
+                     '--primary-color': primaryColor,
+                    '--background-dark': '#F0F2F5',
+                    '--background-light': '#FFFFFF',
+                    '--background-card': '#FFFFFF',
+                    '--border-color': '#E0E0E0',
+                    '--hover-color': '#F5F5F5',
+                    '--text-primary': '#212529',
+                    '--text-secondary': '#6c757d',
+                    '--error-color': '#dc3545',
+                    '--success-color': '#28a745'
+                };
+                const themeColors = theme === 'classic-light' ? classicLight : classicDark;
+                 for (const [key, value] of Object.entries(themeColors)) {
+                    root.style.setProperty(key, value);
+                }
+            }
+        }
+
+        setTimeout(() => {
+            logViewer.addLogMessage('info', 'Enhanced Log Viewer initialized successfully', 'LogViewer');
+            logViewer.addLogMessage('success', 'All systems operational', 'System');
+        }, 1000);
+    </script>
+</body>
+</html>
