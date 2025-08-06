@@ -101,31 +101,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         });
     },
 
-    // Chocolatey package management
-    checkChocoAvailability: () => ipcRenderer.invoke('check-choco-availability'),
-    executeChocoCommand: command => ipcRenderer.invoke('execute-choco-command', command),
-    executeChocoCommandWithProgress: (command, progressCallback) => {
-        return new Promise((resolve, reject) => {
-            // Set up progress listener
-            const progressHandler = (event, progressData) => {
-                progressCallback(progressData);
-            };
-
-            ipcRenderer.on('choco-progress', progressHandler);
-
-            // Execute the command
-            ipcRenderer
-                .invoke('execute-choco-command-with-progress', command)
-                .then(result => {
-                    ipcRenderer.removeListener('choco-progress', progressHandler);
-                    resolve(result);
-                })
-                .catch(error => {
-                    ipcRenderer.removeListener('choco-progress', progressHandler);
-                    reject(error);
-                });
-        });
-    },
+    // Chocolatey support removed
 
     getApplicationsData: () => ipcRenderer.invoke('get-applications-data'),
 
@@ -139,6 +115,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     controlService: (serviceName, action) =>
         ipcRenderer.invoke('control-service', serviceName, action),
     getServiceDetails: serviceName => ipcRenderer.invoke('get-service-details', serviceName),
+
+    // Process management
+    getProcesses: () => ipcRenderer.invoke('get-processes'),
+    terminateProcess: pid => ipcRenderer.invoke('terminate-process', pid),
 
     // System utilities
     launchSystemUtility: utilityCommand =>

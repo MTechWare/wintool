@@ -11,7 +11,6 @@ class PackageManager {
         this.searchTerm = '';
         this.currentOperation = null;
         this.currentPackageManager = 'winget';
-        this.chocoAvailable = false;
         this.installedPackages = new Set();
         this.packagesWithUpdates = new Set();
         this.currentStatusFilter = 'all';
@@ -151,15 +150,8 @@ class PackageManager {
     }
 
     async checkChocoAvailability() {
-        try {
-            if (window.electronAPI && window.electronAPI.checkChocoAvailability) {
-                this.chocoAvailable = await window.electronAPI.checkChocoAvailability();
-            } else {
-                this.chocoAvailable = false;
-            }
-        } catch (error) {
-            this.chocoAvailable = false;
-        }
+        // Chocolatey support has been removed
+        this.chocoAvailable = false;
     }
 
     async getInstalledPackages() {
@@ -190,16 +182,8 @@ class PackageManager {
     }
 
     async getChocoInstalledPackages() {
-        try {
-            if (window.electronAPI && window.electronAPI.executeChocoCommand) {
-                const result = await window.electronAPI.executeChocoCommand('list --local-only');
-                if (result && result.output) {
-                    this.parseChocoList(result.output);
-                }
-            }
-        } catch (error) {
-            // Error getting choco installed packages
-        }
+        // Chocolatey support has been removed
+        return;
     }
 
     parseWingetList(output) {
@@ -227,28 +211,8 @@ class PackageManager {
     }
 
     parseChocoList(output) {
-        const lines = output.split('\n');
-
-        for (const line of lines) {
-            // Skip non-package lines
-            if (
-                !line.trim() ||
-                line.includes('Chocolatey v') ||
-                line.includes('packages installed')
-            ) {
-                continue;
-            }
-
-            // Parse choco list output format: packagename version
-            const parts = line.trim().split(' ');
-            if (parts.length >= 1) {
-                const packageId = parts[0].trim();
-                if (packageId && !packageId.includes('=')) {
-                    // Skip summary lines
-                    this.installedPackages.add(packageId.toLowerCase());
-                }
-            }
-        }
+        // Chocolatey support has been removed
+        return;
     }
 
     updatePackageManagerSelector() {

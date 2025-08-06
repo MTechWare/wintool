@@ -1470,13 +1470,7 @@ function validateAndSanitizeWingetCommand(command, logSecurity = true) {
     return validateAndSanitizeCommand(command, allowedCommands, 'WINGET', logSecurity);
 }
 
-/**
- * Validates and sanitizes chocolatey commands for security
- */
-function validateAndSanitizeChocoCommand(command) {
-    const allowedCommands = ['search', 'install', 'uninstall', 'list', 'info', 'upgrade', 'outdated'];
-    return validateAndSanitizeCommand(command, allowedCommands, '', false);
-}
+
 
 // Winget command execution handler
 ipcMain.handle('execute-winget-command', async (_, command) => {
@@ -1519,75 +1513,13 @@ ipcMain.handle('execute-winget-command', async (_, command) => {
     });
 });
 
-// Check if Chocolatey is available
-async function checkChocoAvailability() {
-    return new Promise(resolve => {
-        const chocoProcess = spawn('choco', ['--version'], {
-            shell: false,
-            stdio: ['pipe', 'pipe', 'pipe'],
-        });
 
-        chocoProcess.on('close', code => {
-            resolve(code === 0);
-        });
 
-        chocoProcess.on('error', () => {
-            resolve(false);
-        });
-    });
-}
+// Chocolatey support removed
 
-// Chocolatey command execution handler
-ipcMain.handle('execute-choco-command', async (_, command) => {
-    // Check if Chocolatey is available
-    const chocoAvailable = await checkChocoAvailability();
-    if (!chocoAvailable) {
-        throw new Error(
-            'Chocolatey is not installed or not available in PATH. Please install Chocolatey first: https://chocolatey.org/install'
-        );
-    }
 
-    // Rate limiting
-    if (!checkRateLimit('choco-command')) {
-        throw new Error('Rate limit exceeded. Please wait before making more requests.');
-    }
-
-    const sanitizedCommand = validateAndSanitizeChocoCommand(command);
-
-    return new Promise((resolve, reject) => {
-        const chocoProcess = spawn('choco', sanitizedCommand.split(' '), {
-            shell: false,
-            stdio: ['pipe', 'pipe', 'pipe'],
-        });
-
-        let stdout = '';
-        let stderr = '';
-
-        chocoProcess.stdout.on('data', data => {
-            stdout += data.toString();
-        });
-
-        chocoProcess.stderr.on('data', data => {
-            stderr += data.toString();
-        });
-
-        chocoProcess.on('close', code => {
-            const output = stdout + (stderr ? '\nErrors:\n' + stderr : '');
-            resolve({
-                code,
-                output,
-                success: code === 0,
-            });
-        });
-
-        chocoProcess.on('error', error => {
-            reject(new Error(`Failed to execute chocolatey: ${error.message}`));
-        });
-    });
-});
-
-// Chocolatey command execution with progress streaming
-ipcMain.handle('execute-choco-command-with-progress', async (_, command) => {
+// Chocolatey support removed - progress handler
+ipcMain.handle('execute-choco-command-with-progress', async (event, command) => {
 
     // Check if Chocolatey is available
     const chocoAvailable = await checkChocoAvailability();
@@ -1598,99 +1530,153 @@ ipcMain.handle('execute-choco-command-with-progress', async (_, command) => {
     }
 
     const sanitizedCommand = validateAndSanitizeChocoCommand(command);
+    const commandParts = sanitizedCommand.split(' ');
+    const mainCommand = commandParts[0];
 
-    return new Promise((resolve, reject) => {
-        const chocoProcess = spawn('choco', sanitizedCommand.split(' '), {
-            shell: false,
-            stdio: ['pipe', 'pipe', 'pipe'],
-        });
+    // Commands that require admin privileges
+    const adminCommands = ['install', 'uninstall', 'upgrade'];
+    const requiresAdmin = adminCommands.includes(mainCommand);
 
-        let stdout = '';
-        let stderr = '';
-        let progressPercentage = 0;
-
-        // Send initial progress
-        event.sender.send('choco-progress', {
-            type: 'progress',
-            percentage: 0,
-            message: 'Starting operation...',
-        });
-
-        chocoProcess.stdout.on('data', data => {
-            const output = data.toString();
-            stdout += output;
-
-            // Send progress updates
+    if (requiresAdmin) {
+        // For admin commands, use elevated execution with simulated progress
+        try {
+            // Send initial progress
             event.sender.send('choco-progress', {
-                type: 'output',
-                message: output,
+                type: 'progress',
+                percentage: 0,
+                message: 'Starting elevated operation...',
             });
 
-            // Try to extract progress information from chocolatey output
-            if (output.includes('Progress:')) {
-                const progressMatch = output.match(/Progress:\s*(\d+)%/);
-                if (progressMatch) {
-                    progressPercentage = parseInt(progressMatch[1]);
-                    event.sender.send('choco-progress', {
-                        type: 'progress',
-                        percentage: progressPercentage,
-                        message: `Processing... ${progressPercentage}%`,
-                    });
-                }
-            } else if (output.includes('Installing') || output.includes('Downloading')) {
-                progressPercentage = Math.min(progressPercentage + 10, 90);
-                event.sender.send('choco-progress', {
-                    type: 'progress',
-                    percentage: progressPercentage,
-                    message: 'Installing package...',
-                });
-            }
-        });
-
-        chocoProcess.stderr.on('data', data => {
-            const output = data.toString();
-            stderr += output;
-
+            // Send intermediate progress
             event.sender.send('choco-progress', {
-                type: 'output',
-                message: output,
+                type: 'progress',
+                percentage: 25,
+                message: 'Requesting administrator privileges...',
             });
-        });
 
-        chocoProcess.on('close', code => {
-            const output = stdout + (stderr ? '\nErrors:\n' + stderr : '');
+            const chocoCommand = `choco ${sanitizedCommand} -y`;
 
+            // Send progress before execution
+            event.sender.send('choco-progress', {
+                type: 'progress',
+                percentage: 50,
+                message: 'Executing command with elevated privileges...',
+            });
+
+            const output = await processPool.executeElevatedCommand(chocoCommand);
+
+            // Send completion progress
             event.sender.send('choco-progress', {
                 type: 'complete',
                 percentage: 100,
-                message:
-                    code === 0
-                        ? 'Operation completed successfully'
-                        : 'Operation completed with errors',
-                success: code === 0,
+                message: 'Operation completed successfully',
+                success: true,
             });
 
-            resolve({
-                code,
-                output,
-                success: code === 0,
-            });
-        });
-
-        chocoProcess.on('error', error => {
+            return {
+                code: 0,
+                output: output,
+                success: true,
+            };
+        } catch (error) {
             event.sender.send('choco-progress', {
                 type: 'error',
-                message: `Failed to execute chocolatey: ${error.message}`,
+                message: `Failed to execute elevated chocolatey command: ${error.message}`,
             });
-            reject(new Error(`Failed to execute chocolatey: ${error.message}`));
+            throw new Error(`Failed to execute elevated chocolatey command: ${error.message}`);
+        }
+    } else {
+        // Use regular spawn for non-admin commands with real-time progress
+        return new Promise((resolve, reject) => {
+            const chocoProcess = spawn('choco', commandParts, {
+                shell: false,
+                stdio: ['pipe', 'pipe', 'pipe'],
+            });
+
+            let stdout = '';
+            let stderr = '';
+            let progressPercentage = 0;
+
+            // Send initial progress
+            event.sender.send('choco-progress', {
+                type: 'progress',
+                percentage: 0,
+                message: 'Starting operation...',
+            });
+
+            chocoProcess.stdout.on('data', data => {
+                const output = data.toString();
+                stdout += output;
+
+                // Send progress updates
+                event.sender.send('choco-progress', {
+                    type: 'output',
+                    message: output,
+                });
+
+                // Try to extract progress information from chocolatey output
+                if (output.includes('Progress:')) {
+                    const progressMatch = output.match(/Progress:\s*(\d+)%/);
+                    if (progressMatch) {
+                        progressPercentage = parseInt(progressMatch[1]);
+                        event.sender.send('choco-progress', {
+                            type: 'progress',
+                            percentage: progressPercentage,
+                            message: `Processing... ${progressPercentage}%`,
+                        });
+                    }
+                } else if (output.includes('Installing') || output.includes('Downloading')) {
+                    progressPercentage = Math.min(progressPercentage + 10, 90);
+                    event.sender.send('choco-progress', {
+                        type: 'progress',
+                        percentage: progressPercentage,
+                        message: 'Installing package...',
+                    });
+                }
+            });
+
+            chocoProcess.stderr.on('data', data => {
+                const output = data.toString();
+                stderr += output;
+
+                event.sender.send('choco-progress', {
+                    type: 'output',
+                    message: output,
+                });
+            });
+
+            chocoProcess.on('close', code => {
+                const output = stdout + (stderr ? '\nErrors:\n' + stderr : '');
+
+                event.sender.send('choco-progress', {
+                    type: 'complete',
+                    percentage: 100,
+                    message:
+                        code === 0
+                            ? 'Operation completed successfully'
+                            : 'Operation completed with errors',
+                    success: code === 0,
+                });
+
+                resolve({
+                    code,
+                    output,
+                    success: code === 0,
+                });
+            });
+
+            chocoProcess.on('error', error => {
+                event.sender.send('choco-progress', {
+                    type: 'error',
+                    message: `Failed to execute chocolatey: ${error.message}`,
+                });
+                reject(new Error(`Failed to execute chocolatey: ${error.message}`));
+            });
         });
-    });
+    }
 });
 
-// Check Chocolatey availability
-ipcMain.handle('check-choco-availability', async () => {
-    return await checkChocoAvailability();
-});
+// Chocolatey support removed - availability check
 
 // Winget command execution with progress streaming
 ipcMain.handle('execute-winget-command-with-progress', async (event, command) => {
@@ -2924,6 +2910,68 @@ $result | ConvertTo-Json -Depth 2
             'ServiceDetails'
         );
         throw new Error(`Failed to get service details: ${error.message}`);
+    }
+});
+
+// Process Management IPC handlers
+ipcMain.handle('get-processes', async () => {
+    console.log('get-processes handler called');
+
+    try {
+        // Get running processes using PowerShell
+        const psScript = `
+Get-Process | Select-Object Id, ProcessName, CPU, WorkingSet | ForEach-Object {
+    @{
+        pid = $_.Id
+        name = $_.ProcessName
+        cpu = [math]::Round(($_.CPU -as [double]), 2)
+        memory = [math]::Round($_.WorkingSet / 1MB, 2)
+    }
+} | ConvertTo-Json
+        `.trim();
+
+        const output = await processPool.executePowerShellCommand(psScript);
+
+        if (!output || output.trim().length === 0) {
+            throw new Error('No output received from PowerShell command');
+        }
+
+        const processes = JSON.parse(output);
+        return {
+            success: true,
+            list: Array.isArray(processes) ? processes : [processes]
+        };
+    } catch (error) {
+        loggingManager.logError(`Error getting processes: ${error.message}`, 'ProcessManager');
+        throw new Error(`Failed to get processes: ${error.message}`);
+    }
+});
+
+ipcMain.handle('terminate-process', async (event, pid) => {
+    console.log(`terminate-process handler called for PID: ${pid}`);
+
+    // Input validation
+    if (!pid || typeof pid !== 'number') {
+        throw new Error('Invalid PID parameter');
+    }
+
+    if (pid <= 0 || pid > 65535) {
+        throw new Error('PID out of valid range');
+    }
+
+    try {
+        // Use PowerShell to terminate the process
+        const psScript = `Stop-Process -Id ${pid} -Force -ErrorAction Stop; Write-Output "Process terminated successfully"`;
+
+        const output = await processPool.executePowerShellCommand(psScript);
+        return {
+            success: true,
+            message: output.trim() || `Process ${pid} terminated successfully`,
+            pid: pid
+        };
+    } catch (error) {
+        loggingManager.logError(`Error terminating process ${pid}: ${error.message}`, 'ProcessManager');
+        throw new Error(`Failed to terminate process: ${error.message}`);
     }
 });
 
