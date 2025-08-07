@@ -325,6 +325,8 @@ async function initializeApplication() {
         app.setAppUserModelId('com.mtechware.wintool');
     }
 
+
+
     // Register global shortcut with retry mechanism
     const registerQuitShortcut = () => {
         // Check if shortcut is already registered
@@ -653,8 +655,10 @@ ipcMain.handle('start-performance-updates', async () => {
                 }
 
                 const memInfo = await windowsSysInfo.mem();
+                const cpuUsage = await windowsSysInfo.cpuUsage();
                 const metrics = {
                     mem: ((memInfo.active / memInfo.total) * 100).toFixed(2),
+                    cpu: cpuUsage.toFixed(2),
                 };
 
                 performanceCache = metrics;
@@ -959,8 +963,25 @@ ipcMain.handle('delete-environment-variable', async (event, name, target) => {
 // Lightweight system health info handler for dashboard
 ipcMain.handle('get-system-health-info', async () => {
     try {
-        // Only gather memory data for health dashboard (CPU monitoring removed)
+        // Gather memory and CPU data for health dashboard
         const mem = await windowsSysInfo.mem();
+
+        // Get CPU information for details display
+        let cpuInfo = {};
+        try {
+            cpuInfo = await windowsSysInfo.cpu();
+        } catch (error) {
+            console.warn('Could not get detailed CPU info:', error.message);
+            // Fallback to basic CPU info from os module
+            const osCpus = os.cpus();
+            cpuInfo = {
+                cores: osCpus.length,
+                speed: osCpus[0]?.speed ? osCpus[0].speed / 1000 : null, // Convert MHz to GHz
+                NumberOfCores: osCpus.length,
+                MaxClockSpeed: osCpus[0]?.speed || null,
+                Name: osCpus[0]?.model || 'Unknown CPU'
+            };
+        }
 
         // Format memory sizes
         const formatBytes = bytes => {
@@ -974,13 +995,26 @@ ipcMain.handle('get-system-health-info', async () => {
         // Calculate memory usage percentage
         const memoryUsagePercent = Math.round((mem.active / mem.total) * 100);
 
+        // Format CPU information - handle both WMI format and our custom format
+        const cpuCores = cpuInfo.cores || cpuInfo.NumberOfCores || os.cpus().length;
+        const cpuSpeed = cpuInfo.speed
+            ? `${cpuInfo.speed.toFixed(2)} GHz`
+            : cpuInfo.MaxClockSpeed
+            ? `${(cpuInfo.MaxClockSpeed / 1000).toFixed(2)} GHz`
+            : 'Unknown';
+
         return {
-            // Memory information only
+            // Memory information
             totalMemory: formatBytes(mem.total),
             usedMemory: formatBytes(mem.active),
             availableMemory: formatBytes(mem.available),
             freeMemory: formatBytes(mem.free),
             memoryUsagePercent: memoryUsagePercent,
+
+            // CPU information
+            cpuCores: cpuCores,
+            cpuSpeed: cpuSpeed,
+            cpuModel: cpuInfo.Name || 'Unknown CPU'
         };
     } catch (error) {
         loggingManager.logError(
@@ -2915,19 +2949,56 @@ $result | ConvertTo-Json -Depth 2
 
 // Process Management IPC handlers
 ipcMain.handle('get-processes', async () => {
-    console.log('get-processes handler called');
 
     try {
-        // Get running processes using PowerShell
+        // Get running processes using PowerShell with CPU percentage calculation
         const psScript = `
-Get-Process | Select-Object Id, ProcessName, CPU, WorkingSet | ForEach-Object {
-    @{
-        pid = $_.Id
-        name = $_.ProcessName
-        cpu = [math]::Round(($_.CPU -as [double]), 2)
-        memory = [math]::Round($_.WorkingSet / 1MB, 2)
+# Get all processes first
+$processes = Get-Process | Where-Object { $_.Id -ne 0 -and $_.ProcessName -ne "Idle" }
+$result = @()
+
+# Get CPU counter data for percentage calculation
+$cpuCounters = @{}
+try {
+    Get-Counter "\\Process(*)\\% Processor Time" -ErrorAction SilentlyContinue | ForEach-Object {
+        $_.CounterSamples | ForEach-Object {
+            $processName = $_.InstanceName
+            if ($processName -ne "_total" -and $processName -ne "idle") {
+                $cpuCounters[$processName] = [math]::Round($_.CookedValue, 2)
+            }
+        }
     }
-} | ConvertTo-Json
+} catch {
+    # If performance counters fail, we'll use fallback method
+}
+
+foreach ($proc in $processes) {
+    try {
+        $cpuPercent = 0.0
+        
+        # Try to get CPU from performance counters first
+        if ($cpuCounters.ContainsKey($proc.ProcessName)) {
+            $cpuPercent = [math]::Min($cpuCounters[$proc.ProcessName], 100.0)
+        }
+        # Fallback: estimate based on CPU time if available
+        elseif ($proc.CPU -and $proc.CPU -gt 0) {
+            # Simple heuristic: convert CPU seconds to a reasonable percentage
+            $cpuPercent = [math]::Min([math]::Round(($proc.CPU / 60), 2), 25.0)
+        }
+        
+        $result += @{
+            pid = $proc.Id
+            name = $proc.ProcessName
+            cpu = [math]::Round($cpuPercent, 2)
+            memory = [math]::Round($proc.WorkingSet / 1MB, 2)
+            path = try { $proc.Path } catch { "N/A" }
+        }
+    } catch {
+        continue
+    }
+}
+
+$result | ConvertTo-Json
         `.trim();
 
         const output = await processPool.executePowerShellCommand(psScript);
@@ -2937,6 +3008,9 @@ Get-Process | Select-Object Id, ProcessName, CPU, WorkingSet | ForEach-Object {
         }
 
         const processes = JSON.parse(output);
+
+
+
         return {
             success: true,
             list: Array.isArray(processes) ? processes : [processes]

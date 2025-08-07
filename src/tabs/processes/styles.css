@@ -166,3 +166,70 @@
     font-family: 'Consolas', 'Menlo', 'Monaco', monospace;
     color: #d0d0d0;
 }
+
+/* Loading and error states */
+.loading-message,
+.error-message {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.error-message {
+    color: #ff6b6b;
+}
+
+/* Terminate button states */
+#terminate-process-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#terminate-process-btn.terminating {
+    background-color: #666;
+    cursor: wait;
+}
+
+.process-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.process-actions .btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.process-actions .btn-secondary {
+    background-color: var(--background-dark);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.process-actions .btn-secondary:hover {
+    background-color: var(--hover-color);
+    border-color: var(--primary-color);
+}
+
+.process-actions .btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.process-actions .btn-danger:hover:not(:disabled) {
+    background-color: #c82333;
+}
+
+.process-actions .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

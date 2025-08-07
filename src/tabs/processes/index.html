@@ -15,7 +15,14 @@
         <input type="number" id="refresh-interval-input" value="5" min="1" max="60">
         <span>seconds</span>
     </div>
-    <button id="terminate-process-btn" class="btn btn-danger" disabled>Terminate Selected</button>
+    <div class="process-actions">
+        <button id="refresh-processes-btn" class="btn btn-secondary">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+        <button id="terminate-process-btn" class="btn btn-danger" disabled>
+            <i class="fas fa-times"></i> Terminate Selected
+        </button>
+    </div>
 </div>
 <div class="processes-container">
     <div class="process-list-container">

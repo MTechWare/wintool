@@ -61,6 +61,30 @@
             </div>
         </div>
 
+        <div class="metric-card cpu-card">
+            <div class="metric-header">
+                <h4><i class="fas fa-microchip"></i> CPU</h4>
+                <span class="metric-status" id="cpu-status">Good</span>
+            </div>
+            <div class="metric-content">
+                <div class="circular-progress" id="cpu-progress">
+                    <div class="progress-circle">
+                        <div class="progress-fill"></div>
+                        <div class="progress-text">
+                            <span id="cpu-percentage">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="metric-details">
+                    <div class="detail-item">
+                        <span>Usage:</span>
+                        <span id="cpu-usage">--%</span>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
 
         <div class="metric-card disk-card">
             <div class="metric-header">
@@ -102,6 +126,11 @@
         <div class="chart-container">
             <h4>Memory Usage History</h4>
             <canvas id="memory-chart" width="400" height="200"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h4>CPU Usage History</h4>
+            <canvas id="cpu-chart" width="400" height="200"></canvas>
         </div>
     </div>
 
@@ -149,6 +178,20 @@
                     <div class="threshold-item">
                         <label for="memory-critical">Critical (%)</label>
                         <input type="number" id="memory-critical" min="1" max="100" value="95">
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h4>CPU Thresholds</h4>
+                <div class="threshold-group">
+                    <div class="threshold-item">
+                        <label for="cpu-warning">Warning (%)</label>
+                        <input type="number" id="cpu-warning" min="1" max="100" value="75">
+                    </div>
+                    <div class="threshold-item">
+                        <label for="cpu-critical">Critical (%)</label>
+                        <input type="number" id="cpu-critical" min="1" max="100" value="90">
                     </div>
                 </div>
             </div>

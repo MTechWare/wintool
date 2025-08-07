@@ -2,7 +2,15 @@
     "name": "System Health",
     "icon": "fas fa-heartbeat",
     "description": "Real-time monitoring of system performance and health",
-    "version": "1.0.0",
+    "version": "3.0.0",
     "author": "WinTool",
-    "category": "monitoring"
+    "category": "monitoring",
+    "priority": 1,
+    "production": true,
+    "performance": {
+        "optimized": true,
+        "debugLogging": false,
+        "updateInterval": 15000,
+        "cacheTimeout": 10000
+    }
 }

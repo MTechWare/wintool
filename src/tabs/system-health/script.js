@@ -1,18 +1,25 @@
 let healthUpdateInterval;
 let memoryChart;
+let cpuChart;
 let memoryHistory = [];
+let cpuHistory = [];
 const maxHistoryPoints = 60;
 let isHealthDashboardActive = false;
 
 let lastHealthDataFetch = 0;
-const HEALTH_DATA_CACHE_DURATION = 5000; // Reduced from 20s to 5s for more responsive memory updates
+const HEALTH_DATA_CACHE_DURATION = 10000; // Production optimized cache duration
 let cachedHealthData = null;
 
 let refreshDebounceTimer = null;
-const REFRESH_DEBOUNCE_DELAY = 2000;
+const REFRESH_DEBOUNCE_DELAY = 1000; // Production optimized debounce
+
+// Production configuration
+const PRODUCTION_MODE = true;
+const DEBUG_LOGGING = false;
 
 let HEALTH_THRESHOLDS = {
     memory: { warning: 80, critical: 95 },
+    cpu: { warning: 75, critical: 90 },
     disk: { warning: 85, critical: 95 },
     temperature: { warning: 70, critical: 85 },
 };
@@ -76,6 +83,7 @@ async function loadSystemHealth(container) {
 
 function initializeCharts() {
     const memoryCanvas = document.getElementById('memory-chart');
+    const cpuCanvas = document.getElementById('cpu-chart');
 
     if (memoryCanvas) {
         const ctx = memoryCanvas.getContext('2d');
@@ -84,6 +92,15 @@ function initializeCharts() {
         memoryChart = { canvas: memoryCanvas, ctx: ctx };
 
         drawChart(memoryChart, memoryHistory, 'Memory Usage %', '#10b981');
+    }
+
+    if (cpuCanvas) {
+        const ctx = cpuCanvas.getContext('2d');
+
+        // Simple chart implementation
+        cpuChart = { canvas: cpuCanvas, ctx: ctx };
+
+        drawChart(cpuChart, cpuHistory, 'CPU Usage %', '#3b82f6');
     }
 }
 
@@ -195,14 +212,41 @@ function updateRealTimeMetrics(metrics) {
     // Check memory thresholds for alerts
     checkMetricThresholds('memory', memValue, '%');
 
-    // Update history
+    // Update CPU
+    if (metrics.cpu !== undefined) {
+        const cpuValue = parseFloat(metrics.cpu);
+        updateCircularProgress('cpu-progress', cpuValue);
+        document.getElementById('cpu-percentage').textContent = `${cpuValue.toFixed(1)}%`;
+        document.getElementById('cpu-usage').textContent = `${cpuValue.toFixed(1)}%`;
+        document.getElementById('cpu-status').textContent = getHealthStatus(
+            cpuValue,
+            HEALTH_THRESHOLDS.cpu
+        );
+        document.getElementById('cpu-status').className =
+            `metric-status ${getHealthStatusClass(cpuValue, HEALTH_THRESHOLDS.cpu)}`;
+
+        // Check CPU thresholds for alerts
+        checkMetricThresholds('cpu', cpuValue, '%');
+
+        // Update CPU history
+        cpuHistory.push(cpuValue);
+
+        if (cpuHistory.length > maxHistoryPoints) {
+            cpuHistory.shift();
+        }
+
+        // Redraw CPU chart
+        drawChart(cpuChart, cpuHistory, 'CPU Usage %', '#3b82f6');
+    }
+
+    // Update Memory history
     memoryHistory.push(memValue);
 
     if (memoryHistory.length > maxHistoryPoints) {
         memoryHistory.shift();
     }
 
-    // Redraw charts
+    // Redraw memory chart
     drawChart(memoryChart, memoryHistory, 'Memory Usage %', '#10b981');
 
     // Update overall status
@@ -301,6 +345,8 @@ function updateSystemDetails(systemInfo) {
             memStatusElement.className = `metric-status ${getHealthStatusClass(memPercent, HEALTH_THRESHOLDS.memory)}`;
         }
     }
+
+
 }
 
 async function updateDiskInfo(systemInfo) {
@@ -404,21 +450,27 @@ function formatBytes(bytes) {
 }
 
 function updateOverallStatus() {
-    const memValue = parseFloat(document.getElementById('memory-percentage').textContent);
+    const memValue = parseFloat(document.getElementById('memory-percentage').textContent) || 0;
+    const cpuValue = parseFloat(document.getElementById('cpu-percentage').textContent) || 0;
 
     let overallStatus = 'Excellent';
     let statusClass = '';
     let iconClass = 'fas fa-check-circle';
 
-    if (memValue > 95) {
+    // Check for critical conditions (either metric above critical threshold)
+    if (memValue > HEALTH_THRESHOLDS.memory.critical || cpuValue > HEALTH_THRESHOLDS.cpu.critical) {
         overallStatus = 'Critical';
         statusClass = 'error';
         iconClass = 'fas fa-exclamation-circle';
-    } else if (memValue > 80) {
+    }
+    // Check for warning conditions (either metric above warning threshold)
+    else if (memValue > HEALTH_THRESHOLDS.memory.warning || cpuValue > HEALTH_THRESHOLDS.cpu.warning) {
         overallStatus = 'Warning';
         statusClass = 'warning';
         iconClass = 'fas fa-exclamation-triangle';
-    } else if (memValue > 60) {
+    }
+    // Check for good conditions (either metric moderately high)
+    else if (memValue > 60 || cpuValue > 50) {
         overallStatus = 'Good';
     }
 
@@ -433,28 +485,38 @@ function updateOverallStatus() {
 }
 
 function setupEventListeners(container) {
-    const alertSettingsBtn = container.querySelector('#alert-settings-btn');
-    const refreshBtn = container.querySelector('#refresh-health-btn');
-    const exportBtn = container.querySelector('#export-health-btn');
-    const clearAlertsBtn = container.querySelector('#clear-alerts-btn');
-    const alertHistoryBtn = container.querySelector('#alert-history-btn');
+    // Try both container-scoped and global selectors as fallback
+    const alertSettingsBtn = container.querySelector('#alert-settings-btn') || document.getElementById('alert-settings-btn');
+    const refreshBtn = container.querySelector('#refresh-health-btn') || document.getElementById('refresh-health-btn');
+    const exportBtn = container.querySelector('#export-health-btn') || document.getElementById('export-health-btn');
+    const demoAlertBtn = container.querySelector('#demo-alert-btn') || document.getElementById('demo-alert-btn');
+    const clearAlertsBtn = container.querySelector('#clear-alerts-btn') || document.getElementById('clear-alerts-btn');
+    const alertHistoryBtn = container.querySelector('#alert-history-btn') || document.getElementById('alert-history-btn');
 
     // Alert section buttons (with different IDs to avoid conflicts)
-    const alertsSettingsBtn = container.querySelector('#alerts-settings-btn');
-    const alertsClearBtn = container.querySelector('#alerts-clear-btn');
-    const alertsHistoryBtn = container.querySelector('#alerts-history-btn');
+    const alertsSettingsBtn = container.querySelector('#alerts-settings-btn') || document.getElementById('alerts-settings-btn');
+    const alertsClearBtn = container.querySelector('#alerts-clear-btn') || document.getElementById('alerts-clear-btn');
+    const alertsHistoryBtn = container.querySelector('#alerts-history-btn') || document.getElementById('alerts-history-btn');
 
-    if (alertSettingsBtn && !alertSettingsBtn.hasAttribute('data-listener-attached')) {
+    if (alertSettingsBtn && !alertSettingsBtn.hasAttribute('data-listener-attached') && !alertSettingsBtn.hasAttribute('data-global-listener')) {
         alertSettingsBtn.addEventListener('click', openAlertSettings);
         alertSettingsBtn.setAttribute('data-listener-attached', 'true');
     }
 
-    if (refreshBtn && !refreshBtn.hasAttribute('data-listener-attached')) {
+    if (demoAlertBtn && !demoAlertBtn.hasAttribute('data-listener-attached') && !demoAlertBtn.hasAttribute('data-global-listener')) {
+        demoAlertBtn.addEventListener('click', () => {
+            // Create demo alerts for testing
+            createAlert('demo_memory', 'warning', 'Demo Memory Alert', 'This is a demo memory warning alert for testing purposes.');
+            createAlert('demo_cpu', 'critical', 'Demo CPU Alert', 'This is a demo CPU critical alert for testing purposes.');
+        });
+        demoAlertBtn.setAttribute('data-listener-attached', 'true');
+    }
+
+    if (refreshBtn && !refreshBtn.hasAttribute('data-listener-attached') && !refreshBtn.hasAttribute('data-global-listener')) {
         refreshBtn.addEventListener('click', async () => {
             // Debounce rapid clicks to prevent CPU spikes
-            if (refreshDebounceTimer) {
-                return;
-            }
+            if (refreshDebounceTimer) return;
+
             refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             refreshBtn.disabled = true;
 
@@ -462,11 +524,11 @@ function setupEventListeners(container) {
             cachedHealthData = null;
             lastHealthDataFetch = 0;
 
-            // Also clear the underlying system info cache for immediate updates
+            // Clear the underlying system info cache for immediate updates
             try {
                 await window.electronAPI.clearSystemInfoCache();
             } catch (error) {
-                console.warn('Failed to clear system info cache:', error);
+                // Silent fail for cache clearing
             }
 
             try {
@@ -489,10 +551,8 @@ function setupEventListeners(container) {
         refreshBtn.setAttribute('data-listener-attached', 'true');
     }
 
-    if (exportBtn && !exportBtn.hasAttribute('data-listener-attached')) {
-        exportBtn.addEventListener('click', () => {
-            exportHealthReport();
-        });
+    if (exportBtn && !exportBtn.hasAttribute('data-listener-attached') && !exportBtn.hasAttribute('data-global-listener')) {
+        exportBtn.addEventListener('click', exportHealthReport);
         exportBtn.setAttribute('data-listener-attached', 'true');
     }
 
@@ -582,8 +642,6 @@ async function gatherHealthReportData() {
                 },
                 cpu: {
                     model: systemInfo.cpuModel,
-                    cores: systemInfo.cpuCores,
-                    speed: systemInfo.cpuSpeed,
                 },
             };
 
@@ -596,6 +654,13 @@ async function gatherHealthReportData() {
                         status: getHealthStatus(
                             parseFloat(performanceData.mem),
                             HEALTH_THRESHOLDS.memory
+                        ),
+                    },
+                    cpu: {
+                        usage: parseFloat(performanceData.cpu || 0),
+                        status: getHealthStatus(
+                            parseFloat(performanceData.cpu || 0),
+                            HEALTH_THRESHOLDS.cpu
                         ),
                     },
                     disk: {
@@ -611,6 +676,7 @@ async function gatherHealthReportData() {
 
         // Get current UI values
         const memoryPercentage = document.getElementById('memory-percentage')?.textContent || 'N/A';
+        const cpuPercentage = document.getElementById('cpu-percentage')?.textContent || 'N/A';
         const diskPercentage = document.getElementById('disk-percentage')?.textContent || 'N/A';
         const overallStatus =
             document.getElementById('overall-status-text')?.textContent || 'Unknown';
@@ -618,6 +684,7 @@ async function gatherHealthReportData() {
         data.currentStatus = {
             overall: overallStatus,
             memory: memoryPercentage,
+            cpu: cpuPercentage,
             disk: diskPercentage,
         };
     } catch (error) {
@@ -1025,23 +1092,46 @@ function openAlertSettings() {
     const modal = document.getElementById('alert-settings-modal');
     if (!modal) return;
 
-    // Populate current settings
-    document.getElementById('memory-warning').value = HEALTH_THRESHOLDS.memory.warning;
-    document.getElementById('memory-critical').value = HEALTH_THRESHOLDS.memory.critical;
-    document.getElementById('disk-warning').value = HEALTH_THRESHOLDS.disk.warning;
-    document.getElementById('disk-critical').value = HEALTH_THRESHOLDS.disk.critical;
+    try {
+        // Populate current settings
+        const memoryWarning = document.getElementById('memory-warning');
+        const memoryCritical = document.getElementById('memory-critical');
+        const cpuWarning = document.getElementById('cpu-warning');
+        const cpuCritical = document.getElementById('cpu-critical');
+        const diskWarning = document.getElementById('disk-warning');
+        const diskCritical = document.getElementById('disk-critical');
 
-    document.getElementById('enable-sound-alerts').checked = alertSettings.enableSound;
-    document.getElementById('enable-desktop-notifications').checked =
-        alertSettings.enableDesktopNotifications;
-    document.getElementById('auto-dismiss-info').checked = alertSettings.autoDismissInfo;
-    document.getElementById('enable-native-notifications').checked =
-        alertSettings.enableNativeNotifications;
-    document.getElementById('persistent-critical-alerts').checked =
-        alertSettings.persistentCriticalAlerts;
-    document.getElementById('refresh-interval').value = alertSettings.refreshInterval || 15;
+        if (memoryWarning) memoryWarning.value = HEALTH_THRESHOLDS.memory.warning;
+        if (memoryCritical) memoryCritical.value = HEALTH_THRESHOLDS.memory.critical;
+        if (cpuWarning) cpuWarning.value = HEALTH_THRESHOLDS.cpu.warning;
+        if (cpuCritical) cpuCritical.value = HEALTH_THRESHOLDS.cpu.critical;
+        if (diskWarning) diskWarning.value = HEALTH_THRESHOLDS.disk.warning;
+        if (diskCritical) diskCritical.value = HEALTH_THRESHOLDS.disk.critical;
 
-    modal.style.display = 'flex';
+        const enableSound = document.getElementById('enable-sound-alerts');
+        const enableDesktop = document.getElementById('enable-desktop-notifications');
+        const autoDismiss = document.getElementById('auto-dismiss-info');
+        const enableNative = document.getElementById('enable-native-notifications');
+        const persistentCritical = document.getElementById('persistent-critical-alerts');
+        const refreshInterval = document.getElementById('refresh-interval');
+
+        if (enableSound) enableSound.checked = alertSettings.enableSound;
+        if (enableDesktop) enableDesktop.checked = alertSettings.enableDesktopNotifications;
+        if (autoDismiss) autoDismiss.checked = alertSettings.autoDismissInfo;
+        if (enableNative) enableNative.checked = alertSettings.enableNativeNotifications;
+        if (persistentCritical) persistentCritical.checked = alertSettings.persistentCriticalAlerts;
+        if (refreshInterval) refreshInterval.value = alertSettings.refreshInterval || 15;
+
+        modal.style.display = 'flex';
+
+        // Focus on the first input for better UX
+        setTimeout(() => {
+            const firstInput = modal.querySelector('input');
+            if (firstInput) firstInput.focus();
+        }, 100);
+    } catch (error) {
+        window.electronAPI.logError(`Error opening alert settings: ${error.message}`, 'SystemHealthTab');
+    }
 }
 
 function openAlertHistory() {
@@ -1159,12 +1249,18 @@ function setupModalEventListeners() {
                 // Validate and save threshold settings
                 const memoryWarning = parseInt(document.getElementById('memory-warning').value);
                 const memoryCritical = parseInt(document.getElementById('memory-critical').value);
+                const cpuWarning = parseInt(document.getElementById('cpu-warning').value);
+                const cpuCritical = parseInt(document.getElementById('cpu-critical').value);
                 const diskWarning = parseInt(document.getElementById('disk-warning').value);
                 const diskCritical = parseInt(document.getElementById('disk-critical').value);
 
                 // Validation
                 if (memoryWarning >= memoryCritical) {
                     alert('Memory warning threshold must be less than critical threshold');
+                    return;
+                }
+                if (cpuWarning >= cpuCritical) {
+                    alert('CPU warning threshold must be less than critical threshold');
                     return;
                 }
                 if (diskWarning >= diskCritical) {
@@ -1175,6 +1271,8 @@ function setupModalEventListeners() {
                 // Apply validated settings
                 HEALTH_THRESHOLDS.memory.warning = memoryWarning;
                 HEALTH_THRESHOLDS.memory.critical = memoryCritical;
+                HEALTH_THRESHOLDS.cpu.warning = cpuWarning;
+                HEALTH_THRESHOLDS.cpu.critical = cpuCritical;
                 HEALTH_THRESHOLDS.disk.warning = diskWarning;
                 HEALTH_THRESHOLDS.disk.critical = diskCritical;
 
@@ -1252,6 +1350,7 @@ function setupModalEventListeners() {
         resetAlertSettings.addEventListener('click', () => {
             // Reset to defaults
             HEALTH_THRESHOLDS.memory = { warning: 80, critical: 95 };
+            HEALTH_THRESHOLDS.cpu = { warning: 75, critical: 90 };
             HEALTH_THRESHOLDS.disk = { warning: 85, critical: 95 };
 
             alertSettings.enableSound = true;
@@ -1264,6 +1363,8 @@ function setupModalEventListeners() {
             // Update UI
             document.getElementById('memory-warning').value = 80;
             document.getElementById('memory-critical').value = 95;
+            document.getElementById('cpu-warning').value = 75;
+            document.getElementById('cpu-critical').value = 90;
             document.getElementById('disk-warning').value = 85;
             document.getElementById('disk-critical').value = 95;
 
@@ -1353,7 +1454,21 @@ if (window.tabEventManager) {
 
 // Auto-initialize when the script loads
 function initializeSystemHealth() {
-    const container = document.querySelector('.folder-tab-container[data-tab="system-health"]');
+    // Try multiple container selectors to find the correct one
+    const possibleSelectors = [
+        '.folder-tab-container[data-tab="system-health"]',
+        '[data-tab="system-health"]',
+        '#tab-system-health',
+        '#tab-folder-system-health',
+        '.system-health-container'
+    ];
+
+    let container = null;
+    for (const selector of possibleSelectors) {
+        container = document.querySelector(selector);
+        if (container) break;
+    }
+
     if (container) {
         loadSystemHealth(container);
     } else {
@@ -1366,10 +1481,41 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Also try to initialize immediately if DOM is already loaded
-if (document.readyState === 'loading') {
-    // DOM still loading, waiting for DOMContentLoaded
-} else {
+if (document.readyState !== 'loading') {
     setTimeout(initializeSystemHealth, 100);
+}
+
+// Alternative initialization using lazy loading helper pattern
+try {
+    const lazyHelper = new LazyLoadingHelper('system-health');
+    if (lazyHelper.shouldInitialize()) {
+        lazyHelper.markScriptExecuted();
+
+        // Try to find container using multiple approaches
+        let container = null;
+        if (typeof tabContainer !== 'undefined') {
+            container = tabContainer;
+        }
+        if (!container) {
+            container = document.querySelector('[data-tab="system-health"]');
+        }
+        if (!container) {
+            container = document.querySelector('#tab-system-health');
+        }
+        if (!container) {
+            container = document.querySelector('#tab-folder-system-health');
+        }
+
+        if (container) {
+            loadSystemHealth(container);
+        } else {
+            lazyHelper.markTabReady();
+        }
+    } else {
+        lazyHelper.markTabReady();
+    }
+} catch (error) {
+    // Fallback initialization if lazy helper not available
 }
 
 // Clean up when page unloads to prevent memory leaks
@@ -1381,5 +1527,82 @@ document.addEventListener('visibilitychange', () => {
         cleanupHealthDashboard();
     }
 });
+
+// Global fallback for button functionality - ensures buttons work even if main initialization fails
+function ensureButtonsWork() {
+    // Settings button fallback
+    const settingsBtn = document.getElementById('alert-settings-btn');
+    if (settingsBtn && !settingsBtn.hasAttribute('data-global-listener') && !settingsBtn.hasAttribute('data-listener-attached')) {
+        settingsBtn.addEventListener('click', openAlertSettings);
+        settingsBtn.setAttribute('data-global-listener', 'true');
+    }
+
+    // Export button fallback
+    const exportBtn = document.getElementById('export-health-btn');
+    if (exportBtn && !exportBtn.hasAttribute('data-global-listener') && !exportBtn.hasAttribute('data-listener-attached')) {
+        exportBtn.addEventListener('click', exportHealthReport);
+        exportBtn.setAttribute('data-global-listener', 'true');
+    }
+
+    // Refresh button fallback
+    const refreshBtn = document.getElementById('refresh-health-btn');
+    if (refreshBtn && !refreshBtn.hasAttribute('data-global-listener') && !refreshBtn.hasAttribute('data-listener-attached')) {
+        refreshBtn.addEventListener('click', async () => {
+            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            refreshBtn.disabled = true;
+            try {
+                await updateHealthMetrics();
+            } catch (error) {
+                window.electronAPI.logError(`Error refreshing health metrics: ${error.message}`, 'SystemHealthTab');
+            } finally {
+                refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                refreshBtn.disabled = false;
+            }
+        });
+        refreshBtn.setAttribute('data-global-listener', 'true');
+    }
+
+    // Demo button fallback
+    const demoBtn = document.getElementById('demo-alert-btn');
+    if (demoBtn && !demoBtn.hasAttribute('data-global-listener') && !demoBtn.hasAttribute('data-listener-attached')) {
+        demoBtn.addEventListener('click', () => {
+            createAlert('demo_memory', 'warning', 'Demo Memory Alert', 'This is a demo memory warning alert for testing purposes.');
+            createAlert('demo_cpu', 'critical', 'Demo CPU Alert', 'This is a demo CPU critical alert for testing purposes.');
+        });
+        demoBtn.setAttribute('data-global-listener', 'true');
+    }
+}
+
+// Production optimizations
+function applyProductionOptimizations() {
+    if (!PRODUCTION_MODE) return;
+
+    // Optimize update intervals for production
+    const alertSettings = JSON.parse(localStorage.getItem('healthDashboard_alertSettings') || '{}');
+    if (!alertSettings.refreshInterval) {
+        alertSettings.refreshInterval = 15; // Default to 15 seconds in production
+        localStorage.setItem('healthDashboard_alertSettings', JSON.stringify(alertSettings));
+    }
+
+    // Limit alert history in production
+    const alertHistory = JSON.parse(localStorage.getItem('healthDashboard_alertHistory') || '[]');
+    if (alertHistory.length > 100) {
+        const trimmedHistory = alertHistory.slice(-100); // Keep only last 100 alerts
+        localStorage.setItem('healthDashboard_alertHistory', JSON.stringify(trimmedHistory));
+    }
+
+    // Disable demo button in production
+    const demoBtn = document.getElementById('demo-alert-btn');
+    if (demoBtn) {
+        demoBtn.style.display = 'none';
+    }
+}
+
+// Set up global button fallbacks after a delay to ensure DOM is ready
+setTimeout(() => {
+    ensureButtonsWork();
+    applyProductionOptimizations();
+}, 1000);
+setTimeout(ensureButtonsWork, 3000); // Try again after 3 seconds in case of slow loading
 
 

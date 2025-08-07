@@ -1,0 +1,47 @@
+{
+  "name": "System Health Dashboard",
+  "icon": "fas fa-heartbeat",
+  "description": "Real-time monitoring of system performance and health",
+  "version": "3.0.0",
+  "category": "System",
+  "priority": 1,
+  "performance": {
+    "updateInterval": 15000,
+    "cacheTimeout": 10000,
+    "debounceDelay": 1000,
+    "maxAlertHistory": 100,
+    "enableDebugLogging": false,
+    "enablePerformanceMonitoring": true,
+    "optimizeForProduction": true
+  },
+  "features": {
+    "realTimeMonitoring": true,
+    "alertSystem": true,
+    "exportReports": true,
+    "thresholdConfiguration": true,
+    "historicalData": true,
+    "demoMode": false
+  },
+  "thresholds": {
+    "memory": {
+      "warning": 80,
+      "critical": 95
+    },
+    "cpu": {
+      "warning": 75,
+      "critical": 90
+    },
+    "disk": {
+      "warning": 85,
+      "critical": 95
+    }
+  },
+  "alerts": {
+    "enableSound": true,
+    "enableDesktopNotifications": true,
+    "enableNativeNotifications": true,
+    "autoDismissInfo": true,
+    "persistentCriticalAlerts": true,
+    "maxActiveAlerts": 10
+  }
+}
