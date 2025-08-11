@@ -146,81 +146,66 @@ try {
 }
 
 if (-not $wingetInstalled) {
-    Write-StatusMsg "Installing winget" "PENDING" "Yellow"
+    Write-StatusMsg "Attempting winget installation" "PROCESSING" "Yellow"
     
     try {
-        # Method 1: Try installing via Microsoft Store (most reliable)
-        Write-StatusMsg "Attempting Microsoft Store installation" "TRYING" "Yellow"
-        
-        # Check if we can use Add-AppxPackage with the Microsoft Store URL
-        $storeAppUrl = "https://www.microsoft.com/p/app-installer/9nblggh4nns1"
-        
-        # Try to install the latest App Installer from GitHub releases
-        $apiUrl = "https://api.github.com/repos/microsoft/winget-cli/releases/latest"
+        # Quick attempt to install winget
+        $tempDir = Join-Path $env:TEMP "WingetInstall_$(Get-Random)"
+        New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
         $ProgressPreference = 'SilentlyContinue'
-        $release = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing -ErrorAction Stop
-        $ProgressPreference = 'Continue'
         
-        # Find the .msixbundle asset
-        $asset = $release.assets | Where-Object { $_.name -like "*.msixbundle" } | Select-Object -First 1
+        # Download the latest winget installer
+        $apiUrl = "https://api.github.com/repos/microsoft/winget-cli/releases/latest"
+        $release = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing
+        $wingetAsset = $release.assets | Where-Object { $_.name -like "*.msixbundle" } | Select-Object -First 1
         
-        if ($asset) {
-            $downloadUrl = $asset.browser_download_url
-            $fileName = $asset.name
-            $downloadPath = Join-Path $env:TEMP $fileName
+        if ($wingetAsset) {
+            $wingetPath = Join-Path $tempDir $wingetAsset.name
+            Invoke-WebRequest -Uri $wingetAsset.browser_download_url -OutFile $wingetPath -UseBasicParsing
             
-            Write-StatusMsg "Downloading winget" "$fileName" "Yellow"
-            $ProgressPreference = 'SilentlyContinue'
-            Invoke-WebRequest -Uri $downloadUrl -OutFile $downloadPath -UseBasicParsing -ErrorAction Stop
+            # Try to install winget
+            Add-AppxPackage -Path $wingetPath -ErrorAction Stop
+            
+            # Clean up and verify
+            Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
             $ProgressPreference = 'Continue'
             
-            # Install the package
-            Write-StatusMsg "Installing package" "PROCESSING" "Yellow"
-            Add-AppxPackage -Path $downloadPath -ErrorAction Stop
-            Remove-Item $downloadPath -Force -ErrorAction SilentlyContinue
-            
-            # Wait a moment for installation to complete
-            Start-Sleep -Seconds 3
-            
-            # Re-check winget
+            Start-Sleep -Seconds 2
             $wingetVersion = winget --version 2>$null
+            
             if ($wingetVersion -and $wingetVersion -match "v?\d+\.\d+") {
                 $wingetInstalled = $true
                 Write-StatusMsg "Winget installation" "SUCCESS" "Green"
                 Write-StatusMsg "Winget version" "$wingetVersion" "Green"
             } else {
-                throw "Winget not available after installation"
+                throw "Verification failed"
             }
         } else {
-            throw "Could not find winget installer in GitHub releases"
+            throw "Installer not found"
         }
         
     } catch {
-        Write-StatusMsg "Automatic installation" "FAILED" "Red"
-        Write-Host "  Error: $_" -ForegroundColor "Red"
-        Write-Host ""
-        Write-Host "  Manual Installation Required:" -ForegroundColor "Yellow"
-        Write-Host "  1. Open Microsoft Store" -ForegroundColor "White"
-        Write-Host "  2. Search for 'App Installer'" -ForegroundColor "White"
-        Write-Host "  3. Install or Update 'App Installer'" -ForegroundColor "White"
-        Write-Host "  4. Re-run this installer" -ForegroundColor "White"
-        Write-Host ""
-        Write-Host "  Alternative: Download from https://github.com/microsoft/winget-cli/releases" -ForegroundColor "White"
-        Write-Host ""
+        Write-StatusMsg "Winget installation" "FAILED" "Yellow"
+        Write-Host "  No worries - WinTool works great without winget!" -ForegroundColor "Gray"
         
-        $response = Read-Host "  Continue without winget? (y/N)"
-        if ($response -notmatch "^[Yy]") {
-            Write-Host "  Installation cancelled. Please install winget and try again." -ForegroundColor "Red"
-            exit 1
-        } else {
-            Write-StatusMsg "Continuing without winget" "WARNING" "Yellow"
-            $wingetInstalled = $false
-        }
+        # Clean up on failure
+        if (Test-Path $tempDir) { Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue }
+        $ProgressPreference = 'Continue'
+        $wingetInstalled = $false
     }
 }
 
 # Installation steps
 Write-ThemeLine "Installation Process" -Color "DarkYellow"
+Write-Host ""
+
+# Note about winget status
+if ($wingetInstalled) {
+    Write-StatusMsg "Winget status" "AVAILABLE" "Green"
+} else {
+    Write-StatusMsg "Winget status" "NOT AVAILABLE" "Yellow"
+    Write-Host "  WinTool will work without winget - package management features will be disabled." -ForegroundColor "Gray"
+}
 Write-Host ""
 
 # Create install directory if it doesn't exist
