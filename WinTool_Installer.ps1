@@ -77,7 +77,7 @@ function Show-Spinner {
 # ======================================================================
 # WinTool Installer Script
 # Created by MTechWare
-# Version: 1.0.1
+# Version: 1.0.2
 # ======================================================================
 # This script will:
 #  - Check for required dependencies
@@ -129,13 +129,15 @@ Write-StatusMsg "Computer" "$computerName" "Yellow"
 Write-StatusMsg "User" "$userName" "Yellow"
 Write-StatusMsg "Installing to" "$installDir" "Yellow"
 Write-Host ""
+Write-Host "  Note: Winget is optional but recommended for package management features." -ForegroundColor "Gray"
+Write-Host ""
 
 # Check for winget
 Write-StatusMsg "Checking for winget" "PENDING" "Yellow"
 $wingetInstalled = $false
 try {
-    $wingetVersion = winget --version 2>&1
-    if ($wingetVersion -match "\d+\.\d+\.\d+") {
+    $wingetVersion = winget --version 2>$null
+    if ($wingetVersion -and $wingetVersion -match "v?\d+\.\d+") {
         $wingetInstalled = $true
         Write-StatusMsg "Winget version" "$wingetVersion" "Green"
     }
@@ -145,31 +147,75 @@ try {
 
 if (-not $wingetInstalled) {
     Write-StatusMsg "Installing winget" "PENDING" "Yellow"
-    $appInstallerUrl = "https://aka.ms/getwinget"
-    $appInstallerPath = Join-Path $env:TEMP "AppInstaller.msixbundle"
-
+    
     try {
+        # Method 1: Try installing via Microsoft Store (most reliable)
+        Write-StatusMsg "Attempting Microsoft Store installation" "TRYING" "Yellow"
+        
+        # Check if we can use Add-AppxPackage with the Microsoft Store URL
+        $storeAppUrl = "https://www.microsoft.com/p/app-installer/9nblggh4nns1"
+        
+        # Try to install the latest App Installer from GitHub releases
+        $apiUrl = "https://api.github.com/repos/microsoft/winget-cli/releases/latest"
         $ProgressPreference = 'SilentlyContinue'
-        Invoke-WebRequest -Uri $appInstallerUrl -OutFile $appInstallerPath -UseBasicParsing -ErrorAction Stop
+        $release = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing -ErrorAction Stop
         $ProgressPreference = 'Continue'
-        Add-AppxPackage -Path $appInstallerPath
-        Remove-Item $appInstallerPath -Force
-
-        # Re-check winget
-        $wingetVersion = winget --version 2>&1
-        if ($wingetVersion -match "\d+\.\d+\.\d+") {
-            $wingetInstalled = $true
-            Write-StatusMsg "Winget installation" "SUCCESS" "Green"
+        
+        # Find the .msixbundle asset
+        $asset = $release.assets | Where-Object { $_.name -like "*.msixbundle" } | Select-Object -First 1
+        
+        if ($asset) {
+            $downloadUrl = $asset.browser_download_url
+            $fileName = $asset.name
+            $downloadPath = Join-Path $env:TEMP $fileName
+            
+            Write-StatusMsg "Downloading winget" "$fileName" "Yellow"
+            $ProgressPreference = 'SilentlyContinue'
+            Invoke-WebRequest -Uri $downloadUrl -OutFile $downloadPath -UseBasicParsing -ErrorAction Stop
+            $ProgressPreference = 'Continue'
+            
+            # Install the package
+            Write-StatusMsg "Installing package" "PROCESSING" "Yellow"
+            Add-AppxPackage -Path $downloadPath -ErrorAction Stop
+            Remove-Item $downloadPath -Force -ErrorAction SilentlyContinue
+            
+            # Wait a moment for installation to complete
+            Start-Sleep -Seconds 3
+            
+            # Re-check winget
+            $wingetVersion = winget --version 2>$null
+            if ($wingetVersion -and $wingetVersion -match "v?\d+\.\d+") {
+                $wingetInstalled = $true
+                Write-StatusMsg "Winget installation" "SUCCESS" "Green"
+                Write-StatusMsg "Winget version" "$wingetVersion" "Green"
+            } else {
+                throw "Winget not available after installation"
+            }
         } else {
-            Write-StatusMsg "Winget installation" "FAILED" "Red"
-            Write-Host "  Please install 'App Installer' from the Microsoft Store manually and re-run this installer." -ForegroundColor "Red"
-            exit 1
+            throw "Could not find winget installer in GitHub releases"
         }
+        
     } catch {
-        Write-StatusMsg "Winget installation" "FAILED" "Red"
+        Write-StatusMsg "Automatic installation" "FAILED" "Red"
         Write-Host "  Error: $_" -ForegroundColor "Red"
-        Write-Host "  Please install 'App Installer' from the Microsoft Store manually and re-run this installer." -ForegroundColor "Red"
-        exit 1
+        Write-Host ""
+        Write-Host "  Manual Installation Required:" -ForegroundColor "Yellow"
+        Write-Host "  1. Open Microsoft Store" -ForegroundColor "White"
+        Write-Host "  2. Search for 'App Installer'" -ForegroundColor "White"
+        Write-Host "  3. Install or Update 'App Installer'" -ForegroundColor "White"
+        Write-Host "  4. Re-run this installer" -ForegroundColor "White"
+        Write-Host ""
+        Write-Host "  Alternative: Download from https://github.com/microsoft/winget-cli/releases" -ForegroundColor "White"
+        Write-Host ""
+        
+        $response = Read-Host "  Continue without winget? (y/N)"
+        if ($response -notmatch "^[Yy]") {
+            Write-Host "  Installation cancelled. Please install winget and try again." -ForegroundColor "Red"
+            exit 1
+        } else {
+            Write-StatusMsg "Continuing without winget" "WARNING" "Yellow"
+            $wingetInstalled = $false
+        }
     }
 }
 
