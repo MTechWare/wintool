@@ -88,14 +88,14 @@ async function loadCurrentSettings() {
             const elevationSelector = document.getElementById('elevation-preference');
             if (elevationSelector) {
                 elevationSelector.value = elevationPreference;
-                
+
                 // Check current elevation status and update the description
                 try {
                     const elevationStatus = await window.electronAPI.checkElevationStatus();
-                    const statusText = elevationStatus.isElevated ? 
-                        ' (Currently running as Administrator)' : 
+                    const statusText = elevationStatus.isElevated ?
+                        ' (Currently running as Administrator)' :
                         ' (Currently running as Standard User)';
-                    
+
                     // Find the description element and update it
                     const descriptionElement = elevationSelector.parentElement.querySelector('.settings-description');
                     if (descriptionElement) {
@@ -132,6 +132,12 @@ async function loadCurrentSettings() {
             const topMostCheckbox = document.getElementById('top-most-checkbox');
             if (topMostCheckbox) {
                 topMostCheckbox.checked = topMost;
+            }
+
+            const foldTabs = await window.electronAPI.getSetting('foldTabs', false);
+            const foldTabsCheckbox = document.getElementById('fold-tabs-checkbox');
+            if (foldTabsCheckbox) {
+                foldTabsCheckbox.checked = foldTabs;
             }
 
             await loadKeyboardShortcutsSettings();
@@ -227,7 +233,21 @@ function initSettingsNavigation() {
             }
         });
     }
+
+    const foldTabsCheckbox = document.getElementById('fold-tabs-checkbox');
+    if (foldTabsCheckbox) {
+        foldTabsCheckbox.addEventListener('change', e => {
+            const foldTabs = e.target.checked;
+            applyFoldTabsSetting(foldTabs);
+        });
+    }
 }
+
+// Debug function to test fold tabs setting
+window.testFoldTabs = function (fold = true) {
+    console.log('Testing fold tabs:', fold);
+    applyFoldTabsSetting(fold);
+};
 
 function toggleRainbowSpeedContainer(enabled) {
     const container = document.getElementById('rainbow-speed-container');
@@ -276,6 +296,9 @@ export async function saveSettings() {
 
             const topMost = document.getElementById('top-most-checkbox')?.checked || false;
             await window.electronAPI.setSetting('topMost', topMost);
+
+            const foldTabs = document.getElementById('fold-tabs-checkbox')?.checked || false;
+            await window.electronAPI.setSetting('foldTabs', foldTabs);
 
             // Save performance settings
             await savePerformanceSettings();
@@ -477,6 +500,10 @@ export async function loadAndApplyStartupSettings() {
 
             const loadedHiddenTabs = await window.electronAPI.getSetting('hiddenTabs', []);
             setHiddenTabs(loadedHiddenTabs);
+
+            const foldTabs = await window.electronAPI.getSetting('foldTabs', false);
+            applyFoldTabsSetting(foldTabs);
+
             console.log('Startup settings loaded and applied');
         }
     } catch (error) {
@@ -554,15 +581,44 @@ function applySettings() {
     if (window.electronAPI && window.electronAPI.setWindowOpacity) {
         window.electronAPI.setWindowOpacity(parseFloat(transparency));
     }
+
+    // Apply fold tabs setting
+    const foldTabs = document.getElementById('fold-tabs-checkbox')?.checked || false;
+    applyFoldTabsSetting(foldTabs);
 }
 
+export function applyFoldTabsSetting(foldTabs) {
+    console.log('Applying fold tabs setting:', foldTabs);
+    const sidebar = document.querySelector('.sidebar');
 
+    if (!sidebar) {
+        console.error('Sidebar not found');
+        return;
+    }
 
+    if (foldTabs) {
+        sidebar.classList.add('folded-tabs');
+        console.log('Added folded-tabs class to sidebar');
 
+        // Add tooltips to tab items
+        const tabItems = sidebar.querySelectorAll('.tab-item');
+        tabItems.forEach(tabItem => {
+            const span = tabItem.querySelector('span');
+            if (span) {
+                tabItem.setAttribute('data-tooltip', span.textContent);
+            }
+        });
+    } else {
+        sidebar.classList.remove('folded-tabs');
+        console.log('Removed folded-tabs class from sidebar');
 
-
-
-
+        // Remove tooltips
+        const tabItems = sidebar.querySelectorAll('.tab-item');
+        tabItems.forEach(tabItem => {
+            tabItem.removeAttribute('data-tooltip');
+        });
+    }
+}
 
 // Helper function to reset performance customization flag (can be called from console)
 window.resetPerformanceCustomization = async function () {
@@ -653,8 +709,8 @@ async function savePerformanceSettings() {
             if (detectedMode !== currentPerformanceMode && detectedMode !== 'custom') {
                 const shouldOverride = confirm(
                     `Your current settings match "${getPerformanceModeDisplayName(detectedMode)}" mode, but you have "${getPerformanceModeDisplayName(currentPerformanceMode)}" selected.\n\n` +
-                        `Would you like to switch to "${getPerformanceModeDisplayName(detectedMode)}" mode to match your settings?\n\n` +
-                        `Click "OK" to switch modes, or "Cancel" to keep "${getPerformanceModeDisplayName(currentPerformanceMode)}" mode with custom settings.`
+                    `Would you like to switch to "${getPerformanceModeDisplayName(detectedMode)}" mode to match your settings?\n\n` +
+                    `Click "OK" to switch modes, or "Cancel" to keep "${getPerformanceModeDisplayName(currentPerformanceMode)}" mode with custom settings.`
                 );
 
                 if (shouldOverride) {
@@ -756,7 +812,7 @@ function setupPerformanceModeHandlers() {
             if (hasCustomSettings) {
                 const userConfirmed = confirm(
                     `Switching to ${getPerformanceModeDisplayName(selectedMode)} mode will overwrite your current advanced settings.\n\n` +
-                        `Do you want to continue and apply the preset settings for ${getPerformanceModeDisplayName(selectedMode)} mode?`
+                    `Do you want to continue and apply the preset settings for ${getPerformanceModeDisplayName(selectedMode)} mode?`
                 );
 
                 if (!userConfirmed) {

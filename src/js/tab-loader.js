@@ -469,6 +469,12 @@ class TabLoader {
 
         tabList.appendChild(tabItem);
 
+        // Add tooltip for folded tabs if currently folded
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar && sidebar.classList.contains('folded-tabs')) {
+            tabItem.setAttribute('data-tooltip', config.name || 'Unnamed Tab');
+        }
+
         // Make the new tab draggable if the feature is enabled
         if (window.makeNewTabDraggable) {
             window.makeNewTabDraggable(tabItem);

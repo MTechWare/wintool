@@ -85,6 +85,17 @@ function initTabSearch() {
             searchInput.blur();
         }
     });
+
+    // Handle search icon click for folded tabs
+    const searchIcon = document.querySelector('.tab-search-icon');
+    if (searchIcon) {
+        searchIcon.addEventListener('click', () => {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar && sidebar.classList.contains('folded-tabs')) {
+                toggleFoldedTabsSearch();
+            }
+        });
+    }
 }
 
 function searchTabs(searchTerm) {
@@ -101,6 +112,40 @@ function searchTabs(searchTerm) {
             tabItem.classList.add('hidden');
         }
     });
+}
+
+function toggleFoldedTabsSearch() {
+    const searchInput = document.getElementById('tab-search');
+    const searchContainer = document.querySelector('.tab-search-container');
+    
+    if (!searchInput || !searchContainer) return;
+
+    // Toggle search input visibility using CSS class
+    if (searchContainer.classList.contains('search-active')) {
+        // Hide search input
+        searchContainer.classList.remove('search-active');
+        searchInput.value = '';
+        searchTabs(''); // Clear search results
+        searchInput.blur();
+    } else {
+        // Show search input temporarily
+        searchContainer.classList.add('search-active');
+        searchInput.focus();
+        
+        // Hide it again when it loses focus or on escape
+        const hideSearch = () => {
+            searchContainer.classList.remove('search-active');
+            searchInput.value = '';
+            searchTabs('');
+        };
+
+        searchInput.addEventListener('blur', hideSearch, { once: true });
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                hideSearch();
+            }
+        }, { once: true });
+    }
 }
 
 /**
@@ -130,6 +175,7 @@ async function initDraggableTabs() {
  * 1. Adds CSS classes for drag styling
  * 2. Enables draggable attributes on tab items
  * 3. Sets up drag event listeners
+ * 4. Sets up mutation observer for new tabs
  *
  * @returns {void}
  */
@@ -142,6 +188,12 @@ function enableDraggableTabsFunction() {
 
     // Make all current tab items draggable
     makeAllTabsDraggable();
+    
+    // Set up mutation observer to automatically make new tabs draggable
+    setupTabMutationObserver();
+    
+    // Start periodic health check to ensure tabs remain draggable
+    startDraggableHealthCheck();
 }
 
 /**
@@ -159,11 +211,19 @@ function enableDraggableTabsFunction() {
  */
 function makeAllTabsDraggable() {
     const tabItems = document.querySelectorAll('.tab-item');
+    console.log(`Making ${tabItems.length} tabs draggable:`, Array.from(tabItems).map(item => item.getAttribute('data-tab')));
 
     tabItems.forEach(tabItem => {
-        tabItem.draggable = true; // Enable HTML5 drag and drop
-        tabItem.classList.add('draggable'); // Add styling for draggable state
-        addDragListeners(tabItem); // Register drag event handlers
+        // Force remove any existing draggable state first
+        tabItem.draggable = false;
+        tabItem.classList.remove('draggable');
+        
+        // Small delay to ensure DOM is ready
+        setTimeout(() => {
+            tabItem.draggable = true; // Enable HTML5 drag and drop
+            tabItem.classList.add('draggable'); // Add styling for draggable state
+            addDragListeners(tabItem); // Register drag event handlers
+        }, 10);
     });
 }
 
@@ -183,12 +243,95 @@ function makeAllTabsDraggable() {
  * @returns {void}
  */
 function addDragListeners(tabItem) {
+    // Remove existing listeners to prevent duplicates
+    removeDragListeners(tabItem);
+    
     tabItem.addEventListener('dragstart', handleDragStart); // Start drag operation
     tabItem.addEventListener('dragend', handleDragEnd); // End drag operation
     tabItem.addEventListener('dragover', handleDragOver); // Handle drag over
     tabItem.addEventListener('drop', handleDrop); // Handle drop
     tabItem.addEventListener('dragenter', handleDragEnter); // Visual feedback on enter
     tabItem.addEventListener('dragleave', handleDragLeave); // Visual feedback on leave
+    
+    // Add marker for debugging
+    tabItem.setAttribute('data-drag-listeners', 'true');
+}
+
+/**
+ * Remove drag and drop event listeners from a tab item
+ * 
+ * @param {HTMLElement} tabItem - The tab item element to remove listeners from
+ * @returns {void}
+ */
+function removeDragListeners(tabItem) {
+    tabItem.removeEventListener('dragstart', handleDragStart);
+    tabItem.removeEventListener('dragend', handleDragEnd);
+    tabItem.removeEventListener('dragover', handleDragOver);
+    tabItem.removeEventListener('drop', handleDrop);
+    tabItem.removeEventListener('dragenter', handleDragEnter);
+    tabItem.removeEventListener('dragleave', handleDragLeave);
+    
+    // Remove marker
+    tabItem.removeAttribute('data-drag-listeners');
+}
+
+/**
+ * Set up mutation observer to automatically make new tabs draggable
+ * This ensures that dynamically added tabs are always draggable
+ */
+function setupTabMutationObserver() {
+    const tabList = document.getElementById('tab-list');
+    if (!tabList) return;
+
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('tab-item')) {
+                        console.log('New tab detected, making it draggable:', node.getAttribute('data-tab'));
+                        // Small delay to ensure the tab is fully rendered
+                        setTimeout(() => {
+                            node.draggable = true;
+                            node.classList.add('draggable');
+                            addDragListeners(node);
+                        }, 50);
+                    }
+                });
+            }
+        });
+    });
+
+    observer.observe(tabList, {
+        childList: true,
+        subtree: false
+    });
+    
+    console.log('Tab mutation observer set up');
+}
+
+/**
+ * Periodic check to ensure all tabs remain draggable
+ * This is a fallback mechanism in case something interferes with draggable state
+ */
+function startDraggableHealthCheck() {
+    setInterval(() => {
+        const tabItems = document.querySelectorAll('.tab-item');
+        let fixedTabs = 0;
+        
+        tabItems.forEach(tabItem => {
+            if (!tabItem.draggable || !tabItem.classList.contains('draggable') || !tabItem.hasAttribute('data-drag-listeners')) {
+                console.log('Fixing draggable state for tab:', tabItem.getAttribute('data-tab'));
+                tabItem.draggable = true;
+                tabItem.classList.add('draggable');
+                addDragListeners(tabItem);
+                fixedTabs++;
+            }
+        });
+        
+        if (fixedTabs > 0) {
+            console.log(`Fixed draggable state for ${fixedTabs} tabs`);
+        }
+    }, 5000); // Check every 5 seconds
 }
 
 let draggedTab = null;
@@ -210,17 +353,23 @@ let dragOverTab = null;
  * @returns {void}
  */
 function handleDragStart(e) {
-    draggedTab = this; // Store reference to dragged tab
-    this.classList.add('dragging'); // Apply dragging visual state
+    try {
+        draggedTab = this; // Store reference to dragged tab
+        this.classList.add('dragging'); // Apply dragging visual state
 
-    // Configure drag operation
-    e.dataTransfer.effectAllowed = 'move'; // Only allow move operations
-    e.dataTransfer.setData('text/html', this.outerHTML); // Set drag data
+        // Configure drag operation
+        e.dataTransfer.effectAllowed = 'move'; // Only allow move operations
+        e.dataTransfer.setData('text/html', this.outerHTML); // Set drag data
 
-    // Activate drag mode on the tab list for visual feedback
-    const tabList = document.getElementById('tab-list');
-    if (tabList) {
-        tabList.classList.add('drag-active');
+        // Activate drag mode on the tab list for visual feedback
+        const tabList = document.getElementById('tab-list');
+        if (tabList) {
+            tabList.classList.add('drag-active');
+        }
+        
+        console.log('Drag started for tab:', this.getAttribute('data-tab'));
+    } catch (error) {
+        console.error('Error in handleDragStart:', error);
     }
 }
 
@@ -293,26 +442,34 @@ function handleDragLeave(e) {
 }
 
 function handleDrop(e) {
-    if (e.stopPropagation) {
-        e.stopPropagation();
-    }
-
-    if (draggedTab !== this) {
-        const rect = this.getBoundingClientRect();
-        const midpoint = rect.top + rect.height / 2;
-        const insertBefore = e.clientY < midpoint;
-
-        const tabList = document.getElementById('tab-list');
-        if (insertBefore) {
-            tabList.insertBefore(draggedTab, this);
-        } else {
-            tabList.insertBefore(draggedTab, this.nextSibling);
+    try {
+        if (e.stopPropagation) {
+            e.stopPropagation();
         }
 
-        saveTabOrder();
-    }
+        if (draggedTab !== this) {
+            const rect = this.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            const insertBefore = e.clientY < midpoint;
 
-    return false;
+            const tabList = document.getElementById('tab-list');
+            if (tabList && draggedTab) {
+                if (insertBefore) {
+                    tabList.insertBefore(draggedTab, this);
+                } else {
+                    tabList.insertBefore(draggedTab, this.nextSibling);
+                }
+
+                saveTabOrder();
+                console.log('Tab dropped and reordered');
+            }
+        }
+
+        return false;
+    } catch (error) {
+        console.error('Error in handleDrop:', error);
+        return false;
+    }
 }
 
 export async function saveTabOrder() {
@@ -363,7 +520,12 @@ export async function loadTabOrder() {
             tabList.appendChild(tabItem);
         });
 
+        // Re-apply draggable functionality after reordering tabs
+        // This is necessary because appendChild moves elements but doesn't preserve event listeners
+        makeAllTabsDraggable();
+
         console.log('Tab order loaded and applied:', savedOrder);
+        console.log('Draggable functionality re-applied to all tabs after reordering');
     } catch (error) {
         console.error('Error loading tab order:', error);
     }
@@ -371,12 +533,65 @@ export async function loadTabOrder() {
 
 export function makeNewTabDraggable(tabItem) {
     try {
-        tabItem.draggable = true;
-        tabItem.classList.add('draggable');
-        addDragListeners(tabItem);
+        console.log('Making new tab draggable:', tabItem.getAttribute('data-tab'));
+        
+        // Ensure clean state first
+        tabItem.draggable = false;
+        tabItem.classList.remove('draggable');
+        
+        // Apply draggable state with small delay
+        setTimeout(() => {
+            tabItem.draggable = true;
+            tabItem.classList.add('draggable');
+            addDragListeners(tabItem);
+        }, 25);
     } catch (error) {
         console.error('Error making new tab draggable:', error);
     }
+}
+
+/**
+ * Debug function to test tab draggability
+ * Can be called from browser console to verify all tabs are draggable
+ * 
+ * @returns {Object} Status of each tab's draggability
+ */
+export function testTabDraggability() {
+    const tabItems = document.querySelectorAll('.tab-item');
+    const results = {};
+    
+    tabItems.forEach(tabItem => {
+        const tabId = tabItem.getAttribute('data-tab');
+        results[tabId] = {
+            draggable: tabItem.draggable,
+            hasDraggableClass: tabItem.classList.contains('draggable'),
+            hasEventListeners: tabItem.hasAttribute('data-drag-listeners')
+        };
+    });
+    
+    console.log('Tab draggability test results:', results);
+    return results;
+}
+
+/**
+ * Force refresh draggable functionality for all tabs
+ * Can be called manually if dragging stops working
+ */
+export function forceRefreshTabDraggability() {
+    console.log('Force refreshing tab draggability...');
+    makeAllTabsDraggable();
+    
+    // Also re-apply after a short delay in case of timing issues
+    setTimeout(() => {
+        makeAllTabsDraggable();
+        console.log('Tab draggability force refresh completed');
+    }, 100);
+}
+
+// Make functions available globally for debugging
+if (typeof window !== 'undefined') {
+    window.testTabDraggability = testTabDraggability;
+    window.forceRefreshTabDraggability = forceRefreshTabDraggability;
 }
 
 /**
