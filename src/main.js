@@ -16,6 +16,9 @@ const fsSync = require('fs');
 const os = require('os');
 const windowsSysInfo = require('./utils/windows-sysinfo');
 const discordPresence = require('./js/modules/discord-presence');
+const { createRateLimiter } = require('./js/modules/rate-limiter');
+const { getAppDataPath: getAppDataPathFromModule } = require('./js/modules/app-paths');
+const { applyPerformanceOptimizations: applyPerformanceOptimizationsModule } = require('./js/modules/performance-optimizer');
 const SimpleCommandExecutor = require('./utils/simple-command-executor');
 const WindowManager = require('./modules/window-manager');
 const SettingsManager = require('./modules/settings-manager');
@@ -35,15 +38,8 @@ const processPool = new SimpleCommandExecutor();
  * @throws {Error} Logs error if optimization application fails
  */
 async function applyPerformanceOptimizations() {
-    try {
-        const systemCapabilities = await processPool.detectSystemCapabilities();
-        await settingsManager.applyPerformanceOptimizations(systemCapabilities);
-    } catch (error) {
-        loggingManager.logError(
-            `Error applying performance optimizations: ${error.message}`,
-            'PerformanceOptimizer'
-        );
-    }
+    // Delegate to module to keep logic centralized
+    return applyPerformanceOptimizationsModule(processPool, settingsManager, loggingManager);
 }
 
 const settingsManager = new SettingsManager();
@@ -78,41 +74,8 @@ async function ensureAppDirectoriesExist() {
     }
 }
 
-const rateLimiter = new Map();
-const RATE_LIMIT_WINDOW = 60000;
-const MAX_REQUESTS_PER_WINDOW = 30;
-
-/**
- * Checks if an operation is within rate limit constraints.
- * Implements a sliding window rate limiter to prevent abuse of sensitive operations.
- *
- * @function checkRateLimit
- * @param {string} operation - The operation identifier to check rate limit for
- * @returns {boolean} True if operation is allowed, false if rate limit exceeded
- */
-function checkRateLimit(operation) {
-    const now = Date.now();
-    const key = operation;
-
-    if (!rateLimiter.has(key)) {
-        rateLimiter.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
-        return true;
-    }
-
-    const limit = rateLimiter.get(key);
-    if (now > limit.resetTime) {
-        limit.count = 1;
-        limit.resetTime = now + RATE_LIMIT_WINDOW;
-        return true;
-    }
-
-    if (limit.count >= MAX_REQUESTS_PER_WINDOW) {
-        return false;
-    }
-
-    limit.count++;
-    return true;
-}
+// Initialize shared rate limiter
+const { checkRateLimit } = createRateLimiter({ windowMs: 60000, max: 30 });
 
 app.setName('WinTool');
 
@@ -127,22 +90,11 @@ app.commandLine.appendSwitch('--memory-pressure-off');
 app.commandLine.appendSwitch('--max_old_space_size=512');
 
 /**
- * Gets the user-writable path for storing app data.
- * Prefers LOCALAPPDATA on Windows, falls back to Electron's userData path.
- *
- * @function getAppDataPath
- * @returns {string} The full path to the application data directory
+ * Gets the user-writable path for storing app data via module.
+ * Delegates to `src/js/modules/app-paths.js` to centralize path logic.
  */
 function getAppDataPath() {
-    let basePath;
-
-    if (process.platform === 'win32' && process.env.LOCALAPPDATA) {
-        basePath = process.env.LOCALAPPDATA;
-    } else {
-        basePath = app.getPath('userData');
-    }
-
-    return path.join(basePath, 'MTechWare', 'WinTool');
+    return getAppDataPathFromModule(app);
 }
 
 /**

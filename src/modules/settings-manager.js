@@ -77,7 +77,7 @@ class SettingsManager {
                     settingsStore.set('enableDiscordRpc', true);
                     settingsStore.set('enableLazyLoading', false); // Disable lazy loading for instant access
                 } else if (mode === 'balanced') {
-                    settingsStore.set('fastSystemInfo', true);
+                    settingsStore.set('fastSystemInfo', false); // Automatically disable Fast System Information in Balanced Mode
                     settingsStore.set('cacheSystemInfo', true);
                     settingsStore.set('enableDiscordRpc', true);
                     settingsStore.set('enableLazyLoading', true);
@@ -366,6 +366,7 @@ class SettingsManager {
             } else {
                 // Balanced settings for mid-range systems
                 settingsStore.set('performanceMode', 'balanced');
+                settingsStore.set('fastSystemInfo', false); // Automatically disable Fast System Information in Balanced Mode
                 settingsStore.set('cacheSystemInfo', true);
             }
         } catch (error) {
