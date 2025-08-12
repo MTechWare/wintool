@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![WinTool Version](https://img.shields.io/badge/WinTool-v0.3.4wb-orange?style=for-the-badge&logo=windows&logoColor=white)
+![WinTool Version](https://img.shields.io/badge/WinTool-v0.3.5wb-orange?style=for-the-badge&logo=windows&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows_11-blue?style=for-the-badge&logo=windows)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=for-the-badge)
 ![GitHub Stars](https://img.shields.io/github/stars/MTechWare/wintool?style=for-the-badge&logo=github)
@@ -18,23 +18,11 @@ WinTool is a powerful and intuitive application for Windows system management, d
 
 ## 🆕 What's New
 
-# Version: v0.3.4wb
+# Version: v0.3.5wb
 
 ---
 
-## :sparkles: **New Features**
-
-**Added Fold Tabs Setting - New option in Settings → Behavior to fold tabs to show only icons, creating a more compact sidebar interface with hover tooltips**
-
----
-
-## :bug: **Bug Fixes**
-
-**Fixed Help Modal not showing - Resolved ID conflicts between main help modal and tab-specific help modals**
-
-**Fixed Tab Dragging Issue - All tabs are now properly draggable.**
-
-**Fixed PowerShell Installer winget installation - Updated installer to use GitHub API for more reliable winget installation with better fallback options**
+**Fixed Balanced Mode Performance Settings - When ⚖️ Balanced Mode is enabled, Fast System Information is now automatically disabled.**
 
 ---
 
@@ -210,6 +198,24 @@ WinTool is designed with a modular architecture, separating the core tools from 
 
 - **Core Tools**: Located in the `src/tabs/` directory. Each tool is a self-contained module with its own HTML, CSS, JavaScript, and a `config.json` file for metadata.
 - **Plugin System**: Plugins are stored in the `%LOCALAPPDATA%\MTechWare\WinTool\Plugins` directory. Each plugin includes a `plugin.json` manifest, UI files (`index.html`, `styles.css`, `script.js`), and an optional `backend.js` for advanced functionality.
+
+---
+
+## 🧭 Tab Loading 
+
+How tabs load, in plain terms:
+
+1) **Find tabs**: `TabLoader` discovers built-in tabs in `src/tabs/` and installed plugins.
+2) **Build UI**: It adds a sidebar item and a content area for each tab.
+3) **Load assets**: Injects `styles.css` and prepares `script.js` for the tab.
+4) **Init + ready**: The tab’s `script.js` runs once, then calls `markTabAsReady('tab-id')`.
+5) **Done**: When all tabs are ready (or timeout passes), startup completes.
+
+Notes:
+- Use `LazyLoadingHelper` in `script.js` to run init once and auto-call ready.
+- Plugins follow the same rule: call `markTabAsReady()` when initialized.
+
+---
 
 ## 🤝 Support
 
