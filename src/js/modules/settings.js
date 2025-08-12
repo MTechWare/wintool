@@ -876,7 +876,7 @@ function getExpectedSettingsForMode(mode) {
             };
         case 'balanced':
             return {
-                fastSystemInfo: true,
+                fastSystemInfo: false, // Fast System Information is automatically disabled in Balanced Mode
                 cacheSystemInfo: true,
                 enableDiscordRpc: true,
                 enableLazyLoading: true,
@@ -936,7 +936,7 @@ function detectPerformanceModeFromSettings(
 
     // Balanced mode characteristics
     if (
-        fastSystemInfo &&
+        !fastSystemInfo && // Fast System Information is disabled in Balanced Mode
         cacheSystemInfo &&
         enableDiscordRpc &&
         enableLazyLoading

@@ -108,15 +108,15 @@ export const DEFAULT_TAB_ORDER = [
     'tweaks', // 3. Apply system optimizations
     'cleanup', // 4. Clean up system files
     'services', // 5. Manage system services
-    'packages', // 7. Install/manage software
-    'appx-packages', // 8. Manage Windows Store apps
-    'networking', // 9. Network configuration/monitoring
-    'environment-variables', // 10. System configuration
-    'system-utilities', // 11. Access Windows tools
-    'event-viewer', // 12. Troubleshooting and logs
-    'script-editor', // 13. Advanced scripting
-    'windows-unattend', // 14. Advanced deployment
-    'about', // 15. Always last
+    'packages', // 6. Install/manage software
+    'appx-packages', // 7. Manage Windows Store apps
+    'networking', // 8. Network configuration/monitoring
+    'environment-variables', // 9. System configuration
+    'system-utilities', // 10. Access Windows tools
+    'event-viewer', // 11. Troubleshooting and logs
+    'script-editor', // 12. Advanced scripting
+    'windows-unattend', // 13. Advanced deployment
+    'about', // 14. Always last
 ];
 
 export const DEFAULT_SHORTCUTS = {
