@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![WinTool Version](https://img.shields.io/badge/WinTool-v0.3.5wb-orange?style=for-the-badge&logo=windows&logoColor=white)
+![WinTool Version](https://img.shields.io/badge/WinTool-v0.3.6wb-orange?style=for-the-badge&logo=windows&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows_11-blue?style=for-the-badge&logo=windows)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=for-the-badge)
 ![GitHub Stars](https://img.shields.io/github/stars/MTechWare/wintool?style=for-the-badge&logo=github)
@@ -18,11 +18,20 @@ WinTool is a powerful and intuitive application for Windows system management, d
 
 ## 🆕 What's New
 
-# Version: v0.3.5wb
+# Version: v0.3.6wb
 
 ---
 
-**Fixed Balanced Mode Performance Settings - When ⚖️ Balanced Mode is enabled, Fast System Information is now automatically disabled.**
+## :sparkles: **New Features**
+
+**Registry Editor Tab - Complete Registry Management:**
+- :file_folder: **Tree Navigation** - Browse Windows Registry with expandable key structure
+- :pencil2: **Value Editing** - Create, modify, and delete registry values with type support
+- :heavy_plus_sign: **Key Management** - Add new registry keys and subkeys
+- :shield: **Admin Protection** - Requires administrator privileges for system safety
+- :warning: **Smart Warnings** - Built-in alerts for potentially dangerous operations
+- :computer: **Professional UI** - Clean, modern interface with syntax highlighting
+
 
 ---
 
