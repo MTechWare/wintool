@@ -1,0 +1,200 @@
+<div class="tab-header">
+    <div>
+        <h1><i class="fas fa-edit"></i> Registry Editor</h1>
+        <p>Browse, search, and manage Windows Registry with backup capabilities</p>
+    </div>
+    <div>
+        <button id="refresh-registry-btn" class="action-btn" title="Refresh Registry View">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+    </div>
+</div>
+
+<div class="plugin-warning security">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span><strong>Warning:</strong> Registry editing can cause system instability or prevent Windows from starting. Always create a backup before making changes. <strong>Administrator privileges</strong> are required for most registry operations.</span>
+</div>
+
+<div class="registry-content">
+    <!-- Registry Navigation and Search -->
+    <div class="registry-toolbar">
+        <div class="registry-navigation">
+            <button id="registry-back-btn" class="nav-btn" title="Go Back" disabled>
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <button id="registry-forward-btn" class="nav-btn" title="Go Forward" disabled>
+                <i class="fas fa-arrow-right"></i>
+            </button>
+            <button id="registry-up-btn" class="nav-btn" title="Go Up">
+                <i class="fas fa-arrow-up"></i>
+            </button>
+            <div class="registry-path-container">
+                <input type="text" id="registry-path-input" class="registry-path-input" 
+                       placeholder="Enter registry path (e.g., HKEY_LOCAL_MACHINE\SOFTWARE)" readonly>
+                <button id="registry-go-btn" class="nav-btn" title="Navigate to Path">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="registry-search">
+            <input type="text" id="registry-search-input" class="registry-search-input" 
+                   placeholder="Search keys and values...">
+            <button id="registry-search-btn" class="search-btn" title="Search Registry">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Registry Browser Layout -->
+    <div class="registry-browser">
+        <!-- Left Panel: Registry Tree -->
+        <div class="registry-tree-panel">
+            <div class="panel-header">
+                <h3><i class="fas fa-sitemap"></i> Registry Keys</h3>
+            </div>
+            <div class="registry-tree-container">
+                <div id="registry-tree" class="registry-tree">
+                    <div class="registry-loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Loading registry structure...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Registry Values -->
+        <div class="registry-values-panel">
+            <div class="panel-header">
+                <h3><i class="fas fa-list"></i> Registry Values</h3>
+                <div class="values-actions">
+                    <button id="add-value-btn" class="btn btn-small btn-primary" title="Add New Value">
+                        <i class="fas fa-plus"></i> Add Value
+                    </button>
+                    <button id="add-key-btn" class="btn btn-small btn-secondary" title="Add New Key">
+                        <i class="fas fa-folder-plus"></i> Add Key
+                    </button>
+                    <button id="remove-key-btn" class="btn btn-small btn-danger" title="Remove Selected Key">
+                        <i class="fas fa-trash"></i> Remove Key
+                    </button>
+                </div>
+            </div>
+            
+            <div class="registry-values-container">
+                <div class="registry-values-header">
+                    <div class="value-column name-column">Name</div>
+                    <div class="value-column type-column">Type</div>
+                    <div class="value-column data-column">Data</div>
+                    <div class="value-column actions-column">Actions</div>
+                </div>
+                
+                <div id="registry-values-list" class="registry-values-list">
+                    <div class="registry-loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Select a registry key to view values...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Registry Value Edit Modal -->
+<div id="registry-value-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="registry-value-modal-title"><i class="fas fa-edit"></i> Edit Registry Value</h3>
+            <button class="modal-close close-btn" onclick="closeModal('registry-value-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="registry-value-name">Value Name:</label>
+                <input type="text" id="registry-value-name" class="form-input" placeholder="Enter value name">
+            </div>
+            <div class="form-group">
+                <label for="registry-value-type">Value Type:</label>
+                <select id="registry-value-type" class="form-select">
+                    <option value="REG_SZ">String (REG_SZ)</option>
+                    <option value="REG_DWORD">DWORD (REG_DWORD)</option>
+                    <option value="REG_QWORD">QWORD (REG_QWORD)</option>
+                    <option value="REG_BINARY">Binary (REG_BINARY)</option>
+                    <option value="REG_MULTI_SZ">Multi-String (REG_MULTI_SZ)</option>
+                    <option value="REG_EXPAND_SZ">Expandable String (REG_EXPAND_SZ)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="registry-value-data">Value Data:</label>
+                <textarea id="registry-value-data" class="form-textarea" rows="4" placeholder="Enter value data"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('registry-value-modal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveRegistryValue()">Save Value</button>
+        </div>
+    </div>
+</div>
+
+<!-- Advanced Search Modal -->
+<div id="registry-search-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-search-plus"></i> Advanced Registry Search</h3>
+            <button class="modal-close close-btn" onclick="closeModal('registry-search-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="search-term">Search Term:</label>
+                <input type="text" id="search-term" class="form-input" placeholder="Enter search term">
+            </div>
+            <div class="form-group">
+                <label>Search In:</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="search-keys" checked> Key Names</label>
+                    <label><input type="checkbox" id="search-values" checked> Value Names</label>
+                    <label><input type="checkbox" id="search-data" checked> Value Data</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="search-root">Search Root:</label>
+                <select id="search-root" class="form-select">
+                    <option value="HKEY_CURRENT_USER">HKEY_CURRENT_USER</option>
+                    <option value="HKEY_LOCAL_MACHINE">HKEY_LOCAL_MACHINE</option>
+                    <option value="HKEY_CLASSES_ROOT">HKEY_CLASSES_ROOT</option>
+                    <option value="HKEY_USERS">HKEY_USERS</option>
+                    <option value="HKEY_CURRENT_CONFIG">HKEY_CURRENT_CONFIG</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label><input type="checkbox" id="search-case-sensitive"> Case Sensitive</label>
+                <label><input type="checkbox" id="search-whole-word"> Whole Words Only</label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('registry-search-modal')">Cancel</button>
+            <button class="btn btn-primary" onclick="performAdvancedSearch()">Search</button>
+        </div>
+    </div>
+</div>
+
+<!-- Search Results Modal -->
+<div id="registry-search-results-modal" class="modal" style="display: none;">
+    <div class="modal-content large-modal">
+        <div class="modal-header">
+            <h3><i class="fas fa-list-ul"></i> Search Results</h3>
+            <button class="modal-close close-btn" onclick="closeModal('registry-search-results-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="search-results-container">
+                <div class="search-results-header">
+                    <span id="search-results-count">0 results found</span>
+                </div>
+                <div id="search-results-list" class="search-results-list">
+                    <!-- Search results will be populated here -->
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" onclick="closeModal('registry-search-results-modal')">Close</button>
+        </div>
+    </div>
+</div>

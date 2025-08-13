@@ -14,6 +14,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
 const os = require('os');
+const Registry = require('winreg');
 const windowsSysInfo = require('./utils/windows-sysinfo');
 const discordPresence = require('./js/modules/discord-presence');
 const { createRateLimiter } = require('./js/modules/rate-limiter');
@@ -952,8 +953,8 @@ ipcMain.handle('get-system-health-info', async () => {
         const cpuSpeed = cpuInfo.speed
             ? `${cpuInfo.speed.toFixed(2)} GHz`
             : cpuInfo.MaxClockSpeed
-            ? `${(cpuInfo.MaxClockSpeed / 1000).toFixed(2)} GHz`
-            : 'Unknown';
+                ? `${(cpuInfo.MaxClockSpeed / 1000).toFixed(2)} GHz`
+                : 'Unknown';
 
         return {
             // Memory information
@@ -3060,6 +3061,725 @@ ipcMain.handle('execute-cmd', async (event, command) => {
     }
 });
 
+// Registry root key mappings for winreg
+const REGISTRY_HIVES = {
+    'HKEY_CLASSES_ROOT': Registry.HKCR,
+    'HKEY_CURRENT_USER': Registry.HKCU,
+    'HKEY_LOCAL_MACHINE': Registry.HKLM,
+    'HKEY_USERS': Registry.HKU,
+    'HKEY_CURRENT_CONFIG': Registry.HKCC
+};
+
+// Registry Management IPC handlers - Using winreg for fast native access
+ipcMain.handle('get-registry-subkeys', async (_, keyPath) => {
+    try {
+        console.log(`Getting registry subkeys for path: ${keyPath}`);
+
+        if (!keyPath) {
+            // Return root keys
+            const rootKeys = ['HKEY_CLASSES_ROOT', 'HKEY_CURRENT_USER', 'HKEY_LOCAL_MACHINE', 'HKEY_USERS', 'HKEY_CURRENT_CONFIG'];
+            console.log('Returning root keys:', rootKeys);
+            return rootKeys;
+        }
+
+        // Parse the registry path
+        const pathParts = keyPath.split('\\');
+        const rootKey = pathParts[0];
+        const subPath = pathParts.slice(1).join('\\');
+
+        if (!REGISTRY_HIVES[rootKey]) {
+            throw new Error(`Invalid registry root key: ${rootKey}`);
+        }
+
+        // Create registry object using winreg (much faster than PowerShell)
+        const regKey = new Registry({
+            hive: REGISTRY_HIVES[rootKey],
+            key: subPath ? '\\' + subPath : ''
+        });
+
+        // Get subkeys using native Windows Registry API
+        return new Promise((resolve, reject) => {
+            regKey.keys((err, items) => {
+                if (err) {
+                    // Handle common registry errors gracefully
+                    if (err.message && err.message.includes('cannot find')) {
+                        console.log(`Registry key not found: ${keyPath}`);
+                        resolve([]); // Key doesn't exist, return empty array
+                        return;
+                    }
+                    console.error('Registry error:', err);
+                    loggingManager.logError(`Registry access error for ${keyPath}: ${err.message}`, 'RegistryEditor');
+                    resolve([]); // Return empty array instead of rejecting to prevent UI crashes
+                    return;
+                }
+
+                const subKeys = items.map(item => {
+                    // Extract just the key name from the full path
+                    const keyName = item.key.split('\\').pop();
+                    return keyName;
+                });
+
+                console.log(`Found ${subKeys.length} subkeys for ${keyPath}`);
+                resolve(subKeys);
+            });
+        });
+    } catch (error) {
+        console.error('Error in get-registry-subkeys handler:', error);
+        loggingManager.logError(`Error getting registry subkeys for ${keyPath}: ${error.message}`, 'RegistryEditor');
+        return [];
+    }
+});
+
+ipcMain.handle('get-registry-values', async (_, keyPath) => {
+    try {
+        if (!keyPath) return [];
+
+        // Parse the registry path
+        const pathParts = keyPath.split('\\');
+        const rootKey = pathParts[0];
+        const subPath = pathParts.slice(1).join('\\');
+
+        if (!REGISTRY_HIVES[rootKey]) {
+            throw new Error(`Invalid registry root key: ${rootKey}`);
+        }
+
+        // Create registry object using winreg
+        const regKey = new Registry({
+            hive: REGISTRY_HIVES[rootKey],
+            key: subPath ? '\\' + subPath : ''
+        });
+
+        // Get registry values using native Windows Registry API
+        return new Promise((resolve, reject) => {
+            regKey.values((err, items) => {
+                if (err) {
+                    console.error('Registry values error:', err);
+                    loggingManager.logError(`Registry values access error for ${keyPath}: ${err.message}`, 'RegistryEditor');
+                    resolve([]); // Return empty array instead of rejecting
+                    return;
+                }
+
+                const values = items.map(item => {
+                    let displayName = item.name || '(Default)';
+                    let displayData = item.value || '';
+
+                    // Handle different registry value types
+                    let displayType = 'REG_SZ'; // Default
+                    switch (item.type) {
+                        case 'REG_SZ':
+                            displayType = 'REG_SZ';
+                            break;
+                        case 'REG_DWORD':
+                            displayType = 'REG_DWORD';
+                            // Convert hex to decimal for display
+                            if (typeof displayData === 'string' && displayData.startsWith('0x')) {
+                                displayData = parseInt(displayData, 16).toString();
+                            }
+                            break;
+                        case 'REG_QWORD':
+                            displayType = 'REG_QWORD';
+                            break;
+                        case 'REG_BINARY':
+                            displayType = 'REG_BINARY';
+                            break;
+                        case 'REG_MULTI_SZ':
+                            displayType = 'REG_MULTI_SZ';
+                            break;
+                        case 'REG_EXPAND_SZ':
+                            displayType = 'REG_EXPAND_SZ';
+                            break;
+                        default:
+                            displayType = item.type || 'REG_SZ';
+                    }
+
+                    return {
+                        name: displayName,
+                        type: displayType,
+                        data: displayData.toString()
+                    };
+                });
+
+                console.log(`Found ${values.length} values for ${keyPath}`);
+                resolve(values);
+            });
+        });
+    } catch (error) {
+        console.error('Error in get-registry-values handler:', error);
+        loggingManager.logError(`Error getting registry values for ${keyPath}: ${error.message}`, 'RegistryEditor');
+        return [];
+    }
+});
+
+ipcMain.handle('set-registry-value', async (_, keyPath, valueName, valueData, valueType) => {
+    try {
+        if (!keyPath || valueName === undefined) {
+            throw new Error('Invalid parameters for registry value');
+        }
+
+        // Parse the registry path
+        const pathParts = keyPath.split('\\');
+        const rootKey = pathParts[0];
+        const subPath = pathParts.slice(1).join('\\');
+
+        if (!REGISTRY_HIVES[rootKey]) {
+            throw new Error(`Invalid registry root key: ${rootKey}`);
+        }
+
+        // Create registry object using winreg
+        const regKey = new Registry({
+            hive: REGISTRY_HIVES[rootKey],
+            key: subPath ? '\\' + subPath : ''
+        });
+
+        // Convert value data based on type
+        let processedValue = valueData;
+        let regType = Registry.REG_SZ; // Default
+
+        switch (valueType) {
+            case 'REG_DWORD':
+                processedValue = parseInt(valueData) || 0;
+                regType = Registry.REG_DWORD;
+                break;
+            case 'REG_QWORD':
+                processedValue = parseInt(valueData) || 0;
+                regType = Registry.REG_QWORD;
+                break;
+            case 'REG_BINARY':
+                regType = Registry.REG_BINARY;
+                break;
+            case 'REG_MULTI_SZ':
+                regType = Registry.REG_MULTI_SZ;
+                break;
+            case 'REG_EXPAND_SZ':
+                regType = Registry.REG_EXPAND_SZ;
+                break;
+            default:
+                regType = Registry.REG_SZ;
+        }
+
+        console.log(`Setting registry value: ${keyPath}\\${valueName} = ${processedValue} (${valueType})`);
+        
+        // Set registry value using native Windows Registry API
+        return new Promise((resolve, reject) => {
+            // First ensure the key exists by creating it if necessary
+            regKey.create((createErr) => {
+                if (createErr) {
+                    console.log(`Key creation warning (may already exist): ${createErr.message}`);
+                }
+                
+                // Now set the value
+                regKey.set(valueName, regType, processedValue, (err) => {
+                    if (err) {
+                        console.error('Registry set error with winreg, trying reg.exe fallback:', err);
+                        
+                        // Fallback to reg.exe command
+                        try {
+                            let regCommand;
+                            switch (valueType) {
+                                case 'REG_DWORD':
+                                    regCommand = `reg add "${keyPath}" /v "${valueName}" /t REG_DWORD /d ${parseInt(valueData) || 0} /f`;
+                                    break;
+                                case 'REG_QWORD':
+                                    regCommand = `reg add "${keyPath}" /v "${valueName}" /t REG_QWORD /d ${parseInt(valueData) || 0} /f`;
+                                    break;
+                                case 'REG_BINARY':
+                                    regCommand = `reg add "${keyPath}" /v "${valueName}" /t REG_BINARY /d "${valueData}" /f`;
+                                    break;
+                                case 'REG_MULTI_SZ':
+                                    regCommand = `reg add "${keyPath}" /v "${valueName}" /t REG_MULTI_SZ /d "${valueData}" /f`;
+                                    break;
+                                case 'REG_EXPAND_SZ':
+                                    regCommand = `reg add "${keyPath}" /v "${valueName}" /t REG_EXPAND_SZ /d "${valueData}" /f`;
+                                    break;
+                                default:
+                                    regCommand = `reg add "${keyPath}" /v "${valueName}" /t REG_SZ /d "${valueData}" /f`;
+                            }
+                            
+                            processPool.executeCmdCommand(regCommand).then(() => {
+                                console.log(`Successfully set registry value using reg.exe: ${keyPath}\\${valueName}`);
+                                loggingManager.logInfo(`Registry value set via reg.exe: ${keyPath}\\${valueName}`, 'RegistryEditor');
+                                resolve({ success: true });
+                            }).catch((regExeError) => {
+                                console.error('Both winreg and reg.exe failed:', regExeError);
+                                loggingManager.logError(`Both winreg and reg.exe failed for registry value: ${regExeError.message}`, 'RegistryEditor');
+                                reject(new Error(`Failed to set registry value: ${err.message} (winreg) and ${regExeError.message} (reg.exe)`));
+                            });
+                        } catch (regExeError) {
+                            console.error('reg.exe fallback failed:', regExeError);
+                            reject(new Error(`Failed to set registry value: ${err.message}`));
+                        }
+                        return;
+                    }
+
+                    console.log(`Successfully set registry value: ${keyPath}\\${valueName}`);
+                    loggingManager.logInfo(`Registry value set: ${keyPath}\\${valueName}`, 'RegistryEditor');
+                    resolve({ success: true });
+                });
+            });
+        });
+    } catch (error) {
+        console.error('Error in set-registry-value handler:', error);
+        loggingManager.logError(`Error setting registry value: ${error.message}`, 'RegistryEditor');
+        throw new Error(`Failed to set registry value: ${error.message}`);
+    }
+});
+
+ipcMain.handle('delete-registry-value', async (_, keyPath, valueName) => {
+    try {
+        if (!keyPath || !valueName) {
+            throw new Error('Invalid parameters for registry value deletion');
+        }
+
+        // Parse the registry path
+        const pathParts = keyPath.split('\\');
+        const rootKey = pathParts[0];
+        const subPath = pathParts.slice(1).join('\\');
+
+        if (!REGISTRY_HIVES[rootKey]) {
+            throw new Error(`Invalid registry root key: ${rootKey}`);
+        }
+
+        // Create registry object using winreg
+        const regKey = new Registry({
+            hive: REGISTRY_HIVES[rootKey],
+            key: subPath ? '\\' + subPath : ''
+        });
+
+        // Delete registry value using native Windows Registry API
+        return new Promise((resolve, reject) => {
+            regKey.remove(valueName, (err) => {
+                if (err) {
+                    console.error('Registry delete error:', err);
+                    loggingManager.logError(`Error deleting registry value: ${err.message}`, 'RegistryEditor');
+                    reject(new Error(`Failed to delete registry value: ${err.message}`));
+                    return;
+                }
+
+                loggingManager.logInfo(`Registry value deleted: ${keyPath}\\${valueName}`, 'RegistryEditor');
+                resolve({ success: true });
+            });
+        });
+    } catch (error) {
+        console.error('Error in delete-registry-value handler:', error);
+        loggingManager.logError(`Error deleting registry value: ${error.message}`, 'RegistryEditor');
+        throw new Error(`Failed to delete registry value: ${error.message}`);
+    }
+});
+
+ipcMain.handle('create-registry-key', async (_, keyPath) => {
+    try {
+        if (!keyPath) {
+            throw new Error('Invalid key path for registry key creation');
+        }
+
+        // Parse the registry path
+        const pathParts = keyPath.split('\\');
+        const rootKey = pathParts[0];
+        const subPath = pathParts.slice(1).join('\\');
+
+        if (!REGISTRY_HIVES[rootKey]) {
+            throw new Error(`Invalid registry root key: ${rootKey}`);
+        }
+
+        // Create registry object using winreg
+        const regKey = new Registry({
+            hive: REGISTRY_HIVES[rootKey],
+            key: subPath ? '\\' + subPath : ''
+        });
+
+        console.log(`Creating registry key: ${keyPath}`);
+        console.log('Registry key details:', { rootKey, subPath, hive: REGISTRY_HIVES[rootKey] });
+        
+        // Create registry key using native Windows Registry API
+        return new Promise((resolve, reject) => {
+            regKey.create((err) => {
+                if (err) {
+                    console.error('Registry create key error:', err);
+                    console.error('Registry create details:', {
+                        keyPath,
+                        rootKey,
+                        subPath,
+                        hive: REGISTRY_HIVES[rootKey]
+                    });
+                    loggingManager.logError(`Error creating registry key: ${err.message}`, 'RegistryEditor');
+                    reject(new Error(`Failed to create registry key: ${err.message}`));
+                    return;
+                }
+
+                console.log(`Successfully created registry key: ${keyPath}`);
+                loggingManager.logInfo(`Registry key created: ${keyPath}`, 'RegistryEditor');
+                resolve({ success: true });
+            });
+        });
+    } catch (error) {
+        console.error('Error in create-registry-key handler:', error);
+        loggingManager.logError(`Error creating registry key: ${error.message}`, 'RegistryEditor');
+        throw new Error(`Failed to create registry key: ${error.message}`);
+    }
+});
+
+ipcMain.handle('delete-registry-key', async (_, keyPath) => {
+    try {
+        if (!keyPath) {
+            throw new Error('Invalid key path for registry key deletion');
+        }
+
+        // Parse the registry path
+        const pathParts = keyPath.split('\\');
+        const rootKey = pathParts[0];
+        const subPath = pathParts.slice(1).join('\\');
+
+        if (!REGISTRY_HIVES[rootKey]) {
+            throw new Error(`Invalid registry root key: ${rootKey}`);
+        }
+
+        // Create registry object using winreg
+        const regKey = new Registry({
+            hive: REGISTRY_HIVES[rootKey],
+            key: subPath ? '\\' + subPath : ''
+        });
+
+        console.log(`Deleting registry key: ${keyPath}`);
+        console.log('Registry key details:', { rootKey, subPath, hive: REGISTRY_HIVES[rootKey] });
+        
+        // Delete registry key using native Windows Registry API
+        return new Promise((resolve, reject) => {
+            regKey.destroy((err) => {
+                if (err) {
+                    console.error('Registry delete key error:', err);
+                    console.error('Registry delete details:', {
+                        keyPath,
+                        rootKey,
+                        subPath,
+                        hive: REGISTRY_HIVES[rootKey]
+                    });
+                    loggingManager.logError(`Error deleting registry key: ${err.message}`, 'RegistryEditor');
+                    reject(new Error(`Failed to delete registry key: ${err.message}`));
+                    return;
+                }
+
+                console.log(`Successfully deleted registry key: ${keyPath}`);
+                loggingManager.logInfo(`Registry key deleted: ${keyPath}`, 'RegistryEditor');
+                resolve({ success: true });
+            });
+        });
+    } catch (error) {
+        console.error('Error in delete-registry-key handler:', error);
+        loggingManager.logError(`Error deleting registry key: ${error.message}`, 'RegistryEditor');
+        throw new Error(`Failed to delete registry key: ${error.message}`);
+    }
+});
+
+ipcMain.handle('export-registry-key', async (_, keyPath, filePath) => {
+    try {
+        if (!keyPath || !filePath) {
+            throw new Error('Invalid parameters for registry export');
+        }
+
+        // Use reg.exe to export registry key
+        const command = `reg export "${keyPath}" "${filePath}" /y`;
+        await processPool.executeCmdCommand(command);
+
+        loggingManager.logInfo(`Registry key exported: ${keyPath} to ${filePath}`, 'RegistryEditor');
+        return { success: true };
+    } catch (error) {
+        loggingManager.logError(`Error exporting registry key: ${error.message}`, 'RegistryEditor');
+        throw new Error(`Failed to export registry key: ${error.message}`);
+    }
+});
+
+ipcMain.handle('import-registry-file', async (_, filePath) => {
+    try {
+        if (!filePath) {
+            throw new Error('Invalid file path for registry import');
+        }
+
+        // Use reg.exe to import registry file
+        const command = `reg import "${filePath}"`;
+        await processPool.executeCmdCommand(command);
+
+        loggingManager.logInfo(`Registry file imported: ${filePath}`, 'RegistryEditor');
+        return { success: true };
+    } catch (error) {
+        loggingManager.logError(`Error importing registry file: ${error.message}`, 'RegistryEditor');
+        throw new Error(`Failed to import registry file: ${error.message}`);
+    }
+});
+
+ipcMain.handle('search-registry', async (_, searchTerm, searchOptions) => {
+    try {
+        if (!searchTerm) {
+            throw new Error('Search term is required');
+        }
+
+        const { searchKeys, searchValues, searchData, searchRoot, caseSensitive, wholeWord } = searchOptions;
+
+        // PowerShell script for registry search
+        const psScript = `
+            $searchTerm = "${searchTerm}"
+            $searchRoot = "${searchRoot}"
+            $caseSensitive = $${caseSensitive}
+            $wholeWord = $${wholeWord}
+            $searchKeys = $${searchKeys}
+            $searchValues = $${searchValues}
+            $searchData = $${searchData}
+            
+            $results = @()
+            $maxResults = 100  # Limit results to prevent performance issues
+            
+            function Search-RegistryRecursive {
+                param($keyPath, $currentDepth = 0)
+                
+                if ($results.Count -ge $maxResults -or $currentDepth -gt 10) { return }
+                
+                try {
+                    $key = Get-Item -Path "Registry::$keyPath" -ErrorAction SilentlyContinue
+                    if (-not $key) { return }
+                    
+                    # Search key names
+                    if ($searchKeys) {
+                        $keyName = Split-Path $keyPath -Leaf
+                        $match = if ($caseSensitive) { 
+                            if ($wholeWord) { $keyName -eq $searchTerm } else { $keyName -like "*$searchTerm*" }
+                        } else { 
+                            if ($wholeWord) { $keyName -ieq $searchTerm } else { $keyName -ilike "*$searchTerm*" }
+                        }
+                        
+                        if ($match) {
+                            $results += @{
+                                path = $keyPath
+                                type = "Key"
+                                match = $keyName
+                            }
+                        }
+                    }
+                    
+                    # Search values
+                    if ($searchValues -or $searchData) {
+                        $valueNames = $key.GetValueNames()
+                        foreach ($valueName in $valueNames) {
+                            if ($results.Count -ge $maxResults) { break }
+                            
+                            # Search value names
+                            if ($searchValues) {
+                                $displayName = if ($valueName -eq "") { "(Default)" } else { $valueName }
+                                $match = if ($caseSensitive) { 
+                                    if ($wholeWord) { $displayName -eq $searchTerm } else { $displayName -like "*$searchTerm*" }
+                                } else { 
+                                    if ($wholeWord) { $displayName -ieq $searchTerm } else { $displayName -ilike "*$searchTerm*" }
+                                }
+                                
+                                if ($match) {
+                                    $results += @{
+                                        path = $keyPath
+                                        type = "Value"
+                                        name = $displayName
+                                        match = $displayName
+                                    }
+                                }
+                            }
+                            
+                            # Search value data
+                            if ($searchData) {
+                                try {
+                                    $valueData = $key.GetValue($valueName)
+                                    if ($valueData) {
+                                        $dataString = $valueData.ToString()
+                                        $match = if ($caseSensitive) { 
+                                            if ($wholeWord) { $dataString -eq $searchTerm } else { $dataString -like "*$searchTerm*" }
+                                        } else { 
+                                            if ($wholeWord) { $dataString -ieq $searchTerm } else { $dataString -ilike "*$searchTerm*" }
+                                        }
+                                        
+                                        if ($match) {
+                                            $displayName = if ($valueName -eq "") { "(Default)" } else { $valueName }
+                                            $results += @{
+                                                path = $keyPath
+                                                type = "Value"
+                                                name = $displayName
+                                                match = $dataString
+                                            }
+                                        }
+                                    }
+                                } catch {
+                                    # Skip values that can't be read
+                                }
+                            }
+                        }
+                    }
+                    
+                    # Recursively search subkeys (limited depth)
+                    if ($currentDepth -lt 5) {
+                        $subKeys = Get-ChildItem -Path "Registry::$keyPath" -ErrorAction SilentlyContinue
+                        foreach ($subKey in $subKeys) {
+                            if ($results.Count -ge $maxResults) { break }
+                            Search-RegistryRecursive -keyPath $subKey.Name -currentDepth ($currentDepth + 1)
+                        }
+                    }
+                } catch {
+                    # Skip keys that can't be accessed
+                }
+            }
+            
+            Search-RegistryRecursive -keyPath $searchRoot
+            $results | ConvertTo-Json -Depth 3
+        `;
+
+        // Use native winreg search instead of PowerShell to avoid execution policy issues
+        console.log(`Starting native registry search for: "${searchTerm}" in ${searchRoot}`);
+
+        const results = [];
+        const maxResults = 100;
+        const maxDepth = 4;
+
+        // Helper function to match search criteria
+        function matchesSearch(text, searchTerm, caseSensitive, wholeWord) {
+            if (!text) return false;
+
+            const textToSearch = caseSensitive ? text : text.toLowerCase();
+            const termToSearch = caseSensitive ? searchTerm : searchTerm.toLowerCase();
+
+            if (wholeWord) {
+                const regex = new RegExp(`\\b${termToSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, caseSensitive ? 'g' : 'gi');
+                return regex.test(text);
+            } else {
+                return textToSearch.includes(termToSearch);
+            }
+        }
+
+        // Recursive search function
+        async function searchRegistryRecursive(keyPath, currentDepth = 0) {
+            if (results.length >= maxResults || currentDepth > maxDepth) {
+                return;
+            }
+
+            try {
+                const pathParts = keyPath.split('\\');
+                const rootKey = pathParts[0];
+                const subPath = pathParts.slice(1).join('\\');
+
+                if (!REGISTRY_HIVES[rootKey]) {
+                    return;
+                }
+
+                const regKey = new Registry({
+                    hive: REGISTRY_HIVES[rootKey],
+                    key: subPath ? '\\' + subPath : ''
+                });
+
+                // Search key names if requested
+                if (searchKeys && results.length < maxResults) {
+                    const keyName = keyPath.split('\\').pop() || keyPath;
+                    if (matchesSearch(keyName, searchTerm, caseSensitive, wholeWord)) {
+                        results.push({
+                            path: keyPath,
+                            type: 'Key',
+                            match: keyName
+                        });
+                        console.log(`Found key match: ${keyName} in ${keyPath}`);
+                    }
+                }
+
+                // Search values if requested
+                if ((searchValues || searchData) && results.length < maxResults) {
+                    await new Promise((resolve) => {
+                        regKey.values((err, items) => {
+                            if (err || !items) {
+                                resolve();
+                                return;
+                            }
+
+                            for (const item of items) {
+                                if (results.length >= maxResults) break;
+
+                                const displayName = item.name || '(Default)';
+
+                                // Search value names
+                                if (searchValues && matchesSearch(displayName, searchTerm, caseSensitive, wholeWord)) {
+                                    results.push({
+                                        path: keyPath,
+                                        type: 'Value',
+                                        name: displayName,
+                                        match: displayName
+                                    });
+                                    console.log(`Found value name match: ${displayName} in ${keyPath}`);
+                                }
+
+                                // Search value data
+                                if (searchData && item.value) {
+                                    const dataString = item.value.toString();
+                                    if (matchesSearch(dataString, searchTerm, caseSensitive, wholeWord)) {
+                                        results.push({
+                                            path: keyPath,
+                                            type: 'Value',
+                                            name: displayName,
+                                            match: dataString.length > 50 ? dataString.substring(0, 50) + '...' : dataString
+                                        });
+                                        console.log(`Found value data match: ${displayName} in ${keyPath}`);
+                                    }
+                                }
+                            }
+                            resolve();
+                        });
+                    });
+                }
+
+                // Recursively search subkeys
+                if (currentDepth < maxDepth && results.length < maxResults) {
+                    await new Promise((resolve) => {
+                        regKey.keys((err, items) => {
+                            if (err || !items) {
+                                resolve();
+                                return;
+                            }
+
+                            // Process subkeys sequentially to avoid overwhelming the system
+                            const processSubkeys = async () => {
+                                // Limit the number of subkeys to search for performance
+                                const limitedItems = items.slice(0, 30);
+
+                                for (const item of limitedItems) {
+                                    if (results.length >= maxResults) break;
+
+                                    try {
+                                        const subKeyName = item.key.split('\\').pop();
+                                        const fullSubKeyPath = keyPath + '\\' + subKeyName;
+
+                                        await searchRegistryRecursive(fullSubKeyPath, currentDepth + 1);
+                                    } catch (subError) {
+                                        // Skip keys that can't be accessed
+                                        console.log(`Skipping inaccessible key: ${item.key}`);
+                                    }
+                                }
+                                resolve();
+                            };
+
+                            processSubkeys().catch(() => resolve());
+                        });
+                    });
+                }
+            } catch (error) {
+                // Skip keys that can't be accessed
+                console.log(`Skipping key due to access error: ${keyPath} - ${error.message}`);
+            }
+        }
+
+        // Start the recursive search
+        try {
+            await searchRegistryRecursive(searchRoot);
+        } catch (searchError) {
+            console.error('Registry search error:', searchError);
+        }
+
+        console.log(`Native registry search completed: ${results.length} results for "${searchTerm}"`);
+        loggingManager.logInfo(`Registry search completed: ${results.length} results for "${searchTerm}"`, 'RegistryEditor');
+        return results;
+    } catch (error) {
+        loggingManager.logError(`Error searching registry: ${error.message}`, 'RegistryEditor');
+        return [];
+    }
+});
+
 ipcMain.handle('show-open-dialog', async (event, options) => {
     console.log('show-open-dialog handler called with options:', options);
     try {
@@ -3069,6 +3789,18 @@ ipcMain.handle('show-open-dialog', async (event, options) => {
     } catch (error) {
         loggingManager.logError(`Error showing open dialog: ${error.message}`, 'FileDialog');
         throw new Error(`Failed to show open dialog: ${error.message}`);
+    }
+});
+
+ipcMain.handle('show-save-dialog', async (event, options) => {
+    console.log('show-save-dialog handler called with options:', options);
+    try {
+        const mainWindow = windowManager.getMainWindow();
+        const result = await dialog.showSaveDialog(mainWindow, options);
+        return result;
+    } catch (error) {
+        loggingManager.logError(`Error showing save dialog: ${error.message}`, 'FileDialog');
+        throw new Error(`Failed to show save dialog: ${error.message}`);
     }
 });
 
@@ -3117,18 +3849,6 @@ ipcMain.handle('open-file-dialog', async event => {
     } catch (error) {
         loggingManager.logError(`Error reading file: ${error.message}`, 'FileOperations');
         throw new Error(`Failed to read file: ${error.message}`);
-    }
-});
-
-ipcMain.handle('show-save-dialog', async (event, options) => {
-    console.log('show-save-dialog handler called with options:', options);
-    try {
-        const mainWindow = windowManager.getMainWindow();
-        const result = await dialog.showSaveDialog(mainWindow, options);
-        return result;
-    } catch (error) {
-        loggingManager.logError(`Error showing save dialog: ${error.message}`, 'FileDialog');
-        throw new Error(`Failed to show save dialog: ${error.message}`);
     }
 });
 

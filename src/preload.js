@@ -177,6 +177,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Elevation Management
     requestElevation: () => ipcRenderer.invoke('request-elevation'),
     checkElevationStatus: () => ipcRenderer.invoke('check-elevation-status'),
+
+    // Registry Management
+    getRegistrySubkeys: keyPath => ipcRenderer.invoke('get-registry-subkeys', keyPath),
+    getRegistryValues: keyPath => ipcRenderer.invoke('get-registry-values', keyPath),
+    setRegistryValue: (keyPath, valueName, valueData, valueType) =>
+        ipcRenderer.invoke('set-registry-value', keyPath, valueName, valueData, valueType),
+    deleteRegistryValue: (keyPath, valueName) =>
+        ipcRenderer.invoke('delete-registry-value', keyPath, valueName),
+    createRegistryKey: keyPath => ipcRenderer.invoke('create-registry-key', keyPath),
+    deleteRegistryKey: keyPath => ipcRenderer.invoke('delete-registry-key', keyPath),
+    exportRegistryKey: (keyPath, filePath) =>
+        ipcRenderer.invoke('export-registry-key', keyPath, filePath),
+    importRegistryFile: filePath => ipcRenderer.invoke('import-registry-file', filePath),
+    searchRegistry: (searchTerm, searchOptions) =>
+        ipcRenderer.invoke('search-registry', searchTerm, searchOptions),
+
+    // Generic invoke method for any IPC handler
+    invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
 });
 
 // Expose a dedicated API for plugins

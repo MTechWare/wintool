@@ -1,0 +1,7 @@
+{
+    "name": "Registry Editor",
+    "icon": "fas fa-edit",
+    "description": "Browse, search, and manage Windows Registry with backup capabilities",
+    "version": "1.0.0",
+    "author": "WinTool"
+}
