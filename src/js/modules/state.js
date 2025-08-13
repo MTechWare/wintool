@@ -112,11 +112,13 @@ export const DEFAULT_TAB_ORDER = [
     'appx-packages', // 7. Manage Windows Store apps
     'networking', // 8. Network configuration/monitoring
     'environment-variables', // 9. System configuration
-    'system-utilities', // 10. Access Windows tools
-    'event-viewer', // 11. Troubleshooting and logs
-    'script-editor', // 12. Advanced scripting
-    'windows-unattend', // 13. Advanced deployment
-    'about', // 14. Always last
+    'registry-editor', // 10. Registry management and editing
+    'system-utilities', // 11. Access Windows tools
+    'event-viewer', // 12. Troubleshooting and logs
+    'processes', // 13. Process management
+    'script-editor', // 14. Advanced scripting
+    'windows-unattend', // 15. Advanced deployment
+    'about', // 16. Always last
 ];
 
 export const DEFAULT_SHORTCUTS = {
