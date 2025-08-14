@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![WinTool Version](https://img.shields.io/badge/WinTool-v0.3.6wb-orange?style=for-the-badge&logo=windows&logoColor=white)
+![WinTool Version](https://img.shields.io/badge/WinTool-v0.3.7wb-orange?style=for-the-badge&logo=windows&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows_11-blue?style=for-the-badge&logo=windows)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=for-the-badge)
 ![GitHub Stars](https://img.shields.io/github/stars/MTechWare/wintool?style=for-the-badge&logo=github)
@@ -18,20 +18,26 @@ WinTool is a powerful and intuitive application for Windows system management, d
 
 ## 🆕 What's New
 
-# Version: v0.3.6wb
+# Version: v0.3.7wb
 
 ---
 
 ## :sparkles: **New Features**
 
-**Registry Editor Tab - Complete Registry Management:**
-- :file_folder: **Tree Navigation** - Browse Windows Registry with expandable key structure
-- :pencil2: **Value Editing** - Create, modify, and delete registry values with type support
-- :heavy_plus_sign: **Key Management** - Add new registry keys and subkeys
-- :shield: **Admin Protection** - Requires administrator privileges for system safety
-- :warning: **Smart Warnings** - Built-in alerts for potentially dangerous operations
-- :computer: **Professional UI** - Clean, modern interface with syntax highlighting
+**Settings - Hide Warning Banners:**
+- :gear: **Settings** - Added new option in Behavior settings to hide all warning banners across all tabs
+- :x: **UI** - Users can now globally disable warning banners while maintaining access to help documentation
 
+## :bug: **Bug Fixes**
+
+**Registry Editor Tab - Fix:**
+- :computer: **UI** -  Fixed table layout where the registry values are overflowing
+
+**Processes Tab - Fix:**
+- :computer: **UI** -  Refactored the UI to use a table for better layout and added styling for each column
+
+**Help Modal - Removed:**
+- :computer: **UI** -  Removed the help modal form command palette
 
 ---
 
@@ -85,6 +91,7 @@ WinTool is packed with features designed for power users, system administrators,
 | **AppX Packages**             | Microsoft app management                            | Uninstall Microsoft apps and AppX packages                  |
 | **System Health**             | Real-time system monitoring                         | Live performance metrics and health alerts                  |
 | **Windows Tweaks**            | Windows customization                               | Apply various tweaks to customize Windows 10/11 (sourced from Win11Debloat, Optimizer & W11Boost) |
+| **Registry Editor**           | Windows Registry management                         | Browse, edit, and manage Windows Registry entries with a user-friendly interface |
 | **Plugin Management**         | Plugin installation and management                  | Install, update, and manage plugins from a simple UI        |
 
 ---
