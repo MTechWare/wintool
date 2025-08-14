@@ -122,7 +122,6 @@ export const DEFAULT_TAB_ORDER = [
 ];
 
 export const DEFAULT_SHORTCUTS = {
-    'show-help': 'F1',
     'command-palette': 'Ctrl+K',
     'focus-search': 'Ctrl+F',
     'refresh-tab': 'Ctrl+R',

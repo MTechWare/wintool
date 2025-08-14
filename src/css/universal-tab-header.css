@@ -154,6 +154,39 @@
     letter-spacing: 0.2px;
 }
 
+/* Dismissible Banner Close Button */
+.plugin-warning .banner-close-btn {
+    background: transparent !important;
+    border: none;
+    color: rgba(255, 255, 255, 0.4) !important;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    margin-left: auto;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    opacity: 0.3;
+    filter: none !important;
+}
+
+.plugin-warning .banner-close-btn:hover {
+    background: transparent !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    opacity: 0.7;
+    transform: scale(1.05);
+}
+
+.plugin-warning .banner-close-btn i {
+    font-size: 0.8rem !important;
+    color: rgba(255, 255, 255, 0.4) !important;
+    filter: none !important;
+    margin-top: 0 !important;
+}
+
+.plugin-warning .banner-close-btn:hover i {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
 /* Info Variant */
 .plugin-warning.info {
     background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.03) 100%);

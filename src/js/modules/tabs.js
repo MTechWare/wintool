@@ -7,6 +7,7 @@ import {
     DEFAULT_TAB_ORDER,
 } from './state.js';
 import { showNotification } from './notifications.js';
+import { bannerManager } from './banner-manager.js';
 
 /**
  * Tab System Module
@@ -640,6 +641,11 @@ export async function switchToTab(tabName) {
     // This ensures tab-specific JavaScript is executed when the tab is first accessed
     if (window.tabLoader && typeof window.tabLoader.executeTabJSOnDemand === 'function') {
         window.tabLoader.executeTabJSOnDemand(tabName);
+    }
+
+    // Initialize banners for this tab
+    if (bannerManager && typeof bannerManager.initTabBanners === 'function') {
+        bannerManager.initTabBanners(tabName);
     }
 
     const tabItems = document.querySelectorAll('.tab-item');

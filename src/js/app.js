@@ -28,7 +28,6 @@ import {
     showCommandPalette,
     registerDefaultCommands,
     registerServiceControlCommands,
-    showHelpModal,
 } from './modules/command-palette.js';
 import {
     initPluginInstallButton,
@@ -57,6 +56,7 @@ import {
 } from './modules/theme.js';
 import { initFpsCounter, showFpsCounter, hideFpsCounter } from './modules/fps-counter.js';
 import { DEFAULT_TAB_ORDER, setTabLoader } from './modules/state.js';
+import { bannerManager } from './modules/banner-manager.js';
 
 import './utils/lazy-loading-helper.js';
 import './utils/batch-checker.js';
@@ -81,24 +81,7 @@ async function initialBoot() {
     initContextMenu();
     initFpsCounter();
 
-    // Try to fetch help modal content, fallback to cached version if offline
-    const helpModalContainer = document.getElementById('help-modal-container');
-    if (helpModalContainer) {
-        fetch('help-modal.html')
-            .then(response => response.text())
-            .then(data => {
-                helpModalContainer.innerHTML = data;
-                // Cache the content in localStorage
-                localStorage.setItem('cachedHelpModal', data);
-            })
-            .catch(() => {
-                const cached = localStorage.getItem('cachedHelpModal');
-                if (cached) {
-                    helpModalContainer.innerHTML = cached;
-                    showNotification('Using cached help content (offline mode)', 'warning');
-                }
-            });
-    }
+    // Help modal is now included directly in index.html
 }
 
 /**
@@ -216,8 +199,61 @@ async function continueNormalStartup() {
     }
 }
 
+/**
+ * Load help modal during app initialization
+ */
+async function loadHelpModalDuringInit() {
+    console.log('Loading help modal during initialization...');
+    const helpModalContainer = document.getElementById('help-modal-container');
+    if (!helpModalContainer) {
+        console.error('Help modal container not found in DOM');
+        return;
+    }
+
+    try {
+        console.log('Fetching help-modal.html during init...');
+        const response = await fetch('help-modal.html');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.text();
+        console.log('Help modal HTML fetched during init, length:', data.length);
+
+        helpModalContainer.innerHTML = data;
+
+        // Verify the modal was inserted
+        const insertedModal = document.getElementById('help-modal');
+        if (!insertedModal) {
+            throw new Error('Modal was not properly inserted into DOM during init');
+        }
+
+        // Cache the content in localStorage
+        localStorage.setItem('cachedHelpModal', data);
+        console.log('Help modal loaded and cached successfully during initialization');
+    } catch (error) {
+        console.warn('Failed to load help modal during initialization:', error);
+        const cached = localStorage.getItem('cachedHelpModal');
+        if (cached) {
+            helpModalContainer.innerHTML = cached;
+            console.log('Using cached help modal content during init');
+
+            // Verify the cached modal was inserted
+            const insertedModal = document.getElementById('help-modal');
+            if (!insertedModal) {
+                console.error('Cached modal was not properly inserted into DOM during init');
+            } else {
+                showNotification('Using cached help content (offline mode)', 'warning');
+            }
+        } else {
+            console.error('No cached help modal content available during init');
+        }
+    }
+}
+
+
+
 window.closeModal = closeModal;
-window.showHelpModal = showHelpModal;
+
 window.showCommandPalette = showCommandPalette;
 window.showSystemInfo = showSystemInfo;
 window.showSettings = showSettings;

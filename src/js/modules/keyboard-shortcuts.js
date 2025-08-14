@@ -1,7 +1,7 @@
 import { DEFAULT_SHORTCUTS, currentShortcuts, setCurrentShortcuts } from './state.js';
 import { closeModal } from './modals.js';
 import { showSettings } from './settings.js';
-import { showCommandPalette, showHelpModal } from './command-palette.js';
+import { showCommandPalette } from './command-palette.js';
 import { refreshCurrentTab, refreshSystemInformation } from './tabs.js';
 
 export function initGlobalKeyboardShortcuts() {
@@ -40,11 +40,7 @@ export function initGlobalKeyboardShortcuts() {
             return;
         }
 
-        if (matchesShortcut(e, currentShortcuts['show-help'])) {
-            console.log('Help shortcut matched');
-            e.preventDefault();
-            showHelpModal();
-        } else if (matchesShortcut(e, currentShortcuts['command-palette'])) {
+        if (matchesShortcut(e, currentShortcuts['command-palette'])) {
             console.log('Command palette shortcut matched');
             e.preventDefault();
             showCommandPalette();

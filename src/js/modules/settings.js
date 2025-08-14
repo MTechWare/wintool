@@ -10,6 +10,7 @@ import {
 import { showFpsCounter, hideFpsCounter } from './fps-counter.js';
 import { THEMES, hiddenTabs, rainbowAnimationId, setHiddenTabs } from './state.js';
 import { loadKeyboardShortcutsSettings, saveKeyboardShortcuts } from './keyboard-shortcuts.js';
+import { bannerManager } from './banner-manager.js';
 
 export async function showSettings() {
     const modal = document.getElementById('settings-modal');
@@ -140,7 +141,20 @@ async function loadCurrentSettings() {
                 foldTabsCheckbox.checked = foldTabs;
             }
 
+            const hideWarningBanners = await window.electronAPI.getSetting('hideWarningBanners', false);
+            const hideWarningBannersCheckbox = document.getElementById('hide-warning-banners-checkbox');
+            if (hideWarningBannersCheckbox) {
+                hideWarningBannersCheckbox.checked = hideWarningBanners;
+            }
+
             await loadKeyboardShortcutsSettings();
+
+            // Apply banner visibility setting on startup
+            if (bannerManager && typeof bannerManager.applyGlobalSetting === 'function') {
+                setTimeout(() => {
+                    bannerManager.applyGlobalSetting();
+                }, 500); // Small delay to ensure banners are loaded
+            }
         }
     } catch (error) {
         console.error('Error loading settings:', error);
@@ -299,6 +313,9 @@ export async function saveSettings() {
 
             const foldTabs = document.getElementById('fold-tabs-checkbox')?.checked || false;
             await window.electronAPI.setSetting('foldTabs', foldTabs);
+
+            const hideWarningBanners = document.getElementById('hide-warning-banners-checkbox')?.checked || false;
+            await window.electronAPI.setSetting('hideWarningBanners', hideWarningBanners);
 
             // Save performance settings
             await savePerformanceSettings();
@@ -585,6 +602,11 @@ function applySettings() {
     // Apply fold tabs setting
     const foldTabs = document.getElementById('fold-tabs-checkbox')?.checked || false;
     applyFoldTabsSetting(foldTabs);
+
+    // Apply banner visibility setting
+    if (bannerManager && typeof bannerManager.applyGlobalSetting === 'function') {
+        bannerManager.applyGlobalSetting();
+    }
 }
 
 export function applyFoldTabsSetting(foldTabs) {

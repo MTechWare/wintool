@@ -124,6 +124,39 @@
     font-weight: 600 !important;
 }
 
+/* Banner Close Button Override */
+.plugin-warning .banner-close-btn {
+    background: transparent !important;
+    border: none !important;
+    color: rgba(255, 255, 255, 0.4) !important;
+    cursor: pointer !important;
+    padding: 4px !important;
+    border-radius: 4px !important;
+    margin-left: auto !important;
+    flex-shrink: 0 !important;
+    transition: all 0.2s ease !important;
+    opacity: 0.3 !important;
+    filter: none !important;
+}
+
+.plugin-warning .banner-close-btn:hover {
+    background: transparent !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    opacity: 0.7 !important;
+    transform: scale(1.05) !important;
+}
+
+.plugin-warning .banner-close-btn i {
+    font-size: 0.8rem !important;
+    color: rgba(255, 255, 255, 0.4) !important;
+    filter: none !important;
+    margin-top: 0 !important;
+}
+
+.plugin-warning .banner-close-btn:hover i {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
 .plugin-warning.info {
     background: rgba(59, 130, 246, 0.1) !important;
     border: 1px solid rgba(59, 130, 246, 0.2) !important;
@@ -2734,53 +2767,7 @@ html, body {
     min-width: 0;
 }
 
-/* Help Modal Styles */
-.help-search-container {
-    position: relative;
-    margin-bottom: 20px;
-}
 
-.help-command-list {
-    max-height: 50vh;
-    overflow-y: auto;
-}
-
-.help-category {
-    margin-bottom: 20px;
-}
-
-.help-category h4 {
-    color: var(--primary-color);
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 10px;
-    padding-bottom: 5px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.help-command-item {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 8px 10px;
-    border-radius: 6px;
-}
-
-.help-command-item:hover {
-    background: var(--hover-color);
-}
-
-.help-command-item i {
-    width: 20px;
-    text-align: center;
-    color: var(--text-secondary);
-}
-
-.help-command-title {
-    flex: 1;
-    color: var(--text-primary);
-    font-weight: 500;
-}
 
 /* Command Palette Styles */
 .command-palette-modal {
