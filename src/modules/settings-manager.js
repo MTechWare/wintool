@@ -226,6 +226,7 @@ class SettingsManager {
                         hasCustomizedPerformanceSettings: false,
                         rainbowMode: false,
                         customTheme: {},
+                        hideWarningBanners: false,
                     },
                 });
             } catch (error) {

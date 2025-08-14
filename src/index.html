@@ -331,10 +331,6 @@
                         <i class="fas fa-shield-alt"></i> Refresh Verification
                     </button>
                 </div>
-                <div class="plugin-warning security">
-                    <i class="fas fa-shield-alt"></i>
-                    <span><strong>Security Note:</strong> Only install plugins from verified developers and trusted sources. Verified plugins are automatically validated against the official MTechWare repository. Unverified plugins require careful review before installation.</span>
-                </div>
                 <div class="tab-search-container">
                     <input type="text" id="plugin-search" placeholder="Search plugins..." class="tab-search-input">
                     <i class="fas fa-search tab-search-icon"></i>
@@ -356,8 +352,7 @@
 
 
 
-    <!-- Help Modal -->
-    <div id="help-modal-container"></div>
+
 
     <!-- System Info Modal -->
     <div id="system-info-modal" class="modal" style="display: none;">
@@ -547,6 +542,15 @@
                                 Fold Tabs to Icons Only
                             </label>
                             <p class="settings-description">Show only tab icons in the sidebar to save space and create a more compact interface.
+                            </p>
+                        </div>
+
+                        <div class="settings-group">
+                            <label class="settings-label">
+                                <input type="checkbox" id="hide-warning-banners-checkbox" class="settings-checkbox">
+                                Hide All Warning Banners
+                            </label>
+                            <p class="settings-description">Hide all warning and informational banners across all tabs. You can still access important information through help documentation.
                             </p>
                         </div>
 

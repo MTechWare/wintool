@@ -2749,91 +2749,108 @@ ipcMain.handle('control-service', async (event, serviceName, action) => {
         throw new Error('Invalid action parameter');
     }
 
-    // Sanitize service name to prevent injection
-    const sanitizedServiceName = serviceName.replace(/[^a-zA-Z0-9_-]/g, '');
-    if (sanitizedServiceName !== serviceName) {
-        throw new Error('Service name contains invalid characters');
-    }
+    // Sanitize service name to prevent injection - allow spaces and dots for service names
+    const sanitizedServiceName = serviceName.replace(/[^a-zA-Z0-9_\-\s\.]/g, '');
 
     // Validate service name length
     if (sanitizedServiceName.length === 0 || sanitizedServiceName.length > 100) {
         throw new Error('Service name length is invalid');
     }
 
-    // Map actions to PowerShell commands
-    let psCommand;
-    switch (action) {
-        case 'start':
-            psCommand = `Start-Service -Name "${sanitizedServiceName}" -ErrorAction Stop; Write-Output "Service started successfully"`;
-            break;
-        case 'stop':
-            psCommand = `Stop-Service -Name "${sanitizedServiceName}" -Force -ErrorAction Stop; Write-Output "Service stopped successfully"`;
-            break;
-        case 'restart':
-            psCommand = `Restart-Service -Name "${sanitizedServiceName}" -Force -ErrorAction Stop; Write-Output "Service restarted successfully"`;
-            break;
-        default:
-            throw new Error(`Invalid action: ${action}`);
+    // Validate action
+    const validActions = ['start', 'stop', 'restart'];
+    if (!validActions.includes(action)) {
+        throw new Error(`Invalid action: ${action}`);
     }
 
     try {
-        const output = await executeOptimizedPowerShell(psCommand);
+        let successMessage;
+
+        switch (action) {
+            case 'start':
+                // Try net start first (most reliable), fallback to sc start, then elevated PowerShell
+                try {
+                    await processPool.executeCmdCommand(`net start "${sanitizedServiceName}"`);
+                    successMessage = `Service "${sanitizedServiceName}" started successfully`;
+                } catch (netError) {
+                    try {
+                        await processPool.executeCmdCommand(`sc start "${sanitizedServiceName}"`);
+                        successMessage = `Service "${sanitizedServiceName}" started successfully`;
+                    } catch (scError) {
+                        // Try elevated PowerShell as last resort
+                        try {
+                            const elevatedCommand = `powershell -Command "Start-Process powershell -Verb RunAs -ArgumentList '-Command', 'Start-Service -Name ''${sanitizedServiceName}''' -Wait"`;
+                            await processPool.executeCmdCommand(elevatedCommand);
+                            successMessage = `Service "${sanitizedServiceName}" started successfully (elevated privileges required)`;
+                        } catch (elevatedError) {
+                            throw new Error(`Failed to start service with all methods. Net error: ${netError.message}. SC error: ${scError.message}. Elevated error: ${elevatedError.message}`);
+                        }
+                    }
+                }
+                break;
+
+            case 'stop':
+                // Try net stop first, fallback to sc stop, then elevated PowerShell
+                try {
+                    await processPool.executeCmdCommand(`net stop "${sanitizedServiceName}" /y`);
+                    successMessage = `Service "${sanitizedServiceName}" stopped successfully`;
+                } catch (netError) {
+                    try {
+                        await processPool.executeCmdCommand(`sc stop "${sanitizedServiceName}"`);
+                        successMessage = `Service "${sanitizedServiceName}" stopped successfully`;
+                    } catch (scError) {
+                        // Try elevated PowerShell as last resort
+                        try {
+                            const elevatedCommand = `powershell -Command "Start-Process powershell -Verb RunAs -ArgumentList '-Command', 'Stop-Service -Name ''${sanitizedServiceName}'' -Force' -Wait"`;
+                            await processPool.executeCmdCommand(elevatedCommand);
+                            successMessage = `Service "${sanitizedServiceName}" stopped successfully (elevated privileges required)`;
+                        } catch (elevatedError) {
+                            throw new Error(`Failed to stop service with all methods. Net error: ${netError.message}. SC error: ${scError.message}. Elevated error: ${elevatedError.message}`);
+                        }
+                    }
+                }
+                break;
+
+            case 'restart':
+                // Stop then start with a delay
+                try {
+                    // First stop the service
+                    try {
+                        await processPool.executeCmdCommand(`net stop "${sanitizedServiceName}" /y`);
+                    } catch (netStopError) {
+                        await processPool.executeCmdCommand(`sc stop "${sanitizedServiceName}"`);
+                    }
+
+                    // Wait 2 seconds
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+
+                    // Then start the service
+                    try {
+                        await processPool.executeCmdCommand(`net start "${sanitizedServiceName}"`);
+                    } catch (netStartError) {
+                        await processPool.executeCmdCommand(`sc start "${sanitizedServiceName}"`);
+                    }
+
+                    successMessage = `Service "${sanitizedServiceName}" restarted successfully`;
+                } catch (restartError) {
+                    throw new Error(`Failed to restart service: ${restartError.message}`);
+                }
+                break;
+        }
+
         return {
             success: true,
-            message: output.trim() || `Service ${action} completed successfully`,
+            message: successMessage,
             serviceName: serviceName,
             action: action,
         };
+
     } catch (error) {
         loggingManager.logError(
-            `PowerShell error for ${action} ${serviceName}: ${error.message}`,
+            `Service control error for ${action} ${serviceName}: ${error.message}`,
             'ServiceControl'
         );
-
-        // If PowerShell fails due to execution policy, try using sc.exe as fallback
-        if (error.message.includes('execution policy') ||
-            error.message.includes('ExecutionPolicy') ||
-            error.message.includes('cannot be loaded because running scripts is disabled')) {
-
-            loggingManager.logInfo(
-                `PowerShell execution policy blocked, trying sc.exe fallback for ${action} ${serviceName}`,
-                'ServiceControl'
-            );
-
-            try {
-                let scCommand;
-                switch (action) {
-                    case 'start':
-                        scCommand = `sc start "${sanitizedServiceName}"`;
-                        break;
-                    case 'stop':
-                        scCommand = `sc stop "${sanitizedServiceName}"`;
-                        break;
-                    case 'restart':
-                        // For restart, we need to stop then start
-                        scCommand = `sc stop "${sanitizedServiceName}" && timeout /t 2 /nobreak && sc start "${sanitizedServiceName}"`;
-                        break;
-                    default:
-                        throw new Error(`Invalid action for sc.exe: ${action}`);
-                }
-
-                const scOutput = await processPool.executeCmdCommand(scCommand);
-                return {
-                    success: true,
-                    message: `Service ${action} completed successfully using sc.exe`,
-                    serviceName: serviceName,
-                    action: action,
-                };
-            } catch (scError) {
-                loggingManager.logError(
-                    `Both PowerShell and sc.exe failed for ${action} ${serviceName}: ${scError.message}`,
-                    'ServiceControl'
-                );
-                throw new Error(`Failed to ${action} service: PowerShell blocked by execution policy, sc.exe also failed: ${scError.message}`);
-            }
-        }
-
-        throw new Error(`Failed to ${action} service: ${error.message}`);
+        throw new Error(`Failed to ${action} ${serviceName}: ${error.message}`);
     }
 });
 

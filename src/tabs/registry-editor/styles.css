@@ -252,6 +252,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .registry-values-header {
@@ -262,25 +263,32 @@
     font-weight: bold;
     color: var(--text-color);
     font-size: 13px;
+    flex-shrink: 0;
 }
 
 .value-column {
     padding: 0 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .name-column {
     flex: 2;
     min-width: 150px;
+    max-width: 250px;
 }
 
 .type-column {
     flex: 1;
     min-width: 120px;
+    max-width: 150px;
 }
 
 .data-column {
     flex: 3;
     min-width: 200px;
+    max-width: 400px;
 }
 
 .actions-column {
@@ -291,6 +299,7 @@
 .registry-values-list {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     font-family: 'Consolas', 'Monaco', monospace;
     font-size: 13px;
 }
@@ -300,6 +309,8 @@
     padding: 8px 15px;
     border-bottom: 1px solid var(--border-color);
     transition: background-color 0.2s ease;
+    min-height: 40px;
+    align-items: center;
 }
 
 .value-row:hover {
@@ -313,21 +324,32 @@
 .value-icon {
     margin-right: 6px;
     color: var(--primary-color);
+    flex-shrink: 0;
 }
 
 .value-name {
     color: var(--text-color);
     font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .value-type {
     color: var(--secondary-text);
     font-style: italic;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .value-data {
     color: var(--text-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     word-break: break-all;
+    max-width: 100%;
 }
 
 .edit-value-btn,
