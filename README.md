@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![WinTool Version](https://img.shields.io/badge/WinTool-v0.3.7wb-orange?style=for-the-badge&logo=windows&logoColor=white)
+![WinTool Version](https://img.shields.io/badge/WinTool-v0.3.8wb-orange?style=for-the-badge&logo=windows&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows_11-blue?style=for-the-badge&logo=windows)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=for-the-badge)
 ![GitHub Stars](https://img.shields.io/github/stars/MTechWare/wintool?style=for-the-badge&logo=github)
@@ -18,26 +18,14 @@ WinTool is a powerful and intuitive application for Windows system management, d
 
 ## 🆕 What's New
 
-# Version: v0.3.7wb
+# Version: v0.3.8wb
 
 ---
 
-## :sparkles: **New Features**
+## :sparkles: **New Icon**
 
 **Settings - Hide Warning Banners:**
-- :gear: **Settings** - Added new option in Behavior settings to hide all warning banners across all tabs
-- :x: **UI** - Users can now globally disable warning banners while maintaining access to help documentation
-
-## :bug: **Bug Fixes**
-
-**Registry Editor Tab - Fix:**
-- :computer: **UI** -  Fixed table layout where the registry values are overflowing
-
-**Processes Tab - Fix:**
-- :computer: **UI** -  Refactored the UI to use a table for better layout and added styling for each column
-
-**Help Modal - Removed:**
-- :computer: **UI** -  Removed the help modal form command palette
+- :gear: **Application** - application icon has been updated
 
 ---
 
