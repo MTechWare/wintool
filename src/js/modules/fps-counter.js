@@ -12,6 +12,7 @@ function createFpsElement() {
     fpsElement.id = 'fps-counter';
     fpsElement.innerHTML = `
         <span id="fps-value">FPS: --</span>
+        <span id="cpu-value">CPU: --%</span>
         <span id="mem-value">MEM: --%</span>
     `;
     document.body.appendChild(fpsElement);
@@ -58,6 +59,7 @@ export async function initFpsCounter() {
     createFpsElement(); // Create the element once
     window.electronAPI.onPerformanceUpdate(metrics => {
         if (fpsElement.style.display !== 'none') {
+            document.getElementById('cpu-value').textContent = `CPU: ${metrics.cpu}%`;
             document.getElementById('mem-value').textContent = `MEM: ${metrics.mem}%`;
         }
     });

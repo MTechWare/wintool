@@ -2903,7 +2903,8 @@ html, body {
     border: 1px solid var(--border-color);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     display: flex;
-    gap: 15px;
+    gap: 12px;
+    min-width: 200px;
 }
 
 /* Global Notification System - Enhanced Design */
