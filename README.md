@@ -24,7 +24,7 @@ WinTool is a powerful and intuitive application for Windows system management, d
 
 **Bug Fixes:**
 
-- :desktop: **Application** Moved application.json to MTechWare folder
+- **Application** Moved application.json to MTechWare folder
 
 ---
 
