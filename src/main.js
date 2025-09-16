@@ -247,6 +247,7 @@ async function startMainApplication() {
                 frame: true,
                 transparent: false,
                 show: true,
+                icon: path.join(__dirname, 'assets', 'images', 'icon.ico'),
             });
 
             basicWindow.loadFile(path.join(__dirname, 'index.html'));
@@ -1401,18 +1402,74 @@ ipcMain.handle('get-network-stats', async () => {
 
 // Load applications.json file handler
 ipcMain.handle('get-applications-data', async () => {
-    const applicationsPath = path.join(__dirname, 'tabs', 'packages', 'applications.json');
+    // Load from AppData\Local\MTechWare\WinTool instead of local directory
+    const appDataDir = path.join(os.homedir(), 'AppData', 'Local', 'MTechWare', 'WinTool');
+    const appDataPath = path.join(appDataDir, 'applications.json');
+    const githubUrl = 'https://raw.githubusercontent.com/MTechWare/wintool/refs/heads/main/src/tabs/packages/applications.json';
 
     try {
-        const data = await fs.readFile(applicationsPath, 'utf8');
+        // Check if file exists first
+        await fs.access(appDataPath);
+        const data = await fs.readFile(appDataPath, 'utf8');
         const applications = JSON.parse(data);
-        return applications;
-    } catch (error) {
-        loggingManager.logError(
-            `Error loading applications.json: ${error.message}`,
+        loggingManager.logInfo(
+            `Successfully loaded applications.json from AppData: ${appDataPath}`,
             'ApplicationsData'
         );
-        throw new Error(`Failed to load applications data: ${error.message}`);
+        return applications;
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            // File doesn't exist, try to download it from GitHub
+            loggingManager.logInfo(
+                `applications.json not found locally, downloading from GitHub: ${githubUrl}`,
+                'ApplicationsData'
+            );
+
+            try {
+                // Ensure the directory exists
+                await fs.mkdir(appDataDir, { recursive: true });
+
+                // Download the file from GitHub
+                const https = require('https');
+                const downloadedData = await new Promise((resolve, reject) => {
+                    https.get(githubUrl, (response) => {
+                        if (response.statusCode !== 200) {
+                            reject(new Error(`Failed to download: HTTP ${response.statusCode}`));
+                            return;
+                        }
+
+                        let data = '';
+                        response.on('data', chunk => data += chunk);
+                        response.on('end', () => resolve(data));
+                        response.on('error', reject);
+                    }).on('error', reject);
+                });
+
+                // Save the downloaded file
+                await fs.writeFile(appDataPath, downloadedData, 'utf8');
+
+                // Parse and return the downloaded data
+                const applications = JSON.parse(downloadedData);
+                loggingManager.logInfo(
+                    `Successfully downloaded and saved applications.json to: ${appDataPath}`,
+                    'ApplicationsData'
+                );
+                return applications;
+
+            } catch (downloadError) {
+                loggingManager.logError(
+                    `Failed to download applications.json from GitHub: ${downloadError.message}`,
+                    'ApplicationsData'
+                );
+                throw new Error(`Failed to download applications data from GitHub: ${downloadError.message}`);
+            }
+        } else {
+            loggingManager.logError(
+                `Error loading applications.json from AppData: ${error.message}`,
+                'ApplicationsData'
+            );
+            throw new Error(`Failed to load applications data from AppData: ${error.message}`);
+        }
     }
 });
 
@@ -3275,7 +3332,7 @@ ipcMain.handle('set-registry-value', async (_, keyPath, valueName, valueData, va
         }
 
         console.log(`Setting registry value: ${keyPath}\\${valueName} = ${processedValue} (${valueType})`);
-        
+
         // Set registry value using native Windows Registry API
         return new Promise((resolve, reject) => {
             // First ensure the key exists by creating it if necessary
@@ -3283,12 +3340,12 @@ ipcMain.handle('set-registry-value', async (_, keyPath, valueName, valueData, va
                 if (createErr) {
                     console.log(`Key creation warning (may already exist): ${createErr.message}`);
                 }
-                
+
                 // Now set the value
                 regKey.set(valueName, regType, processedValue, (err) => {
                     if (err) {
                         console.error('Registry set error with winreg, trying reg.exe fallback:', err);
-                        
+
                         // Fallback to reg.exe command
                         try {
                             let regCommand;
@@ -3311,7 +3368,7 @@ ipcMain.handle('set-registry-value', async (_, keyPath, valueName, valueData, va
                                 default:
                                     regCommand = `reg add "${keyPath}" /v "${valueName}" /t REG_SZ /d "${valueData}" /f`;
                             }
-                            
+
                             processPool.executeCmdCommand(regCommand).then(() => {
                                 console.log(`Successfully set registry value using reg.exe: ${keyPath}\\${valueName}`);
                                 loggingManager.logInfo(`Registry value set via reg.exe: ${keyPath}\\${valueName}`, 'RegistryEditor');
@@ -3406,7 +3463,7 @@ ipcMain.handle('create-registry-key', async (_, keyPath) => {
 
         console.log(`Creating registry key: ${keyPath}`);
         console.log('Registry key details:', { rootKey, subPath, hive: REGISTRY_HIVES[rootKey] });
-        
+
         // Create registry key using native Windows Registry API
         return new Promise((resolve, reject) => {
             regKey.create((err) => {
@@ -3458,7 +3515,7 @@ ipcMain.handle('delete-registry-key', async (_, keyPath) => {
 
         console.log(`Deleting registry key: ${keyPath}`);
         console.log('Registry key details:', { rootKey, subPath, hive: REGISTRY_HIVES[rootKey] });
-        
+
         // Delete registry key using native Windows Registry API
         return new Promise((resolve, reject) => {
             regKey.destroy((err) => {

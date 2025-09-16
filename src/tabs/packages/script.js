@@ -1080,7 +1080,7 @@ class PackageManager {
         // Confirm uninstallation
         const confirmed = confirm(
             `Are you sure you want to uninstall "${pkg.content}"?\n\n` +
-                `This action cannot be undone.`
+            `This action cannot be undone.`
         );
 
         if (!confirmed) {
@@ -1168,7 +1168,7 @@ class PackageManager {
         // Confirm batch installation
         const confirmed = confirm(
             `Install ${validPackages.length} selected packages?\n\n` +
-                `This operation may take several minutes to complete.`
+            `This operation may take several minutes to complete.`
         );
 
         if (!confirmed) {
@@ -1286,7 +1286,7 @@ class PackageManager {
         // Confirm batch uninstallation
         const confirmed = confirm(
             `Uninstall ${validPackages.length} selected packages?\n\n` +
-                `This action cannot be undone and may take several minutes to complete.`
+            `This action cannot be undone and may take several minutes to complete.`
         );
 
         if (!confirmed) {
