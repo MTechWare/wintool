@@ -1,6 +1,6 @@
 {
   "name": "wintool",
-  "version": "0.3.8wb",
+  "version": "0.3.9wb",
   "main": "src/main.js",
   "description": "WinTool - Windows System Management Tool",
   "author": "MTech",
